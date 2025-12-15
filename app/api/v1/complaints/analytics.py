@@ -1,8 +1,6 @@
 # api/v1/complaints/analytics.py
-from __future__ import annotations
 
-from datetime import date as Date
-
+from datetime import date
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
@@ -44,8 +42,8 @@ def _map_service_error(exc: ServiceError) -> HTTPException:
 )
 async def get_complaint_analytics(
     hostel_id: UUID = Query(..., description="Hostel ID"),
-    period_start: Date = Query(..., description="Start Date (inclusive)"),
-    period_end: Date = Query(..., description="End Date (inclusive)"),
+    period_start: date = Query(..., description="Start Date (inclusive)"),
+    period_end: date = Query(..., description="End Date (inclusive)"),
     uow: UnitOfWork = Depends(get_uow),
 ) -> ComplaintAnalytics:
     """

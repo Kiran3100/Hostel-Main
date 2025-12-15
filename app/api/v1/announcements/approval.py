@@ -1,7 +1,6 @@
 # api/v1/announcements/approval.py
-from __future__ import annotations
 
-from typing import List, Optional
+from typing import List, Union
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Path, Query, status
@@ -111,11 +110,11 @@ async def reject_announcement(
     summary="List pending announcement approvals",
 )
 async def list_pending_approvals(
-    hostel_id: Optional[UUID] = Query(
+    hostel_id: Union[UUID, None] = Query(
         None,
         description="Optional hostel filter",
     ),
-    approver_id: Optional[UUID] = Query(
+    approver_id: Union[UUID, None] = Query(
         None,
         description="Optional approver/supervisor filter",
     ),

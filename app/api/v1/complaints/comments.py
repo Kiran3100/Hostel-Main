@@ -1,7 +1,6 @@
 # api/v1/complaints/comments.py
-from __future__ import annotations
 
-from typing import Optional
+from typing import Union
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Path, Query, status, Response
@@ -117,7 +116,7 @@ async def update_comment(
 async def delete_comment(
     complaint_id: UUID = Path(..., description="Complaint ID"),
     comment_id: UUID = Path(..., description="Comment ID"),
-    reason: Optional[str] = Query(
+    reason: Union[str, None] = Query(
         None, 
         description="Deletion reason (optional)",
         max_length=200

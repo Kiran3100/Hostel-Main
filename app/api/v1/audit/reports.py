@@ -1,8 +1,7 @@
 # api/v1/audit/reports.py
-from __future__ import annotations
 
-from datetime import date as Date
-from typing import List, Optional
+from datetime import date
+from typing import List, Union
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
@@ -48,16 +47,16 @@ def _map_service_error(exc: ServiceError) -> HTTPException:
     summary="Get overall audit report",
 )
 async def get_audit_report(
-    hostel_id: Optional[UUID] = Query(
+    hostel_id: Union[UUID, None] = Query(
         None,
         description="Optional hostel filter",
     ),
-    user_id: Optional[UUID] = Query(
+    user_id: Union[UUID, None] = Query(
         None,
         description="Optional user filter",
     ),
-    period_start: Date = Query(..., description="Start Date (inclusive)"),
-    period_end: Date = Query(..., description="End Date (inclusive)"),
+    period_start: date = Query(..., description="Start Date (inclusive)"),
+    period_end: date = Query(..., description="End Date (inclusive)"),
     uow: UnitOfWork = Depends(get_uow),
 ) -> AuditReport:
     """
@@ -82,16 +81,16 @@ async def get_audit_report(
     summary="Get user activity summary",
 )
 async def get_user_activity_summary(
-    hostel_id: Optional[UUID] = Query(
+    hostel_id: Union[UUID, None] = Query(
         None,
         description="Optional hostel filter",
     ),
-    user_id: Optional[UUID] = Query(
+    user_id: Union[UUID, None] = Query(
         None,
         description="User ID to summarize activity for",
     ),
-    period_start: Date = Query(..., description="Start Date (inclusive)"),
-    period_end: Date = Query(..., description="End Date (inclusive)"),
+    period_start: date = Query(..., description="Start Date (inclusive)"),
+    period_end: date = Query(..., description="End Date (inclusive)"),
     uow: UnitOfWork = Depends(get_uow),
 ) -> UserActivitySummary:
     """
@@ -115,16 +114,16 @@ async def get_user_activity_summary(
     summary="Get entity change summaries",
 )
 async def get_entity_change_summaries(
-    hostel_id: Optional[UUID] = Query(
+    hostel_id: Union[UUID, None] = Query(
         None,
         description="Optional hostel filter",
     ),
-    entity_type: Optional[str] = Query(
+    entity_type: Union[str, None] = Query(
         None,
         description="Optional entity type filter (hostel, room, student, etc.)",
     ),
-    period_start: Date = Query(..., description="Start Date (inclusive)"),
-    period_end: Date = Query(..., description="End Date (inclusive)"),
+    period_start: date = Query(..., description="Start Date (inclusive)"),
+    period_end: date = Query(..., description="End Date (inclusive)"),
     uow: UnitOfWork = Depends(get_uow),
 ) -> List[EntityChangeSummary]:
     """

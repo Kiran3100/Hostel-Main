@@ -5,10 +5,8 @@ Handles administrator overrides of supervisor/system decisions with
 comprehensive audit logging and statistical tracking.
 """
 
-from __future__ import annotations
-
-from datetime import date as Date
-from typing import Annotated, Optional
+from datetime import date
+from typing import Annotated, Union
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Path, Query, status
@@ -168,26 +166,26 @@ async def list_overrides_for_entity(
     description="Retrieve aggregated override statistics for a period with optional filters.",
     responses={
         200: {"description": "Successfully retrieved override summary"},
-        400: {"description": "Invalid filter or Date parameters"},
+        400: {"description": "Invalid filter or date parameters"},
         422: {"description": "Validation error in query parameters"},
     },
 )
 async def get_override_summary(
     hostel_id: Annotated[
-        Optional[UUID],
+        Union[UUID, None],
         Query(description="Filter by specific hostel"),
     ] = None,
     supervisor_id: Annotated[
-        Optional[UUID],
+        Union[UUID, None],
         Query(description="Filter by supervisor whose decisions were overridden"),
     ] = None,
     start_date: Annotated[
-        Optional[Date],
-        Query(description="Start Date for summary period (inclusive)"),
+        Union[date, None],
+        Query(description="Start date for summary period (inclusive)"),
     ] = None,
     end_date: Annotated[
-        Optional[Date],
-        Query(description="End Date for summary period (inclusive)"),
+        Union[date, None],
+        Query(description="End date for summary period (inclusive)"),
     ] = None,
     uow: Annotated[UnitOfWork, Depends(get_uow)] = ...,
 ) -> OverrideSummary:
@@ -206,7 +204,7 @@ async def get_override_summary(
     - Specific hostel
     - Specific supervisor
     """
-    # Validate Date range if both provided
+    # Validate date range if both provided
     if start_date and end_date and start_date > end_date:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
@@ -242,12 +240,12 @@ async def get_supervisor_override_stats(
         Path(description="Unique identifier of the supervisor"),
     ],
     start_date: Annotated[
-        Optional[Date],
-        Query(description="Start Date for statistics period (inclusive)"),
+        Union[date, None],
+        Query(description="Start date for statistics period (inclusive)"),
     ] = None,
     end_date: Annotated[
-        Optional[Date],
-        Query(description="End Date for statistics period (inclusive)"),
+        Union[date, None],
+        Query(description="End date for statistics period (inclusive)"),
     ] = None,
     uow: Annotated[UnitOfWork, Depends(get_uow)] = ...,
 ) -> SupervisorOverrideStats:
@@ -268,7 +266,7 @@ async def get_supervisor_override_stats(
     - Quality assurance
     - Process improvement
     """
-    # Validate Date range if both provided
+    # Validate date range if both provided
     if start_date and end_date and start_date > end_date:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,

@@ -1,9 +1,7 @@
 # api/v1/complaints/escalation.py
-from __future__ import annotations
 
-from datetime import date as Date
-
-from typing import Optional
+from datetime import date
+from typing import Union
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Path, Query, status

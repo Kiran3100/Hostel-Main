@@ -12,7 +12,6 @@ Provides comprehensive administrative functionality including:
 All endpoints are designed for administrative users and include
 proper authorization checks, audit logging, and error handling.
 """
-from __future__ import annotations
 
 from fastapi import APIRouter
 

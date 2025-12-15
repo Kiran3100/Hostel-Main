@@ -1,5 +1,4 @@
 # app/api/v1/users/activity.py
-from __future__ import annotations
 
 from typing import Any, List
 

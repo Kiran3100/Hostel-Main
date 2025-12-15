@@ -1,6 +1,6 @@
-from __future__ import annotations
+# app/api/v1/admin/dashboard.py
 
-from datetime import date as Date
+from datetime import date
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
 from app.api.deps import get_uow
@@ -57,8 +57,8 @@ async def get_latest_platform_metrics(
     summary="Get growth metrics for a period (super admin)",
 )
 async def get_growth_metrics(
-    period_start: Date = Query(..., description="Start Date (inclusive)"),
-    period_end: Date = Query(..., description="End Date (inclusive)"),
+    period_start: date = Query(..., description="Start Date (inclusive)"),
+    period_end: date = Query(..., description="End Date (inclusive)"),
     uow: UnitOfWork = Depends(get_uow),
 ) -> GrowthMetrics:
     """

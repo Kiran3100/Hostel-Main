@@ -1,4 +1,4 @@
-from __future__ import annotations
+# app/api/v1/admin/permissions.py
 
 from fastapi import APIRouter, Depends, HTTPException, Path, status
 

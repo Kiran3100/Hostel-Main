@@ -1,5 +1,4 @@
 # app/api/v1/auth/password.py
-from __future__ import annotations
 
 from uuid import UUID
 

@@ -1,7 +1,6 @@
 # api/v1/attendance/alerts.py
-from __future__ import annotations
 
-from typing import List, Optional
+from typing import List, Union
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Path, Query, status
@@ -136,7 +135,7 @@ async def acknowledge_alert(
     summary="List attendance alerts",
 )
 async def list_alerts(
-    hostel_id: Optional[UUID] = Query(
+    hostel_id: Union[UUID, None] = Query(
         None,
         description="Optional hostel filter",
     ),
@@ -158,7 +157,7 @@ async def list_alerts(
     summary="Get attendance alert summary",
 )
 async def get_alert_summary(
-    hostel_id: Optional[UUID] = Query(
+    hostel_id: Union[UUID, None] = Query(
         None,
         description="Optional hostel filter",
     ),

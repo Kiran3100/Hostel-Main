@@ -1,7 +1,6 @@
 # api/v1/bookings/waitlist.py
-from __future__ import annotations
 
-from typing import Optional
+from typing import Union
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Path, Query, status
@@ -80,7 +79,7 @@ async def cancel_waitlist_entry(
 )
 async def list_waitlist_for_hostel(
     hostel_id: UUID = Query(..., description="Hostel ID"),
-    room_type: Optional[RoomType] = Query(None, description="Optional room type filter"),
+    room_type: Union[RoomType, None] = Query(None, description="Optional room type filter"),
     uow: UnitOfWork = Depends(get_uow),
 ) -> WaitlistManagement:
     """
@@ -150,7 +149,7 @@ async def convert_waitlist_entry(
 async def get_waitlist_status(
     visitor_id: UUID = Query(..., description="Visitor ID"),
     hostel_id: UUID = Query(..., description="Hostel ID"),
-    room_type: Optional[RoomType] = Query(None, description="Optional room type filter"),
+    room_type: Union[RoomType, None] = Query(None, description="Optional room type filter"),
     uow: UnitOfWork = Depends(get_uow),
 ) -> WaitlistStatus:
     """

@@ -1,5 +1,4 @@
 # app/api/v1/visitors/profile.py
-from __future__ import annotations
 
 from uuid import UUID
 

@@ -1,7 +1,6 @@
 # api/v1/attendance/attendance.py
-from __future__ import annotations
 
-from datetime import date as Date
+from datetime import date
 from typing import List
 from uuid import UUID
 
@@ -54,7 +53,7 @@ async def list_attendance_records(
     uow: UnitOfWork = Depends(get_uow),
 ) -> List[AttendanceResponse]:
     """
-    List attendance records using filters (hostel, student, Date range, status, mode, etc.).
+    List attendance records using filters (hostel, student, date range, status, mode, etc.).
     """
     service = AttendanceService(uow)
     try:
@@ -132,7 +131,7 @@ async def update_attendance_record(
 )
 async def get_daily_hostel_summary(
     hostel_id: UUID = Path(..., description="Hostel ID"),
-    day: Date = Query(..., description="Date for the summary (YYYY-MM-DD)"),
+    day: date = Query(..., description="Date for the summary (YYYY-MM-DD)"),
     uow: UnitOfWork = Depends(get_uow),
 ) -> DailyAttendanceSummary:
     """

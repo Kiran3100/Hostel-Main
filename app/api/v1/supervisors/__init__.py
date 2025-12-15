@@ -1,5 +1,4 @@
 # app/api/v1/supervisors/__init__.py
-from __future__ import annotations
 
 from dataclasses import dataclass
 from typing import Any

@@ -1,5 +1,4 @@
 # api/v1/announcements/announcements.py
-from __future__ import annotations
 
 from uuid import UUID
 

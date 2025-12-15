@@ -1,8 +1,7 @@
 # api/v1/announcements/scheduling.py
-from __future__ import annotations
 
-from datetime import date as Date
-from typing import Optional
+from datetime import date
+from typing import Union
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Path, Query, status
@@ -137,22 +136,22 @@ async def publish_now(
     summary="List scheduled announcements",
 )
 async def list_scheduled_announcements(
-    hostel_id: Optional[UUID] = Query(
+    hostel_id: Union[UUID, None] = Query(
         None,
         description="Optional hostel filter",
     ),
-    start_date: Optional[Date] = Query(
+    start_date: Union[date, None] = Query(
         None,
-        description="Optional start of Date window (inclusive)",
+        description="Optional start of date window (inclusive)",
     ),
-    end_date: Optional[Date] = Query(
+    end_date: Union[date, None] = Query(
         None,
-        description="Optional end of Date window (inclusive)",
+        description="Optional end of date window (inclusive)",
     ),
     uow: UnitOfWork = Depends(get_uow),
 ) -> ScheduledAnnouncementsList:
     """
-    List upcoming scheduled announcements, optionally filtered by hostel and Date range.
+    List upcoming scheduled announcements, optionally filtered by hostel and date range.
     """
     service = AnnouncementService(uow)
     try:

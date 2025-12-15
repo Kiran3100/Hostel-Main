@@ -1,5 +1,4 @@
 # api/v1/fee_structures/__init__.py
-from __future__ import annotations
 
 from fastapi import APIRouter
 
