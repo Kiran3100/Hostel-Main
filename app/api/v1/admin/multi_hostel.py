@@ -5,9 +5,7 @@ Provides consolidated dashboard views for administrators managing
 multiple hostels, aggregating metrics and analytics across properties.
 """
 
-from __future__ import annotations
-
-from typing import Annotated, Optional
+from typing import Annotated, Union
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
@@ -60,7 +58,7 @@ def _map_service_error(exc: ServiceError) -> HTTPException:
 
 
 def _resolve_admin_id(
-    admin_id: Optional[UUID],
+    admin_id: Union[UUID, None],
     current_user: User,
 ) -> UUID:
     """
@@ -108,7 +106,7 @@ def _resolve_admin_id(
 )
 async def get_multi_hostel_dashboard(
     admin_id: Annotated[
-        Optional[UUID],
+        Union[UUID, None],
         Query(
             description="Admin ID (optional; defaults to current user's admin profile)",
         ),

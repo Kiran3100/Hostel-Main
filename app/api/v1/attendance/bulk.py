@@ -1,5 +1,4 @@
 # api/v1/attendance/bulk.py
-from __future__ import annotations
 
 from fastapi import APIRouter, Depends, HTTPException, status
 

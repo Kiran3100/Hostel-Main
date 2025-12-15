@@ -1,7 +1,7 @@
-from __future__ import annotations
+# api/v1/analytics/visitors.py
 
-from datetime import date as Date
-from typing import Optional
+from datetime import date
+from typing import Union
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Path, Query, status
@@ -35,9 +35,9 @@ def _map_service_error(exc: ServiceError) -> HTTPException:
     summary="Get visitor funnel analytics",
 )
 async def get_visitor_funnel(
-    hostel_id: Optional[UUID] = Query(None, description="Optional hostel filter"),
-    period_start: Date = Query(..., description="Start Date (inclusive)"),
-    period_end: Date = Query(..., description="End Date (inclusive)"),
+    hostel_id: Union[UUID, None] = Query(None, description="Optional hostel filter"),
+    period_start: date = Query(..., description="Start Date (inclusive)"),
+    period_end: date = Query(..., description="End Date (inclusive)"),
     uow: UnitOfWork = Depends(get_uow),
 ) -> VisitorFunnel:
     """
@@ -60,9 +60,9 @@ async def get_visitor_funnel(
     summary="Get traffic source analytics",
 )
 async def get_traffic_sources(
-    hostel_id: Optional[UUID] = Query(None, description="Optional hostel filter"),
-    period_start: Date = Query(..., description="Start Date (inclusive)"),
-    period_end: Date = Query(..., description="End Date (inclusive)"),
+    hostel_id: Union[UUID, None] = Query(None, description="Optional hostel filter"),
+    period_start: date = Query(..., description="Start Date (inclusive)"),
+    period_end: date = Query(..., description="End Date (inclusive)"),
     uow: UnitOfWork = Depends(get_uow),
 ) -> TrafficSourceAnalytics:
     """

@@ -1,7 +1,7 @@
-from __future__ import annotations
+# api/v1/analytics/dashboard.py
 
-from datetime import date as Date
-from typing import Optional
+from datetime import date
+from typing import Union
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
@@ -32,15 +32,15 @@ def _map_service_error(exc: ServiceError) -> HTTPException:
 )
 async def get_dashboard_metrics(
     scope_type: str = Query(..., description="Scope type: hostel | platform | admin"),
-    scope_id: Optional[UUID] = Query(
+    scope_id: Union[UUID, None] = Query(
         None,
         description="Scope ID (hostel_id or admin_id); null for platform scope",
     ),
-    period_start: Optional[Date] = Query(
+    period_start: Union[date, None] = Query(
         None,
         description="Start Date (inclusive). If omitted, service will choose a default window.",
     ),
-    period_end: Optional[Date] = Query(
+    period_end: Union[date, None] = Query(
         None,
         description="End Date (inclusive). If omitted, service will choose a default window.",
     ),

@@ -1,7 +1,6 @@
 # api/v1/bookings/bookings.py
-from __future__ import annotations
 
-from typing import Optional
+from typing import Union
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Path, status

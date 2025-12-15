@@ -1,7 +1,6 @@
 # app/api/v1/users/sessions.py
-from __future__ import annotations
 
-from typing import Any
+from typing import Any, Union
 
 from fastapi import APIRouter, Depends, Response, status
 from app.services.auth import SessionService
@@ -58,7 +57,7 @@ def revoke_session(
 
 @router.post("/revoke-all", status_code=status.HTTP_204_NO_CONTENT)
 def revoke_all_sessions(
-    payload: RevokeAllSessionsRequest | None = None,
+    payload: Union[RevokeAllSessionsRequest, None] = None,
     current_user: CurrentUser = Depends(get_current_user),
     session_service: SessionService = Depends(get_session_service),
 ) -> Response:

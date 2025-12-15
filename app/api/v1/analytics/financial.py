@@ -1,7 +1,7 @@
-from __future__ import annotations
+# api/v1/analytics/financial.py
 
-from datetime import date as Date
-from typing import Optional
+from datetime import date
+from typing import Union
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
@@ -35,12 +35,12 @@ async def get_financial_report(
         "hostel",
         description="Scope type: hostel | platform | admin (default hostel)",
     ),
-    scope_id: Optional[UUID] = Query(
+    scope_id: Union[UUID, None] = Query(
         None,
         description="Scope ID (hostel_id, admin_id, or null for platform-wide)",
     ),
-    period_start: Date = Query(..., description="Start Date (inclusive)"),
-    period_end: Date = Query(..., description="End Date (inclusive)"),
+    period_start: date = Query(..., description="Start Date (inclusive)"),
+    period_end: date = Query(..., description="End Date (inclusive)"),
     uow: UnitOfWork = Depends(get_uow),
 ) -> FinancialReport:
     """

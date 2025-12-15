@@ -1,5 +1,4 @@
 # api/v1/announcements/delivery.py
-from __future__ import annotations
 
 from typing import Annotated
 from uuid import UUID
@@ -43,7 +42,7 @@ async def get_delivery_config(
     delivery_service: Annotated[
         AnnouncementDeliveryService,
         Depends(deps.get_announcement_delivery_service),
-    ] = ...,  # type: ignore[assignment]
+    ] = ...,
 ) -> DeliveryConfig:
     """
     Return the delivery configuration (channels, batching, etc.) for an announcement.
@@ -65,7 +64,7 @@ async def update_delivery_config(
     delivery_service: Annotated[
         AnnouncementDeliveryService,
         Depends(deps.get_announcement_delivery_service),
-    ] = ...,  # type: ignore[assignment]
+    ] = ...,
 ) -> DeliveryConfig:
     """
     Update the delivery configuration (channels, batching strategy, etc.) for an announcement.
@@ -89,7 +88,7 @@ async def get_delivery_status(
     delivery_service: Annotated[
         AnnouncementDeliveryService,
         Depends(deps.get_announcement_delivery_service),
-    ] = ...,  # type: ignore[assignment]
+    ] = ...,
 ) -> DeliveryStatus:
     """
     Return high-level delivery status across channels (queued, in-progress, completed, failed).
@@ -110,7 +109,7 @@ async def get_delivery_report(
     delivery_service: Annotated[
         AnnouncementDeliveryService,
         Depends(deps.get_announcement_delivery_service),
-    ] = ...,  # type: ignore[assignment]
+    ] = ...,
 ) -> DeliveryReport:
     """
     Return a delivery report with per-channel stats, failed deliveries, and other metadata.
@@ -133,7 +132,7 @@ async def retry_failed_deliveries(
     delivery_service: Annotated[
         AnnouncementDeliveryService,
         Depends(deps.get_announcement_delivery_service),
-    ] = ...,  # type: ignore[assignment]
+    ] = ...,
 ) -> BatchDelivery:
     """
     Retry failed deliveries for an announcement, possibly limited to selected channels or

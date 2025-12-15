@@ -1,8 +1,7 @@
 # api/v1/audit/overrides.py
-from __future__ import annotations
 
-from datetime import date as Date
-from typing import List, Optional
+from datetime import date
+from typing import List, Union
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Path, Query, status
@@ -49,27 +48,27 @@ def _map_service_error(exc: ServiceError) -> HTTPException:
     summary="List admin overrides (audit)",
 )
 async def list_admin_overrides(
-    hostel_id: Optional[UUID] = Query(
+    hostel_id: Union[UUID, None] = Query(
         None,
         description="Filter by hostel ID",
     ),
-    supervisor_id: Optional[UUID] = Query(
+    supervisor_id: Union[UUID, None] = Query(
         None,
         description="Filter by supervisor ID",
     ),
-    entity_type: Optional[str] = Query(
+    entity_type: Union[str, None] = Query(
         None,
         description="Filter by entity type (complaint, maintenance, leave, etc.)",
     ),
-    entity_id: Optional[UUID] = Query(
+    entity_id: Union[UUID, None] = Query(
         None,
         description="Filter by entity ID",
     ),
-    start_date: Optional[Date] = Query(
+    start_date: Union[date, None] = Query(
         None,
         description="Start Date (inclusive)",
     ),
-    end_date: Optional[Date] = Query(
+    end_date: Union[date, None] = Query(
         None,
         description="End Date (inclusive)",
     ),
@@ -117,19 +116,19 @@ async def get_admin_override(
     summary="Get summary of admin overrides",
 )
 async def get_admin_override_summary(
-    hostel_id: Optional[UUID] = Query(
+    hostel_id: Union[UUID, None] = Query(
         None,
         description="Filter by hostel ID",
     ),
-    supervisor_id: Optional[UUID] = Query(
+    supervisor_id: Union[UUID, None] = Query(
         None,
         description="Filter by supervisor ID",
     ),
-    start_date: Optional[Date] = Query(
+    start_date: Union[date, None] = Query(
         None,
         description="Start Date (inclusive)",
     ),
-    end_date: Optional[Date] = Query(
+    end_date: Union[date, None] = Query(
         None,
         description="End Date (inclusive)",
     ),
@@ -156,19 +155,19 @@ async def get_admin_override_summary(
     summary="Get admin override timeline",
 )
 async def get_admin_override_timeline(
-    hostel_id: Optional[UUID] = Query(
+    hostel_id: Union[UUID, None] = Query(
         None,
         description="Filter by hostel ID",
     ),
-    supervisor_id: Optional[UUID] = Query(
+    supervisor_id: Union[UUID, None] = Query(
         None,
         description="Filter by supervisor ID",
     ),
-    start_date: Optional[Date] = Query(
+    start_date: Union[date, None] = Query(
         None,
         description="Start Date (inclusive)",
     ),
-    end_date: Optional[Date] = Query(
+    end_date: Union[date, None] = Query(
         None,
         description="End Date (inclusive)",
     ),

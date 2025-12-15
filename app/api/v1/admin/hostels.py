@@ -1,4 +1,4 @@
-from __future__ import annotations
+# app/api/v1/admin/hostels.py
 
 from typing import List
 from uuid import UUID

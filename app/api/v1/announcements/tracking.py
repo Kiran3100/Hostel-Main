@@ -1,5 +1,4 @@
 # api/v1/announcements/tracking.py
-from __future__ import annotations
 
 from typing import Annotated
 from uuid import UUID
@@ -46,7 +45,7 @@ async def record_read_receipt(
     tracking_service: Annotated[
         AnnouncementTrackingService,
         Depends(deps.get_announcement_tracking_service),
-    ] = ...,  # type: ignore[assignment]
+    ] = ...,
 ) -> ReadReceipt:
     """
     Record that a recipient has read the announcement (for engagement tracking).
@@ -72,7 +71,7 @@ async def acknowledge_announcement(
     tracking_service: Annotated[
         AnnouncementTrackingService,
         Depends(deps.get_announcement_tracking_service),
-    ] = ...,  # type: ignore[assignment]
+    ] = ...,
 ) -> AcknowledgmentTracking:
     """
     Record a formal acknowledgment from a recipient for an announcement.
@@ -96,7 +95,7 @@ async def get_pending_acknowledgments(
     tracking_service: Annotated[
         AnnouncementTrackingService,
         Depends(deps.get_announcement_tracking_service),
-    ] = ...,  # type: ignore[assignment]
+    ] = ...,
 ) -> PendingAcknowledgment:
     """
     Return information about recipients who have not yet acknowledged the announcement.
@@ -119,7 +118,7 @@ async def get_engagement_metrics(
     tracking_service: Annotated[
         AnnouncementTrackingService,
         Depends(deps.get_announcement_tracking_service),
-    ] = ...,  # type: ignore[assignment]
+    ] = ...,
 ) -> EngagementMetrics:
     """
     Return engagement metrics such as open/read rates, acknowledgment rates,
@@ -143,7 +142,7 @@ async def get_announcement_analytics(
     tracking_service: Annotated[
         AnnouncementTrackingService,
         Depends(deps.get_announcement_tracking_service),
-    ] = ...,  # type: ignore[assignment]
+    ] = ...,
 ) -> AnnouncementAnalytics:
     """
     Return comprehensive analytics for an announcement, combining delivery and

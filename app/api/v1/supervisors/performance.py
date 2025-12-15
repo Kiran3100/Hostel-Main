@@ -1,7 +1,6 @@
 # app/api/v1/supervisors/performance.py
-from __future__ import annotations
 
-from typing import Optional
+from typing import Union
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, Query
@@ -57,7 +56,7 @@ def get_performance_for_supervisor(
 
 @router.get("/comparison", response_model=PeerComparison)
 def compare_supervisors(
-    hostel_id: Optional[UUID] = Query(
+    hostel_id: Union[UUID, None] = Query(
         None,
         description="Restrict comparison to a single hostel (optional)",
     ),
@@ -74,7 +73,7 @@ def compare_supervisors(
     Compare supervisors' performance (e.g., top/bottom performers).
 
     Expected service method:
-        compare_supervisors(hostel_id: Optional[UUID], limit: int) -> PeerComparison
+        compare_supervisors(hostel_id: Union[UUID, None], limit: int) -> PeerComparison
     """
     service = _get_service(session)
     return service.compare_supervisors(

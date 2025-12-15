@@ -1,5 +1,4 @@
 # api/v1/bookings/assignment.py
-from __future__ import annotations
 
 from typing import List
 from uuid import UUID

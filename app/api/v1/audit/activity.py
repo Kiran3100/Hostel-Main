@@ -1,8 +1,7 @@
 # api/v1/audit/activity.py
-from __future__ import annotations
 
-from datetime import date as Date
-from typing import List, Optional
+from datetime import date
+from typing import List, Union
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Path, Query, status
@@ -76,7 +75,7 @@ async def list_supervisor_activity(
     uow: UnitOfWork = Depends(get_uow),
 ) -> PaginatedResponse[SupervisorActivityLogResponse]:
     """
-    List supervisor activity logs with filters (hostel, supervisor, category, Date range)
+    List supervisor activity logs with filters (hostel, supervisor, category, date range)
     and pagination.
     """
     service = SupervisorActivityService(uow)
@@ -111,19 +110,19 @@ async def get_supervisor_activity(
     summary="Get supervisor activity summary",
 )
 async def get_supervisor_activity_summary(
-    hostel_id: Optional[UUID] = Query(
+    hostel_id: Union[UUID, None] = Query(
         None,
         description="Filter by hostel ID",
     ),
-    supervisor_id: Optional[UUID] = Query(
+    supervisor_id: Union[UUID, None] = Query(
         None,
         description="Filter by supervisor ID",
     ),
-    start_date: Optional[Date] = Query(
+    start_date: Union[date, None] = Query(
         None,
         description="Start Date (inclusive)",
     ),
-    end_date: Optional[Date] = Query(
+    end_date: Union[date, None] = Query(
         None,
         description="End Date (inclusive)",
     ),
@@ -150,19 +149,19 @@ async def get_supervisor_activity_summary(
     summary="Get supervisor activity timeline",
 )
 async def get_supervisor_activity_timeline(
-    hostel_id: Optional[UUID] = Query(
+    hostel_id: Union[UUID, None] = Query(
         None,
         description="Filter by hostel ID",
     ),
-    supervisor_id: Optional[UUID] = Query(
+    supervisor_id: Union[UUID, None] = Query(
         None,
         description="Filter by supervisor ID",
     ),
-    start_date: Optional[Date] = Query(
+    start_date: Union[date, None] = Query(
         None,
         description="Start Date (inclusive)",
     ),
-    end_date: Optional[Date] = Query(
+    end_date: Union[date, None] = Query(
         None,
         description="End Date (inclusive)",
     ),

@@ -1,4 +1,4 @@
-from __future__ import annotations
+# api/v1/analytics/__init__.py
 
 from fastapi import APIRouter
 

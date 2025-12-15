@@ -1,7 +1,6 @@
 # app/api/v1/supervisors/supervisors.py
-from __future__ import annotations
 
-from typing import List, Optional
+from typing import List, Union
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, Query, status
@@ -33,7 +32,7 @@ def _get_service(session: Session) -> SupervisorService:
 
 @router.get("/", response_model=List[SupervisorListItem])
 def list_supervisors(
-    hostel_id: Optional[UUID] = Query(
+    hostel_id: Union[UUID, None] = Query(
         None,
         description="Filter supervisors by hostel_id (optional)",
     ),
@@ -44,7 +43,7 @@ def list_supervisors(
     List supervisors, optionally filtered by hostel.
 
     Expected service method:
-        list_supervisors(hostel_id: Optional[UUID]) -> list[SupervisorListItem]
+        list_supervisors(hostel_id: Union[UUID, None]) -> list[SupervisorListItem]
     """
     service = _get_service(session)
     return service.list_supervisors(hostel_id=hostel_id)
