@@ -1,0 +1,240 @@
+# --- File: app/schemas/common/__init__.py ---
+"""
+Common schemas package.
+
+This __init__ module re-exports frequently used base schemas, enums,
+pagination helpers, responses, and filters from a single location:
+
+    from app.schemas.common import BaseSchema, UserRole, PaginationParams
+"""
+
+from __future__ import annotations
+
+from app.schemas.common.base import (
+    BaseCreateSchema,
+    BaseDBSchema,
+    BaseFilterSchema,
+    BaseResponseSchema,
+    BaseSchema,
+    BaseUpdateSchema,
+    SoftDeleteMixin,
+    TimestampMixin,
+    UUIDMixin,
+)
+from app.schemas.common.enums import (
+    AnnouncementCategory,
+    AttendanceMode,
+    AttendanceStatus,
+    AuditActionCategory,
+    BedStatus,
+    BillingCycle,
+    BookingSource,
+    BookingStatus,
+    ChargeType,
+    ComplaintCategory,
+    ComplaintStatus,
+    DeviceType,
+    DietaryPreference,
+    EmploymentType,
+    FeeType,
+    Gender,
+    HostelStatus,
+    HostelType,
+    IDProofType,
+    InquirySource,
+    InquiryStatus,
+    LeaveStatus,
+    LeaveType,
+    MaintenanceCategory,
+    MaintenanceIssueType,
+    MaintenanceRecurrence,
+    MaintenanceStatus,
+    MealType,
+    NotificationStatus,
+    NotificationType,
+    OTPType,
+    PaymentMethod,
+    PaymentStatus,
+    PaymentType,
+    PermissionLevel,
+    Priority,
+    ReferralStatus,
+    ReviewStatus,
+    RewardStatus,
+    RoomStatus,
+    RoomType,
+    SearchSource,
+    StudentStatus,
+    SubscriptionPlan,
+    SubscriptionStatus,
+    SupervisorStatus,
+    TargetAudience,
+    UserRole,
+    VoteType,
+    WaitlistStatus,
+)
+from app.schemas.common.filters import (
+    BooleanFilter,
+    DateRangeFilter,
+    DateTimeRangeFilter,
+    LocationFilter,
+    MultiSelectFilter,
+    NumericRangeFilter,
+    PriceRangeFilter,
+    SearchFilter,
+    SortOptions,
+    StatusFilter,
+    TextSearchFilter,
+    TimeRangeFilter,
+)
+from app.schemas.common.mixins import (
+    AddressMixin,
+    ApprovalMixin,
+    AuditMixin,
+    ContactMixin,
+    EmergencyContactMixin,
+    LocationMixin,
+    MediaMixin,
+    SEOMixin,
+)
+from app.schemas.common.pagination import (
+    CursorPaginatedResponse,
+    CursorPaginationMeta,
+    CursorPaginationParams,
+    PaginatedResponse,
+    PaginationMeta,
+    PaginationParams,
+)
+from app.schemas.common.response import (
+    BulkOperationResponse,
+    ConflictResponse,
+    ErrorDetail,
+    ErrorResponse,
+    ForbiddenResponse,
+    MessageResponse,
+    NotFoundResponse,
+    RateLimitResponse,
+    SuccessResponse,
+    UnauthorizedResponse,
+    ValidationErrorResponse,
+)
+
+__all__ = [
+    # Base schemas
+    "BaseSchema",
+    "BaseCreateSchema",
+    "BaseUpdateSchema",
+    "BaseResponseSchema",
+    "BaseDBSchema",
+    "BaseFilterSchema",
+    "TimestampMixin",
+    "SoftDeleteMixin",
+    "UUIDMixin",
+    # Enums - User & Auth
+    "UserRole",
+    "Gender",
+    "OTPType",
+    # Enums - Hostel & Room
+    "HostelType",
+    "HostelStatus",
+    "RoomType",
+    "RoomStatus",
+    "BedStatus",
+    # Enums - Booking
+    "BookingStatus",
+    "BookingSource",
+    # Enums - Payment
+    "PaymentStatus",
+    "PaymentMethod",
+    "PaymentType",
+    "FeeType",
+    "ChargeType",
+    # Enums - Complaint
+    "ComplaintCategory",
+    "ComplaintStatus",
+    "Priority",
+    # Enums - Attendance & Leave
+    "AttendanceStatus",
+    "AttendanceMode",
+    "LeaveType",
+    "LeaveStatus",
+    # Enums - Maintenance
+    "MaintenanceCategory",
+    "MaintenanceStatus",
+    "MaintenanceIssueType",
+    "MaintenanceRecurrence",
+    # Enums - Notification
+    "NotificationType",
+    "NotificationStatus",
+    "DeviceType",
+    # Enums - Subscription
+    "SubscriptionPlan",
+    "SubscriptionStatus",
+    "BillingCycle",
+    # Enums - Student & Staff
+    "StudentStatus",
+    "SupervisorStatus",
+    "EmploymentType",
+    # Enums - Announcement
+    "AnnouncementCategory",
+    "TargetAudience",
+    # Enums - Mess
+    "MealType",
+    "DietaryPreference",
+    # Enums - Documents
+    "IDProofType",
+    "PermissionLevel",
+    # Enums - Referral & Review
+    "ReferralStatus",
+    "RewardStatus",
+    "ReviewStatus",
+    "VoteType",
+    # Enums - Inquiry & Waitlist
+    "SearchSource",
+    "InquiryStatus",
+    "InquirySource",
+    "WaitlistStatus",
+    # Enums - Audit
+    "AuditActionCategory",
+    # Mixins
+    "AddressMixin",
+    "ContactMixin",
+    "LocationMixin",
+    "MediaMixin",
+    "EmergencyContactMixin",
+    "AuditMixin",
+    "ApprovalMixin",
+    "SEOMixin",
+    # Pagination
+    "PaginationParams",
+    "PaginationMeta",
+    "PaginatedResponse",
+    "CursorPaginationParams",
+    "CursorPaginationMeta",
+    "CursorPaginatedResponse",
+    # Responses
+    "SuccessResponse",
+    "ErrorDetail",
+    "ErrorResponse",
+    "MessageResponse",
+    "BulkOperationResponse",
+    "ValidationErrorResponse",
+    "NotFoundResponse",
+    "UnauthorizedResponse",
+    "ForbiddenResponse",
+    "ConflictResponse",
+    "RateLimitResponse",
+    # Filters
+    "DateRangeFilter",
+    "DateTimeRangeFilter",
+    "TimeRangeFilter",
+    "PriceRangeFilter",
+    "SearchFilter",
+    "SortOptions",
+    "StatusFilter",
+    "NumericRangeFilter",
+    "LocationFilter",
+    "MultiSelectFilter",
+    "BooleanFilter",
+    "TextSearchFilter",
+]

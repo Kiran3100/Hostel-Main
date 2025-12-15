@@ -1,0 +1,223 @@
+### Combined Content from Folder: D:\Last Github Push\Last\HOStel-back\app\api\v1\search ###
+
+
+
+# ===== Folder: D:\Last Github Push\Last\HOStel-back\app\api\v1\search =====
+
+# --- File: D:\Last Github Push\Last\HOStel-back\app\api\v1\search\analytics.py ---
+# app/api/v1/search/analytics.py
+from __future__ import annotations
+
+from datetime import date as Date
+from typing import Optional
+
+from fastapi import APIRouter, Depends, Query
+from sqlalchemy.orm import Session
+
+from app.core import get_session
+from app.services import UnitOfWork
+from app.services.search import SearchAnalyticsService
+from app.schemas.search.search_analytics import SearchAnalytics
+from . import CurrentUser, get_current_user
+
+router = APIRouter(tags=["Search - Analytics"])
+
+
+def _get_service(session: Session) -> SearchAnalyticsService:
+    uow = UnitOfWork(session)
+    return SearchAnalyticsService(uow)
+
+
+@router.get("/summary", response_model=SearchAnalytics)
+def get_search_analytics(
+    start_date: Optional[Date] = Query(
+        None,
+        description="Start Date for analytics window (inclusive). If omitted, uses a default window.",
+    ),
+    end_date: Optional[Date] = Query(
+        None,
+        description="End Date for analytics window (inclusive). If omitted, uses today.",
+    ),
+    session: Session = Depends(get_session),
+    current_user: CurrentUser = Depends(get_current_user),
+) -> SearchAnalytics:
+    """
+    Aggregated search analytics for a period.
+
+    Expected service method:
+        get_analytics(start_date: Optional[Date], end_date: Optional[Date]) -> SearchAnalytics
+    """
+    service = _get_service(session)
+    return service.get_analytics(
+        start_date=start_date,
+        end_date=end_date,
+    )
+
+# --- File: D:\Last Github Push\Last\HOStel-back\app\api\v1\search\autocomplete.py ---
+# app/api/v1/search/autocomplete.py
+from __future__ import annotations
+
+from fastapi import APIRouter, Depends
+from sqlalchemy.orm import Session
+
+from app.core import get_session
+from app.services import UnitOfWork
+from app.services.search import AutocompleteService
+from app.schemas.search.search_autocomplete import (
+    AutocompleteRequest,
+    AutocompleteResponse,
+)
+
+router = APIRouter(tags=["Search - Autocomplete"])
+
+
+def _get_service(session: Session) -> AutocompleteService:
+    uow = UnitOfWork(session)
+    return AutocompleteService(uow)
+
+
+@router.post("/", response_model=AutocompleteResponse)
+def autocomplete(
+    payload: AutocompleteRequest,
+    session: Session = Depends(get_session),
+) -> AutocompleteResponse:
+    """
+    Return autocomplete suggestions for hostel names, cities, and areas.
+
+    Expected service method:
+        get_suggestions(request: AutocompleteRequest) -> AutocompleteResponse
+    """
+    service = _get_service(session)
+    return service.get_suggestions(request=payload)
+
+# --- File: D:\Last Github Push\Last\HOStel-back\app\api\v1\search\search.py ---
+# app/api/v1/search/search.py
+from __future__ import annotations
+
+from fastapi import APIRouter, Depends
+from sqlalchemy.orm import Session
+
+from app.core import get_session
+from app.services import UnitOfWork
+from app.services.search import SearchService
+from app.schemas.search.search_request import (
+    BasicSearchRequest,
+    AdvancedSearchRequest,
+)
+from app.schemas.search.search_response import FacetedSearchResponse
+
+router = APIRouter(tags=["Search"])
+
+
+def _get_service(session: Session) -> SearchService:
+    uow = UnitOfWork(session)
+    return SearchService(uow)
+
+
+@router.post("/basic", response_model=FacetedSearchResponse)
+def basic_search(
+    payload: BasicSearchRequest,
+    session: Session = Depends(get_session),
+) -> FacetedSearchResponse:
+    """
+    Public basic search endpoint.
+
+    Expected service method:
+        basic_search(request: BasicSearchRequest) -> FacetedSearchResponse
+    """
+    service = _get_service(session)
+    return service.basic_search(request=payload)
+
+
+@router.post("/advanced", response_model=FacetedSearchResponse)
+def advanced_search(
+    payload: AdvancedSearchRequest,
+    session: Session = Depends(get_session),
+) -> FacetedSearchResponse:
+    """
+    Public advanced search endpoint with richer filters and sorting.
+
+    Expected service method:
+        advanced_search(request: AdvancedSearchRequest) -> FacetedSearchResponse
+    """
+    service = _get_service(session)
+    return service.advanced_search(request=payload)
+
+# --- File: D:\Last Github Push\Last\HOStel-back\app\api\v1\search\__init__.py ---
+# app/api/v1/search/__init__.py
+from __future__ import annotations
+
+from dataclasses import dataclass
+from typing import Any
+from uuid import UUID
+
+from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.security import OAuth2PasswordBearer
+
+from app.core.security import decode_token, TokenDecodeError
+from app.schemas.common.enums import UserRole
+
+router = APIRouter()
+
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login")
+
+
+@dataclass
+class CurrentUser:
+    """Minimal representation of the authenticated user for search analytics."""
+    id: UUID
+    role: UserRole
+
+
+def get_current_user(token: str = Depends(oauth2_scheme)) -> CurrentUser:
+    """
+    Decode JWT and return minimal CurrentUser.
+
+    Expects payload to contain either:
+      - sub (user id as string) and role
+      - or user_id and user_role
+    """
+    try:
+        payload: dict[str, Any] = decode_token(token)
+    except TokenDecodeError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Could not validate credentials",
+        ) from exc
+
+    user_id_raw = payload.get("sub") or payload.get("user_id")
+    role_raw = payload.get("role") or payload.get("user_role")
+
+    if not user_id_raw or not role_raw:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid token payload",
+        )
+
+    try:
+        user_id = UUID(str(user_id_raw))
+        role = UserRole(str(role_raw))
+    except Exception as exc:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid token payload",
+        ) from exc
+
+    return CurrentUser(id=user_id, role=role)
+
+
+# Import sub-routers and mount them under /search in the main API router.
+from . import search, autocomplete, analytics  # noqa: E402
+
+router.include_router(search.router)
+router.include_router(autocomplete.router, prefix="/autocomplete")
+router.include_router(analytics.router, prefix="/analytics")
+
+__all__ = [
+    "router",
+    "CurrentUser",
+    "get_current_user",
+]
+
+
+# ===== Folder: D:\Last Github Push\Last\HOStel-back\app\api\v1\search\__pycache__ =====

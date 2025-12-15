@@ -1,0 +1,2423 @@
+### Combined Content from Folder: D:\Last Github Push\Last\HOStel-back\app\schemas\visitor ###
+
+
+
+# ===== Folder: D:\Last Github Push\Last\HOStel-back\app\schemas\visitor =====
+
+# --- File: D:\Last Github Push\Last\HOStel-back\app\schemas\visitor\visitor_base.py ---
+# --- File: app/schemas/visitor/visitor_base.py ---
+"""
+Visitor base schemas with comprehensive validation and documentation.
+
+This module defines the core visitor schemas for profile management,
+preferences, and notification settings.
+"""
+
+from __future__ import annotations
+
+from decimal import Decimal
+from typing import List, Optional
+from uuid import UUID
+
+from pydantic import Field, field_validator, model_validator
+
+from app.schemas.common.base import BaseCreateSchema, BaseSchema, BaseUpdateSchema
+from app.schemas.common.enums import RoomType
+
+__all__ = [
+    "VisitorBase",
+    "VisitorCreate",
+    "VisitorUpdate",
+]
+
+
+class VisitorBase(BaseSchema):
+    """
+    Base visitor schema with preferences and notification settings.
+    
+    This schema contains all common fields used across visitor operations
+    including room preferences, budget constraints, location preferences,
+    and notification settings.
+    """
+
+    user_id: UUID = Field(
+        ...,
+        description="Unique identifier of the associated user account",
+    )
+
+    # Room Preferences
+    preferred_room_type: Optional[RoomType] = Field(
+        default=None,
+        description="Preferred room type (single, double, triple, etc.)",
+    )
+
+    # Budget Constraints
+    budget_min: Optional[Decimal] = Field(
+        default=None,
+        ge=0,
+        decimal_places=2,
+        description="Minimum budget per month in local currency",
+    )
+    budget_max: Optional[Decimal] = Field(
+        default=None,
+        ge=0,
+        decimal_places=2,
+        description="Maximum budget per month in local currency",
+    )
+
+    # Location Preferences
+    preferred_cities: List[str] = Field(
+        default_factory=list,
+        description="List of preferred cities for hostel search",
+        max_length=20,
+    )
+
+    # Amenity Preferences
+    preferred_amenities: List[str] = Field(
+        default_factory=list,
+        description="List of must-have amenities (WiFi, AC, Mess, etc.)",
+        max_length=30,
+    )
+
+    # Saved/Favorite Hostels
+    favorite_hostel_ids: List[UUID] = Field(
+        default_factory=list,
+        description="List of favorite/saved hostel IDs",
+        max_length=100,
+    )
+
+    # Notification Preferences
+    email_notifications: bool = Field(
+        default=True,
+        description="Enable/disable email notifications",
+    )
+    sms_notifications: bool = Field(
+        default=True,
+        description="Enable/disable SMS notifications",
+    )
+    push_notifications: bool = Field(
+        default=True,
+        description="Enable/disable push notifications",
+    )
+
+    @field_validator("budget_min", "budget_max")
+    @classmethod
+    def validate_budget_positive(cls, v: Optional[Decimal]) -> Optional[Decimal]:
+        """Ensure budget values are positive if provided."""
+        if v is not None and v < 0:
+            raise ValueError("Budget must be a positive value")
+        return v
+
+    @model_validator(mode="after")
+    def validate_budget_range(self) -> "VisitorBase":
+        """Validate that budget_max is greater than or equal to budget_min."""
+        if (
+            self.budget_min is not None
+            and self.budget_max is not None
+            and self.budget_max < self.budget_min
+        ):
+            raise ValueError(
+                f"Maximum budget ({self.budget_max}) must be greater than or "
+                f"equal to minimum budget ({self.budget_min})"
+            )
+        return self
+
+    @field_validator("preferred_cities")
+    @classmethod
+    def validate_cities(cls, v: List[str]) -> List[str]:
+        """Validate and normalize city names."""
+        if not v:
+            return v
+
+        # Remove duplicates while preserving order
+        seen = set()
+        unique_cities = []
+        for city in v:
+            city_normalized = city.strip().title()
+            if city_normalized and city_normalized not in seen:
+                seen.add(city_normalized)
+                unique_cities.append(city_normalized)
+
+        if len(unique_cities) > 20:
+            raise ValueError("Maximum 20 preferred cities allowed")
+
+        return unique_cities
+
+    @field_validator("preferred_amenities")
+    @classmethod
+    def validate_amenities(cls, v: List[str]) -> List[str]:
+        """Validate and normalize amenity names."""
+        if not v:
+            return v
+
+        # Remove duplicates and normalize
+        seen = set()
+        unique_amenities = []
+        for amenity in v:
+            amenity_normalized = amenity.strip().lower()
+            if amenity_normalized and amenity_normalized not in seen:
+                seen.add(amenity_normalized)
+                unique_amenities.append(amenity_normalized)
+
+        if len(unique_amenities) > 30:
+            raise ValueError("Maximum 30 preferred amenities allowed")
+
+        return unique_amenities
+
+    @field_validator("favorite_hostel_ids")
+    @classmethod
+    def validate_favorites(cls, v: List[UUID]) -> List[UUID]:
+        """Validate favorite hostel IDs list."""
+        if not v:
+            return v
+
+        # Remove duplicates while preserving order
+        seen = set()
+        unique_favorites = []
+        for hostel_id in v:
+            if hostel_id not in seen:
+                seen.add(hostel_id)
+                unique_favorites.append(hostel_id)
+
+        if len(unique_favorites) > 100:
+            raise ValueError("Maximum 100 favorite hostels allowed")
+
+        return unique_favorites
+
+    @property
+    def has_budget_preference(self) -> bool:
+        """Check if visitor has set any budget preference."""
+        return self.budget_min is not None or self.budget_max is not None
+
+    @property
+    def has_location_preference(self) -> bool:
+        """Check if visitor has set location preferences."""
+        return len(self.preferred_cities) > 0
+
+    @property
+    def notification_enabled_count(self) -> int:
+        """Count how many notification channels are enabled."""
+        return sum(
+            [
+                self.email_notifications,
+                self.sms_notifications,
+                self.push_notifications,
+            ]
+        )
+
+
+class VisitorCreate(VisitorBase, BaseCreateSchema):
+    """
+    Schema for creating a new visitor profile.
+    
+    Inherits all fields from VisitorBase. All fields are optional
+    at creation except user_id, allowing visitors to gradually
+    build their preferences.
+    """
+
+    # Override to make fields optional at creation
+    preferred_cities: List[str] = Field(
+        default_factory=list,
+        description="List of preferred cities (can be added later)",
+    )
+    preferred_amenities: List[str] = Field(
+        default_factory=list,
+        description="List of preferred amenities (can be added later)",
+    )
+    favorite_hostel_ids: List[UUID] = Field(
+        default_factory=list,
+        description="Initially empty, populated as user saves hostels",
+    )
+
+
+class VisitorUpdate(BaseUpdateSchema):
+    """
+    Schema for updating visitor profile.
+    
+    All fields are optional, allowing partial updates.
+    Only provided fields will be updated.
+    """
+
+    # Room Preferences
+    preferred_room_type: Optional[RoomType] = Field(
+        default=None,
+        description="Update preferred room type",
+    )
+
+    # Budget
+    budget_min: Optional[Decimal] = Field(
+        default=None,
+        ge=0,
+        decimal_places=2,
+        description="Update minimum budget",
+    )
+    budget_max: Optional[Decimal] = Field(
+        default=None,
+        ge=0,
+        decimal_places=2,
+        description="Update maximum budget",
+    )
+
+    # Location
+    preferred_cities: Optional[List[str]] = Field(
+        default=None,
+        description="Update preferred cities list",
+    )
+
+    # Amenities
+    preferred_amenities: Optional[List[str]] = Field(
+        default=None,
+        description="Update preferred amenities list",
+    )
+
+    # Notification Preferences
+    email_notifications: Optional[bool] = Field(
+        default=None,
+        description="Enable/disable email notifications",
+    )
+    sms_notifications: Optional[bool] = Field(
+        default=None,
+        description="Enable/disable SMS notifications",
+    )
+    push_notifications: Optional[bool] = Field(
+        default=None,
+        description="Enable/disable push notifications",
+    )
+
+    @field_validator("budget_min", "budget_max")
+    @classmethod
+    def validate_budget_positive(cls, v: Optional[Decimal]) -> Optional[Decimal]:
+        """Ensure budget values are positive if provided."""
+        if v is not None and v < 0:
+            raise ValueError("Budget must be a positive value")
+        return v
+
+    @model_validator(mode="after")
+    def validate_budget_range(self) -> "VisitorUpdate":
+        """Validate that budget_max is greater than or equal to budget_min if both provided."""
+        if (
+            self.budget_min is not None
+            and self.budget_max is not None
+            and self.budget_max < self.budget_min
+        ):
+            raise ValueError(
+                f"Maximum budget ({self.budget_max}) must be greater than or "
+                f"equal to minimum budget ({self.budget_min})"
+            )
+        return self
+
+    @field_validator("preferred_cities")
+    @classmethod
+    def validate_cities(cls, v: Optional[List[str]]) -> Optional[List[str]]:
+        """Validate and normalize city names."""
+        if v is None:
+            return v
+
+        # Remove duplicates while preserving order
+        seen = set()
+        unique_cities = []
+        for city in v:
+            city_normalized = city.strip().title()
+            if city_normalized and city_normalized not in seen:
+                seen.add(city_normalized)
+                unique_cities.append(city_normalized)
+
+        if len(unique_cities) > 20:
+            raise ValueError("Maximum 20 preferred cities allowed")
+
+        return unique_cities
+
+    @field_validator("preferred_amenities")
+    @classmethod
+    def validate_amenities(cls, v: Optional[List[str]]) -> Optional[List[str]]:
+        """Validate and normalize amenity names."""
+        if v is None:
+            return v
+
+        # Remove duplicates and normalize
+        seen = set()
+        unique_amenities = []
+        for amenity in v:
+            amenity_normalized = amenity.strip().lower()
+            if amenity_normalized and amenity_normalized not in seen:
+                seen.add(amenity_normalized)
+                unique_amenities.append(amenity_normalized)
+
+        if len(unique_amenities) > 30:
+            raise ValueError("Maximum 30 preferred amenities allowed")
+
+        return unique_amenities
+
+# --- File: D:\Last Github Push\Last\HOStel-back\app\schemas\visitor\visitor_dashboard.py ---
+# --- File: app/schemas/visitor/visitor_dashboard.py ---
+"""
+Visitor dashboard schemas for comprehensive dashboard views.
+
+This module defines schemas for visitor dashboard including saved hostels,
+booking history, recent activity, recommendations, and alerts.
+"""
+
+from __future__ import annotations
+
+from datetime import datetime
+from datetime import date as Date
+from decimal import Decimal
+from typing import Dict, List, Optional
+from uuid import UUID
+
+from pydantic import Field, computed_field, field_validator
+
+from app.schemas.common.base import BaseSchema
+
+__all__ = [
+    "VisitorDashboard",
+    "SavedHostels",
+    "SavedHostelItem",
+    "BookingHistory",
+    "BookingHistoryItem",
+    "RecentSearch",
+    "RecentlyViewedHostel",
+    "RecommendedHostel",
+    "PriceDropAlert",
+    "AvailabilityAlert",
+]
+
+
+class SavedHostelItem(BaseSchema):
+    """
+    Individual saved/favorite hostel item.
+    
+    Contains hostel details, pricing information, and
+    tracking metadata for saved hostels.
+    """
+
+    hostel_id: UUID = Field(
+        ...,
+        description="Unique hostel identifier",
+    )
+    hostel_name: str = Field(
+        ...,
+        min_length=1,
+        max_length=255,
+        description="Name of the hostel",
+    )
+    hostel_city: str = Field(
+        ...,
+        description="City where hostel is located",
+    )
+    starting_price: Decimal = Field(
+        ...,
+        ge=0,
+        decimal_places=2,
+        description="Starting price per month",
+    )
+    average_rating: Decimal = Field(
+        ...,
+        ge=0,
+        le=5,
+        decimal_places=2,
+        description="Average rating (0-5)",
+    )
+    available_beds: int = Field(
+        ...,
+        ge=0,
+        description="Number of available beds",
+    )
+    cover_image_url: Optional[str] = Field(
+        default=None,
+        description="URL to cover image",
+    )
+
+    # Save Metadata
+    saved_at: datetime = Field(
+        ...,
+        description="When hostel was saved to favorites",
+    )
+    notes: Optional[str] = Field(
+        default=None,
+        max_length=500,
+        description="Personal notes about this hostel",
+    )
+
+    # Price Tracking
+    price_when_saved: Decimal = Field(
+        ...,
+        ge=0,
+        decimal_places=2,
+        description="Price when hostel was first saved",
+    )
+    current_price: Decimal = Field(
+        ...,
+        ge=0,
+        decimal_places=2,
+        description="Current price",
+    )
+    price_changed: bool = Field(
+        ...,
+        description="Whether price has changed since saving",
+    )
+    price_change_percentage: Optional[Decimal] = Field(
+        default=None,
+        description="Percentage change in price (negative = drop, positive = increase)",
+    )
+
+    @computed_field
+    @property
+    def has_availability(self) -> bool:
+        """Check if hostel has available beds."""
+        return self.available_beds > 0
+
+    @computed_field
+    @property
+    def price_drop_amount(self) -> Optional[Decimal]:
+        """Calculate absolute price drop amount if applicable."""
+        if self.price_changed and self.current_price < self.price_when_saved:
+            return (self.price_when_saved - self.current_price).quantize(
+                Decimal("0.01")
+            )
+        return None
+
+    @computed_field
+    @property
+    def is_good_deal(self) -> bool:
+        """Determine if this is a good deal (price dropped or high rating with availability)."""
+        price_dropped = (
+            self.price_changed and self.current_price < self.price_when_saved
+        )
+        high_rated_available = self.average_rating >= Decimal("4.0") and self.has_availability
+        return price_dropped or high_rated_available
+
+
+class SavedHostels(BaseSchema):
+    """
+    Collection of saved/favorite hostels.
+    """
+
+    total_saved: int = Field(
+        ...,
+        ge=0,
+        description="Total number of saved hostels",
+    )
+    hostels: List[SavedHostelItem] = Field(
+        default_factory=list,
+        description="List of saved hostel items",
+    )
+
+    @computed_field
+    @property
+    def hostels_with_price_drops(self) -> int:
+        """Count hostels with price drops."""
+        return sum(
+            1
+            for h in self.hostels
+            if h.price_changed and h.current_price < h.price_when_saved
+        )
+
+    @computed_field
+    @property
+    def hostels_with_availability(self) -> int:
+        """Count hostels with available beds."""
+        return sum(1 for h in self.hostels if h.has_availability)
+
+
+class BookingHistoryItem(BaseSchema):
+    """
+    Individual booking in history.
+    
+    Contains booking details, status, and available actions.
+    """
+
+    booking_id: UUID = Field(
+        ...,
+        description="Unique booking identifier",
+    )
+    booking_reference: str = Field(
+        ...,
+        min_length=1,
+        max_length=50,
+        description="Human-readable booking reference",
+    )
+    hostel_id: UUID = Field(
+        ...,
+        description="Associated hostel ID",
+    )
+    hostel_name: str = Field(
+        ...,
+        description="Name of the hostel",
+    )
+    room_type: str = Field(
+        ...,
+        description="Type of room booked",
+    )
+
+    # Dates
+    booking_date: datetime = Field(
+        ...,
+        description="When booking was made",
+    )
+    check_in_date: Date = Field(
+        ...,
+        description="Check-in Date",
+    )
+    duration_months: int = Field(
+        ...,
+        ge=1,
+        description="Booking duration in months",
+    )
+
+    # Status and Payment
+    status: str = Field(
+        ...,
+        description="Current booking status",
+    )
+    total_amount: Decimal = Field(
+        ...,
+        ge=0,
+        decimal_places=2,
+        description="Total booking amount",
+    )
+
+    # Available Actions
+    can_cancel: bool = Field(
+        ...,
+        description="Whether booking can be cancelled",
+    )
+    can_modify: bool = Field(
+        ...,
+        description="Whether booking can be modified",
+    )
+    can_review: bool = Field(
+        ...,
+        description="Whether hostel can be reviewed",
+    )
+
+    @computed_field
+    @property
+    def check_out_date(self) -> Date:
+        """Calculate check-out Date based on duration."""
+        from dateutil.relativedelta import relativedelta
+
+        return self.check_in_date + relativedelta(months=self.duration_months)
+
+    @computed_field
+    @property
+    def days_until_checkin(self) -> int:
+        """Calculate days until check-in."""
+        return (self.check_in_date - Date.today()).days
+
+    @computed_field
+    @property
+    def is_upcoming(self) -> bool:
+        """Check if booking is upcoming."""
+        return self.check_in_date > Date.today()
+
+
+class BookingHistory(BaseSchema):
+    """
+    Booking history summary with statistics.
+    """
+
+    total_bookings: int = Field(
+        ...,
+        ge=0,
+        description="Total number of bookings",
+    )
+    active_bookings: int = Field(
+        ...,
+        ge=0,
+        description="Number of active bookings",
+    )
+    completed_bookings: int = Field(
+        ...,
+        ge=0,
+        description="Number of completed bookings",
+    )
+    cancelled_bookings: int = Field(
+        ...,
+        ge=0,
+        description="Number of cancelled bookings",
+    )
+
+    bookings: List[BookingHistoryItem] = Field(
+        default_factory=list,
+        description="List of booking items",
+    )
+
+    @computed_field
+    @property
+    def cancellation_rate(self) -> Decimal:
+        """Calculate cancellation rate as percentage."""
+        if self.total_bookings == 0:
+            return Decimal("0")
+        return Decimal(
+            (self.cancelled_bookings / self.total_bookings) * 100
+        ).quantize(Decimal("0.01"))
+
+    @computed_field
+    @property
+    def completion_rate(self) -> Decimal:
+        """Calculate completion rate as percentage."""
+        if self.total_bookings == 0:
+            return Decimal("0")
+        return Decimal(
+            (self.completed_bookings / self.total_bookings) * 100
+        ).quantize(Decimal("0.01"))
+
+
+class RecentSearch(BaseSchema):
+    """
+    Recent search item with metadata.
+    """
+
+    search_id: UUID = Field(
+        ...,
+        description="Unique search identifier",
+    )
+    search_query: Optional[str] = Field(
+        default=None,
+        max_length=255,
+        description="Search query text",
+    )
+    filters_applied: Dict = Field(
+        default_factory=dict,
+        description="Filters applied in this search",
+    )
+    results_count: int = Field(
+        ...,
+        ge=0,
+        description="Number of results found",
+    )
+    searched_at: datetime = Field(
+        ...,
+        description="When search was performed",
+    )
+
+    @computed_field
+    @property
+    def filters_count(self) -> int:
+        """Count number of filters applied."""
+        return len(self.filters_applied)
+
+
+class RecentlyViewedHostel(BaseSchema):
+    """
+    Recently viewed hostel item.
+    """
+
+    hostel_id: UUID = Field(
+        ...,
+        description="Hostel identifier",
+    )
+    hostel_name: str = Field(
+        ...,
+        description="Hostel name",
+    )
+    hostel_city: str = Field(
+        ...,
+        description="City",
+    )
+    starting_price: Decimal = Field(
+        ...,
+        ge=0,
+        decimal_places=2,
+        description="Starting price",
+    )
+    average_rating: Decimal = Field(
+        ...,
+        ge=0,
+        le=5,
+        decimal_places=2,
+        description="Average rating",
+    )
+    cover_image_url: Optional[str] = Field(
+        default=None,
+        description="Cover image URL",
+    )
+
+    viewed_at: datetime = Field(
+        ...,
+        description="When hostel was last viewed",
+    )
+    view_count: int = Field(
+        ...,
+        ge=1,
+        description="Number of times this hostel was viewed",
+    )
+
+    @computed_field
+    @property
+    def is_highly_viewed(self) -> bool:
+        """Check if hostel has been viewed multiple times (interest indicator)."""
+        return self.view_count >= 3
+
+
+class RecommendedHostel(BaseSchema):
+    """
+    Recommended hostel based on visitor preferences.
+    """
+
+    hostel_id: UUID = Field(
+        ...,
+        description="Hostel identifier",
+    )
+    hostel_name: str = Field(
+        ...,
+        description="Hostel name",
+    )
+    hostel_city: str = Field(
+        ...,
+        description="City",
+    )
+    starting_price: Decimal = Field(
+        ...,
+        ge=0,
+        decimal_places=2,
+        description="Starting price",
+    )
+    average_rating: Decimal = Field(
+        ...,
+        ge=0,
+        le=5,
+        decimal_places=2,
+        description="Average rating",
+    )
+    available_beds: int = Field(
+        ...,
+        ge=0,
+        description="Available beds",
+    )
+    cover_image_url: Optional[str] = Field(
+        default=None,
+        description="Cover image URL",
+    )
+
+    match_score: Decimal = Field(
+        ...,
+        ge=0,
+        le=100,
+        decimal_places=2,
+        description="How well hostel matches visitor preferences (0-100)",
+    )
+    match_reasons: List[str] = Field(
+        ...,
+        min_length=1,
+        description="Reasons why this hostel is recommended",
+    )
+
+    @field_validator("match_reasons")
+    @classmethod
+    def validate_match_reasons(cls, v: List[str]) -> List[str]:
+        """Ensure match reasons are not empty."""
+        if not v or len(v) == 0:
+            raise ValueError("At least one match reason must be provided")
+        return v
+
+    @computed_field
+    @property
+    def is_excellent_match(self) -> bool:
+        """Check if this is an excellent match (score >= 80)."""
+        return self.match_score >= Decimal("80")
+
+
+class PriceDropAlert(BaseSchema):
+    """
+    Price drop alert for saved hostel.
+    """
+
+    alert_id: UUID = Field(
+        ...,
+        description="Alert identifier",
+    )
+    hostel_id: UUID = Field(
+        ...,
+        description="Hostel identifier",
+    )
+    hostel_name: str = Field(
+        ...,
+        description="Hostel name",
+    )
+
+    previous_price: Decimal = Field(
+        ...,
+        ge=0,
+        decimal_places=2,
+        description="Previous price",
+    )
+    new_price: Decimal = Field(
+        ...,
+        ge=0,
+        decimal_places=2,
+        description="New reduced price",
+    )
+    discount_percentage: Decimal = Field(
+        ...,
+        ge=0,
+        le=100,
+        decimal_places=2,
+        description="Discount percentage",
+    )
+
+    alert_created: datetime = Field(
+        ...,
+        description="When alert was created",
+    )
+    is_read: bool = Field(
+        ...,
+        description="Whether alert has been read",
+    )
+
+    @computed_field
+    @property
+    def savings_amount(self) -> Decimal:
+        """Calculate absolute savings amount."""
+        return (self.previous_price - self.new_price).quantize(Decimal("0.01"))
+
+
+class AvailabilityAlert(BaseSchema):
+    """
+    Availability alert for previously full hostel.
+    """
+
+    alert_id: UUID = Field(
+        ...,
+        description="Alert identifier",
+    )
+    hostel_id: UUID = Field(
+        ...,
+        description="Hostel identifier",
+    )
+    hostel_name: str = Field(
+        ...,
+        description="Hostel name",
+    )
+    room_type: str = Field(
+        ...,
+        description="Room type that became available",
+    )
+
+    message: str = Field(
+        ...,
+        min_length=1,
+        max_length=500,
+        description="Alert message",
+    )
+
+    alert_created: datetime = Field(
+        ...,
+        description="When alert was created",
+    )
+    is_read: bool = Field(
+        ...,
+        description="Whether alert has been read",
+    )
+
+
+class VisitorDashboard(BaseSchema):
+    """
+    Comprehensive visitor dashboard overview.
+    
+    Contains all information needed for visitor dashboard including
+    saved hostels, booking history, recent activity, recommendations,
+    and alerts.
+    """
+
+    visitor_id: UUID = Field(
+        ...,
+        description="Visitor identifier",
+    )
+    visitor_name: str = Field(
+        ...,
+        min_length=1,
+        max_length=255,
+        description="Visitor full name",
+    )
+
+    # Saved Hostels Section
+    saved_hostels: SavedHostels = Field(
+        ...,
+        description="Saved/favorite hostels",
+    )
+
+    # Booking History Section
+    booking_history: BookingHistory = Field(
+        ...,
+        description="Booking history and statistics",
+    )
+
+    # Recent Activity
+    recent_searches: List[RecentSearch] = Field(
+        default_factory=list,
+        max_length=5,
+        description="5 most recent searches",
+    )
+    recently_viewed: List[RecentlyViewedHostel] = Field(
+        default_factory=list,
+        max_length=10,
+        description="10 most recently viewed hostels",
+    )
+
+    # Recommendations
+    recommended_hostels: List[RecommendedHostel] = Field(
+        default_factory=list,
+        max_length=5,
+        description="Top 5 recommended hostels",
+    )
+
+    # Alerts
+    price_drop_alerts: List[PriceDropAlert] = Field(
+        default_factory=list,
+        description="Active price drop alerts",
+    )
+    availability_alerts: List[AvailabilityAlert] = Field(
+        default_factory=list,
+        description="Active availability alerts",
+    )
+
+    # Overall Statistics
+    total_searches: int = Field(
+        ...,
+        ge=0,
+        description="Total number of searches performed",
+    )
+    total_hostel_views: int = Field(
+        ...,
+        ge=0,
+        description="Total hostel views",
+    )
+    total_bookings: int = Field(
+        ...,
+        ge=0,
+        description="Total bookings made",
+    )
+
+    @computed_field
+    @property
+    def unread_alerts_count(self) -> int:
+        """Count total unread alerts."""
+        price_alerts = sum(1 for alert in self.price_drop_alerts if not alert.is_read)
+        availability_alerts = sum(
+            1 for alert in self.availability_alerts if not alert.is_read
+        )
+        return price_alerts + availability_alerts
+
+    @computed_field
+    @property
+    def has_activity(self) -> bool:
+        """Check if visitor has any activity."""
+        return (
+            self.total_searches > 0
+            or self.total_hostel_views > 0
+            or self.total_bookings > 0
+        )
+
+# --- File: D:\Last Github Push\Last\HOStel-back\app\schemas\visitor\visitor_favorites.py ---
+# --- File: app/schemas/visitor/visitor_favorites.py ---
+"""
+Visitor favorites/wishlist schemas.
+
+This module defines schemas for managing visitor's favorite hostels,
+including adding, removing, updating notes, and comparing favorites.
+"""
+
+from __future__ import annotations
+
+from datetime import datetime
+from decimal import Decimal
+from typing import List, Optional
+from uuid import UUID
+
+from pydantic import Field, field_validator, computed_field
+
+from app.schemas.common.base import BaseCreateSchema, BaseSchema
+
+__all__ = [
+    "FavoriteRequest",
+    "FavoritesList",
+    "FavoriteHostelItem",
+    "FavoriteUpdate",
+    "FavoritesExport",
+    "FavoriteComparison",
+]
+
+
+class FavoriteRequest(BaseCreateSchema):
+    """
+    Request to add or remove hostel from favorites.
+    """
+
+    hostel_id: UUID = Field(
+        ...,
+        description="Hostel ID to add/remove from favorites",
+    )
+    is_favorite: bool = Field(
+        ...,
+        description="True to add to favorites, False to remove",
+    )
+    notes: Optional[str] = Field(
+        default=None,
+        max_length=500,
+        description="Optional personal notes about this hostel",
+    )
+
+    @field_validator("notes")
+    @classmethod
+    def validate_notes(cls, v: Optional[str]) -> Optional[str]:
+        """Validate and clean notes."""
+        if v is not None:
+            v = v.strip()
+            if len(v) == 0:
+                return None
+            if len(v) > 500:
+                raise ValueError("Notes must not exceed 500 characters")
+        return v
+
+
+class FavoriteHostelItem(BaseSchema):
+    """
+    Individual favorite hostel with detailed information.
+    
+    Contains hostel details, pricing tracking, availability,
+    rating information, and favorite metadata.
+    """
+
+    favorite_id: UUID = Field(
+        ...,
+        description="Unique favorite record identifier",
+    )
+    hostel_id: UUID = Field(
+        ...,
+        description="Hostel identifier",
+    )
+    hostel_name: str = Field(
+        ...,
+        min_length=1,
+        max_length=255,
+        description="Hostel name",
+    )
+    hostel_slug: str = Field(
+        ...,
+        min_length=1,
+        max_length=255,
+        description="URL-friendly hostel slug",
+    )
+    hostel_city: str = Field(
+        ...,
+        description="City where hostel is located",
+    )
+    hostel_type: str = Field(
+        ...,
+        description="Hostel type (boys/girls/co-ed)",
+    )
+
+    # Pricing Information
+    starting_price_monthly: Decimal = Field(
+        ...,
+        ge=0,
+        decimal_places=2,
+        description="Current starting price per month",
+    )
+    price_when_saved: Decimal = Field(
+        ...,
+        ge=0,
+        decimal_places=2,
+        description="Price when hostel was saved",
+    )
+    current_price: Decimal = Field(
+        ...,
+        ge=0,
+        decimal_places=2,
+        description="Current price",
+    )
+    has_price_drop: bool = Field(
+        ...,
+        description="Whether price has dropped since saving",
+    )
+    price_drop_percentage: Optional[Decimal] = Field(
+        default=None,
+        ge=0,
+        le=100,
+        decimal_places=2,
+        description="Price drop percentage if applicable",
+    )
+
+    # Availability
+    available_beds: int = Field(
+        ...,
+        ge=0,
+        description="Number of available beds",
+    )
+    has_availability: bool = Field(
+        ...,
+        description="Whether hostel has available beds",
+    )
+
+    # Rating Information
+    average_rating: Decimal = Field(
+        ...,
+        ge=0,
+        le=5,
+        decimal_places=2,
+        description="Average rating (0-5)",
+    )
+    total_reviews: int = Field(
+        ...,
+        ge=0,
+        description="Total number of reviews",
+    )
+
+    # Media
+    cover_image_url: Optional[str] = Field(
+        default=None,
+        description="Cover image URL",
+    )
+
+    # Favorite Metadata
+    notes: Optional[str] = Field(
+        default=None,
+        max_length=500,
+        description="Personal notes about this hostel",
+    )
+    added_to_favorites: datetime = Field(
+        ...,
+        description="When hostel was added to favorites",
+    )
+
+    # View Tracking
+    times_viewed: int = Field(
+        ...,
+        ge=0,
+        description="Number of times hostel was viewed",
+    )
+    last_viewed: Optional[datetime] = Field(
+        default=None,
+        description="When hostel was last viewed",
+    )
+
+    @computed_field
+    @property
+    def price_savings(self) -> Optional[Decimal]:
+        """Calculate price savings if price dropped."""
+        if self.has_price_drop:
+            return (self.price_when_saved - self.current_price).quantize(
+                Decimal("0.01")
+            )
+        return None
+
+    @computed_field
+    @property
+    def days_in_favorites(self) -> int:
+        """Calculate days since hostel was added to favorites."""
+        return (datetime.utcnow() - self.added_to_favorites).days
+
+    @computed_field
+    @property
+    def is_highly_rated(self) -> bool:
+        """Check if hostel is highly rated (>= 4.0 stars)."""
+        return self.average_rating >= Decimal("4.0")
+
+    @computed_field
+    @property
+    def is_popular(self) -> bool:
+        """Check if hostel is popular (many reviews)."""
+        return self.total_reviews >= 50
+
+    @computed_field
+    @property
+    def is_frequently_viewed(self) -> bool:
+        """Check if visitor views this hostel frequently."""
+        return self.times_viewed >= 3
+
+
+class FavoritesList(BaseSchema):
+    """
+    List of favorite hostels with summary statistics.
+    """
+
+    visitor_id: UUID = Field(
+        ...,
+        description="Visitor identifier",
+    )
+    total_favorites: int = Field(
+        ...,
+        ge=0,
+        description="Total number of favorite hostels",
+    )
+    favorites: List[FavoriteHostelItem] = Field(
+        default_factory=list,
+        description="List of favorite hostel items",
+    )
+
+    @computed_field
+    @property
+    def favorites_with_availability(self) -> int:
+        """Count favorites with available beds."""
+        return sum(1 for fav in self.favorites if fav.has_availability)
+
+    @computed_field
+    @property
+    def favorites_with_price_drops(self) -> int:
+        """Count favorites with price drops."""
+        return sum(1 for fav in self.favorites if fav.has_price_drop)
+
+    @computed_field
+    @property
+    def total_potential_savings(self) -> Decimal:
+        """Calculate total potential savings from price drops."""
+        total = Decimal("0")
+        for fav in self.favorites:
+            if fav.price_savings:
+                total += fav.price_savings
+        return total.quantize(Decimal("0.01"))
+
+
+class FavoriteUpdate(BaseCreateSchema):
+    """
+    Update notes for a favorite hostel.
+    """
+
+    favorite_id: UUID = Field(
+        ...,
+        description="Favorite record identifier",
+    )
+    notes: str = Field(
+        ...,
+        max_length=500,
+        description="Updated personal notes",
+    )
+
+    @field_validator("notes")
+    @classmethod
+    def validate_notes(cls, v: str) -> str:
+        """Validate and clean notes."""
+        v = v.strip()
+        if len(v) > 500:
+            raise ValueError("Notes must not exceed 500 characters")
+        return v
+
+
+class FavoritesExport(BaseSchema):
+    """
+    Export favorites list in various formats.
+    """
+
+    format: str = Field(
+        default="pdf",
+        pattern=r"^(pdf|csv|json)$",
+        description="Export format: pdf, csv, or json",
+    )
+    include_prices: bool = Field(
+        default=True,
+        description="Include pricing information in export",
+    )
+    include_notes: bool = Field(
+        default=True,
+        description="Include personal notes in export",
+    )
+
+    @field_validator("format")
+    @classmethod
+    def validate_format(cls, v: str) -> str:
+        """Validate and normalize format."""
+        v = v.lower().strip()
+        if v not in ["pdf", "csv", "json"]:
+            raise ValueError("Format must be one of: pdf, csv, json")
+        return v
+
+
+class FavoriteComparison(BaseSchema):
+    """
+    Compare multiple favorite hostels side-by-side.
+    """
+
+    favorite_ids: List[UUID] = Field(
+        ...,
+        min_length=2,
+        max_length=4,
+        description="2-4 favorite hostel IDs to compare",
+    )
+
+    @field_validator("favorite_ids")
+    @classmethod
+    def validate_favorite_ids(cls, v: List[UUID]) -> List[UUID]:
+        """Validate favorite IDs list."""
+        if len(v) < 2:
+            raise ValueError("At least 2 favorites required for comparison")
+        if len(v) > 4:
+            raise ValueError("Maximum 4 favorites can be compared at once")
+
+        # Remove duplicates while preserving order
+        seen = set()
+        unique_ids = []
+        for fav_id in v:
+            if fav_id not in seen:
+                seen.add(fav_id)
+                unique_ids.append(fav_id)
+
+        if len(unique_ids) < 2:
+            raise ValueError(
+                "At least 2 unique favorites required for comparison"
+            )
+
+        return unique_ids
+
+# --- File: D:\Last Github Push\Last\HOStel-back\app\schemas\visitor\visitor_preferences.py ---
+# --- File: app/schemas/visitor/visitor_preferences.py ---
+"""
+Visitor preferences schemas for detailed preference management.
+
+This module defines schemas for comprehensive visitor preferences including
+room preferences, budget, location, amenities, dietary preferences,
+and saved search criteria.
+"""
+
+from __future__ import annotations
+
+from datetime import datetime
+from datetime import date as Date
+from decimal import Decimal
+from typing import Dict, List, Optional
+from uuid import UUID
+
+from pydantic import Field, field_validator, model_validator
+
+from app.schemas.common.base import BaseSchema, BaseUpdateSchema
+from app.schemas.common.enums import (
+    DietaryPreference,
+    HostelType,
+    RoomType,
+)
+
+__all__ = [
+    "VisitorPreferences",
+    "PreferenceUpdate",
+    "SearchPreferences",
+    "SavedSearch",
+]
+
+
+class VisitorPreferences(BaseSchema):
+    """
+    Complete visitor preferences schema.
+    
+    Comprehensive preferences including room type, budget, location,
+    amenities, facilities, dietary requirements, move-in details,
+    and notification settings.
+    """
+
+    # Room Preferences
+    preferred_room_type: Optional[RoomType] = Field(
+        default=None,
+        description="Preferred room type (single, double, dormitory, etc.)",
+    )
+    preferred_hostel_type: Optional[HostelType] = Field(
+        default=None,
+        description="Preferred hostel type (boys, girls, co-ed)",
+    )
+
+    # Budget Constraints
+    budget_min: Optional[Decimal] = Field(
+        default=None,
+        ge=0,
+        decimal_places=2,
+        description="Minimum monthly budget in local currency",
+    )
+    budget_max: Optional[Decimal] = Field(
+        default=None,
+        ge=0,
+        decimal_places=2,
+        description="Maximum monthly budget in local currency",
+    )
+
+    # Location Preferences
+    preferred_cities: List[str] = Field(
+        default_factory=list,
+        max_length=20,
+        description="List of preferred cities",
+    )
+    preferred_areas: List[str] = Field(
+        default_factory=list,
+        max_length=30,
+        description="Preferred areas/localities within cities",
+    )
+    max_distance_from_work_km: Optional[Decimal] = Field(
+        default=None,
+        ge=0,
+        le=50,
+        description="Maximum acceptable distance from workplace in km",
+    )
+
+    # Amenities (must-have vs nice-to-have)
+    required_amenities: List[str] = Field(
+        default_factory=list,
+        max_length=20,
+        description="Must-have amenities (deal-breakers)",
+    )
+    preferred_amenities: List[str] = Field(
+        default_factory=list,
+        max_length=30,
+        description="Nice-to-have amenities (preferences)",
+    )
+
+    # Facility Requirements
+    need_parking: bool = Field(
+        default=False,
+        description="Requires parking facility",
+    )
+    need_gym: bool = Field(
+        default=False,
+        description="Requires gym facility",
+    )
+    need_laundry: bool = Field(
+        default=False,
+        description="Requires laundry facility",
+    )
+    need_mess: bool = Field(
+        default=False,
+        description="Requires mess/dining facility",
+    )
+
+    # Dietary Preferences
+    dietary_preference: Optional[DietaryPreference] = Field(
+        default=None,
+        description="Dietary preference (vegetarian, non-vegetarian, vegan, jain)",
+    )
+
+    # Move-in Details
+    earliest_move_in_date: Optional[Date] = Field(
+        default=None,
+        description="Earliest date willing to move in",
+    )
+    preferred_lease_duration_months: Optional[int] = Field(
+        default=None,
+        ge=1,
+        le=24,
+        description="Preferred lease duration in months (1-24)",
+    )
+
+    # Notification Preferences
+    email_notifications: bool = Field(
+        default=True,
+        description="Enable email notifications",
+    )
+    sms_notifications: bool = Field(
+        default=True,
+        description="Enable SMS notifications",
+    )
+    push_notifications: bool = Field(
+        default=True,
+        description="Enable push notifications",
+    )
+
+    # Specific Notification Types
+    notify_on_price_drop: bool = Field(
+        default=True,
+        description="Notify when saved hostel reduces price",
+    )
+    notify_on_availability: bool = Field(
+        default=True,
+        description="Notify when saved hostel has new availability",
+    )
+    notify_on_new_listings: bool = Field(
+        default=True,
+        description="Notify about new hostels matching preferences",
+    )
+
+    @field_validator("budget_min", "budget_max")
+    @classmethod
+    def validate_budget_positive(cls, v: Optional[Decimal]) -> Optional[Decimal]:
+        """Ensure budget values are positive."""
+        if v is not None and v < 0:
+            raise ValueError("Budget must be a positive value")
+        return v
+
+    @model_validator(mode="after")
+    def validate_budget_range(self) -> "VisitorPreferences":
+        """Validate that budget_max >= budget_min."""
+        if (
+            self.budget_min is not None
+            and self.budget_max is not None
+            and self.budget_max < self.budget_min
+        ):
+            raise ValueError(
+                f"Maximum budget (₹{self.budget_max}) must be greater than or "
+                f"equal to minimum budget (₹{self.budget_min})"
+            )
+        return self
+
+    @field_validator("earliest_move_in_date")
+    @classmethod
+    def validate_move_in_date(cls, v: Optional[Date]) -> Optional[Date]:
+        """Validate move-in date is not in the past."""
+        if v is not None and v < Date.today():
+            raise ValueError("Move-in date cannot be in the past")
+        return v
+
+    @field_validator("preferred_cities", "preferred_areas")
+    @classmethod
+    def normalize_location_list(cls, v: List[str]) -> List[str]:
+        """Normalize and deduplicate location lists."""
+        if not v:
+            return v
+
+        seen = set()
+        normalized = []
+        for item in v:
+            item_clean = item.strip().title()
+            if item_clean and item_clean not in seen:
+                seen.add(item_clean)
+                normalized.append(item_clean)
+
+        return normalized
+
+    @field_validator("required_amenities", "preferred_amenities")
+    @classmethod
+    def normalize_amenities_list(cls, v: List[str]) -> List[str]:
+        """Normalize and deduplicate amenity lists."""
+        if not v:
+            return v
+
+        seen = set()
+        normalized = []
+        for item in v:
+            item_clean = item.strip().lower()
+            if item_clean and item_clean not in seen:
+                seen.add(item_clean)
+                normalized.append(item_clean)
+
+        return normalized
+
+    @model_validator(mode="after")
+    def validate_notification_settings(self) -> "VisitorPreferences":
+        """Ensure at least one notification channel is enabled if specific alerts are on."""
+        specific_alerts_enabled = (
+            self.notify_on_price_drop
+            or self.notify_on_availability
+            or self.notify_on_new_listings
+        )
+
+        all_channels_disabled = not (
+            self.email_notifications
+            or self.sms_notifications
+            or self.push_notifications
+        )
+
+        if specific_alerts_enabled and all_channels_disabled:
+            raise ValueError(
+                "At least one notification channel (email/SMS/push) must be "
+                "enabled to receive alerts"
+            )
+
+        return self
+
+
+class PreferenceUpdate(BaseUpdateSchema):
+    """
+    Schema for updating visitor preferences.
+    
+    All fields are optional, allowing partial updates.
+    """
+
+    # Room Preferences
+    preferred_room_type: Optional[RoomType] = Field(
+        default=None,
+        description="Update preferred room type",
+    )
+    preferred_hostel_type: Optional[HostelType] = Field(
+        default=None,
+        description="Update preferred hostel type",
+    )
+
+    # Budget
+    budget_min: Optional[Decimal] = Field(
+        default=None,
+        ge=0,
+        decimal_places=2,
+        description="Update minimum budget",
+    )
+    budget_max: Optional[Decimal] = Field(
+        default=None,
+        ge=0,
+        decimal_places=2,
+        description="Update maximum budget",
+    )
+
+    # Location
+    preferred_cities: Optional[List[str]] = Field(
+        default=None,
+        description="Update preferred cities",
+    )
+    preferred_areas: Optional[List[str]] = Field(
+        default=None,
+        description="Update preferred areas",
+    )
+
+    # Amenities
+    required_amenities: Optional[List[str]] = Field(
+        default=None,
+        description="Update required amenities",
+    )
+    preferred_amenities: Optional[List[str]] = Field(
+        default=None,
+        description="Update preferred amenities",
+    )
+
+    # Dietary
+    dietary_preference: Optional[DietaryPreference] = Field(
+        default=None,
+        description="Update dietary preference",
+    )
+
+    # Notification Toggles
+    email_notifications: Optional[bool] = Field(
+        default=None,
+        description="Update email notification setting",
+    )
+    sms_notifications: Optional[bool] = Field(
+        default=None,
+        description="Update SMS notification setting",
+    )
+    push_notifications: Optional[bool] = Field(
+        default=None,
+        description="Update push notification setting",
+    )
+    notify_on_price_drop: Optional[bool] = Field(
+        default=None,
+        description="Update price drop alert setting",
+    )
+    notify_on_availability: Optional[bool] = Field(
+        default=None,
+        description="Update availability alert setting",
+    )
+    notify_on_new_listings: Optional[bool] = Field(
+        default=None,
+        description="Update new listings alert setting",
+    )
+
+    @field_validator("budget_min", "budget_max")
+    @classmethod
+    def validate_budget_positive(cls, v: Optional[Decimal]) -> Optional[Decimal]:
+        """Ensure budget values are positive if provided."""
+        if v is not None and v < 0:
+            raise ValueError("Budget must be a positive value")
+        return v
+
+    @model_validator(mode="after")
+    def validate_budget_range(self) -> "PreferenceUpdate":
+        """Validate budget range if both values provided."""
+        if (
+            self.budget_min is not None
+            and self.budget_max is not None
+            and self.budget_max < self.budget_min
+        ):
+            raise ValueError(
+                f"Maximum budget (₹{self.budget_max}) must be greater than or "
+                f"equal to minimum budget (₹{self.budget_min})"
+            )
+        return self
+
+
+class SearchPreferences(BaseSchema):
+    """
+    Saved search preferences for recurring searches.
+    
+    Allows visitors to save specific search criteria and receive
+    notifications when new matches are found.
+    """
+
+    search_name: str = Field(
+        ...,
+        min_length=3,
+        max_length=100,
+        description="Descriptive name for this saved search",
+    )
+
+    # Search Criteria
+    cities: List[str] = Field(
+        default_factory=list,
+        max_length=10,
+        description="Cities to search in",
+    )
+    room_types: List[RoomType] = Field(
+        default_factory=list,
+        max_length=5,
+        description="Room types to include",
+    )
+    min_price: Optional[Decimal] = Field(
+        default=None,
+        ge=0,
+        description="Minimum price filter",
+    )
+    max_price: Optional[Decimal] = Field(
+        default=None,
+        ge=0,
+        description="Maximum price filter",
+    )
+    amenities: List[str] = Field(
+        default_factory=list,
+        max_length=15,
+        description="Required amenities",
+    )
+
+    # Alert Settings
+    notify_on_new_matches: bool = Field(
+        default=True,
+        description="Send notifications when new hostels match this search",
+    )
+    notification_frequency: str = Field(
+        default="daily",
+        pattern=r"^(instant|daily|weekly)$",
+        description="How often to send notifications: instant, daily, or weekly",
+    )
+
+    @field_validator("search_name")
+    @classmethod
+    def validate_search_name(cls, v: str) -> str:
+        """Validate and normalize search name."""
+        v = v.strip()
+        if len(v) < 3:
+            raise ValueError("Search name must be at least 3 characters")
+        if len(v) > 100:
+            raise ValueError("Search name must not exceed 100 characters")
+        return v
+
+    @model_validator(mode="after")
+    def validate_price_range(self) -> "SearchPreferences":
+        """Validate price range if both values provided."""
+        if (
+            self.min_price is not None
+            and self.max_price is not None
+            and self.max_price < self.min_price
+        ):
+            raise ValueError(
+                f"Maximum price (₹{self.max_price}) must be greater than or "
+                f"equal to minimum price (₹{self.min_price})"
+            )
+        return self
+
+    @model_validator(mode="after")
+    def validate_has_criteria(self) -> "SearchPreferences":
+        """Ensure at least one search criterion is specified."""
+        has_criteria = (
+            len(self.cities) > 0
+            or len(self.room_types) > 0
+            or self.min_price is not None
+            or self.max_price is not None
+            or len(self.amenities) > 0
+        )
+
+        if not has_criteria:
+            raise ValueError(
+                "At least one search criterion must be specified "
+                "(cities, room types, price range, or amenities)"
+            )
+
+        return self
+
+
+class SavedSearch(BaseSchema):
+    """
+    Saved search with ID and statistics.
+    
+    Represents a persisted search preference with tracking
+    of matches and last check timestamp.
+    """
+
+    id: UUID = Field(
+        ...,
+        description="Unique identifier for this saved search",
+    )
+    visitor_id: UUID = Field(
+        ...,
+        description="Visitor who created this search",
+    )
+    search_name: str = Field(
+        ...,
+        min_length=3,
+        max_length=100,
+        description="Name of the saved search",
+    )
+    criteria: Dict = Field(
+        ...,
+        description="Search criteria stored as JSON object",
+    )
+    notify_on_new_matches: bool = Field(
+        ...,
+        description="Whether to send notifications for new matches",
+    )
+    notification_frequency: str = Field(
+        ...,
+        pattern=r"^(instant|daily|weekly)$",
+        description="Notification frequency",
+    )
+
+    # Statistics
+    total_matches: int = Field(
+        default=0,
+        ge=0,
+        description="Current number of hostels matching this search",
+    )
+    new_matches_since_last_check: int = Field(
+        default=0,
+        ge=0,
+        description="Number of new matches since last notification",
+    )
+
+    # Timestamps
+    created_at: datetime = Field(
+        ...,
+        description="When this search was saved",
+    )
+    last_checked: Optional[datetime] = Field(
+        default=None,
+        description="When this search was last executed",
+    )
+
+    @field_validator("criteria")
+    @classmethod
+    def validate_criteria(cls, v: Dict) -> Dict:
+        """Validate criteria dictionary is not empty."""
+        if not v:
+            raise ValueError("Search criteria cannot be empty")
+        return v
+
+# --- File: D:\Last Github Push\Last\HOStel-back\app\schemas\visitor\visitor_response.py ---
+# --- File: app/schemas/visitor/visitor_response.py ---
+"""
+Visitor response schemas for API responses.
+
+This module defines response schemas for visitor data returned by API endpoints,
+including profile information, statistics, and detailed visitor information.
+"""
+
+from __future__ import annotations
+
+from datetime import datetime
+from decimal import Decimal
+from typing import List, Optional
+from uuid import UUID
+
+from pydantic import Field, computed_field
+
+from app.schemas.common.base import BaseResponseSchema, BaseSchema
+from app.schemas.common.enums import RoomType
+
+__all__ = [
+    "VisitorResponse",
+    "VisitorProfile",
+    "VisitorDetail",
+    "VisitorStats",
+]
+
+
+class VisitorResponse(BaseResponseSchema):
+    """
+    Standard visitor response schema.
+    
+    Used for basic visitor information in API responses.
+    Contains core profile data and preferences.
+    """
+
+    user_id: UUID = Field(
+        ...,
+        description="Associated user account ID",
+    )
+    full_name: str = Field(
+        ...,
+        min_length=1,
+        max_length=255,
+        description="Full name of the visitor",
+    )
+    email: str = Field(
+        ...,
+        description="Email address",
+    )
+    phone: str = Field(
+        ...,
+        pattern=r"^\+?[1-9]\d{9,14}$",
+        description="Contact phone number",
+    )
+
+    # Preferences
+    preferred_room_type: Optional[RoomType] = Field(
+        default=None,
+        description="Preferred room type",
+    )
+    budget_min: Optional[Decimal] = Field(
+        default=None,
+        ge=0,
+        description="Minimum budget per month",
+    )
+    budget_max: Optional[Decimal] = Field(
+        default=None,
+        ge=0,
+        description="Maximum budget per month",
+    )
+    preferred_cities: List[str] = Field(
+        default_factory=list,
+        description="Preferred cities for hostel search",
+    )
+
+    # Statistics
+    total_bookings: int = Field(
+        default=0,
+        ge=0,
+        description="Total number of bookings made by visitor",
+    )
+    saved_hostels_count: int = Field(
+        default=0,
+        ge=0,
+        description="Number of hostels saved to favorites",
+    )
+
+    # Notification Preferences
+    email_notifications: bool = Field(
+        ...,
+        description="Email notifications enabled",
+    )
+    sms_notifications: bool = Field(
+        ...,
+        description="SMS notifications enabled",
+    )
+    push_notifications: bool = Field(
+        ...,
+        description="Push notifications enabled",
+    )
+
+    @computed_field
+    @property
+    def has_active_notifications(self) -> bool:
+        """Check if visitor has any notification channel enabled."""
+        return (
+            self.email_notifications
+            or self.sms_notifications
+            or self.push_notifications
+        )
+
+    @computed_field
+    @property
+    def budget_range_display(self) -> Optional[str]:
+        """Get formatted budget range for display."""
+        if self.budget_min is not None and self.budget_max is not None:
+            return f"₹{self.budget_min:,.0f} - ₹{self.budget_max:,.0f}"
+        elif self.budget_min is not None:
+            return f"₹{self.budget_min:,.0f}+"
+        elif self.budget_max is not None:
+            return f"Up to ₹{self.budget_max:,.0f}"
+        return None
+
+
+class VisitorProfile(BaseSchema):
+    """
+    Public visitor profile information.
+    
+    Contains minimal visitor information suitable for public display
+    (e.g., in reviews, comments, etc.).
+    """
+
+    id: UUID = Field(
+        ...,
+        description="Visitor profile ID",
+    )
+    user_id: UUID = Field(
+        ...,
+        description="Associated user ID",
+    )
+    full_name: str = Field(
+        ...,
+        min_length=1,
+        max_length=255,
+        description="Full name of the visitor",
+    )
+    profile_image_url: Optional[str] = Field(
+        default=None,
+        description="URL to profile image",
+    )
+    member_since: datetime = Field(
+        ...,
+        description="Date when visitor joined the platform",
+    )
+
+    @computed_field
+    @property
+    def display_name(self) -> str:
+        """Get display name (first name only for privacy)."""
+        return self.full_name.split()[0] if self.full_name else "Guest"
+
+    @computed_field
+    @property
+    def membership_days(self) -> int:
+        """Calculate number of days since joining."""
+        return (datetime.utcnow() - self.member_since).days
+
+
+class VisitorDetail(BaseResponseSchema):
+    """
+    Detailed visitor information.
+    
+    Complete visitor profile with all preferences, activity statistics,
+    and account information. Used for profile pages and detailed views.
+    """
+
+    # User Information
+    user_id: UUID = Field(
+        ...,
+        description="Associated user account ID",
+    )
+    full_name: str = Field(
+        ...,
+        min_length=1,
+        max_length=255,
+        description="Full name",
+    )
+    email: str = Field(
+        ...,
+        description="Email address",
+    )
+    phone: str = Field(
+        ...,
+        pattern=r"^\+?[1-9]\d{9,14}$",
+        description="Phone number",
+    )
+    profile_image_url: Optional[str] = Field(
+        default=None,
+        description="Profile image URL",
+    )
+
+    # Preferences
+    preferred_room_type: Optional[RoomType] = Field(
+        default=None,
+        description="Preferred room type",
+    )
+    budget_min: Optional[Decimal] = Field(
+        default=None,
+        ge=0,
+        description="Minimum budget",
+    )
+    budget_max: Optional[Decimal] = Field(
+        default=None,
+        ge=0,
+        description="Maximum budget",
+    )
+    preferred_cities: List[str] = Field(
+        default_factory=list,
+        description="Preferred cities",
+    )
+    preferred_amenities: List[str] = Field(
+        default_factory=list,
+        description="Preferred amenities",
+    )
+
+    # Saved Hostels
+    favorite_hostel_ids: List[UUID] = Field(
+        default_factory=list,
+        description="List of favorite hostel IDs",
+    )
+    total_saved_hostels: int = Field(
+        default=0,
+        ge=0,
+        description="Total number of saved hostels",
+    )
+
+    # Activity Statistics
+    total_bookings: int = Field(
+        default=0,
+        ge=0,
+        description="Total bookings made",
+    )
+    completed_bookings: int = Field(
+        default=0,
+        ge=0,
+        description="Number of completed bookings",
+    )
+    cancelled_bookings: int = Field(
+        default=0,
+        ge=0,
+        description="Number of cancelled bookings",
+    )
+    total_inquiries: int = Field(
+        default=0,
+        ge=0,
+        description="Total inquiries made",
+    )
+
+    # Review Activity
+    total_reviews_written: int = Field(
+        default=0,
+        ge=0,
+        description="Number of reviews written",
+    )
+    average_rating_given: Optional[Decimal] = Field(
+        default=None,
+        ge=0,
+        le=5,
+        description="Average rating given in reviews",
+    )
+
+    # Notification Preferences
+    email_notifications: bool = Field(
+        ...,
+        description="Email notifications enabled",
+    )
+    sms_notifications: bool = Field(
+        ...,
+        description="SMS notifications enabled",
+    )
+    push_notifications: bool = Field(
+        ...,
+        description="Push notifications enabled",
+    )
+
+    # Account Information
+    created_at: datetime = Field(
+        ...,
+        description="Account creation timestamp",
+    )
+    last_login: Optional[datetime] = Field(
+        default=None,
+        description="Last login timestamp",
+    )
+
+    @computed_field
+    @property
+    def active_bookings(self) -> int:
+        """Calculate number of active bookings."""
+        return self.total_bookings - self.completed_bookings - self.cancelled_bookings
+
+    @computed_field
+    @property
+    def booking_completion_rate(self) -> Decimal:
+        """Calculate booking completion rate as percentage."""
+        if self.total_bookings == 0:
+            return Decimal("0")
+        return Decimal(
+            (self.completed_bookings / self.total_bookings) * 100
+        ).quantize(Decimal("0.01"))
+
+    @computed_field
+    @property
+    def is_active_user(self) -> bool:
+        """Determine if user is active (logged in within last 30 days)."""
+        if self.last_login is None:
+            return False
+        days_since_login = (datetime.utcnow() - self.last_login).days
+        return days_since_login <= 30
+
+    @computed_field
+    @property
+    def engagement_score(self) -> Decimal:
+        """
+        Calculate engagement score (0-100) based on activity.
+        
+        Weighted formula:
+        - Bookings: 40%
+        - Reviews: 30%
+        - Saved hostels: 20%
+        - Inquiries: 10%
+        """
+        booking_score = min(self.total_bookings * 10, 40)
+        review_score = min(self.total_reviews_written * 6, 30)
+        saved_score = min(self.total_saved_hostels * 2, 20)
+        inquiry_score = min(self.total_inquiries * 2, 10)
+
+        total_score = booking_score + review_score + saved_score + inquiry_score
+        return Decimal(total_score).quantize(Decimal("0.01"))
+
+
+class VisitorStats(BaseSchema):
+    """
+    Visitor statistics and analytics.
+    
+    Comprehensive statistics about visitor search behavior,
+    engagement, and conversion metrics.
+    """
+
+    visitor_id: UUID = Field(
+        ...,
+        description="Visitor profile ID",
+    )
+
+    # Search Activity
+    total_searches: int = Field(
+        default=0,
+        ge=0,
+        description="Total number of searches performed",
+    )
+    unique_hostels_viewed: int = Field(
+        default=0,
+        ge=0,
+        description="Number of unique hostels viewed",
+    )
+    average_search_filters_used: Decimal = Field(
+        default=Decimal("0"),
+        ge=0,
+        description="Average number of filters used per search",
+    )
+
+    # Engagement Metrics
+    total_hostel_views: int = Field(
+        default=0,
+        ge=0,
+        description="Total hostel detail page views",
+    )
+    total_comparisons: int = Field(
+        default=0,
+        ge=0,
+        description="Number of hostel comparisons made",
+    )
+    total_inquiries: int = Field(
+        default=0,
+        ge=0,
+        description="Total inquiries sent",
+    )
+
+    # Booking Metrics
+    total_bookings: int = Field(
+        default=0,
+        ge=0,
+        description="Total bookings made",
+    )
+    booking_conversion_rate: Decimal = Field(
+        default=Decimal("0"),
+        ge=0,
+        le=100,
+        description="Percentage of views that resulted in bookings",
+    )
+
+    # Preference Insights
+    most_searched_city: Optional[str] = Field(
+        default=None,
+        description="City searched most frequently",
+    )
+    most_viewed_room_type: Optional[RoomType] = Field(
+        default=None,
+        description="Most frequently viewed room type",
+    )
+    average_budget: Optional[Decimal] = Field(
+        default=None,
+        ge=0,
+        description="Average budget range from searches",
+    )
+
+    @computed_field
+    @property
+    def inquiry_conversion_rate(self) -> Decimal:
+        """Calculate inquiry to booking conversion rate."""
+        if self.total_inquiries == 0:
+            return Decimal("0")
+        return Decimal(
+            (self.total_bookings / self.total_inquiries) * 100
+        ).quantize(Decimal("0.01"))
+
+    @computed_field
+    @property
+    def average_views_per_search(self) -> Decimal:
+        """Calculate average hostel views per search."""
+        if self.total_searches == 0:
+            return Decimal("0")
+        return Decimal(self.total_hostel_views / self.total_searches).quantize(
+            Decimal("0.01")
+        )
+
+    @computed_field
+    @property
+    def engagement_level(self) -> str:
+        """
+        Categorize engagement level based on activity.
+        
+        Returns: "high", "medium", "low", or "inactive"
+        """
+        if self.total_searches == 0 and self.total_hostel_views == 0:
+            return "inactive"
+        elif self.total_bookings >= 3 or self.booking_conversion_rate >= 10:
+            return "high"
+        elif self.total_searches >= 5 or self.total_hostel_views >= 10:
+            return "medium"
+        else:
+            return "low"
+
+# --- File: D:\Last Github Push\Last\HOStel-back\app\schemas\visitor\__init__.py ---
+# --- File: app/schemas/visitor/__init__.py ---
+"""
+Visitor schemas package.
+
+This module exports all visitor-related schemas for easy importing
+across the application.
+"""
+
+from __future__ import annotations
+
+from app.schemas.visitor.visitor_base import (
+    VisitorBase,
+    VisitorCreate,
+    VisitorUpdate,
+)
+from app.schemas.visitor.visitor_dashboard import (
+    AvailabilityAlert,
+    BookingHistory,
+    BookingHistoryItem,
+    PriceDropAlert,
+    RecentSearch,
+    RecentlyViewedHostel,
+    RecommendedHostel,
+    SavedHostelItem,
+    SavedHostels,
+    VisitorDashboard,
+)
+from app.schemas.visitor.visitor_favorites import (
+    FavoriteComparison,
+    FavoriteHostelItem,
+    FavoriteRequest,
+    FavoritesList,
+    FavoriteUpdate,
+    FavoritesExport,
+)
+from app.schemas.visitor.visitor_preferences import (
+    PreferenceUpdate,
+    SavedSearch,
+    SearchPreferences,
+    VisitorPreferences,
+)
+from app.schemas.visitor.visitor_response import (
+    VisitorDetail,
+    VisitorProfile,
+    VisitorResponse,
+    VisitorStats,
+)
+
+__all__ = [
+    # Base Schemas
+    "VisitorBase",
+    "VisitorCreate",
+    "VisitorUpdate",
+    # Response Schemas
+    "VisitorResponse",
+    "VisitorProfile",
+    "VisitorDetail",
+    "VisitorStats",
+    # Preferences
+    "VisitorPreferences",
+    "PreferenceUpdate",
+    "SearchPreferences",
+    "SavedSearch",
+    # Dashboard
+    "VisitorDashboard",
+    "SavedHostels",
+    "SavedHostelItem",
+    "BookingHistory",
+    "BookingHistoryItem",
+    "RecentSearch",
+    "RecentlyViewedHostel",
+    "RecommendedHostel",
+    "PriceDropAlert",
+    "AvailabilityAlert",
+    # Favorites
+    "FavoriteRequest",
+    "FavoritesList",
+    "FavoriteHostelItem",
+    "FavoriteUpdate",
+    "FavoritesExport",
+    "FavoriteComparison",
+]
+
+
+# ===== Folder: D:\Last Github Push\Last\HOStel-back\app\schemas\visitor\__pycache__ =====

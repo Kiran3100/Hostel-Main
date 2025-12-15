@@ -1,0 +1,963 @@
+### Combined Content from Folder: D:\Last Github Push\Last\HOStel-back\app\api\v1\complaints ###
+
+
+
+# ===== Folder: D:\Last Github Push\Last\HOStel-back\app\api\v1\complaints =====
+
+# --- File: D:\Last Github Push\Last\HOStel-back\app\api\v1\complaints\analytics.py ---
+# api/v1/complaints/analytics.py
+from __future__ import annotations
+
+from datetime import date as Date
+
+from uuid import UUID
+
+from fastapi import APIRouter, Depends, HTTPException, Query, status
+
+from app.api.deps import get_uow
+from app.core.exceptions import (
+    ServiceError,
+    NotFoundError,
+    ValidationError,
+    ConflictError,
+)
+from app.schemas.complaint.complaint_analytics import ComplaintAnalytics
+from app.services.common.unit_of_work import UnitOfWork
+from app.services.complaint import ComplaintAnalyticsService
+
+router = APIRouter(prefix="/analytics")
+
+
+def _map_service_error(exc: ServiceError) -> HTTPException:
+    if isinstance(exc, NotFoundError):
+        return HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc))
+    if isinstance(exc, ValidationError):
+        return HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=str(exc),
+        )
+    if isinstance(exc, ConflictError):
+        return HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(exc))
+    return HTTPException(
+        status_code=status.HTTP_400_BAD_REQUEST,
+        detail=str(exc),
+    )
+
+
+@router.get(
+    "",
+    response_model=ComplaintAnalytics,
+    summary="Get detailed complaint analytics for a hostel",
+)
+async def get_complaint_analytics(
+    hostel_id: UUID = Query(..., description="Hostel ID"),
+    period_start: Date = Query(..., description="Start Date (inclusive)"),
+    period_end: Date = Query(..., description="End Date (inclusive)"),
+    uow: UnitOfWork = Depends(get_uow),
+) -> ComplaintAnalytics:
+    """
+    Compute detailed complaint analytics for a hostel over a period:
+    resolution metrics, category breakdowns, trends, staff performance,
+    complaint heatmap, etc.
+    """
+    service = ComplaintAnalyticsService(uow)
+    try:
+        return service.get_complaint_analytics(
+            hostel_id=hostel_id,
+            period_start=period_start,
+            period_end=period_end,
+        )
+    except ServiceError as exc:
+        raise _map_service_error(exc)
+
+# --- File: D:\Last Github Push\Last\HOStel-back\app\api\v1\complaints\assignment.py ---
+# api/v1/complaints/assignment.py
+from __future__ import annotations
+
+from typing import List
+from uuid import UUID
+
+from fastapi import APIRouter, Depends, HTTPException, Path, status
+
+from app.api.deps import get_uow
+from app.core.exceptions import (
+    ServiceError,
+    NotFoundError,
+    ValidationError,
+    ConflictError,
+)
+from app.schemas.complaint.complaint_assignment import (
+    AssignmentRequest,
+    AssignmentResponse,
+    ReassignmentRequest,
+    BulkAssignment,
+    UnassignRequest,
+)
+from app.services.common.unit_of_work import UnitOfWork
+from app.services.complaint import ComplaintAssignmentService
+
+router = APIRouter(prefix="/assignments")
+
+
+def _map_service_error(exc: ServiceError) -> HTTPException:
+    if isinstance(exc, NotFoundError):
+        return HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc))
+    if isinstance(exc, ValidationError):
+        return HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=str(exc),
+        )
+    if isinstance(exc, ConflictError):
+        return HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(exc))
+    return HTTPException(
+        status_code=status.HTTP_400_BAD_REQUEST,
+        detail=str(exc),
+    )
+
+
+@router.post(
+    "/{complaint_id}",
+    response_model=AssignmentResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Assign a complaint to a supervisor",
+)
+async def assign_complaint(
+    complaint_id: UUID = Path(..., description="Complaint ID"),
+    payload: AssignmentRequest = ...,
+    uow: UnitOfWork = Depends(get_uow),
+) -> AssignmentResponse:
+    """
+    Assign a complaint to a supervisor (or staff member).
+    """
+    service = ComplaintAssignmentService(uow)
+    try:
+        return service.assign_complaint(
+            complaint_id=complaint_id,
+            request=payload,
+        )
+    except ServiceError as exc:
+        raise _map_service_error(exc)
+
+
+@router.post(
+    "/{complaint_id}/reassign",
+    response_model=AssignmentResponse,
+    summary="Reassign a complaint",
+)
+async def reassign_complaint(
+    complaint_id: UUID = Path(..., description="Complaint ID"),
+    payload: ReassignmentRequest = ...,
+    uow: UnitOfWork = Depends(get_uow),
+) -> AssignmentResponse:
+    """
+    Reassign a complaint to a different supervisor.
+    """
+    service = ComplaintAssignmentService(uow)
+    try:
+        return service.reassign_complaint(
+            complaint_id=complaint_id,
+            request=payload,
+        )
+    except ServiceError as exc:
+        raise _map_service_error(exc)
+
+
+@router.post(
+    "/bulk",
+    response_model=List[AssignmentResponse],
+    summary="Bulk assign complaints",
+)
+async def bulk_assign_complaints(
+    payload: BulkAssignment,
+    uow: UnitOfWork = Depends(get_uow),
+) -> List[AssignmentResponse]:
+    """
+    Bulk assign multiple complaints to supervisors.
+    """
+    service = ComplaintAssignmentService(uow)
+    try:
+        return service.bulk_assign(request=payload)
+    except ServiceError as exc:
+        raise _map_service_error(exc)
+
+
+@router.post(
+    "/{complaint_id}/unassign",
+    response_model=AssignmentResponse,
+    summary="Unassign a complaint",
+)
+async def unassign_complaint(
+    complaint_id: UUID = Path(..., description="Complaint ID"),
+    payload: UnassignRequest = ...,
+    uow: UnitOfWork = Depends(get_uow),
+) -> AssignmentResponse:
+    """
+    Remove the current supervisor assignment from a complaint.
+    """
+    service = ComplaintAssignmentService(uow)
+    try:
+        return service.unassign_complaint(
+            complaint_id=complaint_id,
+            request=payload,
+        )
+    except ServiceError as exc:
+        raise _map_service_error(exc)
+
+# --- File: D:\Last Github Push\Last\HOStel-back\app\api\v1\complaints\comments.py ---
+# api/v1/complaints/comments.py
+from __future__ import annotations
+
+from uuid import UUID
+
+from fastapi import APIRouter, Depends, HTTPException, Path, status
+
+from app.api.deps import get_uow
+from app.core.exceptions import (
+    ServiceError,
+    NotFoundError,
+    ValidationError,
+    ConflictError,
+)
+from app.schemas.complaint.complaint_comments import (
+    CommentCreate,
+    CommentResponse,
+    CommentList,
+    CommentUpdate,
+    CommentDelete,
+)
+from app.services.common.unit_of_work import UnitOfWork
+from app.services.complaint import ComplaintService
+
+router = APIRouter(prefix="/comments")
+
+
+def _map_service_error(exc: ServiceError) -> HTTPException:
+    if isinstance(exc, NotFoundError):
+        return HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc))
+    if isinstance(exc, ValidationError):
+        return HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=str(exc),
+        )
+    if isinstance(exc, ConflictError):
+        return HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(exc))
+    return HTTPException(
+        status_code=status.HTTP_400_BAD_REQUEST,
+        detail=str(exc),
+    )
+
+
+@router.get(
+    "/{complaint_id}",
+    response_model=CommentList,
+    summary="List comments for a complaint",
+)
+async def list_comments(
+    complaint_id: UUID = Path(..., description="Complaint ID"),
+    uow: UnitOfWork = Depends(get_uow),
+) -> CommentList:
+    """
+    List all comments associated with a complaint.
+    """
+    service = ComplaintService(uow)
+    try:
+        return service.list_comments(complaint_id=complaint_id)
+    except ServiceError as exc:
+        raise _map_service_error(exc)
+
+
+@router.post(
+    "/{complaint_id}",
+    response_model=CommentResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="Add a comment to a complaint",
+)
+async def add_comment(
+    complaint_id: UUID = Path(..., description="Complaint ID"),
+    payload: CommentCreate = ...,
+    uow: UnitOfWork = Depends(get_uow),
+) -> CommentResponse:
+    """
+    Add a new comment to a complaint.
+    """
+    service = ComplaintService(uow)
+    try:
+        return service.add_comment(
+            complaint_id=complaint_id,
+            data=payload,
+        )
+    except ServiceError as exc:
+        raise _map_service_error(exc)
+
+
+@router.patch(
+    "/{complaint_id}/{comment_id}",
+    response_model=CommentResponse,
+    summary="Update a complaint comment",
+)
+async def update_comment(
+    complaint_id: UUID = Path(..., description="Complaint ID"),
+    comment_id: UUID = Path(..., description="Comment ID"),
+    payload: CommentUpdate = ...,
+    uow: UnitOfWork = Depends(get_uow),
+) -> CommentResponse:
+    """
+    Update an existing comment on a complaint.
+    """
+    service = ComplaintService(uow)
+    try:
+        return service.update_comment(
+            complaint_id=complaint_id,
+            comment_id=comment_id,
+            data=payload,
+        )
+    except ServiceError as exc:
+        raise _map_service_error(exc)
+
+
+@router.delete(
+    "/{complaint_id}/{comment_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary="Delete a complaint comment",
+)
+async def delete_comment(
+    complaint_id: UUID = Path(..., description="Complaint ID"),
+    comment_id: UUID = Path(..., description="Comment ID"),
+    payload: CommentDelete = ...,
+    uow: UnitOfWork = Depends(get_uow),
+) -> None:
+    """
+    Delete a comment from a complaint (or mark it as deleted, depending on implementation).
+    """
+    service = ComplaintService(uow)
+    try:
+        service.delete_comment(
+            complaint_id=complaint_id,
+            comment_id=comment_id,
+            data=payload,
+        )
+    except ServiceError as exc:
+        raise _map_service_error(exc)
+
+# --- File: D:\Last Github Push\Last\HOStel-back\app\api\v1\complaints\complaints.py ---
+# api/v1/complaints/complaints.py
+from __future__ import annotations
+
+from uuid import UUID
+
+from fastapi import APIRouter, Depends, HTTPException, Path, status
+
+from app.api.deps import get_uow
+from app.core.exceptions import (
+    ServiceError,
+    NotFoundError,
+    ValidationError,
+    ConflictError,
+)
+from app.schemas.complaint.complaint_base import (
+    ComplaintCreate,
+    ComplaintUpdate,
+    ComplaintStatusUpdate,
+)
+from app.schemas.complaint.complaint_response import (
+    ComplaintDetail,
+    ComplaintListItem,
+    ComplaintSummary,
+)
+from app.schemas.complaint.complaint_filters import ComplaintFilterParams, ComplaintSearchRequest
+from app.schemas.common.pagination import PaginatedResponse
+from app.services.common.unit_of_work import UnitOfWork
+from app.services.complaint import ComplaintService
+
+router = APIRouter()
+
+
+def _map_service_error(exc: ServiceError) -> HTTPException:
+    if isinstance(exc, NotFoundError):
+        return HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc))
+    if isinstance(exc, ValidationError):
+        return HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=str(exc),
+        )
+    if isinstance(exc, ConflictError):
+        return HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(exc))
+    return HTTPException(
+        status_code=status.HTTP_400_BAD_REQUEST,
+        detail=str(exc),
+    )
+
+
+@router.get(
+    "/",
+    response_model=PaginatedResponse[ComplaintListItem],
+    summary="List complaints",
+)
+async def list_complaints(
+    filters: ComplaintFilterParams = Depends(),
+    uow: UnitOfWork = Depends(get_uow),
+) -> PaginatedResponse[ComplaintListItem]:
+    """
+    List complaints using filters (hostel, status, category, priority, date range, etc.)
+    with pagination and sorting.
+    """
+    service = ComplaintService(uow)
+    try:
+        return service.list_complaints(filters=filters)
+    except ServiceError as exc:
+        raise _map_service_error(exc)
+
+
+@router.post(
+    "/",
+    response_model=ComplaintDetail,
+    status_code=status.HTTP_201_CREATED,
+    summary="Create a new complaint",
+)
+async def create_complaint(
+    payload: ComplaintCreate,
+    uow: UnitOfWork = Depends(get_uow),
+) -> ComplaintDetail:
+    """
+    Create a new complaint record.
+    """
+    service = ComplaintService(uow)
+    try:
+        return service.create_complaint(data=payload)
+    except ServiceError as exc:
+        raise _map_service_error(exc)
+
+
+@router.get(
+    "/{complaint_id}",
+    response_model=ComplaintDetail,
+    summary="Get complaint details",
+)
+async def get_complaint(
+    complaint_id: UUID = Path(..., description="Complaint ID"),
+    uow: UnitOfWork = Depends(get_uow),
+) -> ComplaintDetail:
+    """
+    Retrieve detailed complaint information, including room/student context if available.
+    """
+    service = ComplaintService(uow)
+    try:
+        return service.get_complaint(complaint_id=complaint_id)
+    except ServiceError as exc:
+        raise _map_service_error(exc)
+
+
+@router.patch(
+    "/{complaint_id}",
+    response_model=ComplaintDetail,
+    summary="Update a complaint",
+)
+async def update_complaint(
+    complaint_id: UUID = Path(..., description="Complaint ID"),
+    payload: ComplaintUpdate = ...,
+    uow: UnitOfWork = Depends(get_uow),
+) -> ComplaintDetail:
+    """
+    Partially update complaint fields (title, description, category, priority, location, etc.).
+    """
+    service = ComplaintService(uow)
+    try:
+        return service.update_complaint(
+            complaint_id=complaint_id,
+            data=payload,
+        )
+    except ServiceError as exc:
+        raise _map_service_error(exc)
+
+
+@router.patch(
+    "/{complaint_id}/status",
+    response_model=ComplaintDetail,
+    summary="Update complaint status",
+)
+async def update_complaint_status(
+    complaint_id: UUID = Path(..., description="Complaint ID"),
+    payload: ComplaintStatusUpdate = ...,
+    uow: UnitOfWork = Depends(get_uow),
+) -> ComplaintDetail:
+    """
+    Update the status of a complaint (open, in_progress, resolved, closed, escalated, etc.).
+    """
+    service = ComplaintService(uow)
+    try:
+        return service.update_status(
+            complaint_id=complaint_id,
+            data=payload,
+        )
+    except ServiceError as exc:
+        raise _map_service_error(exc)
+
+
+@router.post(
+    "/search",
+    response_model=PaginatedResponse[ComplaintListItem],
+    summary="Search complaints",
+)
+async def search_complaints(
+    payload: ComplaintSearchRequest,
+    uow: UnitOfWork = Depends(get_uow),
+) -> PaginatedResponse[ComplaintListItem]:
+    """
+    Perform a structured search over complaints with richer query criteria.
+    """
+    service = ComplaintService(uow)
+    try:
+        return service.search_complaints(request=payload)
+    except ServiceError as exc:
+        raise _map_service_error(exc)
+
+
+@router.get(
+    "/hostels/{hostel_id}/summary",
+    response_model=ComplaintSummary,
+    summary="Get complaint summary for a hostel",
+)
+async def get_complaint_summary_for_hostel(
+    hostel_id: UUID = Path(..., description="Hostel ID"),
+    uow: UnitOfWork = Depends(get_uow),
+) -> ComplaintSummary:
+    """
+    Summarize complaints for a hostel: counts by status, average resolution time, etc.
+    """
+    service = ComplaintService(uow)
+    try:
+        return service.get_hostel_summary(hostel_id=hostel_id)
+    except ServiceError as exc:
+        raise _map_service_error(exc)
+
+# --- File: D:\Last Github Push\Last\HOStel-back\app\api\v1\complaints\escalation.py ---
+# api/v1/complaints/escalation.py
+from __future__ import annotations
+
+from datetime import date as Date
+
+from typing import Optional
+from uuid import UUID
+
+from fastapi import APIRouter, Depends, HTTPException, Path, Query, status
+
+from app.api.deps import get_uow
+from app.core.exceptions import (
+    ServiceError,
+    NotFoundError,
+    ValidationError,
+    ConflictError,
+)
+from app.schemas.complaint.complaint_escalation import (
+    EscalationRequest,
+    EscalationResponse,
+    EscalationHistory,
+    AutoEscalationRule,
+)
+from app.services.common.unit_of_work import UnitOfWork
+from app.services.complaint import ComplaintEscalationService
+
+router = APIRouter(prefix="/escalation")
+
+
+def _map_service_error(exc: ServiceError) -> HTTPException:
+    if isinstance(exc, NotFoundError):
+        return HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc))
+    if isinstance(exc, ValidationError):
+        return HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=str(exc),
+        )
+    if isinstance(exc, ConflictError):
+        return HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(exc))
+    return HTTPException(
+        status_code=status.HTTP_400_BAD_REQUEST,
+        detail=str(exc),
+    )
+
+
+@router.post(
+    "/{complaint_id}",
+    response_model=EscalationResponse,
+    summary="Escalate a complaint",
+)
+async def escalate_complaint(
+    complaint_id: UUID = Path(..., description="Complaint ID"),
+    payload: EscalationRequest = ...,
+    uow: UnitOfWork = Depends(get_uow),
+) -> EscalationResponse:
+    """
+    Manually escalate a complaint according to escalation rules.
+    """
+    service = ComplaintEscalationService(uow)
+    try:
+        return service.escalate(
+            complaint_id=complaint_id,
+            request=payload,
+        )
+    except ServiceError as exc:
+        raise _map_service_error(exc)
+
+
+@router.get(
+    "/{complaint_id}/history",
+    response_model=EscalationHistory,
+    summary="Get complaint escalation history",
+)
+async def get_escalation_history(
+    complaint_id: UUID = Path(..., description="Complaint ID"),
+    uow: UnitOfWork = Depends(get_uow),
+) -> EscalationHistory:
+    """
+    Retrieve the full escalation history for a complaint.
+    """
+    service = ComplaintEscalationService(uow)
+    try:
+        return service.get_history(complaint_id=complaint_id)
+    except ServiceError as exc:
+        raise _map_service_error(exc)
+
+
+@router.get(
+    "/rules/{hostel_id}",
+    response_model=AutoEscalationRule,
+    summary="Get auto-escalation rules for a hostel",
+)
+async def get_auto_escalation_rules(
+    hostel_id: UUID = Path(..., description="Hostel ID"),
+    uow: UnitOfWork = Depends(get_uow),
+) -> AutoEscalationRule:
+    """
+    Fetch SLA-based auto-escalation rules for a hostel.
+    """
+    service = ComplaintEscalationService(uow)
+    try:
+        return service.get_rules(hostel_id=hostel_id)
+    except ServiceError as exc:
+        raise _map_service_error(exc)
+
+
+@router.put(
+    "/rules/{hostel_id}",
+    response_model=AutoEscalationRule,
+    summary="Update auto-escalation rules for a hostel",
+)
+async def update_auto_escalation_rules(
+    hostel_id: UUID = Path(..., description="Hostel ID"),
+    payload: AutoEscalationRule = ...,
+    uow: UnitOfWork = Depends(get_uow),
+) -> AutoEscalationRule:
+    """
+    Create or update SLA-based auto-escalation rules for a hostel.
+    """
+    service = ComplaintEscalationService(uow)
+    try:
+        return service.update_rules(
+            hostel_id=hostel_id,
+            rules=payload,
+        )
+    except ServiceError as exc:
+        raise _map_service_error(exc)
+
+# --- File: D:\Last Github Push\Last\HOStel-back\app\api\v1\complaints\feedback.py ---
+# api/v1/complaints/feedback.py
+from __future__ import annotations
+
+from datetime import date as Date
+
+from typing import Optional
+from uuid import UUID
+
+from fastapi import APIRouter, Depends, HTTPException, Path, Query, status
+
+from app.api.deps import get_uow
+from app.core.exceptions import (
+    ServiceError,
+    NotFoundError,
+    ValidationError,
+    ConflictError,
+)
+from app.schemas.complaint.complaint_feedback import (
+    FeedbackRequest,
+    FeedbackResponse,
+    FeedbackSummary,
+    FeedbackAnalysis,
+)
+from app.services.common.unit_of_work import UnitOfWork
+from app.services.complaint import ComplaintFeedbackService
+
+router = APIRouter(prefix="/feedback")
+
+
+def _map_service_error(exc: ServiceError) -> HTTPException:
+    if isinstance(exc, NotFoundError):
+        return HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc))
+    if isinstance(exc, ValidationError):
+        return HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=str(exc),
+        )
+    if isinstance(exc, ConflictError):
+        return HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(exc))
+    return HTTPException(
+        status_code=status.HTTP_400_BAD_REQUEST,
+        detail=str(exc),
+    )
+
+
+@router.post(
+    "/{complaint_id}",
+    response_model=FeedbackResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="Submit feedback for a complaint",
+)
+async def submit_feedback(
+    complaint_id: UUID = Path(..., description="Complaint ID"),
+    payload: FeedbackRequest = ...,
+    uow: UnitOfWork = Depends(get_uow),
+) -> FeedbackResponse:
+    """
+    Submit post-resolution feedback for a complaint.
+    """
+    service = ComplaintFeedbackService(uow)
+    try:
+        return service.submit_feedback(
+            complaint_id=complaint_id,
+            request=payload,
+        )
+    except ServiceError as exc:
+        raise _map_service_error(exc)
+
+
+@router.get(
+    "/{complaint_id}",
+    response_model=FeedbackResponse,
+    summary="Get feedback for a complaint",
+)
+async def get_feedback(
+    complaint_id: UUID = Path(..., description="Complaint ID"),
+    uow: UnitOfWork = Depends(get_uow),
+) -> FeedbackResponse:
+    """
+    Retrieve feedback associated with a specific complaint (if any).
+    """
+    service = ComplaintFeedbackService(uow)
+    try:
+        return service.get_feedback(complaint_id=complaint_id)
+    except ServiceError as exc:
+        raise _map_service_error(exc)
+
+
+@router.get(
+    "/summary",
+    response_model=FeedbackSummary,
+    summary="Get feedback summary for a hostel",
+)
+async def get_feedback_summary(
+    hostel_id: UUID = Query(..., description="Hostel ID"),
+    period_start: Optional[Date] = Query(None, description="Start Date (inclusive)"),
+    period_end: Optional[Date] = Query(None, description="End Date (inclusive)"),
+    uow: UnitOfWork = Depends(get_uow),
+) -> FeedbackSummary:
+    """
+    Summarize complaint feedback for a hostel: ratings, satisfaction, etc.
+    """
+    service = ComplaintFeedbackService(uow)
+    try:
+        return service.get_summary(
+            hostel_id=hostel_id,
+            period_start=period_start,
+            period_end=period_end,
+        )
+    except ServiceError as exc:
+        raise _map_service_error(exc)
+
+
+@router.get(
+    "/analysis",
+    response_model=FeedbackAnalysis,
+    summary="Analyze complaint feedback for a hostel",
+)
+async def get_feedback_analysis(
+    hostel_id: UUID = Query(..., description="Hostel ID"),
+    period_start: Optional[Date] = Query(None, description="Start Date (inclusive)"),
+    period_end: Optional[Date] = Query(None, description="End Date (inclusive)"),
+    uow: UnitOfWork = Depends(get_uow),
+) -> FeedbackAnalysis:
+    """
+    Return a more detailed analysis of complaint feedback (trends, ratings, etc.).
+    """
+    service = ComplaintFeedbackService(uow)
+    try:
+        return service.get_analysis(
+            hostel_id=hostel_id,
+            period_start=period_start,
+            period_end=period_end,
+        )
+    except ServiceError as exc:
+        raise _map_service_error(exc)
+
+# --- File: D:\Last Github Push\Last\HOStel-back\app\api\v1\complaints\resolution.py ---
+# api/v1/complaints/resolution.py
+from __future__ import annotations
+
+from uuid import UUID
+
+from fastapi import APIRouter, Depends, HTTPException, Path, status
+
+from app.api.deps import get_uow
+from app.core.exceptions import (
+    ServiceError,
+    NotFoundError,
+    ValidationError,
+    ConflictError,
+)
+from app.schemas.complaint.complaint_resolution import (
+    ResolutionRequest,
+    ResolutionResponse,
+    ResolutionUpdate,
+    ReopenRequest,
+    CloseRequest,
+)
+from app.services.common.unit_of_work import UnitOfWork
+from app.services.complaint import ComplaintService
+
+router = APIRouter(prefix="/resolution")
+
+
+def _map_service_error(exc: ServiceError) -> HTTPException:
+    if isinstance(exc, NotFoundError):
+        return HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc))
+    if isinstance(exc, ValidationError):
+        return HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=str(exc),
+        )
+    if isinstance(exc, ConflictError):
+        return HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(exc))
+    return HTTPException(
+        status_code=status.HTTP_400_BAD_REQUEST,
+        detail=str(exc),
+    )
+
+
+@router.post(
+    "/{complaint_id}",
+    response_model=ResolutionResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Add resolution details to a complaint",
+)
+async def add_resolution(
+    complaint_id: UUID = Path(..., description="Complaint ID"),
+    payload: ResolutionRequest = ...,
+    uow: UnitOfWork = Depends(get_uow),
+) -> ResolutionResponse:
+    """
+    Record resolution details for a complaint and update its status.
+    """
+    service = ComplaintService(uow)
+    try:
+        return service.add_resolution(
+            complaint_id=complaint_id,
+            request=payload,
+        )
+    except ServiceError as exc:
+        raise _map_service_error(exc)
+
+
+@router.patch(
+    "/{complaint_id}",
+    response_model=ResolutionResponse,
+    summary="Update complaint resolution",
+)
+async def update_resolution(
+    complaint_id: UUID = Path(..., description="Complaint ID"),
+    payload: ResolutionUpdate = ...,
+    uow: UnitOfWork = Depends(get_uow),
+) -> ResolutionResponse:
+    """
+    Update existing resolution details for a complaint.
+    """
+    service = ComplaintService(uow)
+    try:
+        return service.update_resolution(
+            complaint_id=complaint_id,
+            request=payload,
+        )
+    except ServiceError as exc:
+        raise _map_service_error(exc)
+
+
+@router.post(
+    "/{complaint_id}/reopen",
+    response_model=ResolutionResponse,
+    summary="Reopen a resolved/closed complaint",
+)
+async def reopen_complaint(
+    complaint_id: UUID = Path(..., description="Complaint ID"),
+    payload: ReopenRequest = ...,
+    uow: UnitOfWork = Depends(get_uow),
+) -> ResolutionResponse:
+    """
+    Reopen a previously resolved or closed complaint.
+    """
+    service = ComplaintService(uow)
+    try:
+        return service.reopen_complaint(
+            complaint_id=complaint_id,
+            request=payload,
+        )
+    except ServiceError as exc:
+        raise _map_service_error(exc)
+
+
+@router.post(
+    "/{complaint_id}/close",
+    response_model=ResolutionResponse,
+    summary="Close a complaint",
+)
+async def close_complaint(
+    complaint_id: UUID = Path(..., description="Complaint ID"),
+    payload: CloseRequest = ...,
+    uow: UnitOfWork = Depends(get_uow),
+) -> ResolutionResponse:
+    """
+    Close a complaint after resolution is confirmed.
+    """
+    service = ComplaintService(uow)
+    try:
+        return service.close_complaint(
+            complaint_id=complaint_id,
+            request=payload,
+        )
+    except ServiceError as exc:
+        raise _map_service_error(exc)
+
+# --- File: D:\Last Github Push\Last\HOStel-back\app\api\v1\complaints\__init__.py ---
+# api/v1/complaints/__init__.py
+from __future__ import annotations
+
+from fastapi import APIRouter
+
+from . import complaints
+from . import assignment
+from . import resolution
+from . import escalation
+from . import feedback
+from . import comments
+from . import analytics
+
+router = APIRouter(prefix="/complaints")
+
+router.include_router(complaints.router, tags=["Complaints - Core"])
+router.include_router(assignment.router, tags=["Complaints - Assignment"])
+router.include_router(resolution.router, tags=["Complaints - Resolution"])
+router.include_router(escalation.router, tags=["Complaints - Escalation"])
+router.include_router(feedback.router, tags=["Complaints - Feedback"])
+router.include_router(comments.router, tags=["Complaints - Comments"])
+router.include_router(analytics.router, tags=["Complaints - Analytics"])
+
+__all__ = ["router"]
+
+
+# ===== Folder: D:\Last Github Push\Last\HOStel-back\app\api\v1\complaints\__pycache__ =====

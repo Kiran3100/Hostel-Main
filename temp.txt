@@ -1,0 +1,439 @@
+### Combined Content from Folder: D:\Last Github Push\Last\HOStel-back\app\api\v1\visitors ###
+
+
+
+# ===== Folder: D:\Last Github Push\Last\HOStel-back\app\api\v1\visitors =====
+
+# --- File: D:\Last Github Push\Last\HOStel-back\app\api\v1\visitors\dashboard.py ---
+# app/api/v1/visitors/dashboard.py
+from __future__ import annotations
+
+from fastapi import APIRouter, Depends
+from sqlalchemy.orm import Session
+
+from app.core import get_session
+from app.services import UnitOfWork
+from app.services.visitor import VisitorDashboardService
+from app.schemas.visitor.visitor_dashboard import VisitorDashboard
+from . import CurrentUser, get_current_visitor
+
+router = APIRouter(tags=["Visitor - Dashboard"])
+
+
+def _get_service(session: Session) -> VisitorDashboardService:
+    uow = UnitOfWork(session)
+    return VisitorDashboardService(uow)
+
+
+@router.get("", response_model=VisitorDashboard)
+def get_dashboard(
+    current_user: CurrentUser = Depends(get_current_visitor),
+    session: Session = Depends(get_session),
+) -> VisitorDashboard:
+    """
+    Return the visitor dashboard for the authenticated visitor.
+    """
+    service = _get_service(session)
+    # Expected service method:
+    #   get_dashboard_for_user(user_id: UUID) -> VisitorDashboard
+    return service.get_dashboard_for_user(user_id=current_user.id)
+
+# --- File: D:\Last Github Push\Last\HOStel-back\app\api\v1\visitors\favorites.py ---
+# app/api/v1/visitors/favorites.py
+from __future__ import annotations
+
+from typing import List
+from uuid import UUID
+
+from fastapi import APIRouter, Depends, Query, Response, status
+from sqlalchemy.orm import Session
+
+from app.core import get_session
+from app.services import UnitOfWork
+from app.services.visitor import FavoritesService
+from app.schemas.visitor.visitor_favorites import (
+    FavoriteRequest,
+    FavoriteUpdate,
+    FavoritesList,
+    FavoriteHostelItem,
+    FavoritesExport,
+    FavoriteComparison,
+)
+from . import CurrentUser, get_current_visitor
+
+router = APIRouter(tags=["Visitor - Favorites"])
+
+
+def _get_service(session: Session) -> FavoritesService:
+    uow = UnitOfWork(session)
+    return FavoritesService(uow)
+
+
+@router.get("", response_model=FavoritesList)
+def list_favorites(
+    current_user: CurrentUser = Depends(get_current_visitor),
+    session: Session = Depends(get_session),
+) -> FavoritesList:
+    """
+    List all favorite hostels for the authenticated visitor.
+    """
+    service = _get_service(session)
+    # Expected service method:
+    #   list_favorites_for_user(user_id: UUID) -> FavoritesList
+    return service.list_favorites_for_user(user_id=current_user.id)
+
+
+@router.post(
+    "",
+    response_model=FavoriteHostelItem,
+    status_code=status.HTTP_201_CREATED,
+)
+def add_favorite(
+    payload: FavoriteRequest,
+    current_user: CurrentUser = Depends(get_current_visitor),
+    session: Session = Depends(get_session),
+) -> FavoriteHostelItem:
+    """
+    Add a hostel to the visitor's favorites (or update if already exists).
+    """
+    service = _get_service(session)
+    # Expected service method:
+    #   add_favorite(user_id: UUID, data: FavoriteRequest) -> FavoriteHostelItem
+    return service.add_favorite(user_id=current_user.id, data=payload)
+
+
+@router.patch(
+    "/{hostel_id}",
+    response_model=FavoriteHostelItem,
+)
+def update_favorite(
+    hostel_id: UUID,
+    payload: FavoriteUpdate,
+    current_user: CurrentUser = Depends(get_current_visitor),
+    session: Session = Depends(get_session),
+) -> FavoriteHostelItem:
+    """
+    Update metadata (e.g., notes) for a favorite hostel.
+    """
+    service = _get_service(session)
+    # Expected service method:
+    #   update_favorite(user_id: UUID, hostel_id: UUID, data: FavoriteUpdate) -> FavoriteHostelItem
+    return service.update_favorite(
+        user_id=current_user.id,
+        hostel_id=hostel_id,
+        data=payload,
+    )
+
+
+@router.delete("/{hostel_id}", status_code=status.HTTP_204_NO_CONTENT)
+def remove_favorite(
+    hostel_id: UUID,
+    current_user: CurrentUser = Depends(get_current_visitor),
+    session: Session = Depends(get_session),
+) -> Response:
+    """
+    Remove a hostel from the visitor's favorites.
+    """
+    service = _get_service(session)
+    # Expected service method:
+    #   remove_favorite(user_id: UUID, hostel_id: UUID) -> None
+    service.remove_favorite(user_id=current_user.id, hostel_id=hostel_id)
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+@router.get("/export", response_model=FavoritesExport)
+def export_favorites(
+    current_user: CurrentUser = Depends(get_current_visitor),
+    session: Session = Depends(get_session),
+) -> FavoritesExport:
+    """
+    Export the visitor's favorites (for now as a structured JSON model).
+    """
+    service = _get_service(session)
+    # Expected service method:
+    #   export_favorites_for_user(user_id: UUID) -> FavoritesExport
+    return service.export_favorites_for_user(user_id=current_user.id)
+
+
+@router.get("/compare", response_model=FavoriteComparison)
+def compare_favorites(
+    hostel_ids: List[UUID] = Query(..., description="Hostel IDs to compare (2-4 ids recommended)"),
+    current_user: CurrentUser = Depends(get_current_visitor),
+    session: Session = Depends(get_session),
+) -> FavoriteComparison:
+    """
+    Compare a subset of favorite hostels.
+    """
+    service = _get_service(session)
+    # Expected service method:
+    #   compare_favorites(user_id: UUID, hostel_ids: List[UUID]) -> FavoriteComparison
+    return service.compare_favorites(
+        user_id=current_user.id,
+        hostel_ids=hostel_ids,
+    )
+
+# --- File: D:\Last Github Push\Last\HOStel-back\app\api\v1\visitors\preferences.py ---
+# app/api/v1/visitors/preferences.py
+from __future__ import annotations
+
+from fastapi import APIRouter, Depends
+from sqlalchemy.orm import Session
+
+from app.core import get_session
+from app.services import UnitOfWork
+from app.services.visitor import VisitorPreferencesService
+from app.schemas.visitor.visitor_preferences import (
+    VisitorPreferences,
+    PreferenceUpdate,
+)
+from . import CurrentUser, get_current_visitor
+
+router = APIRouter(tags=["Visitor - Preferences"])
+
+
+def _get_service(session: Session) -> VisitorPreferencesService:
+    uow = UnitOfWork(session)
+    return VisitorPreferencesService(uow)
+
+
+@router.get("", response_model=VisitorPreferences)
+def get_preferences(
+    current_user: CurrentUser = Depends(get_current_visitor),
+    session: Session = Depends(get_session),
+) -> VisitorPreferences:
+    """
+    Get the current visitor's preferences and notification settings.
+    """
+    service = _get_service(session)
+    # Expected service method:
+    #   get_preferences_for_user(user_id: UUID) -> VisitorPreferences
+    return service.get_preferences_for_user(user_id=current_user.id)
+
+
+@router.patch("", response_model=VisitorPreferences)
+def update_preferences(
+    payload: PreferenceUpdate,
+    current_user: CurrentUser = Depends(get_current_visitor),
+    session: Session = Depends(get_session),
+) -> VisitorPreferences:
+    """
+    Partially update the current visitor's preferences.
+    """
+    service = _get_service(session)
+    # Expected service method:
+    #   update_preferences_for_user(user_id: UUID, data: PreferenceUpdate) -> VisitorPreferences
+    return service.update_preferences_for_user(
+        user_id=current_user.id,
+        data=payload,
+    )
+
+# --- File: D:\Last Github Push\Last\HOStel-back\app\api\v1\visitors\profile.py ---
+# app/api/v1/visitors/profile.py
+from __future__ import annotations
+
+from uuid import UUID
+
+from fastapi import APIRouter, Depends
+from sqlalchemy.orm import Session
+
+from app.core import get_session
+from app.services import UnitOfWork
+from app.services.visitor import VisitorService
+from app.schemas.visitor.visitor_base import VisitorUpdate
+from app.schemas.visitor.visitor_response import VisitorDetail, VisitorProfile
+from . import CurrentUser, get_current_visitor
+
+router = APIRouter(tags=["Visitor - Profile"])
+
+
+def _get_service(session: Session) -> VisitorService:
+    """Helper to construct VisitorService with a UnitOfWork."""
+    uow = UnitOfWork(session)
+    return VisitorService(uow)
+
+
+@router.get("/me", response_model=VisitorDetail)
+def get_my_profile(
+    current_user: CurrentUser = Depends(get_current_visitor),
+    session: Session = Depends(get_session),
+) -> VisitorDetail:
+    """
+    Return the detailed visitor profile for the authenticated visitor.
+    """
+    service = _get_service(session)
+    # Expected service method: get_visitor_detail(user_id: UUID) -> VisitorDetail
+    return service.get_visitor_detail(user_id=current_user.id)
+
+
+@router.get("/me/summary", response_model=VisitorProfile)
+def get_my_profile_summary(
+    current_user: CurrentUser = Depends(get_current_visitor),
+    session: Session = Depends(get_session),
+) -> VisitorProfile:
+    """
+    Lightweight summary/profile for dashboard/header usage.
+    """
+    service = _get_service(session)
+    # Expected service method: get_visitor_profile_summary(user_id: UUID) -> VisitorProfile
+    return service.get_visitor_profile_summary(user_id=current_user.id)
+
+
+@router.patch("/me", response_model=VisitorDetail)
+def update_my_profile(
+    payload: VisitorUpdate,
+    current_user: CurrentUser = Depends(get_current_visitor),
+    session: Session = Depends(get_session),
+) -> VisitorDetail:
+    """
+    Partially update the visitor profile of the authenticated user.
+    """
+    service = _get_service(session)
+    # Expected service method:
+    #   update_visitor_profile(user_id: UUID, data: VisitorUpdate) -> VisitorDetail
+    return service.update_visitor_profile(user_id=current_user.id, data=payload)
+
+# --- File: D:\Last Github Push\Last\HOStel-back\app\api\v1\visitors\search.py ---
+# app/api/v1/visitors/search.py
+from __future__ import annotations
+
+from fastapi import APIRouter, Depends
+from sqlalchemy.orm import Session
+
+from app.core import get_session
+from app.services import UnitOfWork
+from app.services.visitor import VisitorHostelSearchService
+from app.schemas.hostel.hostel_search import (
+    HostelSearchRequest,
+    HostelSearchResponse,
+)
+from . import CurrentUser, get_current_visitor
+
+router = APIRouter(tags=["Visitor - Search"])
+
+
+def _get_service(session: Session) -> VisitorHostelSearchService:
+    uow = UnitOfWork(session)
+    return VisitorHostelSearchService(uow)
+
+
+@router.post("", response_model=HostelSearchResponse)
+def search_hostels(
+    payload: HostelSearchRequest,
+    session: Session = Depends(get_session),
+) -> HostelSearchResponse:
+    """
+    Public / generic hostel search over the visitor-facing index.
+
+    This does not require authentication; if you want to make this
+    visitor-only, add get_current_visitor as a dependency.
+    """
+    service = _get_service(session)
+    # Expected service method:
+    #   search(request: HostelSearchRequest) -> HostelSearchResponse
+    return service.search(request=payload)
+
+
+@router.get("/recommended", response_model=HostelSearchResponse)
+def recommended_hostels(
+    current_user: CurrentUser = Depends(get_current_visitor),
+    session: Session = Depends(get_session),
+) -> HostelSearchResponse:
+    """
+    Recommend hostels based on the visitor's saved preferences and behavior.
+    """
+    service = _get_service(session)
+    # Expected service method:
+    #   search_by_preferences(user_id: UUID) -> HostelSearchResponse
+    return service.search_by_preferences(user_id=current_user.id)
+
+# --- File: D:\Last Github Push\Last\HOStel-back\app\api\v1\visitors\__init__.py ---
+# app/api/v1/visitors/__init__.py
+from __future__ import annotations
+
+from dataclasses import dataclass
+from typing import Any
+from uuid import UUID
+
+from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.security import OAuth2PasswordBearer
+
+from app.core.security import decode_token, TokenDecodeError
+from app.schemas.common.enums import UserRole
+
+router = APIRouter()
+
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login")
+
+
+@dataclass
+class CurrentUser:
+    """Minimal representation of the authenticated user for visitor APIs."""
+    id: UUID
+    role: UserRole
+
+
+def get_current_user(token: str = Depends(oauth2_scheme)) -> CurrentUser:
+    """
+    Decode JWT and return minimal CurrentUser.
+
+    Expects payload to contain either:
+      - sub (user id as string) and role
+      - or user_id and user_role
+
+    Adjust this if your TokenPayload uses different claim names.
+    """
+    try:
+        payload: dict[str, Any] = decode_token(token)
+    except TokenDecodeError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Could not validate credentials",
+        ) from exc
+
+    user_id_raw = payload.get("sub") or payload.get("user_id")
+    role_raw = payload.get("role") or payload.get("user_role")
+
+    if not user_id_raw or not role_raw:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid token payload",
+        )
+
+    try:
+        user_id = UUID(str(user_id_raw))
+        role = UserRole(str(role_raw))
+    except Exception as exc:  # ValueError, KeyError, etc.
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid token payload",
+        ) from exc
+
+    return CurrentUser(id=user_id, role=role)
+
+
+def get_current_visitor(current_user: CurrentUser = Depends(get_current_user)) -> CurrentUser:
+    """Ensure the authenticated user is a VISITOR."""
+    if current_user.role is not UserRole.VISITOR:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only visitors can access this endpoint",
+        )
+    return current_user
+
+
+# Import sub-routers and mount them under /visitors in the main API router.
+from . import profile, dashboard, favorites, preferences, search  # noqa: E402
+
+router.include_router(profile.router, prefix="/profile")
+router.include_router(dashboard.router, prefix="/dashboard")
+router.include_router(favorites.router, prefix="/favorites")
+router.include_router(preferences.router, prefix="/preferences")
+router.include_router(search.router, prefix="/search")
+
+__all__ = [
+    "router",
+    "CurrentUser",
+    "get_current_user",
+    "get_current_visitor",
+]
+

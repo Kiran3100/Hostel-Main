@@ -1,0 +1,676 @@
+### Combined Content from Folder: D:\Last Github Push\Last\HOStel-back\app\api\v1\notifications ###
+
+
+
+# ===== Folder: D:\Last Github Push\Last\HOStel-back\app\api\v1\notifications =====
+
+# --- File: D:\Last Github Push\Last\HOStel-back\app\api\v1\notifications\notifications.py ---
+# app/api/v1/notifications/notifications.py
+from __future__ import annotations
+
+from typing import Optional
+
+from fastapi import APIRouter, Depends, Query, status, Response
+from sqlalchemy.orm import Session
+
+from app.core import get_session
+from app.services import UnitOfWork
+from app.services.notification import NotificationService
+from app.schemas.notification.notification_base import (
+    MarkAsRead,
+    BulkMarkAsRead,
+    NotificationDelete,
+)
+from app.schemas.notification.notification_response import (
+    NotificationList,
+    NotificationDetail,
+    UnreadCount,
+    NotificationSummary,
+)
+from . import CurrentUser, get_current_user
+
+router = APIRouter(tags=["Notifications - In-App"])
+
+
+def _get_service(session: Session) -> NotificationService:
+    uow = UnitOfWork(session)
+    return NotificationService(uow)
+
+
+@router.get("/", response_model=NotificationList)
+def list_my_notifications(
+    only_unread: bool = Query(
+        False,
+        description="If true, return only unread notifications",
+    ),
+    limit: int = Query(
+        50,
+        ge=1,
+        le=200,
+        description="Maximum number of notifications to return",
+    ),
+    session: Session = Depends(get_session),
+    current_user: CurrentUser = Depends(get_current_user),
+) -> NotificationList:
+    """
+    List notifications for the authenticated user.
+    """
+    service = _get_service(session)
+    # Expected: list_notifications_for_user(user_id, only_unread, limit) -> NotificationList
+    return service.list_notifications_for_user(
+        user_id=current_user.id,
+        only_unread=only_unread,
+        limit=limit,
+    )
+
+
+@router.get("/unread-count", response_model=UnreadCount)
+def get_unread_count(
+    session: Session = Depends(get_session),
+    current_user: CurrentUser = Depends(get_current_user),
+) -> UnreadCount:
+    """
+    Get unread notifications count for the authenticated user.
+    """
+    service = _get_service(session)
+    # Expected: get_unread_count_for_user(user_id) -> UnreadCount
+    return service.get_unread_count_for_user(user_id=current_user.id)
+
+
+@router.get("/summary", response_model=NotificationSummary)
+def get_notification_summary(
+    session: Session = Depends(get_session),
+    current_user: CurrentUser = Depends(get_current_user),
+) -> NotificationSummary:
+    """
+    Get notification summary (unread counts per type/category, etc.).
+    """
+    service = _get_service(session)
+    # Expected: get_summary_for_user(user_id) -> NotificationSummary
+    return service.get_summary_for_user(user_id=current_user.id)
+
+
+@router.get("/{notification_id}", response_model=NotificationDetail)
+def get_notification(
+    notification_id: str,
+    session: Session = Depends(get_session),
+    current_user: CurrentUser = Depends(get_current_user),
+) -> NotificationDetail:
+    """
+    Get details of a single notification.
+    """
+    service = _get_service(session)
+    # Expected: get_notification_for_user(notification_id, user_id) -> NotificationDetail
+    return service.get_notification_for_user(
+        notification_id=notification_id,
+        user_id=current_user.id,
+    )
+
+
+@router.post("/{notification_id}/read", response_model=NotificationDetail)
+def mark_notification_as_read(
+    notification_id: str,
+    payload: MarkAsRead | None = None,
+    session: Session = Depends(get_session),
+    current_user: CurrentUser = Depends(get_current_user),
+) -> NotificationDetail:
+    """
+    Mark a single notification as read.
+    """
+    service = _get_service(session)
+    # Expected: mark_as_read(user_id, notification_id, data: Optional[MarkAsRead]) -> NotificationDetail
+    return service.mark_as_read(
+        user_id=current_user.id,
+        notification_id=notification_id,
+        data=payload,
+    )
+
+
+@router.post("/read/bulk", response_model=NotificationList)
+def bulk_mark_as_read(
+    payload: BulkMarkAsRead,
+    session: Session = Depends(get_session),
+    current_user: CurrentUser = Depends(get_current_user),
+) -> NotificationList:
+    """
+    Bulk mark multiple notifications as read.
+    """
+    service = _get_service(session)
+    # Expected: bulk_mark_as_read(user_id, data: BulkMarkAsRead) -> NotificationList
+    return service.bulk_mark_as_read(
+        user_id=current_user.id,
+        data=payload,
+    )
+
+
+@router.delete("/{notification_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_notification(
+    notification_id: str,
+    payload: NotificationDelete | None = None,
+    session: Session = Depends(get_session),
+    current_user: CurrentUser = Depends(get_current_user),
+) -> Response:
+    """
+    Delete (or soft-delete) a single notification.
+    """
+    service = _get_service(session)
+    # Expected: delete_notification(user_id, notification_id, data: Optional[NotificationDelete]) -> None
+    service.delete_notification(
+        user_id=current_user.id,
+        notification_id=notification_id,
+        data=payload,
+    )
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+# --- File: D:\Last Github Push\Last\HOStel-back\app\api\v1\notifications\preferences.py ---
+# app/api/v1/notifications/preferences.py
+from __future__ import annotations
+
+from fastapi import APIRouter, Depends, status, Response
+from sqlalchemy.orm import Session
+
+from app.core import get_session
+from app.services import UnitOfWork
+from app.services.notification import PreferenceService
+from app.schemas.notification.notification_preferences import (
+    UserPreferences,
+    PreferenceUpdate,
+    UnsubscribeRequest,
+)
+from . import CurrentUser, get_current_user
+
+router = APIRouter(tags=["Notifications - Preferences"])
+
+
+def _get_service(session: Session) -> PreferenceService:
+    uow = UnitOfWork(session)
+    return PreferenceService(uow)
+
+
+@router.get("/me", response_model=UserPreferences)
+def get_my_preferences(
+    session: Session = Depends(get_session),
+    current_user: CurrentUser = Depends(get_current_user),
+) -> UserPreferences:
+    """
+    Get notification preferences for the authenticated user.
+    """
+    service = _get_service(session)
+    # Expected: get_preferences(user_id: UUID) -> UserPreferences
+    return service.get_preferences(user_id=current_user.id)
+
+
+@router.patch("/me", response_model=UserPreferences)
+def update_my_preferences(
+    payload: PreferenceUpdate,
+    session: Session = Depends(get_session),
+    current_user: CurrentUser = Depends(get_current_user),
+) -> UserPreferences:
+    """
+    Update notification preferences for the authenticated user.
+    """
+    service = _get_service(session)
+    # Expected: update_preferences(user_id: UUID, data: PreferenceUpdate) -> UserPreferences
+    return service.update_preferences(
+        user_id=current_user.id,
+        data=payload,
+    )
+
+
+@router.post("/unsubscribe", status_code=status.HTTP_204_NO_CONTENT)
+def unsubscribe(
+    payload: UnsubscribeRequest,
+    session: Session = Depends(get_session),
+) -> Response:
+    """
+    Unsubscribe endpoint (can be used with signed links; may not require auth).
+
+    Service is responsible for validating tokens / keys in the request.
+    """
+    service = _get_service(session)
+    # Expected: handle_unsubscribe(request: UnsubscribeRequest) -> None
+    service.handle_unsubscribe(request=payload)
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+# --- File: D:\Last Github Push\Last\HOStel-back\app\api\v1\notifications\send.py ---
+# app/api/v1/notifications/send.py
+from __future__ import annotations
+
+from fastapi import APIRouter, Depends, status
+from sqlalchemy.orm import Session
+
+from app.core import get_session
+from app.services import UnitOfWork
+from app.services.notification import (
+    NotificationService,
+    EmailService,
+    SMSService,
+    PushService,
+)
+from app.schemas.notification.notification_base import NotificationCreate
+from app.schemas.notification.notification_response import NotificationDetail
+from app.schemas.notification.email_notification import (
+    EmailRequest,
+    BulkEmailRequest,
+    EmailStats,
+)
+from app.schemas.notification.sms_notification import (
+    SMSRequest,
+    BulkSMSRequest,
+    SMSStats,
+)
+from app.schemas.notification.push_notification import (
+    PushRequest,
+    PushStats,
+)
+from . import CurrentUser, get_current_user, get_current_admin
+
+router = APIRouter(tags=["Notifications - Send"])
+
+
+def _get_notification_service(session: Session) -> NotificationService:
+    uow = UnitOfWork(session)
+    return NotificationService(uow)
+
+
+def _get_email_service(session: Session) -> EmailService:
+    uow = UnitOfWork(session)
+    return EmailService(uow)
+
+
+def _get_sms_service(session: Session) -> SMSService:
+    uow = UnitOfWork(session)
+    return SMSService(uow)
+
+
+def _get_push_service(session: Session) -> PushService:
+    uow = UnitOfWork(session)
+    return PushService(uow)
+
+
+# In-app notifications --------------------------------------------------------
+
+
+@router.post("/in-app", response_model=NotificationDetail, status_code=status.HTTP_201_CREATED)
+def send_in_app_notification(
+    payload: NotificationCreate,
+    session: Session = Depends(get_session),
+    current_user: CurrentUser = Depends(get_current_admin),
+) -> NotificationDetail:
+    """
+    Create and dispatch an in-app notification (admin-triggered).
+    """
+    service = _get_notification_service(session)
+    # Expected: send_notification(created_by: UUID, data: NotificationCreate) -> NotificationDetail
+    return service.send_notification(
+        created_by=current_user.id,
+        data=payload,
+    )
+
+
+# Email -----------------------------------------------------------------------
+
+
+@router.post("/email", response_model=EmailStats)
+def send_email(
+    payload: EmailRequest,
+    session: Session = Depends(get_session),
+    current_user: CurrentUser = Depends(get_current_admin),
+) -> EmailStats:
+    """
+    Send a single email via EmailService.
+    """
+    service = _get_email_service(session)
+    # Expected: send_email(requester_id: UUID, data: EmailRequest) -> EmailStats | similar
+    return service.send_email(
+        requester_id=current_user.id,
+        data=payload,
+    )
+
+
+@router.post("/email/bulk", response_model=EmailStats)
+def send_bulk_email(
+    payload: BulkEmailRequest,
+    session: Session = Depends(get_session),
+    current_user: CurrentUser = Depends(get_current_admin),
+) -> EmailStats:
+    """
+    Send bulk emails via EmailService.
+    """
+    service = _get_email_service(session)
+    # Expected: send_bulk_email(requester_id: UUID, data: BulkEmailRequest) -> EmailStats
+    return service.send_bulk_email(
+        requester_id=current_user.id,
+        data=payload,
+    )
+
+
+@router.get("/email/stats", response_model=EmailStats)
+def get_email_stats(
+    session: Session = Depends(get_session),
+    current_user: CurrentUser = Depends(get_current_admin),
+) -> EmailStats:
+    """
+    Get high-level email stats.
+    """
+    service = _get_email_service(session)
+    # Expected: get_stats() -> EmailStats
+    return service.get_stats()
+
+
+# SMS -------------------------------------------------------------------------
+
+
+@router.post("/sms", response_model=SMSStats)
+def send_sms(
+    payload: SMSRequest,
+    session: Session = Depends(get_session),
+    current_user: CurrentUser = Depends(get_current_admin),
+) -> SMSStats:
+    """
+    Send a single SMS via SMSService.
+    """
+    service = _get_sms_service(session)
+    # Expected: send_sms(requester_id: UUID, data: SMSRequest) -> SMSStats
+    return service.send_sms(
+        requester_id=current_user.id,
+        data=payload,
+    )
+
+
+@router.post("/sms/bulk", response_model=SMSStats)
+def send_bulk_sms(
+    payload: BulkSMSRequest,
+    session: Session = Depends(get_session),
+    current_user: CurrentUser = Depends(get_current_admin),
+) -> SMSStats:
+    """
+    Send bulk SMS via SMSService.
+    """
+    service = _get_sms_service(session)
+    # Expected: send_bulk_sms(requester_id: UUID, data: BulkSMSRequest) -> SMSStats
+    return service.send_bulk_sms(
+        requester_id=current_user.id,
+        data=payload,
+    )
+
+
+@router.get("/sms/stats", response_model=SMSStats)
+def get_sms_stats(
+    session: Session = Depends(get_session),
+    current_user: CurrentUser = Depends(get_current_admin),
+) -> SMSStats:
+    """
+    Get high-level SMS stats.
+    """
+    service = _get_sms_service(session)
+    # Expected: get_stats() -> SMSStats
+    return service.get_stats()
+
+
+# Push ------------------------------------------------------------------------
+
+
+@router.post("/push", response_model=PushStats)
+def send_push(
+    payload: PushRequest,
+    session: Session = Depends(get_session),
+    current_user: CurrentUser = Depends(get_current_admin),
+) -> PushStats:
+    """
+    Send a push notification via PushService.
+    """
+    service = _get_push_service(session)
+    # Expected: send_push(requester_id: UUID, data: PushRequest) -> PushStats
+    return service.send_push(
+        requester_id=current_user.id,
+        data=payload,
+    )
+
+
+@router.get("/push/stats", response_model=PushStats)
+def get_push_stats(
+    session: Session = Depends(get_session),
+    current_user: CurrentUser = Depends(get_current_admin),
+) -> PushStats:
+    """
+    Get high-level push notification stats.
+    """
+    service = _get_push_service(session)
+    # Expected: get_stats() -> PushStats
+    return service.get_stats()
+
+# --- File: D:\Last Github Push\Last\HOStel-back\app\api\v1\notifications\templates.py ---
+# app/api/v1/notifications/templates.py
+from __future__ import annotations
+
+from typing import List
+from uuid import UUID
+
+from fastapi import APIRouter, Depends, status
+from sqlalchemy.orm import Session
+
+from app.core import get_session
+from app.services import UnitOfWork
+from app.services.notification import TemplateService
+from app.schemas.notification.notification_template import (
+    TemplateCreate,
+    TemplateUpdate,
+    TemplateResponse,
+    TemplatePreview,
+    TemplatePreviewResponse,
+    TemplateList,
+    TemplateCategory,
+)
+from . import CurrentUser, get_current_admin
+
+router = APIRouter(tags=["Notifications - Templates"])
+
+
+def _get_service(session: Session) -> TemplateService:
+    uow = UnitOfWork(session)
+    return TemplateService(uow)
+
+
+@router.get("/", response_model=TemplateList)
+def list_templates(
+    session: Session = Depends(get_session),
+    current_user: CurrentUser = Depends(get_current_admin),
+) -> TemplateList:
+    """
+    List all notification templates.
+    """
+    service = _get_service(session)
+    # Expected: list_templates() -> TemplateList
+    return service.list_templates()
+
+
+@router.get("/categories", response_model=List[TemplateCategory])
+def list_template_categories(
+    session: Session = Depends(get_session),
+    current_user: CurrentUser = Depends(get_current_admin),
+) -> List[TemplateCategory]:
+    """
+    List template categories.
+    """
+    service = _get_service(session)
+    # Expected: list_categories() -> list[TemplateCategory]
+    return service.list_categories()
+
+
+@router.get("/{template_id}", response_model=TemplateResponse)
+def get_template(
+    template_id: UUID,
+    session: Session = Depends(get_session),
+    current_user: CurrentUser = Depends(get_current_admin),
+) -> TemplateResponse:
+    """
+    Get a single template.
+    """
+    service = _get_service(session)
+    # Expected: get_template(template_id: UUID) -> TemplateResponse
+    return service.get_template(template_id=template_id)
+
+
+@router.post(
+    "/",
+    response_model=TemplateResponse,
+    status_code=status.HTTP_201_CREATED,
+)
+def create_template(
+    payload: TemplateCreate,
+    session: Session = Depends(get_session),
+    current_user: CurrentUser = Depends(get_current_admin),
+) -> TemplateResponse:
+    """
+    Create a new template.
+    """
+    service = _get_service(session)
+    # Expected: create_template(data: TemplateCreate, created_by: UUID) -> TemplateResponse
+    return service.create_template(
+        data=payload,
+        created_by=current_user.id,
+    )
+
+
+@router.patch("/{template_id}", response_model=TemplateResponse)
+def update_template(
+    template_id: UUID,
+    payload: TemplateUpdate,
+    session: Session = Depends(get_session),
+    current_user: CurrentUser = Depends(get_current_admin),
+) -> TemplateResponse:
+    """
+    Update an existing template.
+    """
+    service = _get_service(session)
+    # Expected: update_template(template_id: UUID, data: TemplateUpdate, updated_by: UUID) -> TemplateResponse
+    return service.update_template(
+        template_id=template_id,
+        data=payload,
+        updated_by=current_user.id,
+    )
+
+
+@router.delete("/{template_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_template(
+    template_id: UUID,
+    session: Session = Depends(get_session),
+    current_user: CurrentUser = Depends(get_current_admin),
+) -> None:
+    """
+    Delete a template.
+    """
+    service = _get_service(session)
+    # Expected: delete_template(template_id: UUID) -> None
+    service.delete_template(template_id=template_id)
+    return None
+
+
+@router.post("/{template_id}/preview", response_model=TemplatePreviewResponse)
+def preview_template(
+    template_id: UUID,
+    payload: TemplatePreview,
+    session: Session = Depends(get_session),
+    current_user: CurrentUser = Depends(get_current_admin),
+) -> TemplatePreviewResponse:
+    """
+    Render a preview of a template with given variables.
+    """
+    service = _get_service(session)
+    # Expected: preview_template(template_id: UUID, data: TemplatePreview) -> TemplatePreviewResponse
+    return service.preview_template(
+        template_id=template_id,
+        data=payload,
+    )
+
+# --- File: D:\Last Github Push\Last\HOStel-back\app\api\v1\notifications\__init__.py ---
+# app/api/v1/notifications/__init__.py
+from __future__ import annotations
+
+from dataclasses import dataclass
+from typing import Any
+from uuid import UUID
+
+from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.security import OAuth2PasswordBearer
+
+from app.core.security import decode_token, TokenDecodeError
+from app.schemas.common.enums import UserRole
+
+router = APIRouter()
+
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login")
+
+
+@dataclass
+class CurrentUser:
+    """Minimal representation of the authenticated user for notification APIs."""
+    id: UUID
+    role: UserRole
+
+
+def get_current_user(token: str = Depends(oauth2_scheme)) -> CurrentUser:
+    """
+    Decode JWT and return minimal CurrentUser.
+
+    Expects payload to contain either:
+      - sub (user id as string) and role
+      - or user_id and user_role
+    """
+    try:
+        payload: dict[str, Any] = decode_token(token)
+    except TokenDecodeError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Could not validate credentials",
+        ) from exc
+
+    user_id_raw = payload.get("sub") or payload.get("user_id")
+    role_raw = payload.get("role") or payload.get("user_role")
+
+    if not user_id_raw or not role_raw:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid token payload",
+        )
+
+    try:
+        user_id = UUID(str(user_id_raw))
+        role = UserRole(str(role_raw))
+    except Exception as exc:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid token payload",
+        ) from exc
+
+    return CurrentUser(id=user_id, role=role)
+
+
+def get_current_admin(current_user: CurrentUser = Depends(get_current_user)) -> CurrentUser:
+    """Ensure the authenticated user is an ADMIN for admin-only endpoints."""
+    if current_user.role is not UserRole.ADMIN:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only admins can access this endpoint",
+        )
+    return current_user
+
+
+# Import sub-routers and mount them under /notifications in the main API router.
+from . import notifications, templates, preferences, send  # noqa: E402
+
+router.include_router(notifications.router, prefix="/notifications")
+router.include_router(templates.router, prefix="/templates")
+router.include_router(preferences.router, prefix="/preferences")
+router.include_router(send.router, prefix="/send")
+
+__all__ = [
+    "router",
+    "CurrentUser",
+    "get_current_user",
+    "get_current_admin",
+]
+
+
+# ===== Folder: D:\Last Github Push\Last\HOStel-back\app\api\v1\notifications\__pycache__ =====
