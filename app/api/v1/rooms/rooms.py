@@ -1,7 +1,5 @@
 # app/api/v1/rooms/rooms.py
-from __future__ import annotations
-
-from typing import List, Optional
+from typing import List, Union
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, Query, status
@@ -41,7 +39,7 @@ def list_rooms(
         False,
         description="If true, return only rooms available for booking",
     ),
-    room_type: Optional[RoomType] = Query(
+    room_type: Union[RoomType, None] = Query(
         None,
         description="Optional filter by room type",
     ),

@@ -1,7 +1,4 @@
 # app/api/v1/students/finance.py
-from __future__ import annotations
-
-from typing import Optional
 from uuid import UUID
 
 from fastapi import APIRouter, Depends

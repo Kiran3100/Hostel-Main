@@ -1,7 +1,4 @@
-# api/v1/inquiries/inquiries.py
-from __future__ import annotations
-
-from typing import List, Optional
+from typing import List, Union
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Path, Query, status
@@ -96,7 +93,7 @@ async def get_inquiry(
 )
 async def list_inquiries(
     hostel_id: UUID = Query(..., description="Hostel ID"),
-    status_filter: Optional[InquiryStatus] = Query(
+    status_filter: Union[InquiryStatus, None] = Query(
         None,
         alias="status",
         description="Optional inquiry status filter",

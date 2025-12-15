@@ -1,7 +1,4 @@
-# app/api/v1/reviews/submission.py
-from __future__ import annotations
-
-from typing import List
+from typing import List, Union
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, Query
@@ -49,7 +46,7 @@ def submit_review(
 @router.get("/eligibility", response_model=ReviewEligibility)
 def check_review_eligibility(
     hostel_id: UUID = Query(..., description="Hostel the user wants to review"),
-    booking_id: UUID | None = Query(
+    booking_id: Union[UUID, None] = Query(
         None,
         description="Optional booking id for more precise eligibility checks",
     ),
@@ -60,7 +57,7 @@ def check_review_eligibility(
     Check if the current user is eligible to submit or edit a review for a hostel.
     """
     service = _get_service(session)
-    # Expected: check_eligibility(user_id: UUID, hostel_id: UUID, booking_id: Optional[UUID]) -> ReviewEligibility
+    # Expected: check_eligibility(user_id: UUID, hostel_id: UUID, booking_id: Union[UUID, None]) -> ReviewEligibility
     return service.check_eligibility(
         user_id=current_user.id,
         hostel_id=hostel_id,

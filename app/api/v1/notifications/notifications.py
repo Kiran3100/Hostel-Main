@@ -1,7 +1,4 @@
-# app/api/v1/notifications/notifications.py
-from __future__ import annotations
-
-from typing import Optional
+from typing import Union
 
 from fastapi import APIRouter, Depends, Query, status, Response
 from sqlalchemy.orm import Session
@@ -103,7 +100,7 @@ def get_notification(
 @router.post("/{notification_id}/read", response_model=NotificationDetail)
 def mark_notification_as_read(
     notification_id: str,
-    payload: MarkAsRead | None = None,
+    payload: Union[MarkAsRead, None] = None,
     session: Session = Depends(get_session),
     current_user: CurrentUser = Depends(get_current_user),
 ) -> NotificationDetail:
@@ -111,7 +108,7 @@ def mark_notification_as_read(
     Mark a single notification as read.
     """
     service = _get_service(session)
-    # Expected: mark_as_read(user_id, notification_id, data: Optional[MarkAsRead]) -> NotificationDetail
+    # Expected: mark_as_read(user_id, notification_id, data: Union[MarkAsRead, None]) -> NotificationDetail
     return service.mark_as_read(
         user_id=current_user.id,
         notification_id=notification_id,
@@ -136,10 +133,10 @@ def bulk_mark_as_read(
     )
 
 
-@router.delete("/{notification_id}")
+@router.delete("/{notification_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_notification(
     notification_id: str,
-    reason: Optional[str] = Query(None, description="Deletion reason (optional)"),
+    payload: Union[NotificationDelete, None] = None,
     session: Session = Depends(get_session),
     current_user: CurrentUser = Depends(get_current_user),
 ) -> Response:
@@ -147,14 +144,10 @@ def delete_notification(
     Delete (or soft-delete) a single notification.
     """
     service = _get_service(session)
-    
-    # Create NotificationDelete object from query parameter if needed
-    delete_data = NotificationDelete(reason=reason) if reason else None
-    
-    # Expected: delete_notification(user_id, notification_id, data: Optional[NotificationDelete]) -> None
+    # Expected: delete_notification(user_id, notification_id, data: Union[NotificationDelete, None]) -> None
     service.delete_notification(
         user_id=current_user.id,
         notification_id=notification_id,
-        data=delete_data,
+        data=payload,
     )
     return Response(status_code=status.HTTP_204_NO_CONTENT)

@@ -1,0 +1,955 @@
+### Combined Content from Folder: D:\Last Github Push\Last\Hostel-Main\app\api\v1\maintenance ###
+
+
+
+# ===== Folder: D:\Last Github Push\Last\Hostel-Main\app\api\v1\maintenance =====
+
+# --- File: D:\Last Github Push\Last\Hostel-Main\app\api\v1\maintenance\analytics.py ---
+from datetime import date
+from uuid import UUID
+
+from fastapi import APIRouter, Depends, HTTPException, Query, status
+
+from app.api.deps import get_uow
+from app.core.exceptions import ServiceError, NotFoundError, ValidationError, ConflictError
+from app.schemas.maintenance.maintenance_analytics import MaintenanceAnalytics
+from app.services.common.unit_of_work import UnitOfWork
+from app.services.maintenance import MaintenanceAnalyticsService
+
+router = APIRouter(prefix="/analytics")
+
+
+def _map_service_error(exc: ServiceError) -> HTTPException:
+    if isinstance(exc, NotFoundError):
+        return HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc))
+    if isinstance(exc, ValidationError):
+        return HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(exc))
+    if isinstance(exc, ConflictError):
+        return HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(exc))
+    return HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc))
+
+
+@router.get(
+    "",
+    response_model=MaintenanceAnalytics,
+    summary="Get maintenance analytics for a hostel",
+)
+async def get_maintenance_analytics(
+    hostel_id: UUID = Query(..., description="Hostel ID"),
+    period_start: date = Query(..., description="Start Date (inclusive)"),
+    period_end: date = Query(..., description="End Date (inclusive)"),
+    uow: UnitOfWork = Depends(get_uow),
+) -> MaintenanceAnalytics:
+    """
+    Compute maintenance analytics for a hostel over a period:
+    counts, completion rates, costs, trends, category breakdowns, and vendor performance.
+    """
+    service = MaintenanceAnalyticsService(uow)
+    try:
+        return service.get_analytics(
+            hostel_id=hostel_id,
+            period_start=period_start,
+            period_end=period_end,
+        )
+    except ServiceError as exc:
+        raise _map_service_error(exc)
+
+# --- File: D:\Last Github Push\Last\Hostel-Main\app\api\v1\maintenance\approval.py ---
+# api/v1/maintenance/approval.py
+from __future__ import annotations
+
+from uuid import UUID
+
+from fastapi import APIRouter, Depends, HTTPException, Path, status
+
+from app.api.deps import get_uow
+from app.core.exceptions import ServiceError, NotFoundError, ValidationError, ConflictError
+from app.schemas.maintenance.maintenance_approval import (
+    ApprovalRequest,
+    ApprovalResponse,
+    ThresholdConfig,
+    ApprovalWorkflow,
+    RejectionRequest,
+)
+from app.services.common.unit_of_work import UnitOfWork
+from app.services.maintenance import MaintenanceApprovalService
+
+router = APIRouter(prefix="/approval")
+
+
+def _map_service_error(exc: ServiceError) -> HTTPException:
+    if isinstance(exc, NotFoundError):
+        return HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc))
+    if isinstance(exc, ValidationError):
+        return HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=str(exc),
+        )
+    if isinstance(exc, ConflictError):
+        return HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(exc))
+    return HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc))
+
+
+@router.get(
+    "/hostels/{hostel_id}/thresholds",
+    response_model=ThresholdConfig,
+    summary="Get maintenance approval thresholds for a hostel",
+)
+async def get_threshold_config(
+    hostel_id: UUID = Path(..., description="Hostel ID"),
+    uow: UnitOfWork = Depends(get_uow),
+) -> ThresholdConfig:
+    """
+    Fetch cost approval thresholds per hostel (e.g. supervisor/admin limits).
+    """
+    service = MaintenanceApprovalService(uow)
+    try:
+        return service.get_threshold_config(hostel_id=hostel_id)
+    except ServiceError as exc:
+        raise _map_service_error(exc)
+
+
+@router.put(
+    "/hostels/{hostel_id}/thresholds",
+    response_model=ThresholdConfig,
+    summary="Update maintenance approval thresholds for a hostel",
+)
+async def update_threshold_config(
+    hostel_id: UUID = Path(..., description="Hostel ID"),
+    payload: ThresholdConfig = ...,
+    uow: UnitOfWork = Depends(get_uow),
+) -> ThresholdConfig:
+    """
+    Update cost approval thresholds for a hostel.
+    """
+    service = MaintenanceApprovalService(uow)
+    try:
+        return service.update_threshold_config(
+            hostel_id=hostel_id,
+            config=payload,
+        )
+    except ServiceError as exc:
+        raise _map_service_error(exc)
+
+
+@router.post(
+    "/{maintenance_id}",
+    response_model=ApprovalResponse,
+    summary="Approve a maintenance request",
+)
+async def approve_maintenance(
+    maintenance_id: UUID = Path(..., description="Maintenance request ID"),
+    payload: ApprovalRequest = ...,
+    uow: UnitOfWork = Depends(get_uow),
+) -> ApprovalResponse:
+    """
+    Approve a maintenance request, recording cost approval workflow and flags.
+    """
+    service = MaintenanceApprovalService(uow)
+    try:
+        return service.approve_maintenance(
+            maintenance_id=maintenance_id,
+            request=payload,
+        )
+    except ServiceError as exc:
+        raise _map_service_error(exc)
+
+
+@router.post(
+    "/{maintenance_id}/reject",
+    response_model=ApprovalResponse,
+    summary="Reject a maintenance request approval",
+)
+async def reject_maintenance_approval(
+    maintenance_id: UUID = Path(..., description="Maintenance request ID"),
+    payload: RejectionRequest = ...,
+    uow: UnitOfWork = Depends(get_uow),
+) -> ApprovalResponse:
+    """
+    Reject or decline approval for a maintenance request.
+    """
+    service = MaintenanceApprovalService(uow)
+    try:
+        return service.reject_maintenance(
+            maintenance_id=maintenance_id,
+            request=payload,
+        )
+    except ServiceError as exc:
+        raise _map_service_error(exc)
+
+
+@router.get(
+    "/{maintenance_id}/workflow",
+    response_model=ApprovalWorkflow,
+    summary="Get approval workflow for a maintenance request",
+)
+async def get_approval_workflow(
+    maintenance_id: UUID = Path(..., description="Maintenance request ID"),
+    uow: UnitOfWork = Depends(get_uow),
+) -> ApprovalWorkflow:
+    """
+    Retrieve the approval workflow state for a maintenance request.
+    """
+    service = MaintenanceApprovalService(uow)
+    try:
+        return service.get_workflow(maintenance_id=maintenance_id)
+    except ServiceError as exc:
+        raise _map_service_error(exc)
+
+# --- File: D:\Last Github Push\Last\Hostel-Main\app\api\v1\maintenance\assignment.py ---
+from typing import List
+from uuid import UUID
+
+from fastapi import APIRouter, Depends, HTTPException, Path, status
+
+from app.api.deps import get_uow
+from app.core.exceptions import ServiceError, NotFoundError, ValidationError, ConflictError
+from app.schemas.maintenance.maintenance_assignment import (
+    TaskAssignment,
+    VendorAssignment,
+    AssignmentUpdate,
+    BulkAssignment,
+    AssignmentHistory,
+)
+from app.services.common.unit_of_work import UnitOfWork
+from app.services.maintenance import MaintenanceAssignmentService
+
+router = APIRouter(prefix="/assignment")
+
+
+def _map_service_error(exc: ServiceError) -> HTTPException:
+    if isinstance(exc, NotFoundError):
+        return HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc))
+    if isinstance(exc, ValidationError):
+        return HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=str(exc),
+        )
+    if isinstance(exc, ConflictError):
+        return HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(exc))
+    return HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc))
+
+
+@router.post(
+    "/{maintenance_id}",
+    response_model=TaskAssignment,
+    status_code=status.HTTP_200_OK,
+    summary="Assign maintenance request to a supervisor/staff",
+)
+async def assign_maintenance(
+    maintenance_id: UUID = Path(..., description="Maintenance request ID"),
+    payload: TaskAssignment = ...,
+    uow: UnitOfWork = Depends(get_uow),
+) -> TaskAssignment:
+    """
+    Assign a maintenance request to a supervisor or staff member.
+    """
+    service = MaintenanceAssignmentService(uow)
+    try:
+        return service.assign_task(
+            maintenance_id=maintenance_id,
+            request=payload,
+        )
+    except ServiceError as exc:
+        raise _map_service_error(exc)
+
+
+@router.post(
+    "/{maintenance_id}/vendor",
+    response_model=TaskAssignment,
+    summary="Assign maintenance request to a vendor",
+)
+async def assign_vendor(
+    maintenance_id: UUID = Path(..., description="Maintenance request ID"),
+    payload: VendorAssignment = ...,
+    uow: UnitOfWork = Depends(get_uow),
+) -> TaskAssignment:
+    """
+    Assign or update vendor information for a maintenance request.
+    """
+    service = MaintenanceAssignmentService(uow)
+    try:
+        return service.assign_vendor(
+            maintenance_id=maintenance_id,
+            request=payload,
+        )
+    except ServiceError as exc:
+        raise _map_service_error(exc)
+
+
+@router.patch(
+    "/{maintenance_id}",
+    response_model=TaskAssignment,
+    summary="Update maintenance assignment",
+)
+async def update_maintenance_assignment(
+    maintenance_id: UUID = Path(..., description="Maintenance request ID"),
+    payload: AssignmentUpdate = ...,
+    uow: UnitOfWork = Depends(get_uow),
+) -> TaskAssignment:
+    """
+    Update an existing assignment (e.g. reassignment, deadline, instructions).
+    """
+    service = MaintenanceAssignmentService(uow)
+    try:
+        return service.update_assignment(
+            maintenance_id=maintenance_id,
+            request=payload,
+        )
+    except ServiceError as exc:
+        raise _map_service_error(exc)
+
+
+@router.post(
+    "/bulk",
+    response_model=List[TaskAssignment],
+    summary="Bulk assign maintenance requests",
+)
+async def bulk_assign_maintenance(
+    payload: BulkAssignment,
+    uow: UnitOfWork = Depends(get_uow),
+) -> List[TaskAssignment]:
+    """
+    Bulk assign multiple maintenance requests to supervisors/staff.
+    """
+    service = MaintenanceAssignmentService(uow)
+    try:
+        return service.bulk_assign(request=payload)
+    except ServiceError as exc:
+        raise _map_service_error(exc)
+
+
+@router.get(
+    "/{maintenance_id}/history",
+    response_model=AssignmentHistory,
+    summary="Get assignment history for a maintenance request",
+)
+async def get_assignment_history(
+    maintenance_id: UUID = Path(..., description="Maintenance request ID"),
+    uow: UnitOfWork = Depends(get_uow),
+) -> AssignmentHistory:
+    """
+    Retrieve the full assignment history for a maintenance request.
+    """
+    service = MaintenanceAssignmentService(uow)
+    try:
+        return service.get_history(maintenance_id=maintenance_id)
+    except ServiceError as exc:
+        raise _map_service_error(exc)
+
+# --- File: D:\Last Github Push\Last\Hostel-Main\app\api\v1\maintenance\completion.py ---
+# api/v1/maintenance/completion.py
+from __future__ import annotations
+
+from uuid import UUID
+
+from fastapi import APIRouter, Depends, HTTPException, Path, status
+
+from app.api.deps import get_uow
+from app.core.exceptions import ServiceError, NotFoundError, ValidationError, ConflictError
+from app.schemas.maintenance.maintenance_completion import (
+    CompletionRequest,
+    CompletionResponse,
+    CompletionCertificate,
+)
+from app.services.common.unit_of_work import UnitOfWork
+from app.services.maintenance import MaintenanceCompletionService
+
+router = APIRouter(prefix="/completion")
+
+
+def _map_service_error(exc: ServiceError) -> HTTPException:
+    if isinstance(exc, NotFoundError):
+        return HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc))
+    if isinstance(exc, ValidationError):
+        return HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=str(exc),
+        )
+    if isinstance(exc, ConflictError):
+        return HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(exc))
+    return HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc))
+
+
+@router.post(
+    "/{maintenance_id}",
+    response_model=CompletionResponse,
+    summary="Mark a maintenance request as completed",
+)
+async def complete_maintenance(
+    maintenance_id: UUID = Path(..., description="Maintenance request ID"),
+    payload: CompletionRequest = ...,
+    uow: UnitOfWork = Depends(get_uow),
+) -> CompletionResponse:
+    """
+    Mark a maintenance request as completed, recording work done, materials, costs,
+    and quality checks.
+    """
+    service = MaintenanceCompletionService(uow)
+    try:
+        return service.complete_maintenance(
+            maintenance_id=maintenance_id,
+            request=payload,
+        )
+    except ServiceError as exc:
+        raise _map_service_error(exc)
+
+
+@router.get(
+    "/{maintenance_id}",
+    response_model=CompletionResponse,
+    summary="Get completion details for a maintenance request",
+)
+async def get_completion_details(
+    maintenance_id: UUID = Path(..., description="Maintenance request ID"),
+    uow: UnitOfWork = Depends(get_uow),
+) -> CompletionResponse:
+    """
+    Retrieve completion details for a maintenance request.
+    """
+    service = MaintenanceCompletionService(uow)
+    try:
+        return service.get_completion(maintenance_id=maintenance_id)
+    except ServiceError as exc:
+        raise _map_service_error(exc)
+
+
+@router.get(
+    "/{maintenance_id}/certificate",
+    response_model=CompletionCertificate,
+    summary="Get completion certificate for a maintenance request",
+)
+async def get_completion_certificate(
+    maintenance_id: UUID = Path(..., description="Maintenance request ID"),
+    uow: UnitOfWork = Depends(get_uow),
+) -> CompletionCertificate:
+    """
+    Return a completion certificate payload (for downloads/printing).
+    """
+    service = MaintenanceCompletionService(uow)
+    try:
+        return service.get_completion_certificate(maintenance_id=maintenance_id)
+    except ServiceError as exc:
+        raise _map_service_error(exc)
+
+# --- File: D:\Last Github Push\Last\Hostel-Main\app\api\v1\maintenance\cost.py ---
+# api/v1/maintenance/cost.py
+from __future__ import annotations
+
+from typing import List
+from uuid import UUID
+
+from fastapi import APIRouter, Depends, HTTPException, Path, Query, status
+
+from app.api.deps import get_uow
+from app.core.exceptions import ServiceError, NotFoundError, ValidationError, ConflictError
+from app.schemas.maintenance.maintenance_cost import (
+    CostTracking,
+    CategoryBudget,
+    ExpenseReport,
+    CostAnalysis,
+)
+from app.services.common.unit_of_work import UnitOfWork
+from app.services.maintenance import MaintenanceCostService
+
+router = APIRouter(prefix="/cost")
+
+
+def _map_service_error(exc: ServiceError) -> HTTPException:
+    if isinstance(exc, NotFoundError):
+        return HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc))
+    if isinstance(exc, ValidationError):
+        return HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=str(exc),
+        )
+    if isinstance(exc, ConflictError):
+        return HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(exc))
+    return HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc))
+
+
+@router.get(
+    "/{maintenance_id}/tracking",
+    response_model=CostTracking,
+    summary="Get cost tracking for a maintenance request",
+)
+async def get_cost_tracking(
+    maintenance_id: UUID = Path(..., description="Maintenance request ID"),
+    uow: UnitOfWork = Depends(get_uow),
+) -> CostTracking:
+    """
+    Return detailed cost tracking for a single maintenance request.
+    """
+    service = MaintenanceCostService(uow)
+    try:
+        return service.get_cost_tracking(maintenance_id=maintenance_id)
+    except ServiceError as exc:
+        raise _map_service_error(exc)
+
+
+@router.get(
+    "/hostels/{hostel_id}/budget",
+    response_model=List[CategoryBudget],
+    summary="Get maintenance budget allocation per category for a hostel",
+)
+async def get_hostel_budget(
+    hostel_id: UUID = Path(..., description="Hostel ID"),
+    uow: UnitOfWork = Depends(get_uow),
+) -> List[CategoryBudget]:
+    """
+    Get configured budget allocations per maintenance category for a hostel.
+    """
+    service = MaintenanceCostService(uow)
+    try:
+        return service.get_budget_allocations(hostel_id=hostel_id)
+    except ServiceError as exc:
+        raise _map_service_error(exc)
+
+
+@router.get(
+    "/hostels/{hostel_id}/expenses",
+    response_model=ExpenseReport,
+    summary="Get maintenance expense report for a hostel",
+)
+async def get_hostel_expense_report(
+    hostel_id: UUID = Path(..., description="Hostel ID"),
+    year: int = Query(..., ge=2000, description="Year for the report"),
+    month: int = Query(..., ge=1, le=12, description="Month for the report"),
+    uow: UnitOfWork = Depends(get_uow),
+) -> ExpenseReport:
+    """
+    Get an expense report for maintenance costs for a given hostel and month.
+    """
+    service = MaintenanceCostService(uow)
+    try:
+        return service.get_expense_report(
+            hostel_id=hostel_id,
+            year=year,
+            month=month,
+        )
+    except ServiceError as exc:
+        raise _map_service_error(exc)
+
+
+@router.get(
+    "/hostels/{hostel_id}/analysis",
+    response_model=CostAnalysis,
+    summary="Get high-level cost analysis for a hostel",
+)
+async def get_hostel_cost_analysis(
+    hostel_id: UUID = Path(..., description="Hostel ID"),
+    uow: UnitOfWork = Depends(get_uow),
+) -> CostAnalysis:
+    """
+    High-level cost analysis for maintenance at a hostel (trends, ratios, etc.).
+    """
+    service = MaintenanceCostService(uow)
+    try:
+        return service.get_cost_analysis(hostel_id=hostel_id)
+    except ServiceError as exc:
+        raise _map_service_error(exc)
+
+# --- File: D:\Last Github Push\Last\Hostel-Main\app\api\v1\maintenance\requests.py ---
+from datetime import date
+from typing import Union
+from uuid import UUID
+
+from fastapi import APIRouter, Depends, HTTPException, Path, Query, status
+
+from app.api.deps import get_uow
+from app.core.exceptions import ServiceError, NotFoundError, ValidationError, ConflictError
+from app.schemas.maintenance.maintenance_base import (
+    MaintenanceCreate,
+    MaintenanceUpdate,
+    MaintenanceStatusUpdate,
+)
+from app.schemas.maintenance.maintenance_response import (
+    MaintenanceDetail,
+    RequestListItem,
+    MaintenanceSummary,
+)
+from app.schemas.maintenance.maintenance_filters import (
+    MaintenanceFilterParams,
+    SearchRequest as MaintenanceSearchRequest,
+)
+from app.schemas.maintenance.maintenance_request import (
+    MaintenanceRequest,
+    RequestSubmission,
+    EmergencyRequest,
+)
+from app.schemas.common.pagination import PaginatedResponse
+from app.services.common.unit_of_work import UnitOfWork
+from app.services.maintenance import MaintenanceService
+
+router = APIRouter(prefix="/requests")
+
+
+def _map_service_error(exc: ServiceError) -> HTTPException:
+    if isinstance(exc, NotFoundError):
+        return HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc))
+    if isinstance(exc, ValidationError):
+        return HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=str(exc),
+        )
+    if isinstance(exc, ConflictError):
+        return HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(exc))
+    return HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc))
+
+
+@router.get(
+    "",
+    response_model=PaginatedResponse[RequestListItem],
+    summary="List maintenance requests",
+)
+async def list_maintenance_requests(
+    filters: MaintenanceFilterParams = Depends(),
+    uow: UnitOfWork = Depends(get_uow),
+) -> PaginatedResponse[RequestListItem]:
+    """
+    List maintenance requests using filters (hostel, status, category, priority,
+    Date range, etc.) with pagination and sorting.
+    """
+    service = MaintenanceService(uow)
+    try:
+        return service.list_requests(filters=filters)
+    except ServiceError as exc:
+        raise _map_service_error(exc)
+
+
+@router.post(
+    "/",
+    response_model=MaintenanceDetail,
+    status_code=status.HTTP_201_CREATED,
+    summary="Create a maintenance request (low-level)",
+)
+async def create_maintenance_request(
+    payload: MaintenanceCreate,
+    uow: UnitOfWork = Depends(get_uow),
+) -> MaintenanceDetail:
+    """
+    Create a maintenance request with full low-level fields.
+
+    For higher-level flows, prefer `/requests/submit` or `/requests/emergency`.
+    """
+    service = MaintenanceService(uow)
+    try:
+        return service.create_request(data=payload)
+    except ServiceError as exc:
+        raise _map_service_error(exc)
+
+
+@router.post(
+    "/submit",
+    response_model=MaintenanceDetail,
+    status_code=status.HTTP_201_CREATED,
+    summary="Submit a maintenance request",
+)
+async def submit_maintenance_request(
+    payload: RequestSubmission,
+    uow: UnitOfWork = Depends(get_uow),
+) -> MaintenanceDetail:
+    """
+    Higher-level submission of a maintenance request by supervisors/staff.
+
+    Includes estimated cost, vendor, and days if known.
+    """
+    service = MaintenanceService(uow)
+    try:
+        return service.submit_request(request=payload)
+    except ServiceError as exc:
+        raise _map_service_error(exc)
+
+
+@router.post(
+    "/emergency",
+    response_model=MaintenanceDetail,
+    status_code=status.HTTP_201_CREATED,
+    summary="Submit an emergency maintenance request",
+)
+async def submit_emergency_request(
+    payload: EmergencyRequest,
+    uow: UnitOfWork = Depends(get_uow),
+) -> MaintenanceDetail:
+    """
+    Create an emergency maintenance request with incident details.
+    """
+    service = MaintenanceService(uow)
+    try:
+        return service.submit_emergency(request=payload)
+    except ServiceError as exc:
+        raise _map_service_error(exc)
+
+
+@router.get(
+    "/{request_id}",
+    response_model=MaintenanceDetail,
+    summary="Get maintenance request details",
+)
+async def get_maintenance_request(
+    request_id: UUID = Path(..., description="Maintenance request ID"),
+    uow: UnitOfWork = Depends(get_uow),
+) -> MaintenanceDetail:
+    """
+    Retrieve detailed information about a specific maintenance request.
+    """
+    service = MaintenanceService(uow)
+    try:
+        return service.get_request(request_id=request_id)
+    except ServiceError as exc:
+        raise _map_service_error(exc)
+
+
+@router.patch(
+    "/{request_id}",
+    response_model=MaintenanceDetail,
+    summary="Update a maintenance request",
+)
+async def update_maintenance_request(
+    request_id: UUID = Path(..., description="Maintenance request ID"),
+    payload: MaintenanceUpdate = ...,
+    uow: UnitOfWork = Depends(get_uow),
+) -> MaintenanceDetail:
+    """
+    Partially update fields of a maintenance request (title, description,
+    category, priority, location, costs, etc.).
+    """
+    service = MaintenanceService(uow)
+    try:
+        return service.update_request(
+            request_id=request_id,
+            data=payload,
+        )
+    except ServiceError as exc:
+        raise _map_service_error(exc)
+
+
+@router.patch(
+    "/{request_id}/status",
+    response_model=MaintenanceDetail,
+    summary="Update maintenance request status",
+)
+async def update_maintenance_status(
+    request_id: UUID = Path(..., description="Maintenance request ID"),
+    payload: MaintenanceStatusUpdate = ...,
+    uow: UnitOfWork = Depends(get_uow),
+) -> MaintenanceDetail:
+    """
+    Update only the status of a maintenance request
+    (open, in_progress, pending_approval, completed, etc.).
+    """
+    service = MaintenanceService(uow)
+    try:
+        return service.update_status(
+            request_id=request_id,
+            data=payload,
+        )
+    except ServiceError as exc:
+        raise _map_service_error(exc)
+
+
+@router.post(
+    "/search",
+    response_model=PaginatedResponse[RequestListItem],
+    summary="Search maintenance requests",
+)
+async def search_maintenance_requests(
+    payload: MaintenanceSearchRequest,
+    uow: UnitOfWork = Depends(get_uow),
+) -> PaginatedResponse[RequestListItem]:
+    """
+    Perform a richer search over maintenance requests (free-text, combined filters, etc.).
+    """
+    service = MaintenanceService(uow)
+    try:
+        return service.search_requests(request=payload)
+    except ServiceError as exc:
+        raise _map_service_error(exc)
+
+
+@router.get(
+    "/hostels/{hostel_id}/summary",
+    response_model=MaintenanceSummary,
+    summary="Get maintenance summary for a hostel",
+)
+async def get_hostel_maintenance_summary(
+    hostel_id: UUID = Path(..., description="Hostel ID"),
+    uow: UnitOfWork = Depends(get_uow),
+) -> MaintenanceSummary:
+    """
+    Summarize maintenance requests for a hostel (counts by status/priority,
+    average completion time, etc.).
+    """
+    service = MaintenanceService(uow)
+    try:
+        return service.get_hostel_summary(hostel_id=hostel_id)
+    except ServiceError as exc:
+        raise _map_service_error(exc)
+
+# --- File: D:\Last Github Push\Last\Hostel-Main\app\api\v1\maintenance\schedule.py ---
+# api/v1/maintenance/schedule.py
+from __future__ import annotations
+
+from typing import List
+from uuid import UUID
+
+from fastapi import APIRouter, Depends, HTTPException, Path, status
+
+from app.api.deps import get_uow
+from app.core.exceptions import ServiceError, NotFoundError, ValidationError, ConflictError
+from app.schemas.maintenance.maintenance_schedule import (
+    PreventiveSchedule,
+    ScheduleCreate,
+    ScheduleUpdate,
+    ScheduleExecution,
+    ChecklistResult,
+    ScheduleHistory,
+)
+from app.services.common.unit_of_work import UnitOfWork
+from app.services.maintenance import MaintenanceScheduleService
+
+router = APIRouter(prefix="/schedule")
+
+
+def _map_service_error(exc: ServiceError) -> HTTPException:
+    if isinstance(exc, NotFoundError):
+        return HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc))
+    if isinstance(exc, ValidationError):
+        return HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=str(exc),
+        )
+    if isinstance(exc, ConflictError):
+        return HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(exc))
+    return HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc))
+
+
+@router.get(
+    "/hostels/{hostel_id}",
+    response_model=List[PreventiveSchedule],
+    summary="List preventive maintenance schedules for a hostel",
+)
+async def list_preventive_schedules(
+    hostel_id: UUID = Path(..., description="Hostel ID"),
+    uow: UnitOfWork = Depends(get_uow),
+) -> List[PreventiveSchedule]:
+    """
+    List all preventive maintenance schedules configured for a hostel.
+    """
+    service = MaintenanceScheduleService(uow)
+    try:
+        return service.list_schedules(hostel_id=hostel_id)
+    except ServiceError as exc:
+        raise _map_service_error(exc)
+
+
+@router.post(
+    "/hostels/{hostel_id}",
+    response_model=PreventiveSchedule,
+    status_code=status.HTTP_201_CREATED,
+    summary="Create a preventive maintenance schedule",
+)
+async def create_preventive_schedule(
+    hostel_id: UUID = Path(..., description="Hostel ID"),
+    payload: ScheduleCreate = ...,
+    uow: UnitOfWork = Depends(get_uow),
+) -> PreventiveSchedule:
+    """
+    Create a new preventive maintenance schedule for a hostel.
+    """
+    service = MaintenanceScheduleService(uow)
+    try:
+        return service.create_schedule(
+            hostel_id=hostel_id,
+            request=payload,
+        )
+    except ServiceError as exc:
+        raise _map_service_error(exc)
+
+
+@router.patch(
+    "/{schedule_id}",
+    response_model=PreventiveSchedule,
+    summary="Update a preventive maintenance schedule",
+)
+async def update_preventive_schedule(
+    schedule_id: UUID = Path(..., description="Schedule ID"),
+    payload: ScheduleUpdate = ...,
+    uow: UnitOfWork = Depends(get_uow),
+) -> PreventiveSchedule:
+    """
+    Partially update a preventive maintenance schedule.
+    """
+    service = MaintenanceScheduleService(uow)
+    try:
+        return service.update_schedule(
+            schedule_id=schedule_id,
+            request=payload,
+        )
+    except ServiceError as exc:
+        raise _map_service_error(exc)
+
+
+@router.post(
+    "/{schedule_id}/execute",
+    response_model=ChecklistResult,
+    summary="Record schedule execution",
+)
+async def execute_schedule(
+    schedule_id: UUID = Path(..., description="Schedule ID"),
+    payload: ScheduleExecution = ...,
+    uow: UnitOfWork = Depends(get_uow),
+) -> ChecklistResult:
+    """
+    Record an execution instance for a preventive maintenance schedule.
+    """
+    service = MaintenanceScheduleService(uow)
+    try:
+        return service.record_execution(
+            schedule_id=schedule_id,
+            request=payload,
+        )
+    except ServiceError as exc:
+        raise _map_service_error(exc)
+
+
+@router.get(
+    "/{schedule_id}/history",
+    response_model=ScheduleHistory,
+    summary="Get schedule execution history",
+)
+async def get_schedule_history(
+    schedule_id: UUID = Path(..., description="Schedule ID"),
+    uow: UnitOfWork = Depends(get_uow),
+) -> ScheduleHistory:
+    """
+    Retrieve execution history for a preventive maintenance schedule.
+    """
+    service = MaintenanceScheduleService(uow)
+    try:
+        return service.get_history(schedule_id=schedule_id)
+    except ServiceError as exc:
+        raise _map_service_error(exc)
+
+# --- File: D:\Last Github Push\Last\Hostel-Main\app\api\v1\maintenance\__init__.py ---
+from fastapi import APIRouter
+
+from . import requests
+from . import assignment
+from . import approval
+from . import completion
+from . import schedule
+from . import cost
+from . import analytics
+
+router = APIRouter(prefix="/maintenance")
+
+router.include_router(requests.router, tags=["Maintenance - Requests"])
+router.include_router(assignment.router, tags=["Maintenance - Assignment"])
+router.include_router(approval.router, tags=["Maintenance - Approval"])
+router.include_router(completion.router, tags=["Maintenance - Completion"])
+router.include_router(schedule.router, tags=["Maintenance - Preventive Schedule"])
+router.include_router(cost.router, tags=["Maintenance - Cost & Budgets"])
+router.include_router(analytics.router, tags=["Maintenance - Analytics"])
+
+__all__ = ["router"]

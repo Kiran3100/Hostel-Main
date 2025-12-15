@@ -1,6 +1,3 @@
-# api/v1/maintenance/completion.py
-from __future__ import annotations
-
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Path, status

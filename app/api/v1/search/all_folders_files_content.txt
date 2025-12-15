@@ -1,15 +1,13 @@
-### Combined Content from Folder: D:\Last Github Push\Last\HOStel-back\app\api\v1\search ###
+### Combined Content from Folder: D:\Last Github Push\Last\Hostel-Main\app\api\v1\search ###
 
 
 
-# ===== Folder: D:\Last Github Push\Last\HOStel-back\app\api\v1\search =====
+# ===== Folder: D:\Last Github Push\Last\Hostel-Main\app\api\v1\search =====
 
-# --- File: D:\Last Github Push\Last\HOStel-back\app\api\v1\search\analytics.py ---
+# --- File: D:\Last Github Push\Last\Hostel-Main\app\api\v1\search\analytics.py ---
 # app/api/v1/search/analytics.py
-from __future__ import annotations
-
 from datetime import date as Date
-from typing import Optional
+from typing import Union
 
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
@@ -30,11 +28,11 @@ def _get_service(session: Session) -> SearchAnalyticsService:
 
 @router.get("/summary", response_model=SearchAnalytics)
 def get_search_analytics(
-    start_date: Optional[Date] = Query(
+    start_date: Union[Date, None] = Query(
         None,
         description="Start Date for analytics window (inclusive). If omitted, uses a default window.",
     ),
-    end_date: Optional[Date] = Query(
+    end_date: Union[Date, None] = Query(
         None,
         description="End Date for analytics window (inclusive). If omitted, uses today.",
     ),
@@ -53,10 +51,8 @@ def get_search_analytics(
         end_date=end_date,
     )
 
-# --- File: D:\Last Github Push\Last\HOStel-back\app\api\v1\search\autocomplete.py ---
+# --- File: D:\Last Github Push\Last\Hostel-Main\app\api\v1\search\autocomplete.py ---
 # app/api/v1/search/autocomplete.py
-from __future__ import annotations
-
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
@@ -90,10 +86,8 @@ def autocomplete(
     service = _get_service(session)
     return service.get_suggestions(request=payload)
 
-# --- File: D:\Last Github Push\Last\HOStel-back\app\api\v1\search\search.py ---
+# --- File: D:\Last Github Push\Last\Hostel-Main\app\api\v1\search\search.py ---
 # app/api/v1/search/search.py
-from __future__ import annotations
-
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
@@ -143,10 +137,8 @@ def advanced_search(
     service = _get_service(session)
     return service.advanced_search(request=payload)
 
-# --- File: D:\Last Github Push\Last\HOStel-back\app\api\v1\search\__init__.py ---
+# --- File: D:\Last Github Push\Last\Hostel-Main\app\api\v1\search\__init__.py ---
 # app/api/v1/search/__init__.py
-from __future__ import annotations
-
 from dataclasses import dataclass
 from typing import Any
 from uuid import UUID
@@ -218,6 +210,3 @@ __all__ = [
     "CurrentUser",
     "get_current_user",
 ]
-
-
-# ===== Folder: D:\Last Github Push\Last\HOStel-back\app\api\v1\search\__pycache__ =====

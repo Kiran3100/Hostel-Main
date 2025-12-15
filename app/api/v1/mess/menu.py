@@ -1,8 +1,4 @@
-# api/v1/mess/menu.py
-from __future__ import annotations
-
-from datetime import date as Date
-
+from datetime import date
 from typing import List
 from uuid import UUID
 
@@ -116,17 +112,17 @@ async def get_today_menu(
 
 
 @router.get(
-    "/hostels/{hostel_id}/Date",
+    "/hostels/{hostel_id}/date",
     response_model=MenuDetail,
-    summary="Get mess menu for a specific Date",
+    summary="Get mess menu for a specific date",
 )
 async def get_menu_for_date(
     hostel_id: UUID = Path(..., description="Hostel ID"),
-    menu_date: Date = Query(..., description="Menu Date (YYYY-MM-DD)"),
+    menu_date: date = Query(..., description="Menu Date (YYYY-MM-DD)"),
     uow: UnitOfWork = Depends(get_uow),
 ) -> MenuDetail:
     """
-    Get the mess menu for a hostel on a given Date.
+    Get the mess menu for a hostel on a given date.
     """
     service = MessMenuService(uow)
     try:
@@ -145,8 +141,8 @@ async def get_menu_for_date(
 )
 async def get_weekly_menu(
     hostel_id: UUID = Path(..., description="Hostel ID"),
-    start_date: Date = Query(..., description="Week start Date (inclusive)"),
-    end_date: Date = Query(..., description="Week end Date (inclusive)"),
+    start_date: date = Query(..., description="Week start date (inclusive)"),
+    end_date: date = Query(..., description="Week end date (inclusive)"),
     uow: UnitOfWork = Depends(get_uow),
 ) -> WeeklyMenu:
     """

@@ -1,6 +1,4 @@
 # app/api/v1/subscriptions/upgrade.py
-from __future__ import annotations
-
 from uuid import UUID
 
 from fastapi import APIRouter, Depends

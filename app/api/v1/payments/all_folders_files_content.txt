@@ -1,0 +1,854 @@
+### Combined Content from Folder: D:\Last Github Push\Last\Hostel-Main\app\api\v1\payments ###
+
+
+
+# ===== Folder: D:\Last Github Push\Last\Hostel-Main\app\api\v1\payments =====
+
+# --- File: D:\Last Github Push\Last\Hostel-Main\app\api\v1\payments\gateway.py ---
+# app/api/v1/payments/gateway.py
+from __future__ import annotations
+
+from fastapi import APIRouter, Depends, Request, Response, status
+from sqlalchemy.orm import Session
+
+from app.core import get_session
+from app.services import UnitOfWork
+from app.services.payment import PaymentGatewayService
+from app.schemas.payment.payment_gateway import (
+    GatewayRequest,
+    GatewayResponse,
+    GatewayWebhook,
+    GatewayCallback,
+)
+from . import CurrentUser, get_current_admin_or_staff
+
+router = APIRouter(tags=["Payments - Gateway"])
+
+
+def _get_service(session: Session) -> PaymentGatewayService:
+    uow = UnitOfWork(session)
+    return PaymentGatewayService(uow)
+
+
+@router.post("/order", response_model=GatewayResponse)
+def create_gateway_order(
+    payload: GatewayRequest,
+    session: Session = Depends(get_session),
+    current_user: CurrentUser = Depends(get_current_admin_or_staff),
+) -> GatewayResponse:
+    """
+    Create/refresh a gateway order for an existing Payment.
+    """
+    service = _get_service(session)
+    # Expected: create_order(data: GatewayRequest, requester_id: UUID) -> GatewayResponse
+    return service.create_order(
+        data=payload,
+        requester_id=current_user.id,
+    )
+
+
+@router.post("/webhook", status_code=status.HTTP_200_OK)
+async def gateway_webhook(
+    payload: GatewayWebhook,
+    request: Request,
+    session: Session = Depends(get_session),
+) -> Response:
+    """
+    Gateway webhook endpoint to update payment status (unauthenticated; secured by gateway secret).
+    """
+    service = _get_service(session)
+    # Expected: handle_webhook(webhook: GatewayWebhook, raw_request: Request) -> None
+    await service.handle_webhook(
+        webhook=payload,
+        raw_request=request,
+    )
+    return Response(status_code=status.HTTP_200_OK)
+
+
+@router.post("/callback", response_model=GatewayResponse)
+async def gateway_callback(
+    payload: GatewayCallback,
+    request: Request,
+    session: Session = Depends(get_session),
+) -> GatewayResponse:
+    """
+    Browser/server callback endpoint after payment completion.
+    """
+    service = _get_service(session)
+    # Expected: handle_callback(callback: GatewayCallback, raw_request: Request) -> GatewayResponse
+    return await service.handle_callback(
+        callback=payload,
+        raw_request=request,
+    )
+
+# --- File: D:\Last Github Push\Last\Hostel-Main\app\api\v1\payments\initiate.py ---
+# app/api/v1/payments/initiate.py
+from __future__ import annotations
+
+from fastapi import APIRouter, Depends, status
+from sqlalchemy.orm import Session
+
+from app.core import get_session
+from app.services import UnitOfWork
+from app.services.payment import PaymentRequestService
+from app.schemas.payment.payment_request import (
+    PaymentRequest,
+    PaymentInitiation,
+    ManualPaymentRequest,
+    BulkPaymentRequest,
+    SinglePaymentRecord,
+)
+from app.schemas.payment.payment_response import PaymentDetail
+from . import CurrentUser, get_current_user, get_current_admin_or_staff
+
+router = APIRouter(tags=["Payments - Initiation"])
+
+
+def _get_service(session: Session) -> PaymentRequestService:
+    uow = UnitOfWork(session)
+    return PaymentRequestService(uow)
+
+
+@router.post("/online", response_model=PaymentInitiation, status_code=status.HTTP_201_CREATED)
+def initiate_online_payment(
+    payload: PaymentRequest,
+    session: Session = Depends(get_session),
+    current_user: CurrentUser = Depends(get_current_user),
+) -> PaymentInitiation:
+    """
+    Start an online payment flow (creates Payment + gateway order).
+    """
+    service = _get_service(session)
+    # Expected: initiate_online_payment(requester_id: UUID, data: PaymentRequest) -> PaymentInitiation
+    return service.initiate_online_payment(
+        requester_id=current_user.id,
+        data=payload,
+    )
+
+
+@router.post("/manual", response_model=PaymentDetail, status_code=status.HTTP_201_CREATED)
+def record_manual_payment(
+    payload: ManualPaymentRequest,
+    session: Session = Depends(get_session),
+    current_user: CurrentUser = Depends(get_current_admin_or_staff),
+) -> PaymentDetail:
+    """
+    Record a completed manual payment (cash/cheque/bank_transfer).
+    """
+    service = _get_service(session)
+    # Expected: record_manual_payment(collector_id: UUID, data: ManualPaymentRequest) -> PaymentDetail
+    return service.record_manual_payment(
+        collector_id=current_user.id,
+        data=payload,
+    )
+
+
+@router.post("/bulk", response_model=list[SinglePaymentRecord], status_code=status.HTTP_201_CREATED)
+def bulk_create_payments(
+    payload: BulkPaymentRequest,
+    session: Session = Depends(get_session),
+    current_user: CurrentUser = Depends(get_current_admin_or_staff),
+) -> list[SinglePaymentRecord]:
+    """
+    Bulk-create/manual payments (e.g., import from CSV).
+    """
+    service = _get_service(session)
+    # Expected: bulk_create_payments(creator_id: UUID, data: BulkPaymentRequest) -> list[SinglePaymentRecord]
+    return service.bulk_create_payments(
+        creator_id=current_user.id,
+        data=payload,
+    )
+
+# --- File: D:\Last Github Push\Last\Hostel-Main\app\api\v1\payments\ledger.py ---
+from datetime import date
+from typing import Union
+from uuid import UUID
+
+from fastapi import APIRouter, Depends, Query
+from sqlalchemy.orm import Session
+
+from app.core import get_session
+from app.services import UnitOfWork
+from app.services.payment import PaymentLedgerService
+from app.schemas.payment.payment_ledger import (
+    LedgerSummary,
+    AccountStatement,
+    TransactionHistory,
+)
+from . import CurrentUser, get_current_user, get_current_admin_or_staff
+
+router = APIRouter(tags=["Payments - Ledger"])
+
+
+def _get_service(session: Session) -> PaymentLedgerService:
+    uow = UnitOfWork(session)
+    return PaymentLedgerService(uow)
+
+
+@router.get("/students/{student_id}/summary", response_model=LedgerSummary)
+def get_student_ledger_summary(
+    student_id: UUID,
+    session: Session = Depends(get_session),
+    current_user: CurrentUser = Depends(get_current_admin_or_staff),
+) -> LedgerSummary:
+    """
+    Get high-level ledger summary for a student.
+    """
+    service = _get_service(session)
+    # Expected: get_ledger_summary(student_id: UUID) -> LedgerSummary
+    return service.get_ledger_summary(student_id=student_id)
+
+
+@router.get("/students/{student_id}/statement", response_model=AccountStatement)
+def get_student_account_statement(
+    student_id: UUID,
+    start_date: Union[date, None] = Query(
+        None,
+        description="Start date for the statement period (inclusive).",
+    ),
+    end_date: Union[date, None] = Query(
+        None,
+        description="End date for the statement period (inclusive).",
+    ),
+    session: Session = Depends(get_session),
+    current_user: CurrentUser = Depends(get_current_admin_or_staff),
+) -> AccountStatement:
+    """
+    Get account statement for a student over a date range.
+    """
+    service = _get_service(session)
+    # Expected:
+    #   get_account_statement(student_id: UUID,
+    #                         start_date: Union[date, None],
+    #                         end_date: Union[date, None]) -> AccountStatement
+    return service.get_account_statement(
+        student_id=student_id,
+        start_date=start_date,
+        end_date=end_date,
+    )
+
+
+@router.get("/students/{student_id}/transactions", response_model=TransactionHistory)
+def get_student_transaction_history(
+    student_id: UUID,
+    session: Session = Depends(get_session),
+    current_user: CurrentUser = Depends(get_current_admin_or_staff),
+) -> TransactionHistory:
+    """
+    Get full transaction history for a student.
+    """
+    service = _get_service(session)
+    # Expected: get_transaction_history(student_id: UUID) -> TransactionHistory
+    return service.get_transaction_history(student_id=student_id)
+
+
+@router.get("/me/statement", response_model=AccountStatement)
+def get_my_account_statement(
+    start_date: Union[date, None] = Query(
+        None,
+        description="Start date for the statement period (inclusive).",
+    ),
+    end_date: Union[date, None] = Query(
+        None,
+        description="End date for the statement period (inclusive).",
+    ),
+    session: Session = Depends(get_session),
+    current_user: CurrentUser = Depends(get_current_user),
+) -> AccountStatement:
+    """
+    Get an account statement for the authenticated user (if they are a student/payer).
+    """
+    service = _get_service(session)
+    # Expected: get_account_statement_for_user(user_id: UUID, start_date, end_date) -> AccountStatement
+    return service.get_account_statement_for_user(
+        user_id=current_user.id,
+        start_date=start_date,
+        end_date=end_date,
+    )
+
+# --- File: D:\Last Github Push\Last\Hostel-Main\app\api\v1\payments\payments.py ---
+from typing import List, Union
+from uuid import UUID
+
+from fastapi import APIRouter, Depends, Query, status
+from sqlalchemy.orm import Session
+
+from app.core import get_session
+from app.services import UnitOfWork
+from app.services.payment import PaymentService
+from app.schemas.payment.payment_base import PaymentCreate, PaymentUpdate
+from app.schemas.payment.payment_response import (
+    PaymentListItem,
+    PaymentDetail,
+    PaymentSummary,
+)
+from app.schemas.payment.payment_filters import PaymentFilterParams
+from . import CurrentUser, get_current_user, get_current_admin_or_staff
+
+router = APIRouter(tags=["Payments - Core"])
+
+
+def _get_service(session: Session) -> PaymentService:
+    uow = UnitOfWork(session)
+    return PaymentService(uow)
+
+
+@router.get("/", response_model=List[PaymentListItem])
+def list_payments(
+    filters: PaymentFilterParams = Depends(),
+    session: Session = Depends(get_session),
+    current_user: CurrentUser = Depends(get_current_admin_or_staff),
+) -> List[PaymentListItem]:
+    """
+    List payments with filters/search/sorting (admin/staff).
+    """
+    service = _get_service(session)
+    # Expected: list_payments(filters: PaymentFilterParams) -> list[PaymentListItem]
+    return service.list_payments(filters=filters)
+
+
+@router.get("/{payment_id}", response_model=PaymentDetail)
+def get_payment(
+    payment_id: UUID,
+    session: Session = Depends(get_session),
+    current_user: CurrentUser = Depends(get_current_user),
+) -> PaymentDetail:
+    """
+    Get detailed information about a single payment.
+
+    (Visible to staff or the payer themselves; enforcement is in service.)
+    """
+    service = _get_service(session)
+    # Expected: get_payment_detail(payment_id: UUID, requester_id: UUID, role: UserRole) -> PaymentDetail
+    return service.get_payment_detail(
+        payment_id=payment_id,
+        requester_id=current_user.id,
+        role=current_user.role,
+    )
+
+
+@router.get("/students/{student_id}", response_model=List[PaymentListItem])
+def list_payments_for_student(
+    student_id: UUID,
+    session: Session = Depends(get_session),
+    current_user: CurrentUser = Depends(get_current_admin_or_staff),
+) -> List[PaymentListItem]:
+    """
+    List payments for a given student (admin/staff).
+    """
+    service = _get_service(session)
+    # Expected: list_for_student(student_id: UUID) -> list[PaymentListItem]
+    return service.list_for_student(student_id=student_id)
+
+
+@router.get("/hostels/{hostel_id}/summary", response_model=PaymentSummary)
+def get_hostel_payment_summary(
+    hostel_id: UUID,
+    session: Session = Depends(get_session),
+    current_user: CurrentUser = Depends(get_current_admin_or_staff),
+) -> PaymentSummary:
+    """
+    Payment summary for a hostel (total, due, overdue, etc.).
+    """
+    service = _get_service(session)
+    # Expected: get_summary_for_hostel(hostel_id: UUID) -> PaymentSummary
+    return service.get_summary_for_hostel(hostel_id=hostel_id)
+
+
+@router.post(
+    "/",
+    response_model=PaymentDetail,
+    status_code=status.HTTP_201_CREATED,
+)
+def create_payment(
+    payload: PaymentCreate,
+    session: Session = Depends(get_session),
+    current_user: CurrentUser = Depends(get_current_admin_or_staff),
+) -> PaymentDetail:
+    """
+    Low-level create payment (primarily for admin/manual adjustments).
+    Prefer /payments/initiate for interactive flows.
+    """
+    service = _get_service(session)
+    # Expected: create_payment(data: PaymentCreate, created_by: UUID) -> PaymentDetail
+    return service.create_payment(data=payload, created_by=current_user.id)
+
+
+@router.patch("/{payment_id}", response_model=PaymentDetail)
+def update_payment(
+    payment_id: UUID,
+    payload: PaymentUpdate,
+    session: Session = Depends(get_session),
+    current_user: CurrentUser = Depends(get_current_admin_or_staff),
+) -> PaymentDetail:
+    """
+    Update a payment (status, receipt info, etc.) (admin/staff).
+    """
+    service = _get_service(session)
+    # Expected: update_payment(payment_id: UUID, data: PaymentUpdate, updated_by: UUID) -> PaymentDetail
+    return service.update_payment(
+        payment_id=payment_id,
+        data=payload,
+        updated_by=current_user.id,
+    )
+
+# --- File: D:\Last Github Push\Last\Hostel-Main\app\api\v1\payments\receipt.py ---
+# app/api/v1/payments/receipt.py
+from __future__ import annotations
+
+from uuid import UUID
+
+from fastapi import APIRouter, Depends
+from sqlalchemy.orm import Session
+
+from app.core import get_session
+from app.services import UnitOfWork
+from app.services.payment import PaymentService
+from app.schemas.payment.payment_response import PaymentReceipt
+from . import CurrentUser, get_current_user
+
+router = APIRouter(tags=["Payments - Receipt"])
+
+
+def _get_service(session: Session) -> PaymentService:
+    uow = UnitOfWork(session)
+    return PaymentService(uow)
+
+
+@router.get("/{payment_id}", response_model=PaymentReceipt)
+def get_payment_receipt(
+    payment_id: UUID,
+    session: Session = Depends(get_session),
+    current_user: CurrentUser = Depends(get_current_user),
+) -> PaymentReceipt:
+    """
+    Get a printable receipt view for a payment.
+
+    (Visible to staff or the payer; enforcement is in service.)
+    """
+    service = _get_service(session)
+    # Expected: get_receipt(payment_id: UUID, requester_id: UUID, role: UserRole) -> PaymentReceipt
+    return service.get_receipt(
+        payment_id=payment_id,
+        requester_id=current_user.id,
+        role=current_user.role,
+    )
+
+# --- File: D:\Last Github Push\Last\Hostel-Main\app\api\v1\payments\refunds.py ---
+# app/api/v1/payments/refunds.py
+from __future__ import annotations
+
+from typing import List
+from uuid import UUID
+
+from fastapi import APIRouter, Depends, Query, status
+from sqlalchemy.orm import Session
+
+from app.core import get_session
+from app.services import UnitOfWork
+from app.services.payment import RefundService
+from app.schemas.payment.payment_refund import (
+    RefundRequest,
+    RefundResponse,
+    RefundApproval,
+    RefundList,
+    RefundListItem,
+)
+from . import CurrentUser, get_current_admin_or_staff
+
+router = APIRouter(tags=["Payments - Refunds"])
+
+
+def _get_service(session: Session) -> RefundService:
+    uow = UnitOfWork(session)
+    return RefundService(uow)
+
+
+@router.post("/", response_model=RefundResponse, status_code=status.HTTP_201_CREATED)
+def create_refund_request(
+    payload: RefundRequest,
+    session: Session = Depends(get_session),
+    current_user: CurrentUser = Depends(get_current_admin_or_staff),
+) -> RefundResponse:
+    """
+    Create a refund request for a payment (admin/staff).
+    """
+    service = _get_service(session)
+    # Expected: create_refund_request(requester_id: UUID, data: RefundRequest) -> RefundResponse
+    return service.create_refund_request(
+        requester_id=current_user.id,
+        data=payload,
+    )
+
+
+@router.get("/", response_model=RefundList)
+def list_refunds(
+    status_filter: str | None = Query(
+        None,
+        description="Optional refund status filter",
+    ),
+    session: Session = Depends(get_session),
+    current_user: CurrentUser = Depends(get_current_admin_or_staff),
+) -> RefundList:
+    """
+    List refund requests with basic totals.
+    """
+    service = _get_service(session)
+    # Expected: list_refunds(status: Optional[str]) -> RefundList
+    return service.list_refunds(status=status_filter)
+
+
+@router.get("/{refund_id}", response_model=RefundResponse)
+def get_refund(
+    refund_id: UUID,
+    session: Session = Depends(get_session),
+    current_user: CurrentUser = Depends(get_current_admin_or_staff),
+) -> RefundResponse:
+    """
+    Get a single refund by ID.
+    """
+    service = _get_service(session)
+    # Expected: get_refund(refund_id: UUID) -> RefundResponse
+    return service.get_refund(refund_id=refund_id)
+
+
+@router.post("/{refund_id}/approve", response_model=RefundResponse)
+def approve_refund(
+    refund_id: UUID,
+    payload: RefundApproval,
+    session: Session = Depends(get_session),
+    current_user: CurrentUser = Depends(get_current_admin_or_staff),
+) -> RefundResponse:
+    """
+    Approve or reject a refund request.
+    """
+    service = _get_service(session)
+    # Expected: approve_refund(refund_id: UUID, approver_id: UUID, data: RefundApproval) -> RefundResponse
+    return service.approve_refund(
+        refund_id=refund_id,
+        approver_id=current_user.id,
+        data=payload,
+    )
+
+# --- File: D:\Last Github Push\Last\Hostel-Main\app\api\v1\payments\reminders.py ---
+# app/api/v1/payments/reminders.py
+from __future__ import annotations
+
+from typing import List
+from uuid import UUID
+
+from fastapi import APIRouter, Depends
+from sqlalchemy.orm import Session
+
+from app.core import get_session
+from app.services import UnitOfWork
+from app.services.payment import PaymentReminderService
+from app.schemas.payment.payment_reminder import (
+    ReminderConfig,
+    ReminderLog,
+    SendReminderRequest,
+    ReminderBatch,
+    ReminderStats,
+)
+from . import CurrentUser, get_current_admin_or_staff
+
+router = APIRouter(tags=["Payments - Reminders"])
+
+
+def _get_service(session: Session) -> PaymentReminderService:
+    uow = UnitOfWork(session)
+    return PaymentReminderService(uow)
+
+
+@router.get("/config/{hostel_id}", response_model=ReminderConfig)
+def get_reminder_config(
+    hostel_id: UUID,
+    session: Session = Depends(get_session),
+    current_user: CurrentUser = Depends(get_current_admin_or_staff),
+) -> ReminderConfig:
+    """
+    Get reminder configuration for a hostel.
+    """
+    service = _get_service(session)
+    # Expected: get_config(hostel_id: UUID) -> ReminderConfig
+    return service.get_config(hostel_id=hostel_id)
+
+
+@router.put("/config/{hostel_id}", response_model=ReminderConfig)
+def update_reminder_config(
+    hostel_id: UUID,
+    payload: ReminderConfig,
+    session: Session = Depends(get_session),
+    current_user: CurrentUser = Depends(get_current_admin_or_staff),
+) -> ReminderConfig:
+    """
+    Update reminder configuration for a hostel.
+    """
+    service = _get_service(session)
+    # Expected: update_config(hostel_id: UUID, data: ReminderConfig) -> ReminderConfig
+    return service.update_config(
+        hostel_id=hostel_id,
+        data=payload,
+    )
+
+
+@router.post("/send", response_model=ReminderBatch)
+def send_reminders(
+    payload: SendReminderRequest,
+    session: Session = Depends(get_session),
+    current_user: CurrentUser = Depends(get_current_admin_or_staff),
+) -> ReminderBatch:
+    """
+    Trigger sending reminders for pending/overdue payments according to config.
+    """
+    service = _get_service(session)
+    # Expected: send_reminders(request: SendReminderRequest) -> ReminderBatch
+    return service.send_reminders(request=payload)
+
+
+@router.get("/logs/{hostel_id}", response_model=List[ReminderLog])
+def list_reminder_logs(
+    hostel_id: UUID,
+    session: Session = Depends(get_session),
+    current_user: CurrentUser = Depends(get_current_admin_or_staff),
+) -> List[ReminderLog]:
+    """
+    List reminder logs for a hostel.
+    """
+    service = _get_service(session)
+    # Expected: list_logs(hostel_id: UUID) -> list[ReminderLog]
+    return service.list_logs(hostel_id=hostel_id)
+
+
+@router.get("/stats/{hostel_id}", response_model=ReminderStats)
+def get_reminder_stats(
+    hostel_id: UUID,
+    session: Session = Depends(get_session),
+    current_user: CurrentUser = Depends(get_current_admin_or_staff),
+) -> ReminderStats:
+    """
+    Get reminder statistics for a hostel.
+    """
+    service = _get_service(session)
+    # Expected: get_stats(hostel_id: UUID) -> ReminderStats
+    return service.get_stats(hostel_id=hostel_id)
+
+# --- File: D:\Last Github Push\Last\Hostel-Main\app\api\v1\payments\schedule.py ---
+# app/api/v1/payments/schedule.py
+from __future__ import annotations
+
+from typing import List
+from uuid import UUID
+
+from fastapi import APIRouter, Depends, status
+from sqlalchemy.orm import Session
+
+from app.core import get_session
+from app.services import UnitOfWork
+from app.services.payment import PaymentScheduleService
+from app.schemas.payment.payment_schedule import (
+    PaymentSchedule,
+    ScheduleCreate,
+    ScheduleUpdate,
+    BulkScheduleCreate,
+    ScheduleGeneration,
+    ScheduledPaymentGenerated,
+    ScheduleSuspension,
+)
+from . import CurrentUser, get_current_admin_or_staff
+
+router = APIRouter(tags=["Payments - Schedule"])
+
+
+def _get_service(session: Session) -> PaymentScheduleService:
+    uow = UnitOfWork(session)
+    return PaymentScheduleService(uow)
+
+
+@router.get("/students/{student_id}", response_model=List[PaymentSchedule])
+def list_schedules_for_student(
+    student_id: UUID,
+    session: Session = Depends(get_session),
+    current_user: CurrentUser = Depends(get_current_admin_or_staff),
+) -> List[PaymentSchedule]:
+    """
+    List payment schedules for a student.
+    """
+    service = _get_service(session)
+    # Expected: list_schedules_for_student(student_id: UUID) -> list[PaymentSchedule]
+    return service.list_schedules_for_student(student_id=student_id)
+
+
+@router.post("/", response_model=PaymentSchedule, status_code=status.HTTP_201_CREATED)
+def create_schedule(
+    payload: ScheduleCreate,
+    session: Session = Depends(get_session),
+    current_user: CurrentUser = Depends(get_current_admin_or_staff),
+) -> PaymentSchedule:
+    """
+    Create a single payment schedule.
+    """
+    service = _get_service(session)
+    # Expected: create_schedule(data: ScheduleCreate) -> PaymentSchedule
+    return service.create_schedule(data=payload)
+
+
+@router.patch("/{schedule_id}", response_model=PaymentSchedule)
+def update_schedule(
+    schedule_id: UUID,
+    payload: ScheduleUpdate,
+    session: Session = Depends(get_session),
+    current_user: CurrentUser = Depends(get_current_admin_or_staff),
+) -> PaymentSchedule:
+    """
+    Update an existing payment schedule.
+    """
+    service = _get_service(session)
+    # Expected: update_schedule(schedule_id: UUID, data: ScheduleUpdate) -> PaymentSchedule
+    return service.update_schedule(
+        schedule_id=schedule_id,
+        data=payload,
+    )
+
+
+@router.post("/bulk", response_model=List[PaymentSchedule], status_code=status.HTTP_201_CREATED)
+def bulk_create_schedules(
+    payload: BulkScheduleCreate,
+    session: Session = Depends(get_session),
+    current_user: CurrentUser = Depends(get_current_admin_or_staff),
+) -> List[PaymentSchedule]:
+    """
+    Bulk-create payment schedules (e.g., for all students in a hostel).
+    """
+    service = _get_service(session)
+    # Expected: bulk_create_schedules(data: BulkScheduleCreate) -> list[PaymentSchedule]
+    return service.bulk_create_schedules(data=payload)
+
+
+@router.post("/{schedule_id}/generate", response_model=List[ScheduledPaymentGenerated])
+def generate_payments_from_schedule(
+    schedule_id: UUID,
+    payload: ScheduleGeneration,
+    session: Session = Depends(get_session),
+    current_user: CurrentUser = Depends(get_current_admin_or_staff),
+) -> List[ScheduledPaymentGenerated]:
+    """
+    Generate pending Payment records from a schedule across a Date range.
+    """
+    service = _get_service(session)
+    # Expected:
+    #   generate_payments(schedule_id: UUID, data: ScheduleGeneration)
+    #     -> list[ScheduledPaymentGenerated]
+    return service.generate_payments(
+        schedule_id=schedule_id,
+        data=payload,
+    )
+
+
+@router.post("/{schedule_id}/suspend", response_model=PaymentSchedule)
+def suspend_schedule(
+    schedule_id: UUID,
+    payload: ScheduleSuspension,
+    session: Session = Depends(get_session),
+    current_user: CurrentUser = Depends(get_current_admin_or_staff),
+) -> PaymentSchedule:
+    """
+    Suspend or resume a payment schedule.
+    """
+    service = _get_service(session)
+    # Expected: suspend_schedule(schedule_id: UUID, data: ScheduleSuspension) -> PaymentSchedule
+    return service.suspend_schedule(
+        schedule_id=schedule_id,
+        data=payload,
+    )
+
+# --- File: D:\Last Github Push\Last\Hostel-Main\app\api\v1\payments\__init__.py ---
+from dataclasses import dataclass
+from typing import Any
+from uuid import UUID
+
+from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.security import OAuth2PasswordBearer
+
+from app.core.security import decode_token, TokenDecodeError
+from app.schemas.common.enums import UserRole
+
+router = APIRouter()
+
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login")
+
+
+@dataclass
+class CurrentUser:
+    """Minimal representation of the authenticated user for payment APIs."""
+    id: UUID
+    role: UserRole
+
+
+def get_current_user(token: str = Depends(oauth2_scheme)) -> CurrentUser:
+    """
+    Decode JWT and return minimal CurrentUser.
+
+    Expects payload to contain either:
+      - sub (user id as string) and role
+      - or user_id and user_role
+    """
+    try:
+        payload: dict[str, Any] = decode_token(token)
+    except TokenDecodeError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Could not validate credentials",
+        ) from exc
+
+    user_id_raw = payload.get("sub") or payload.get("user_id")
+    role_raw = payload.get("role") or payload.get("user_role")
+
+    if not user_id_raw or not role_raw:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid token payload",
+        )
+
+    try:
+        user_id = UUID(str(user_id_raw))
+        role = UserRole(str(role_raw))
+    except Exception as exc:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid token payload",
+        ) from exc
+
+    return CurrentUser(id=user_id, role=role)
+
+
+def get_current_admin_or_staff(current_user: CurrentUser = Depends(get_current_user)) -> CurrentUser:
+    """
+    Ensure the authenticated user is staff (ADMIN or SUPERVISOR) for admin-facing endpoints.
+    """
+    if current_user.role not in {UserRole.ADMIN, UserRole.SUPERVISOR}:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only admins or supervisors can access this endpoint",
+        )
+    return current_user
+
+
+# Import sub-routers and mount them under /payments in the main API router.
+from . import payments, initiate, gateway, refunds, schedule, reminders, ledger, receipt  # noqa: E402
+
+router.include_router(payments.router, prefix="/payments")
+router.include_router(initiate.router, prefix="/initiate")
+router.include_router(gateway.router, prefix="/gateway")
+router.include_router(refunds.router, prefix="/refunds")
+router.include_router(schedule.router, prefix="/schedule")
+router.include_router(reminders.router, prefix="/reminders")
+router.include_router(ledger.router, prefix="/ledger")
+router.include_router(receipt.router, prefix="/receipt")
+
+__all__ = [
+    "router",
+    "CurrentUser",
+    "get_current_user",
+    "get_current_admin_or_staff",
+]

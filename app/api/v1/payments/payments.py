@@ -1,7 +1,4 @@
-# app/api/v1/payments/payments.py
-from __future__ import annotations
-
-from typing import List, Optional
+from typing import List, Union
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, Query, status

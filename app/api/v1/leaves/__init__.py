@@ -1,6 +1,3 @@
-# api/v1/leaves/__init__.py
-from __future__ import annotations
-
 from fastapi import APIRouter
 
 from . import leaves

@@ -1,7 +1,5 @@
 # app/api/v1/reviews/response.py
-from __future__ import annotations
-
-from typing import Optional
+from typing import Union
 from uuid import UUID
 
 from fastapi import APIRouter, Depends
@@ -39,11 +37,11 @@ def get_response_guidelines(
     return service.get_guidelines()
 
 
-@router.get("/{review_id}", response_model=Optional[OwnerResponse])
+@router.get("/{review_id}", response_model=Union[OwnerResponse, None])
 def get_hostel_response_for_review(
     review_id: UUID,
     session: Session = Depends(get_session),
-) -> Optional[OwnerResponse]:
+) -> Union[OwnerResponse, None]:
     """
     Get hostel/owner response for a specific review (if any).
     """

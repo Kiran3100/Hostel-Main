@@ -1,7 +1,4 @@
-# api/v1/files/upload.py
-from __future__ import annotations
-
-from typing import Annotated, Optional
+from typing import Annotated, Union
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Path, Query, status
@@ -114,15 +111,15 @@ async def get_file(
 )
 async def list_files(
     file_service: Annotated[FileService, Depends(deps.get_file_service)],
-    owner_id: Optional[UUID] = Query(
+    owner_id: Union[UUID, None] = Query(
         None,
         description="Optional owner/user ID filter",
     ),
-    folder: Optional[str] = Query(
+    folder: Union[str, None] = Query(
         None,
         description="Optional logical folder/path filter",
     ),
-    tag: Optional[str] = Query(
+    tag: Union[str, None] = Query(
         None,
         description="Optional tag filter",
     ),

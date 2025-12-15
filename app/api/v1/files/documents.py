@@ -1,7 +1,4 @@
-# api/v1/files/documents.py
-from __future__ import annotations
-
-from typing import Annotated, Optional
+from typing import Annotated, Union
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Path, Query, status
@@ -67,15 +64,15 @@ async def validate_document(
 )
 async def list_documents(
     document_service: Annotated[DocumentService, Depends(deps.get_document_service)],
-    owner_id: Optional[UUID] = Query(
+    owner_id: Union[UUID, None] = Query(
         None,
         description="Optional owner/user ID filter",
     ),
-    hostel_id: Optional[UUID] = Query(
+    hostel_id: Union[UUID, None] = Query(
         None,
         description="Optional hostel filter",
     ),
-    doc_type: Optional[str] = Query(
+    doc_type: Union[str, None] = Query(
         None,
         description="Optional document type filter",
     ),

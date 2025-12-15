@@ -1,7 +1,5 @@
 # app/api/v1/reviews/voting.py
-from __future__ import annotations
-
-from typing import List
+from typing import List, Union
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, status, Response
@@ -49,7 +47,7 @@ def cast_or_update_vote(
 @router.delete("/{review_id}", status_code=status.HTTP_204_NO_CONTENT)
 def remove_vote(
     review_id: UUID,
-    payload: RemoveVote | None = None,
+    payload: Union[RemoveVote, None] = None,
     session: Session = Depends(get_session),
     current_user: CurrentUser = Depends(get_current_user),
 ) -> Response:

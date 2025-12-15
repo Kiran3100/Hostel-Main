@@ -1,6 +1,3 @@
-# api/v1/inquiries/__init__.py
-from __future__ import annotations
-
 from fastapi import APIRouter
 
 from . import inquiries
