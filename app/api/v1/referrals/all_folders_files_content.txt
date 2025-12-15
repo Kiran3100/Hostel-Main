@@ -1,13 +1,11 @@
-### Combined Content from Folder: D:\Last Github Push\Last\HOStel-back\app\api\v1\referrals ###
+### Combined Content from Folder: D:\Last Github Push\Last\Hostel-Main\app\api\v1\referrals ###
 
 
 
-# ===== Folder: D:\Last Github Push\Last\HOStel-back\app\api\v1\referrals =====
+# ===== Folder: D:\Last Github Push\Last\Hostel-Main\app\api\v1\referrals =====
 
-# --- File: D:\Last Github Push\Last\HOStel-back\app\api\v1\referrals\codes.py ---
+# --- File: D:\Last Github Push\Last\Hostel-Main\app\api\v1\referrals\codes.py ---
 # app/api/v1/referrals/codes.py
-from __future__ import annotations
-
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
@@ -63,12 +61,9 @@ def validate_referral_code(
     # Expected: validate_code(request: CodeValidationRequest) -> CodeValidationResponse
     return service.validate_code(request=payload)
 
-# --- File: D:\Last Github Push\Last\HOStel-back\app\api\v1\referrals\programs.py ---
-# app/api/v1/referrals/programs.py
-from __future__ import annotations
-
-from datetime import date as Date
-from typing import List, Optional
+# --- File: D:\Last Github Push\Last\Hostel-Main\app\api\v1\referrals\programs.py ---
+from datetime import date
+from typing import List, Union
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, Query, status
@@ -110,7 +105,7 @@ def list_programs(
 
 @router.get("/active", response_model=List[ProgramResponse])
 def list_active_programs(
-    as_of: Optional[date] = Query(
+    as_of: Union[date, None] = Query(
         None,
         description="Filter programs active on this date (defaults to today).",
     ),
@@ -121,7 +116,7 @@ def list_active_programs(
     """
     service = _get_service(session)
     # Expected service method:
-    #   list_active_programs(as_of: Optional[date]) -> list[ProgramResponse]
+    #   list_active_programs(as_of: Union[date, None]) -> list[ProgramResponse]
     return service.list_active_programs(as_of=as_of)
 
 
@@ -174,10 +169,8 @@ def update_program(
         data=payload,
     )
 
-# --- File: D:\Last Github Push\Last\HOStel-back\app\api\v1\referrals\referrals.py ---
+# --- File: D:\Last Github Push\Last\Hostel-Main\app\api\v1\referrals\referrals.py ---
 # app/api/v1/referrals/referrals.py
-from __future__ import annotations
-
 from typing import List
 from uuid import UUID
 
@@ -275,12 +268,10 @@ def list_referrals_for_program(
     # Expected: list_referrals_for_program(program_id: UUID) -> list[ReferralResponse]
     return service.list_referrals_for_program(program_id=program_id)
 
-# --- File: D:\Last Github Push\Last\HOStel-back\app\api\v1\referrals\rewards.py ---
+# --- File: D:\Last Github Push\Last\Hostel-Main\app\api\v1\referrals\rewards.py ---
 # app/api/v1/referrals/rewards.py
-from __future__ import annotations
-
 from datetime import date as Date
-from typing import Optional, List
+from typing import Optional, List, Union
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, Query, status
@@ -366,15 +357,15 @@ def request_payout(
 
 @router.get("/payouts", response_model=List[PayoutRequestResponse])
 def list_payout_requests(
-    status_filter: Optional[str] = Query(
+    status_filter: Union[str, None] = Query(
         None,
         description="Optional filter by payout status (e.g., pending, approved, paid).",
     ),
-    start_date: Optional[Date] = Query(
+    start_date: Union[Date, None] = Query(
         None,
         description="Optional start Date for payout requests (inclusive).",
     ),
-    end_date: Optional[Date] = Query(
+    end_date: Union[Date, None] = Query(
         None,
         description="Optional end Date for payout requests (inclusive).",
     ),
@@ -397,10 +388,7 @@ def list_payout_requests(
         end_date=end_date,
     )
 
-# --- File: D:\Last Github Push\Last\HOStel-back\app\api\v1\referrals\__init__.py ---
-# app/api/v1/referrals/__init__.py
-from __future__ import annotations
-
+# --- File: D:\Last Github Push\Last\Hostel-Main\app\api\v1\referrals\__init__.py ---
 from dataclasses import dataclass
 from typing import Any
 from uuid import UUID
@@ -484,6 +472,3 @@ __all__ = [
     "get_current_user",
     "get_current_admin",
 ]
-
-
-# ===== Folder: D:\Last Github Push\Last\HOStel-back\app\api\v1\referrals\__pycache__ =====

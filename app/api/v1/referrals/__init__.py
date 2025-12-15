@@ -1,4 +1,3 @@
-# app/api/v1/referrals/__init__.py
 from dataclasses import dataclass
 from typing import Any
 from uuid import UUID

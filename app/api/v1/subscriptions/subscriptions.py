@@ -1,7 +1,5 @@
 # app/api/v1/subscriptions/subscriptions.py
-from __future__ import annotations
-
-from typing import List, Optional
+from typing import List, Union
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, Query, status
@@ -29,7 +27,7 @@ def _get_service(session: Session) -> SubscriptionService:
 
 @router.get("/", response_model=List[SubscriptionResponse])
 def list_subscriptions(
-    hostel_id: Optional[UUID] = Query(
+    hostel_id: Union[UUID, None] = Query(
         None,
         description="Optionally filter subscriptions by hostel ID.",
     ),
@@ -102,12 +100,12 @@ def update_subscription(
     )
 
 
-@router.get("/hostels/{hostel_id}/active", response_model=Optional[SubscriptionResponse])
+@router.get("/hostels/{hostel_id}/active", response_model=Union[SubscriptionResponse, None])
 def get_active_subscription_for_hostel(
     hostel_id: UUID,
     session: Session = Depends(get_session),
     current_user: CurrentUser = Depends(get_current_user),
-) -> Optional[SubscriptionResponse]:
+) -> Union[SubscriptionResponse, None]:
     """
     Get the active subscription for a hostel (if any).
 

@@ -1,6 +1,4 @@
 # app/api/v1/payments/gateway.py
-from __future__ import annotations
-
 from fastapi import APIRouter, Depends, Request, Response, status
 from sqlalchemy.orm import Session
 

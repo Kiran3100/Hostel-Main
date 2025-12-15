@@ -1,7 +1,5 @@
 # app/api/v1/subscriptions/plans.py
-from __future__ import annotations
-
-from typing import List, Optional
+from typing import List, Union
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, Query, status
@@ -67,7 +65,7 @@ def list_public_plans(
 
 @router.get("/comparison", response_model=PlanComparison)
 def compare_plans(
-    plan_ids: Optional[List[UUID]] = Query(
+    plan_ids: Union[List[UUID], None] = Query(
         None,
         description="Optional list of plan IDs to compare; if omitted, compare all public plans.",
     ),

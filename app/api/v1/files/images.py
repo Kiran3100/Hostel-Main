@@ -1,6 +1,3 @@
-# api/v1/files/images.py
-from __future__ import annotations
-
 from typing import Annotated
 from uuid import UUID
 
@@ -91,5 +88,4 @@ async def get_image_processing_result(
     try:
         return image_service.get_processing_result(image_id=image_id)
     except ServiceError as exc:
-        raise _map_service_error(exc)
         raise _map_service_error(exc)

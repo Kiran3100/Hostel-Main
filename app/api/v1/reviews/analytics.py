@@ -1,9 +1,7 @@
 # app/api/v1/reviews/analytics.py
-from __future__ import annotations
-
 from datetime import date as Date
 from uuid import UUID
-from typing import Optional
+from typing import Union
 
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
@@ -25,11 +23,11 @@ def _get_service(session: Session) -> ReviewAnalyticsService:
 @router.get("/hostels/{hostel_id}", response_model=ReviewAnalytics)
 def get_hostel_review_analytics(
     hostel_id: UUID,
-    start_date: Optional[Date] = Query(
+    start_date: Union[Date, None] = Query(
         None,
         description="Start Date (inclusive) for analytics period",
     ),
-    end_date: Optional[Date] = Query(
+    end_date: Union[Date, None] = Query(
         None,
         description="End Date (inclusive) for analytics period",
     ),

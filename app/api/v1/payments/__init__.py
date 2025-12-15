@@ -1,6 +1,3 @@
-# app/api/v1/payments/__init__.py
-from __future__ import annotations
-
 from dataclasses import dataclass
 from typing import Any
 from uuid import UUID

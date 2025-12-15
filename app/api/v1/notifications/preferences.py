@@ -1,7 +1,5 @@
 # app/api/v1/notifications/preferences.py
-from __future__ import annotations
-
-from typing import Optional
+from typing import Union
 
 from fastapi import APIRouter, Depends, Query, status, Response
 from sqlalchemy.orm import Session
@@ -57,9 +55,9 @@ def update_my_preferences(
 @router.post("/unsubscribe")
 def unsubscribe(
     # Convert request body fields to query parameters
-    token: Optional[str] = Query(None, description="Unsubscribe token"),
-    email: Optional[str] = Query(None, description="Email to unsubscribe"),
-    notification_type: Optional[str] = Query(None, description="Notification type"),
+    token: Union[str, None] = Query(None, description="Unsubscribe token"),
+    email: Union[str, None] = Query(None, description="Email to unsubscribe"),
+    notification_type: Union[str, None] = Query(None, description="Notification type"),
     session: Session = Depends(get_session),
 ) -> Response:
     """

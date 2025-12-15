@@ -1,6 +1,4 @@
 # app/api/v1/notifications/send.py
-from __future__ import annotations
-
 from fastapi import APIRouter, Depends, status
 from sqlalchemy.orm import Session
 

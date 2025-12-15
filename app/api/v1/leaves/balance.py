@@ -1,8 +1,4 @@
-# api/v1/leaves/balance.py
-from __future__ import annotations
-
-from datetime import date as Date
-
+from datetime import date
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Path, Query, status
@@ -51,11 +47,11 @@ def _map_service_error(exc: ServiceError) -> HTTPException:
 async def get_leave_balance_summary(
     student_id: UUID = Path(..., description="Student ID"),
     hostel_id: UUID = Query(..., description="Hostel ID"),
-    academic_year_start: Date = Query(
+    academic_year_start: date = Query(
         ...,
         description="Start Date of the academic year (inclusive)",
     ),
-    academic_year_end: Date = Query(
+    academic_year_end: date = Query(
         ...,
         description="End Date of the academic year (inclusive)",
     ),

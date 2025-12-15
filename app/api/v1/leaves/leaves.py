@@ -1,7 +1,4 @@
-# api/v1/leaves/leaves.py
-from __future__ import annotations
-
-from typing import List, Optional
+from typing import List, Union
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Path, Query, status
@@ -74,7 +71,7 @@ async def get_leave(
 )
 async def list_leaves_for_student(
     student_id: UUID = Path(..., description="Student ID"),
-    status_filter: Optional[LeaveStatus] = Query(
+    status_filter: Union[LeaveStatus, None] = Query(
         None,
         alias="status",
         description="Optional leave status filter",

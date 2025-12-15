@@ -1,8 +1,5 @@
-# app/api/v1/payments/ledger.py
-from __future__ import annotations
-
 from datetime import date
-from typing import Optional
+from typing import Union
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, Query
@@ -43,11 +40,11 @@ def get_student_ledger_summary(
 @router.get("/students/{student_id}/statement", response_model=AccountStatement)
 def get_student_account_statement(
     student_id: UUID,
-    start_date: Optional[date] = Query(
+    start_date: Union[date, None] = Query(
         None,
         description="Start date for the statement period (inclusive).",
     ),
-    end_date: Optional[date] = Query(
+    end_date: Union[date, None] = Query(
         None,
         description="End date for the statement period (inclusive).",
     ),
@@ -60,8 +57,8 @@ def get_student_account_statement(
     service = _get_service(session)
     # Expected:
     #   get_account_statement(student_id: UUID,
-    #                         start_date: Optional[date],
-    #                         end_date: Optional[date]) -> AccountStatement
+    #                         start_date: Union[date, None],
+    #                         end_date: Union[date, None]) -> AccountStatement
     return service.get_account_statement(
         student_id=student_id,
         start_date=start_date,
@@ -85,11 +82,11 @@ def get_student_transaction_history(
 
 @router.get("/me/statement", response_model=AccountStatement)
 def get_my_account_statement(
-    start_date: Optional[date] = Query(
+    start_date: Union[date, None] = Query(
         None,
         description="Start date for the statement period (inclusive).",
     ),
-    end_date: Optional[date] = Query(
+    end_date: Union[date, None] = Query(
         None,
         description="End date for the statement period (inclusive).",
     ),

@@ -1,0 +1,625 @@
+### Combined Content from Folder: D:\Last Github Push\Last\Hostel-Main\app\api\v1\reviews ###
+
+
+
+# ===== Folder: D:\Last Github Push\Last\Hostel-Main\app\api\v1\reviews =====
+
+# --- File: D:\Last Github Push\Last\Hostel-Main\app\api\v1\reviews\analytics.py ---
+# app/api/v1/reviews/analytics.py
+from __future__ import annotations
+
+from datetime import date as Date
+from uuid import UUID
+from typing import Optional
+
+from fastapi import APIRouter, Depends, Query
+from sqlalchemy.orm import Session
+
+from app.core import get_session
+from app.services import UnitOfWork
+from app.services.review import ReviewAnalyticsService
+from app.schemas.review.review_analytics import ReviewAnalytics
+from . import CurrentUser, get_current_user
+
+router = APIRouter(tags=["Reviews - Analytics"])
+
+
+def _get_service(session: Session) -> ReviewAnalyticsService:
+    uow = UnitOfWork(session)
+    return ReviewAnalyticsService(uow)
+
+
+@router.get("/hostels/{hostel_id}", response_model=ReviewAnalytics)
+def get_hostel_review_analytics(
+    hostel_id: UUID,
+    start_date: Optional[Date] = Query(
+        None,
+        description="Start Date (inclusive) for analytics period",
+    ),
+    end_date: Optional[Date] = Query(
+        None,
+        description="End Date (inclusive) for analytics period",
+    ),
+    session: Session = Depends(get_session),
+    current_user: CurrentUser = Depends(get_current_user),
+) -> ReviewAnalytics:
+    """
+    Get review analytics for a hostel over a period.
+
+    Includes rating distribution, trends, aspect analysis, etc.
+    """
+    service = _get_service(session)
+    # Expected:
+    #   get_analytics_for_hostel(
+    #       hostel_id: UUID,
+    #       start_date: Optional[Date],
+    #       end_date: Optional[Date],
+    #   ) -> ReviewAnalytics
+    return service.get_analytics_for_hostel(
+        hostel_id=hostel_id,
+        start_date=start_date,
+        end_date=end_date,
+    )
+
+# --- File: D:\Last Github Push\Last\Hostel-Main\app\api\v1\reviews\moderation.py ---
+# app/api/v1/reviews/moderation.py
+from __future__ import annotations
+
+from typing import List
+from uuid import UUID
+
+from fastapi import APIRouter, Depends
+from sqlalchemy.orm import Session
+
+from app.core import get_session
+from app.services import UnitOfWork
+from app.services.review import ReviewModerationService
+from app.schemas.review.review_moderation import (
+    ModerationRequest,
+    ModerationResponse,
+    ModerationQueue,
+    PendingReview,
+    BulkModeration,
+    ModerationStats,
+)
+from . import CurrentUser, get_current_staff
+
+router = APIRouter(tags=["Reviews - Moderation"])
+
+
+def _get_service(session: Session) -> ReviewModerationService:
+    uow = UnitOfWork(session)
+    return ReviewModerationService(uow)
+
+
+@router.get("/queue", response_model=ModerationQueue)
+def get_moderation_queue(
+    session: Session = Depends(get_session),
+    current_user: CurrentUser = Depends(get_current_staff),
+) -> ModerationQueue:
+    """
+    Get the pending moderation queue for staff.
+    """
+    service = _get_service(session)
+    # Expected: get_moderation_queue() -> ModerationQueue
+    return service.get_moderation_queue()
+
+
+@router.get("/pending", response_model=List[PendingReview])
+def list_pending_reviews(
+    session: Session = Depends(get_session),
+    current_user: CurrentUser = Depends(get_current_staff),
+) -> List[PendingReview]:
+    """
+    List pending reviews (flat list).
+    """
+    service = _get_service(session)
+    # Expected: list_pending_reviews() -> list[PendingReview]
+    return service.list_pending_reviews()
+
+
+@router.post("/{review_id}", response_model=ModerationResponse)
+def moderate_review(
+    review_id: UUID,
+    payload: ModerationRequest,
+    session: Session = Depends(get_session),
+    current_user: CurrentUser = Depends(get_current_staff),
+) -> ModerationResponse:
+    """
+    Approve/reject/flag a single review.
+    """
+    service = _get_service(session)
+    # Expected: moderate_review(review_id: UUID, data: ModerationRequest) -> ModerationResponse
+    return service.moderate_review(
+        review_id=review_id,
+        data=payload,
+    )
+
+
+@router.post("/bulk", response_model=ModerationStats)
+def bulk_moderate_reviews(
+    payload: BulkModeration,
+    session: Session = Depends(get_session),
+    current_user: CurrentUser = Depends(get_current_staff),
+) -> ModerationStats:
+    """
+    Bulk moderation of multiple reviews.
+    """
+    service = _get_service(session)
+    # Expected: bulk_moderate(data: BulkModeration) -> ModerationStats
+    return service.bulk_moderate(data=payload)
+
+
+@router.get("/stats", response_model=ModerationStats)
+def get_moderation_stats(
+    session: Session = Depends(get_session),
+    current_user: CurrentUser = Depends(get_current_staff),
+) -> ModerationStats:
+    """
+    Moderation stats (actions, time-to-moderate, per-user counts).
+    """
+    service = _get_service(session)
+    # Expected: get_stats() -> ModerationStats
+    return service.get_stats()
+
+# --- File: D:\Last Github Push\Last\Hostel-Main\app\api\v1\reviews\response.py ---
+# app/api/v1/reviews/response.py
+from __future__ import annotations
+
+from typing import Optional
+from uuid import UUID
+
+from fastapi import APIRouter, Depends
+from sqlalchemy.orm import Session
+
+from app.core import get_session
+from app.services import UnitOfWork
+from app.services.review import HostelResponseService
+from app.schemas.review.review_response_schema import (
+    HostelResponseCreate,
+    OwnerResponse,
+    HostelResponseUpdate,
+    ResponseGuidelines,
+    ResponseStats,
+)
+from . import CurrentUser, get_current_staff
+
+router = APIRouter(tags=["Reviews - Hostel Responses"])
+
+
+def _get_service(session: Session) -> HostelResponseService:
+    uow = UnitOfWork(session)
+    return HostelResponseService(uow)
+
+
+@router.get("/guidelines", response_model=ResponseGuidelines)
+def get_response_guidelines(
+    session: Session = Depends(get_session),
+) -> ResponseGuidelines:
+    """
+    Public guidelines for responding to reviews.
+    """
+    service = _get_service(session)
+    # Expected: get_guidelines() -> ResponseGuidelines
+    return service.get_guidelines()
+
+
+@router.get("/{review_id}", response_model=Optional[OwnerResponse])
+def get_hostel_response_for_review(
+    review_id: UUID,
+    session: Session = Depends(get_session),
+) -> Optional[OwnerResponse]:
+    """
+    Get hostel/owner response for a specific review (if any).
+    """
+    service = _get_service(session)
+    # Expected: get_response_for_review(review_id: UUID) -> Optional[OwnerResponse]
+    return service.get_response_for_review(review_id=review_id)
+
+
+@router.post("/{review_id}", response_model=OwnerResponse)
+def create_hostel_response(
+    review_id: UUID,
+    payload: HostelResponseCreate,
+    session: Session = Depends(get_session),
+    current_user: CurrentUser = Depends(get_current_staff),
+) -> OwnerResponse:
+    """
+    Create a hostel/owner response for a review (staff only).
+    """
+    service = _get_service(session)
+    # Expected: create_response(review_id: UUID, user_id: UUID, data: HostelResponseCreate) -> OwnerResponse
+    return service.create_response(
+        review_id=review_id,
+        user_id=current_user.id,
+        data=payload,
+    )
+
+
+@router.patch("/{review_id}", response_model=OwnerResponse)
+def update_hostel_response(
+    review_id: UUID,
+    payload: HostelResponseUpdate,
+    session: Session = Depends(get_session),
+    current_user: CurrentUser = Depends(get_current_staff),
+) -> OwnerResponse:
+    """
+    Update an existing hostel/owner response (staff only).
+    """
+    service = _get_service(session)
+    # Expected: update_response(review_id: UUID, user_id: UUID, data: HostelResponseUpdate) -> OwnerResponse
+    return service.update_response(
+        review_id=review_id,
+        user_id=current_user.id,
+        data=payload,
+    )
+
+
+@router.get("/hostels/{hostel_id}/stats", response_model=ResponseStats)
+def get_response_stats_for_hostel(
+    hostel_id: UUID,
+    session: Session = Depends(get_session),
+    current_user: CurrentUser = Depends(get_current_staff),
+) -> ResponseStats:
+    """
+    Stats about how promptly/often a hostel responds to reviews.
+    """
+    service = _get_service(session)
+    # Expected: get_stats_for_hostel(hostel_id: UUID) -> ResponseStats
+    return service.get_stats_for_hostel(hostel_id=hostel_id)
+
+# --- File: D:\Last Github Push\Last\Hostel-Main\app\api\v1\reviews\reviews.py ---
+# app/api/v1/reviews/reviews.py
+from __future__ import annotations
+
+from typing import List
+from uuid import UUID
+
+from fastapi import APIRouter, Depends
+from sqlalchemy.orm import Session
+
+from app.core import get_session
+from app.services import UnitOfWork
+from app.services.review import ReviewService
+from app.schemas.review.review_filters import ReviewFilterParams, ReviewExportRequest
+from app.schemas.review.review_response import (
+    ReviewDetail,
+    ReviewListItem,
+    ReviewSummary,
+)
+from . import CurrentUser, get_current_user, get_current_staff
+
+router = APIRouter(tags=["Reviews - Admin/Internal"])
+
+
+def _get_service(session: Session) -> ReviewService:
+    uow = UnitOfWork(session)
+    return ReviewService(uow)
+
+
+@router.get("/", response_model=List[ReviewListItem])
+def list_reviews(
+    filters: ReviewFilterParams = Depends(),
+    session: Session = Depends(get_session),
+    current_user: CurrentUser = Depends(get_current_staff),
+) -> List[ReviewListItem]:
+    """
+    List reviews with filters/search/sort (admin/internal).
+    """
+    service = _get_service(session)
+    # Expected service method: list_reviews(filters: ReviewFilterParams) -> list[ReviewListItem]
+    return service.list_reviews(filters=filters)
+
+
+@router.get("/{review_id}", response_model=ReviewDetail)
+def get_review(
+    review_id: UUID,
+    session: Session = Depends(get_session),
+    current_user: CurrentUser = Depends(get_current_staff),
+) -> ReviewDetail:
+    """
+    Get detailed review including moderation/override info (admin/internal).
+    """
+    service = _get_service(session)
+    # Expected: get_review_detail(review_id: UUID) -> ReviewDetail
+    return service.get_review_detail(review_id=review_id)
+
+
+@router.get("/hostels/{hostel_id}/summary", response_model=ReviewSummary)
+def get_hostel_review_summary(
+    hostel_id: UUID,
+    session: Session = Depends(get_session),
+    current_user: CurrentUser = Depends(get_current_user),
+) -> ReviewSummary:
+    """
+    Summary stats for reviews of a hostel (can be used in dashboards).
+    """
+    service = _get_service(session)
+    # Expected: get_hostel_summary(hostel_id: UUID) -> ReviewSummary
+    return service.get_hostel_summary(hostel_id=hostel_id)
+
+
+@router.post("/export")
+def export_reviews(
+    payload: ReviewExportRequest,
+    session: Session = Depends(get_session),
+    current_user: CurrentUser = Depends(get_current_staff),
+) -> dict:
+    """
+    Export reviews matching filters (CSV/Excel/etc. via reporting/export service).
+    """
+    service = _get_service(session)
+    # Expected: export_reviews(request: ReviewExportRequest) -> dict | ExportResult
+    result = service.export_reviews(request=payload)
+    return result
+
+# --- File: D:\Last Github Push\Last\Hostel-Main\app\api\v1\reviews\submission.py ---
+from typing import List, Union
+from uuid import UUID
+
+from fastapi import APIRouter, Depends, Query
+from sqlalchemy.orm import Session
+
+from app.core import get_session
+from app.services import UnitOfWork
+from app.services.review import PublicReviewService
+from app.schemas.review.review_submission import (
+    ReviewSubmissionRequest,
+    ReviewEligibility,
+)
+from app.schemas.review.review_response import (
+    ReviewDetail,
+    ReviewResponse,
+)
+from app.schemas.review.review_filters import ReviewSearchRequest, ReviewSortOptions
+from . import CurrentUser, get_current_user
+
+router = APIRouter(tags=["Reviews - Public Submission & Listing"])
+
+
+def _get_service(session: Session) -> PublicReviewService:
+    uow = UnitOfWork(session)
+    return PublicReviewService(uow)
+
+
+@router.post("/", response_model=ReviewDetail)
+def submit_review(
+    payload: ReviewSubmissionRequest,
+    session: Session = Depends(get_session),
+    current_user: CurrentUser = Depends(get_current_user),
+) -> ReviewDetail:
+    """
+    Submit a public review (visitor/student). Requires authenticated user.
+    """
+    service = _get_service(session)
+    # Expected: submit_review(user_id: UUID, data: ReviewSubmissionRequest) -> ReviewDetail
+    return service.submit_review(
+        user_id=current_user.id,
+        data=payload,
+    )
+
+
+@router.get("/eligibility", response_model=ReviewEligibility)
+def check_review_eligibility(
+    hostel_id: UUID = Query(..., description="Hostel the user wants to review"),
+    booking_id: Union[UUID, None] = Query(
+        None,
+        description="Optional booking id for more precise eligibility checks",
+    ),
+    session: Session = Depends(get_session),
+    current_user: CurrentUser = Depends(get_current_user),
+) -> ReviewEligibility:
+    """
+    Check if the current user is eligible to submit or edit a review for a hostel.
+    """
+    service = _get_service(session)
+    # Expected: check_eligibility(user_id: UUID, hostel_id: UUID, booking_id: Union[UUID, None]) -> ReviewEligibility
+    return service.check_eligibility(
+        user_id=current_user.id,
+        hostel_id=hostel_id,
+        booking_id=booking_id,
+    )
+
+
+@router.get("/hostels/{hostel_id}", response_model=List[ReviewResponse])
+def list_public_reviews_for_hostel(
+    hostel_id: UUID,
+    search: ReviewSearchRequest = Depends(),
+    sort: ReviewSortOptions = Depends(),
+    session: Session = Depends(get_session),
+) -> List[ReviewResponse]:
+    """
+    Public listing of approved reviews for a hostel (used in public profile pages).
+    """
+    service = _get_service(session)
+    # Expected:
+    #   list_public_reviews(hostel_id: UUID,
+    #                       search: ReviewSearchRequest,
+    #                       sort: ReviewSortOptions) -> list[ReviewResponse]
+    return service.list_public_reviews(
+        hostel_id=hostel_id,
+        search=search,
+        sort=sort,
+    )
+
+# --- File: D:\Last Github Push\Last\Hostel-Main\app\api\v1\reviews\voting.py ---
+# app/api/v1/reviews/voting.py
+from __future__ import annotations
+
+from typing import List
+from uuid import UUID
+
+from fastapi import APIRouter, Depends, status, Response
+from sqlalchemy.orm import Session
+
+from app.core import get_session
+from app.services import UnitOfWork
+from app.services.review import ReviewVotingService
+from app.schemas.review.review_voting import (
+    VoteRequest,
+    VoteResponse,
+    HelpfulnessScore,
+    VoteHistory,
+    RemoveVote,
+)
+from . import CurrentUser, get_current_user
+
+router = APIRouter(tags=["Reviews - Voting"])
+
+
+def _get_service(session: Session) -> ReviewVotingService:
+    uow = UnitOfWork(session)
+    return ReviewVotingService(uow)
+
+
+@router.post("/{review_id}", response_model=VoteResponse)
+def cast_or_update_vote(
+    review_id: UUID,
+    payload: VoteRequest,
+    session: Session = Depends(get_session),
+    current_user: CurrentUser = Depends(get_current_user),
+) -> VoteResponse:
+    """
+    Cast or update a helpfulness vote for a review.
+    """
+    service = _get_service(session)
+    # Expected: cast_vote(user_id: UUID, review_id: UUID, data: VoteRequest) -> VoteResponse
+    return service.cast_vote(
+        user_id=current_user.id,
+        review_id=review_id,
+        data=payload,
+    )
+
+
+@router.delete("/{review_id}", status_code=status.HTTP_204_NO_CONTENT)
+def remove_vote(
+    review_id: UUID,
+    payload: RemoveVote | None = None,
+    session: Session = Depends(get_session),
+    current_user: CurrentUser = Depends(get_current_user),
+) -> Response:
+    """
+    Remove a helpfulness vote from a review.
+    """
+    service = _get_service(session)
+    # Expected: remove_vote(user_id: UUID, review_id: UUID) -> None
+    service.remove_vote(
+        user_id=current_user.id,
+        review_id=review_id,
+    )
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+@router.get("/me/history", response_model=VoteHistory)
+def get_my_vote_history(
+    session: Session = Depends(get_session),
+    current_user: CurrentUser = Depends(get_current_user),
+) -> VoteHistory:
+    """
+    Get the vote history for the authenticated user.
+    """
+    service = _get_service(session)
+    # Expected: get_vote_history(user_id: UUID) -> VoteHistory
+    return service.get_vote_history(user_id=current_user.id)
+
+
+@router.get("/{review_id}/score", response_model=HelpfulnessScore)
+def get_review_helpfulness_score(
+    review_id: UUID,
+    session: Session = Depends(get_session),
+) -> HelpfulnessScore:
+    """
+    Get the helpfulness score for a review.
+    """
+    service = _get_service(session)
+    # Expected: get_helpfulness_score(review_id: UUID) -> HelpfulnessScore
+    return service.get_helpfulness_score(review_id=review_id)
+
+# --- File: D:\Last Github Push\Last\Hostel-Main\app\api\v1\reviews\__init__.py ---
+from dataclasses import dataclass
+from typing import Any
+from uuid import UUID
+
+from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.security import OAuth2PasswordBearer
+
+from app.core.security import decode_token, TokenDecodeError
+from app.schemas.common.enums import UserRole
+
+router = APIRouter()
+
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login")
+
+
+@dataclass
+class CurrentUser:
+    """Minimal representation of the authenticated user for review APIs."""
+    id: UUID
+    role: UserRole
+
+
+def get_current_user(token: str = Depends(oauth2_scheme)) -> CurrentUser:
+    """
+    Decode JWT and return minimal CurrentUser.
+
+    Expects payload to contain either:
+      - sub (user id as string) and role
+      - or user_id and user_role
+    """
+    try:
+        payload: dict[str, Any] = decode_token(token)
+    except TokenDecodeError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Could not validate credentials",
+        ) from exc
+
+    user_id_raw = payload.get("sub") or payload.get("user_id")
+    role_raw = payload.get("role") or payload.get("user_role")
+
+    if not user_id_raw or not role_raw:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid token payload",
+        )
+
+    try:
+        user_id = UUID(str(user_id_raw))
+        role = UserRole(str(role_raw))
+    except Exception as exc:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid token payload",
+        ) from exc
+
+    return CurrentUser(id=user_id, role=role)
+
+
+def get_current_staff(current_user: CurrentUser = Depends(get_current_user)) -> CurrentUser:
+    """
+    Ensure the authenticated user is staff (ADMIN or SUPERVISOR) for moderation/owner actions.
+    """
+    if current_user.role not in {UserRole.ADMIN, UserRole.SUPERVISOR}:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only admins or supervisors can access this endpoint",
+        )
+    return current_user
+
+
+# Import sub-routers and mount them under /reviews in the main API router.
+from . import reviews, submission, moderation, voting, response, analytics  # noqa: E402
+
+router.include_router(reviews.router)
+router.include_router(submission.router, prefix="/submission")
+router.include_router(moderation.router, prefix="/moderation")
+router.include_router(voting.router, prefix="/voting")
+router.include_router(response.router, prefix="/response")
+router.include_router(analytics.router, prefix="/analytics")
+
+__all__ = [
+    "router",
+    "CurrentUser",
+    "get_current_user",
+    "get_current_staff",
+]

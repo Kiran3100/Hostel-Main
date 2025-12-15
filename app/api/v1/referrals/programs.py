@@ -1,4 +1,3 @@
-# app/api/v1/referrals/programs.py
 from datetime import date
 from typing import List, Union
 from uuid import UUID
@@ -53,7 +52,7 @@ def list_active_programs(
     """
     service = _get_service(session)
     # Expected service method:
-    #   list_active_programs(as_of: Optional[date]) -> list[ProgramResponse]
+    #   list_active_programs(as_of: Union[date, None]) -> list[ProgramResponse]
     return service.list_active_programs(as_of=as_of)
 
 

@@ -1,6 +1,4 @@
 # app/api/v1/students/search.py
-from __future__ import annotations
-
 from typing import List
 
 from fastapi import APIRouter, Depends

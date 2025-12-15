@@ -1,14 +1,11 @@
-### Combined Content from Folder: D:\Last Github Push\Last\HOStel-back\app\api\v1\notifications ###
+### Combined Content from Folder: D:\Last Github Push\Last\Hostel-Main\app\api\v1\notifications ###
 
 
 
-# ===== Folder: D:\Last Github Push\Last\HOStel-back\app\api\v1\notifications =====
+# ===== Folder: D:\Last Github Push\Last\Hostel-Main\app\api\v1\notifications =====
 
-# --- File: D:\Last Github Push\Last\HOStel-back\app\api\v1\notifications\notifications.py ---
-# app/api/v1/notifications/notifications.py
-from __future__ import annotations
-
-from typing import Optional
+# --- File: D:\Last Github Push\Last\Hostel-Main\app\api\v1\notifications\notifications.py ---
+from typing import Union
 
 from fastapi import APIRouter, Depends, Query, status, Response
 from sqlalchemy.orm import Session
@@ -110,7 +107,7 @@ def get_notification(
 @router.post("/{notification_id}/read", response_model=NotificationDetail)
 def mark_notification_as_read(
     notification_id: str,
-    payload: MarkAsRead | None = None,
+    payload: Union[MarkAsRead, None] = None,
     session: Session = Depends(get_session),
     current_user: CurrentUser = Depends(get_current_user),
 ) -> NotificationDetail:
@@ -118,7 +115,7 @@ def mark_notification_as_read(
     Mark a single notification as read.
     """
     service = _get_service(session)
-    # Expected: mark_as_read(user_id, notification_id, data: Optional[MarkAsRead]) -> NotificationDetail
+    # Expected: mark_as_read(user_id, notification_id, data: Union[MarkAsRead, None]) -> NotificationDetail
     return service.mark_as_read(
         user_id=current_user.id,
         notification_id=notification_id,
@@ -146,7 +143,7 @@ def bulk_mark_as_read(
 @router.delete("/{notification_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_notification(
     notification_id: str,
-    payload: NotificationDelete | None = None,
+    payload: Union[NotificationDelete, None] = None,
     session: Session = Depends(get_session),
     current_user: CurrentUser = Depends(get_current_user),
 ) -> Response:
@@ -154,7 +151,7 @@ def delete_notification(
     Delete (or soft-delete) a single notification.
     """
     service = _get_service(session)
-    # Expected: delete_notification(user_id, notification_id, data: Optional[NotificationDelete]) -> None
+    # Expected: delete_notification(user_id, notification_id, data: Union[NotificationDelete, None]) -> None
     service.delete_notification(
         user_id=current_user.id,
         notification_id=notification_id,
@@ -162,11 +159,13 @@ def delete_notification(
     )
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
-# --- File: D:\Last Github Push\Last\HOStel-back\app\api\v1\notifications\preferences.py ---
+# --- File: D:\Last Github Push\Last\Hostel-Main\app\api\v1\notifications\preferences.py ---
 # app/api/v1/notifications/preferences.py
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, status, Response
+from typing import Optional
+
+from fastapi import APIRouter, Depends, Query, status, Response
 from sqlalchemy.orm import Session
 
 from app.core import get_session
@@ -217,9 +216,12 @@ def update_my_preferences(
     )
 
 
-@router.post("/unsubscribe", status_code=status.HTTP_204_NO_CONTENT)
+@router.post("/unsubscribe")
 def unsubscribe(
-    payload: UnsubscribeRequest,
+    # Convert request body fields to query parameters
+    token: Optional[str] = Query(None, description="Unsubscribe token"),
+    email: Optional[str] = Query(None, description="Email to unsubscribe"),
+    notification_type: Optional[str] = Query(None, description="Notification type"),
     session: Session = Depends(get_session),
 ) -> Response:
     """
@@ -228,11 +230,19 @@ def unsubscribe(
     Service is responsible for validating tokens / keys in the request.
     """
     service = _get_service(session)
+    
+    # Create UnsubscribeRequest object from query parameters
+    unsubscribe_data = UnsubscribeRequest(
+        token=token,
+        email=email,
+        notification_type=notification_type
+    )
+    
     # Expected: handle_unsubscribe(request: UnsubscribeRequest) -> None
-    service.handle_unsubscribe(request=payload)
+    service.handle_unsubscribe(request=unsubscribe_data)
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
-# --- File: D:\Last Github Push\Last\HOStel-back\app\api\v1\notifications\send.py ---
+# --- File: D:\Last Github Push\Last\Hostel-Main\app\api\v1\notifications\send.py ---
 # app/api/v1/notifications/send.py
 from __future__ import annotations
 
@@ -440,14 +450,14 @@ def get_push_stats(
     # Expected: get_stats() -> PushStats
     return service.get_stats()
 
-# --- File: D:\Last Github Push\Last\HOStel-back\app\api\v1\notifications\templates.py ---
+# --- File: D:\Last Github Push\Last\Hostel-Main\app\api\v1\notifications\templates.py ---
 # app/api/v1/notifications/templates.py
 from __future__ import annotations
 
 from typing import List
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, status, Response
 from sqlalchemy.orm import Session
 
 from app.core import get_session
@@ -552,19 +562,19 @@ def update_template(
     )
 
 
-@router.delete("/{template_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/{template_id}")
 def delete_template(
     template_id: UUID,
     session: Session = Depends(get_session),
     current_user: CurrentUser = Depends(get_current_admin),
-) -> None:
+) -> Response:
     """
     Delete a template.
     """
     service = _get_service(session)
     # Expected: delete_template(template_id: UUID) -> None
     service.delete_template(template_id=template_id)
-    return None
+    return Response(status_code=204)
 
 
 @router.post("/{template_id}/preview", response_model=TemplatePreviewResponse)
@@ -584,10 +594,7 @@ def preview_template(
         data=payload,
     )
 
-# --- File: D:\Last Github Push\Last\HOStel-back\app\api\v1\notifications\__init__.py ---
-# app/api/v1/notifications/__init__.py
-from __future__ import annotations
-
+# --- File: D:\Last Github Push\Last\Hostel-Main\app\api\v1\notifications\__init__.py ---
 from dataclasses import dataclass
 from typing import Any
 from uuid import UUID
@@ -671,6 +678,3 @@ __all__ = [
     "get_current_user",
     "get_current_admin",
 ]
-
-
-# ===== Folder: D:\Last Github Push\Last\HOStel-back\app\api\v1\notifications\__pycache__ =====

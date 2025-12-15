@@ -1,8 +1,6 @@
 # app/api/v1/subscriptions/commission.py
-from __future__ import annotations
-
 from datetime import date as Date 
-from typing import Optional
+from typing import Union
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, Query
@@ -77,7 +75,7 @@ def get_booking_commission(
 def get_commission_summary(
     start_date: Date = Query(..., description="Start Date for the summary period"),
     end_date: Date = Query(..., description="End Date for the summary period"),
-    plan_id: Optional[UUID] = Query(
+    plan_id: Union[UUID, None] = Query(
         None,
         description="Optionally restrict summary to a specific subscription plan.",
     ),

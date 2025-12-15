@@ -1,6 +1,4 @@
 # api/v1/mess/duplicate.py
-from __future__ import annotations
-
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from app.api.deps import get_uow

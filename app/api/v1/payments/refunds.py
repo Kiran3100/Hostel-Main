@@ -1,7 +1,5 @@
 # app/api/v1/payments/refunds.py
-from __future__ import annotations
-
-from typing import List
+from typing import List, Union
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, Query, status
@@ -46,7 +44,7 @@ def create_refund_request(
 
 @router.get("/", response_model=RefundList)
 def list_refunds(
-    status_filter: str | None = Query(
+    status_filter: Union[str, None] = Query(
         None,
         description="Optional refund status filter",
     ),
