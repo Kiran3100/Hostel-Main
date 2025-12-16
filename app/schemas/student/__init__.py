@@ -13,7 +13,7 @@ Example:
     )
 """
 
-from __future__ import annotations
+from typing import Union
 
 from app.schemas.student.student_base import (
     StudentBase,

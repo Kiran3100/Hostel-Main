@@ -6,8 +6,6 @@ Comprehensive mess/cafeteria menu management schemas including planning,
 feedback, approval workflows, and duplication with enhanced validation.
 """
 
-from __future__ import annotations
-
 from app.schemas.mess.meal_items import (
     AllergenInfo,
     DietaryOptions,

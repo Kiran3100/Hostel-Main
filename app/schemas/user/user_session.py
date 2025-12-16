@@ -3,10 +3,8 @@
 User session schemas with enhanced tracking and management.
 """
 
-from __future__ import annotations
-
 from datetime import datetime
-from typing import Dict, List, Optional
+from typing import Dict, List, Union
 from uuid import UUID
 
 from pydantic import BaseModel, Field, IPvAnyAddress, field_validator
@@ -34,11 +32,11 @@ class UserSession(BaseResponseSchema):
         ...,
         description="User ID associated with session",
     )
-    device_info: Optional[Dict[str, str]] = Field(
+    device_info: Union[Dict[str, str], None] = Field(
         default=None,
         description="Device information (user agent, platform, etc.)",
     )
-    ip_address: Optional[str] = Field(
+    ip_address: Union[str, None] = Field(
         default=None,
         description="IP address from which session was created",
     )
@@ -67,32 +65,32 @@ class SessionInfo(BaseSchema):
         ...,
         description="Unique session identifier",
     )
-    device_name: Optional[str] = Field(
+    device_name: Union[str, None] = Field(
         default=None,
         description="Device name/description",
         examples=["iPhone 13", "Chrome on Windows"],
     )
-    device_type: Optional[str] = Field(
+    device_type: Union[str, None] = Field(
         default=None,
         description="Device category",
         examples=["mobile", "desktop", "tablet"],
     )
-    browser: Optional[str] = Field(
+    browser: Union[str, None] = Field(
         default=None,
         description="Browser name and version",
         examples=["Chrome 120.0", "Safari 17.1"],
     )
-    os: Optional[str] = Field(
+    os: Union[str, None] = Field(
         default=None,
         description="Operating system",
         examples=["Windows 11", "macOS 14.0", "iOS 17.0"],
     )
-    ip_address: Optional[str] = Field(
+    ip_address: Union[str, None] = Field(
         default=None,
         description="IP address (masked for privacy)",
         examples=["192.168.1.***"],
     )
-    location: Optional[str] = Field(
+    location: Union[str, None] = Field(
         default=None,
         description="Approximate location (city, country)",
         examples=["Mumbai, India", "New York, USA"],
@@ -131,7 +129,7 @@ class ActiveSessionsList(BaseSchema):
         ge=0,
         description="Total number of active sessions",
     )
-    current_session_id: Optional[UUID] = Field(
+    current_session_id: Union[UUID, None] = Field(
         default=None,
         description="ID of the current session making the request",
     )
@@ -161,7 +159,7 @@ class RevokeAllSessionsRequest(BaseCreateSchema):
         default=True,
         description="Keep current session active after revoking others",
     )
-    reason: Optional[str] = Field(
+    reason: Union[str, None] = Field(
         default=None,
         max_length=500,
         description="Reason for revoking all sessions (optional)",
@@ -180,15 +178,15 @@ class CreateSessionRequest(BaseCreateSchema):
         ...,
         description="User ID for the session",
     )
-    device_info: Optional[Dict[str, str]] = Field(
+    device_info: Union[Dict[str, str], None] = Field(
         default=None,
         description="Device information",
     )
-    ip_address: Optional[str] = Field(
+    ip_address: Union[str, None] = Field(
         default=None,
         description="IP address",
     )
-    user_agent: Optional[str] = Field(
+    user_agent: Union[str, None] = Field(
         default=None,
         max_length=500,
         description="User agent string",
@@ -200,7 +198,7 @@ class CreateSessionRequest(BaseCreateSchema):
 
     @field_validator("ip_address")
     @classmethod
-    def validate_ip_address(cls, v: Optional[str]) -> Optional[str]:
+    def validate_ip_address(cls, v: Union[str, None]) -> Union[str, None]:
         """Validate IP address format."""
         if v is not None:
             v = v.strip()

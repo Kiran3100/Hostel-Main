@@ -6,14 +6,12 @@ Provides comprehensive menu planning capabilities including weekly plans,
 monthly schedules, special menus, and reusable templates.
 """
 
-from __future__ import annotations
-
 from datetime import date as Date, datetime, timedelta
 from decimal import Decimal
-from typing import Dict, List, Optional
+from typing import Dict, List, Union
+from uuid import UUID
 
 from pydantic import Field, field_validator, model_validator, computed_field
-from uuid import UUID
 
 from app.schemas.common.base import BaseCreateSchema, BaseSchema
 
@@ -63,12 +61,12 @@ class DailyMenuPlan(BaseSchema):
         False,
         description="Special menu indicator",
     )
-    special_occasion: Optional[str] = Field(
+    special_occasion: Union[str, None] = Field(
         None,
         max_length=255,
         description="Special occasion name",
     )
-    notes: Optional[str] = Field(
+    notes: Union[str, None] = Field(
         None,
         max_length=500,
         description="Planning notes",
@@ -132,7 +130,7 @@ class MenuPlanRequest(BaseCreateSchema):
         False,
         description="Use existing template",
     )
-    template_id: Optional[UUID] = Field(
+    template_id: Union[UUID, None] = Field(
         None,
         description="Template ID to use",
     )
@@ -170,19 +168,19 @@ class MenuPlanRequest(BaseCreateSchema):
     )
     
     # Budget constraints
-    target_cost_per_day: Optional[Decimal] = Field(
+    target_cost_per_day: Union[Decimal, None] = Field(
         None,
         ge=0,
         description="Target daily cost per person",
     )
-    max_cost_per_day: Optional[Decimal] = Field(
+    max_cost_per_day: Union[Decimal, None] = Field(
         None,
         ge=0,
         description="Maximum daily cost per person",
     )
     
     # Nutritional goals
-    target_calories_per_day: Optional[int] = Field(
+    target_calories_per_day: Union[int, None] = Field(
         None,
         ge=1000,
         le=5000,
@@ -219,7 +217,7 @@ class MenuPlanRequest(BaseCreateSchema):
 
     @field_validator("target_cost_per_day", "max_cost_per_day", mode="after")
     @classmethod
-    def round_cost_decimals(cls, v: Optional[Decimal]) -> Optional[Decimal]:
+    def round_cost_decimals(cls, v: Union[Decimal, None]) -> Union[Decimal, None]:
         """Round cost values to 2 decimal places."""
         if v is not None:
             return v.quantize(Decimal("0.01"))
@@ -315,17 +313,17 @@ class WeeklyPlan(BaseCreateSchema):
         ...,
         description="Creator user ID",
     )
-    plan_name: Optional[str] = Field(
+    plan_name: Union[str, None] = Field(
         None,
         max_length=255,
         description="Plan name/title",
     )
-    notes: Optional[str] = Field(
+    notes: Union[str, None] = Field(
         None,
         max_length=1000,
         description="Planning notes",
     )
-    estimated_total_cost: Optional[Decimal] = Field(
+    estimated_total_cost: Union[Decimal, None] = Field(
         None,
         ge=0,
         description="Estimated total cost for the week",
@@ -341,7 +339,7 @@ class WeeklyPlan(BaseCreateSchema):
 
     @field_validator("estimated_total_cost", mode="after")
     @classmethod
-    def round_cost(cls, v: Optional[Decimal]) -> Optional[Decimal]:
+    def round_cost(cls, v: Union[Decimal, None]) -> Union[Decimal, None]:
         """Round cost to 2 decimal places."""
         if v is not None:
             return v.quantize(Decimal("0.01"))
@@ -374,12 +372,12 @@ class SpecialDayMenu(BaseSchema):
         ...,
         description="Special menu for the day",
     )
-    budget: Optional[Decimal] = Field(
+    budget: Union[Decimal, None] = Field(
         None,
         ge=0,
         description="Special budget allocation",
     )
-    expected_guests: Optional[int] = Field(
+    expected_guests: Union[int, None] = Field(
         None,
         ge=0,
         description="Expected number of guests",
@@ -387,7 +385,7 @@ class SpecialDayMenu(BaseSchema):
 
     @field_validator("budget", mode="after")
     @classmethod
-    def round_budget(cls, v: Optional[Decimal]) -> Optional[Decimal]:
+    def round_budget(cls, v: Union[Decimal, None]) -> Union[Decimal, None]:
         """Round budget to 2 decimal places."""
         if v is not None:
             return v.quantize(Decimal("0.01"))
@@ -436,7 +434,7 @@ class MonthlyPlan(BaseCreateSchema):
     )
     
     # Monthly summary
-    total_budget: Optional[Decimal] = Field(
+    total_budget: Union[Decimal, None] = Field(
         None,
         ge=0,
         description="Total monthly budget",
@@ -445,11 +443,11 @@ class MonthlyPlan(BaseCreateSchema):
         ...,
         description="Creator user ID",
     )
-    approved_by: Optional[UUID] = Field(
+    approved_by: Union[UUID, None] = Field(
         None,
         description="Approver user ID",
     )
-    notes: Optional[str] = Field(
+    notes: Union[str, None] = Field(
         None,
         max_length=2000,
         description="Monthly planning notes",
@@ -457,7 +455,7 @@ class MonthlyPlan(BaseCreateSchema):
 
     @field_validator("total_budget", mode="after")
     @classmethod
-    def round_budget(cls, v: Optional[Decimal]) -> Optional[Decimal]:
+    def round_budget(cls, v: Union[Decimal, None]) -> Union[Decimal, None]:
         """Round budget to 2 decimal places."""
         if v is not None:
             return v.quantize(Decimal("0.01"))
@@ -541,34 +539,34 @@ class SpecialMenu(BaseCreateSchema):
     )
     
     # Budget and planning
-    budget: Optional[Decimal] = Field(
+    budget: Union[Decimal, None] = Field(
         None,
         ge=0,
         description="Special occasion budget",
     )
-    estimated_cost_per_person: Optional[Decimal] = Field(
+    estimated_cost_per_person: Union[Decimal, None] = Field(
         None,
         ge=0,
         description="Estimated cost per person",
     )
-    expected_attendees: Optional[int] = Field(
+    expected_attendees: Union[int, None] = Field(
         None,
         ge=1,
         description="Expected number of attendees",
     )
     
     # Execution details
-    decoration_theme: Optional[str] = Field(
+    decoration_theme: Union[str, None] = Field(
         None,
         max_length=255,
         description="Decoration theme",
     )
-    serving_style: Optional[str] = Field(
+    serving_style: Union[str, None] = Field(
         None,
         pattern=r"^(buffet|table_service|plated|family_style)$",
         description="Serving style",
     )
-    special_instructions: Optional[str] = Field(
+    special_instructions: Union[str, None] = Field(
         None,
         max_length=1000,
         description="Special preparation instructions",
@@ -606,7 +604,7 @@ class SpecialMenu(BaseCreateSchema):
 
     @field_validator("budget", "estimated_cost_per_person", mode="after")
     @classmethod
-    def round_costs(cls, v: Optional[Decimal]) -> Optional[Decimal]:
+    def round_costs(cls, v: Union[Decimal, None]) -> Union[Decimal, None]:
         """Round cost values to 2 decimal places."""
         if v is not None:
             return v.quantize(Decimal("0.01"))
@@ -630,12 +628,12 @@ class MenuTemplate(BaseCreateSchema):
         max_length=100,
         description="Template name",
     )
-    template_code: Optional[str] = Field(
+    template_code: Union[str, None] = Field(
         None,
         max_length=50,
         description="Template code/identifier",
     )
-    description: Optional[str] = Field(
+    description: Union[str, None] = Field(
         None,
         max_length=500,
         description="Template description",
@@ -647,7 +645,7 @@ class MenuTemplate(BaseCreateSchema):
         pattern=r"^(weekly|festival|summer|winter|monsoon|exam_period|vacation|regular)$",
         description="Template type/category",
     )
-    applicable_season: Optional[str] = Field(
+    applicable_season: Union[str, None] = Field(
         None,
         pattern=r"^(spring|summer|monsoon|autumn|winter|all)$",
         description="Applicable season",
@@ -677,7 +675,7 @@ class MenuTemplate(BaseCreateSchema):
         ge=0,
         description="Number of times template has been used",
     )
-    average_rating: Optional[Decimal] = Field(
+    average_rating: Union[Decimal, None] = Field(
         None,
         ge=0,
         le=5,
@@ -685,7 +683,7 @@ class MenuTemplate(BaseCreateSchema):
     )
     
     # Cost information
-    estimated_daily_cost: Optional[Decimal] = Field(
+    estimated_daily_cost: Union[Decimal, None] = Field(
         None,
         ge=0,
         description="Estimated daily cost per person",
@@ -722,7 +720,7 @@ class MenuTemplate(BaseCreateSchema):
 
     @field_validator("average_rating", "estimated_daily_cost", mode="after")
     @classmethod
-    def round_decimals(cls, v: Optional[Decimal]) -> Optional[Decimal]:
+    def round_decimals(cls, v: Union[Decimal, None]) -> Union[Decimal, None]:
         """Round decimal values to 2 decimal places."""
         if v is not None:
             return v.quantize(Decimal("0.01"))
@@ -820,12 +818,12 @@ class MenuSuggestion(BaseSchema):
         ge=0,
         description="Number of seasonal items included",
     )
-    estimated_cost_per_person: Optional[Decimal] = Field(
+    estimated_cost_per_person: Union[Decimal, None] = Field(
         None,
         ge=0,
         description="Estimated cost per person",
     )
-    estimated_calories: Optional[int] = Field(
+    estimated_calories: Union[int, None] = Field(
         None,
         ge=0,
         description="Estimated daily calories",
@@ -836,7 +834,7 @@ class MenuSuggestion(BaseSchema):
         ...,
         description="Suggestion generation timestamp",
     )
-    algorithm_version: Optional[str] = Field(
+    algorithm_version: Union[str, None] = Field(
         None,
         description="Suggestion algorithm version",
     )
@@ -847,7 +845,7 @@ class MenuSuggestion(BaseSchema):
         mode="after"
     )
     @classmethod
-    def round_decimals(cls, v: Optional[Decimal]) -> Optional[Decimal]:
+    def round_decimals(cls, v: Union[Decimal, None]) -> Union[Decimal, None]:
         """Round decimal values to 2 decimal places."""
         if v is not None:
             return v.quantize(Decimal("0.01"))

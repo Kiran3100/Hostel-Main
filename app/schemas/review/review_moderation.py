@@ -12,14 +12,12 @@ Pydantic v2 Migration Notes:
 - Time metrics use proper precision for hour calculations
 """
 
-from __future__ import annotations
-
 from datetime import date as Date, datetime
 from decimal import Decimal
-from typing import Annotated, Dict, List, Optional
+from typing import Annotated, Dict, List, Union
+from uuid import UUID
 
 from pydantic import Field, field_validator, model_validator
-from uuid import UUID
 
 from app.schemas.common.base import BaseSchema, BaseCreateSchema
 
@@ -51,7 +49,7 @@ class ModerationRequest(BaseCreateSchema):
     )
     
     # Rejection details
-    rejection_reason: Optional[str] = Field(
+    rejection_reason: Union[str, None] = Field(
         default=None,
         min_length=20,
         max_length=500,
@@ -59,19 +57,19 @@ class ModerationRequest(BaseCreateSchema):
     )
     
     # Flagging details
-    flag_reason: Optional[str] = Field(
+    flag_reason: Union[str, None] = Field(
         default=None,
         pattern=r"^(inappropriate|spam|fake|offensive|profanity|other)$",
         description="Reason for flagging (required if action=flag)",
     )
-    flag_details: Optional[str] = Field(
+    flag_details: Union[str, None] = Field(
         default=None,
         max_length=1000,
         description="Additional flagging details",
     )
     
     # Internal notes
-    moderator_notes: Optional[str] = Field(
+    moderator_notes: Union[str, None] = Field(
         default=None,
         max_length=500,
         description="Internal moderator notes (not visible to reviewer)",
@@ -124,7 +122,7 @@ class FlagReview(BaseCreateSchema):
         pattern=r"^(inappropriate|spam|fake|offensive|profanity|not_relevant|other)$",
         description="Reason for flagging",
     )
-    description: Optional[str] = Field(
+    description: Union[str, None] = Field(
         default=None,
         max_length=1000,
         description="Detailed description of the issue",
@@ -218,7 +216,7 @@ class PendingReview(BaseSchema):
     submitted_at: datetime = Field(..., description="Review submission time")
     
     # AI moderation scores with proper constraints
-    spam_score: Optional[
+    spam_score: Union[
         Annotated[
             Decimal,
             Field(
@@ -228,9 +226,10 @@ class PendingReview(BaseSchema):
                 decimal_places=3,
                 description="AI spam detection score (0-1, higher = more likely spam)",
             ),
-        ]
+        ],
+        None,
     ] = None
-    sentiment_score: Optional[
+    sentiment_score: Union[
         Annotated[
             Decimal,
             Field(
@@ -240,9 +239,10 @@ class PendingReview(BaseSchema):
                 decimal_places=3,
                 description="Sentiment analysis score (-1 to 1)",
             ),
-        ]
+        ],
+        None,
     ] = None
-    toxicity_score: Optional[
+    toxicity_score: Union[
         Annotated[
             Decimal,
             Field(
@@ -252,7 +252,8 @@ class PendingReview(BaseSchema):
                 decimal_places=3,
                 description="Content toxicity score (0-1, higher = more toxic)",
             ),
-        ]
+        ],
+        None,
     ] = None
     
     # Priority indicators
@@ -269,7 +270,7 @@ class ModerationQueue(BaseSchema):
     Summary of reviews pending moderation.
     """
     
-    hostel_id: Optional[UUID] = Field(
+    hostel_id: Union[UUID, None] = Field(
         default=None,
         description="Filter by specific hostel (None = all hostels)",
     )
@@ -291,7 +292,7 @@ class ModerationQueue(BaseSchema):
     )
     
     # Queue health with proper time constraints
-    average_wait_time_hours: Optional[
+    average_wait_time_hours: Union[
         Annotated[
             Decimal,
             Field(
@@ -300,9 +301,10 @@ class ModerationQueue(BaseSchema):
                 decimal_places=2,
                 description="Average time reviews spend in queue",
             ),
-        ]
+        ],
+        None,
     ] = None
-    oldest_review_age_hours: Optional[
+    oldest_review_age_hours: Union[
         Annotated[
             Decimal,
             Field(
@@ -311,7 +313,8 @@ class ModerationQueue(BaseSchema):
                 decimal_places=2,
                 description="Age of oldest pending review",
             ),
-        ]
+        ],
+        None,
     ] = None
 
 
@@ -337,21 +340,21 @@ class ApprovalWorkflow(BaseSchema):
     
     # Timeline
     submitted_at: datetime = Field(..., description="Submission timestamp")
-    moderated_at: Optional[datetime] = Field(
+    moderated_at: Union[datetime, None] = Field(
         default=None,
         description="Moderation completion timestamp",
     )
-    published_at: Optional[datetime] = Field(
+    published_at: Union[datetime, None] = Field(
         default=None,
         description="Publication timestamp (if approved)",
     )
     
     # Moderator info
-    moderated_by: Optional[UUID] = Field(default=None, description="Moderator user ID")
-    moderated_by_name: Optional[str] = Field(default=None, description="Moderator name")
+    moderated_by: Union[UUID, None] = Field(default=None, description="Moderator user ID")
+    moderated_by_name: Union[str, None] = Field(default=None, description="Moderator name")
     
     # Rejection/flagging details
-    rejection_reason: Optional[str] = Field(
+    rejection_reason: Union[str, None] = Field(
         default=None,
         description="Reason for rejection",
     )
@@ -361,7 +364,7 @@ class ApprovalWorkflow(BaseSchema):
     )
     
     # Auto-moderation with proper score constraints
-    auto_moderation_score: Optional[
+    auto_moderation_score: Union[
         Annotated[
             Decimal,
             Field(
@@ -371,7 +374,8 @@ class ApprovalWorkflow(BaseSchema):
                 decimal_places=3,
                 description="Automated moderation confidence score",
             ),
-        ]
+        ],
+        None,
     ] = None
     auto_approved: bool = Field(
         default=False,
@@ -400,7 +404,7 @@ class BulkModeration(BaseCreateSchema):
     )
     
     # Common reason/notes
-    reason: Optional[str] = Field(
+    reason: Union[str, None] = Field(
         default=None,
         max_length=500,
         description="Common reason for all reviews",
@@ -439,7 +443,7 @@ class ModerationStats(BaseSchema):
     Provides insights into moderation performance and volume.
     """
     
-    hostel_id: Optional[UUID] = Field(
+    hostel_id: Union[UUID, None] = Field(
         default=None,
         description="Hostel filter (None = all hostels)",
     )
@@ -467,7 +471,7 @@ class ModerationStats(BaseSchema):
             description="Average time to moderate (in hours)",
         ),
     ]
-    median_moderation_time_hours: Optional[
+    median_moderation_time_hours: Union[
         Annotated[
             Decimal,
             Field(
@@ -476,7 +480,8 @@ class ModerationStats(BaseSchema):
                 decimal_places=2,
                 description="Median moderation time",
             ),
-        ]
+        ],
+        None,
     ] = None
     
     # By moderator
@@ -506,7 +511,7 @@ class ModerationStats(BaseSchema):
             description="Percentage of reviews rejected",
         ),
     ]
-    auto_approval_accuracy: Optional[
+    auto_approval_accuracy: Union[
         Annotated[
             Decimal,
             Field(
@@ -516,7 +521,8 @@ class ModerationStats(BaseSchema):
                 decimal_places=2,
                 description="Accuracy of auto-approval system",
             ),
-        ]
+        ],
+        None,
     ] = None
     
     @model_validator(mode="after")

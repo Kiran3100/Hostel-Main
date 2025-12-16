@@ -6,8 +6,6 @@ Provides comprehensive schemas for referral program management including
 programs, referrals, codes, rewards, and analytics.
 """
 
-from __future__ import annotations
-
 # Program base schemas
 from app.schemas.referral.referral_program_base import (
     ProgramCreate,

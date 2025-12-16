@@ -6,11 +6,9 @@ This module defines schemas for refund requests, approvals,
 and refund management operations.
 """
 
-from __future__ import annotations
-
 from datetime import datetime
 from decimal import Decimal
-from typing import List, Optional
+from typing import List, Union
 from uuid import UUID
 
 from pydantic import Field, field_validator, model_validator, computed_field
@@ -66,7 +64,7 @@ class RefundRequest(BaseCreateSchema):
     )
 
     # Additional Details
-    notes: Optional[str] = Field(
+    notes: Union[str, None] = Field(
         None,
         max_length=1000,
         description="Additional notes",
@@ -130,7 +128,7 @@ class RefundStatus(BaseSchema):
         ge=0,
         description="Refund amount",
     )
-    processed_amount: Optional[Decimal] = Field(
+    processed_amount: Union[Decimal, None] = Field(
         None,
         ge=0,
         description="Actually processed amount",
@@ -141,28 +139,28 @@ class RefundStatus(BaseSchema):
         ...,
         description="When refund was requested",
     )
-    approved_at: Optional[datetime] = Field(
+    approved_at: Union[datetime, None] = Field(
         None,
         description="When refund was approved",
     )
-    processed_at: Optional[datetime] = Field(
+    processed_at: Union[datetime, None] = Field(
         None,
         description="When refund was processed",
     )
-    completed_at: Optional[datetime] = Field(
+    completed_at: Union[datetime, None] = Field(
         None,
         description="When refund was completed",
     )
 
     # Gateway Details
-    gateway_refund_id: Optional[str] = Field(
+    gateway_refund_id: Union[str, None] = Field(
         None,
         description="Gateway refund ID",
     )
 
     @computed_field  # type: ignore[prop-decorator]
     @property
-    def processing_time_hours(self) -> Optional[float]:
+    def processing_time_hours(self) -> Union[float, None]:
         """Calculate processing time in hours."""
         if self.completed_at and self.requested_at:
             delta = self.completed_at - self.requested_at
@@ -233,11 +231,11 @@ class RefundResponse(BaseResponseSchema):
         ...,
         description="Requester name",
     )
-    approved_by: Optional[UUID] = Field(
+    approved_by: Union[UUID, None] = Field(
         None,
         description="User who approved refund",
     )
-    approved_by_name: Optional[str] = Field(
+    approved_by_name: Union[str, None] = Field(
         None,
         description="Approver name",
     )
@@ -247,31 +245,31 @@ class RefundResponse(BaseResponseSchema):
         ...,
         description="Request timestamp",
     )
-    approved_at: Optional[datetime] = Field(
+    approved_at: Union[datetime, None] = Field(
         None,
         description="Approval timestamp",
     )
-    processed_at: Optional[datetime] = Field(
+    processed_at: Union[datetime, None] = Field(
         None,
         description="Processing timestamp",
     )
-    completed_at: Optional[datetime] = Field(
+    completed_at: Union[datetime, None] = Field(
         None,
         description="Completion timestamp",
     )
 
     # Gateway Details
-    gateway_refund_id: Optional[str] = Field(
+    gateway_refund_id: Union[str, None] = Field(
         None,
         description="Gateway refund ID",
     )
-    transaction_id: Optional[str] = Field(
+    transaction_id: Union[str, None] = Field(
         None,
         description="Refund transaction ID",
     )
 
     # Notes
-    notes: Optional[str] = Field(
+    notes: Union[str, None] = Field(
         None,
         description="Additional notes",
     )
@@ -312,7 +310,7 @@ class RefundApproval(BaseSchema):
     )
 
     # Approval Details
-    approval_notes: Optional[str] = Field(
+    approval_notes: Union[str, None] = Field(
         None,
         max_length=1000,
         description="Approval/rejection notes",
@@ -326,7 +324,7 @@ class RefundApproval(BaseSchema):
 
     @field_validator("approval_notes")
     @classmethod
-    def validate_approval_notes(cls, v: Optional[str]) -> Optional[str]:
+    def validate_approval_notes(cls, v: Union[str, None]) -> Union[str, None]:
         """Validate approval notes."""
         if v is not None:
             v = v.strip()
@@ -355,8 +353,8 @@ class RefundListItem(BaseSchema):
     requested_by_name: str = Field(..., description="Requester name")
     requested_at: datetime = Field(..., description="Request time")
 
-    approved_at: Optional[datetime] = Field(None, description="Approval time")
-    completed_at: Optional[datetime] = Field(None, description="Completion time")
+    approved_at: Union[datetime, None] = Field(None, description="Approval time")
+    completed_at: Union[datetime, None] = Field(None, description="Completion time")
 
     @computed_field  # type: ignore[prop-decorator]
     @property

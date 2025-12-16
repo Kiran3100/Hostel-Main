@@ -6,10 +6,8 @@ Manages supervisor-hostel assignments with proper tracking,
 permission management, and transfer handling.
 """
 
-from __future__ import annotations
-
 from datetime import datetime, timedelta, date as Date
-from typing import Optional
+from typing import Union
 from decimal import Decimal
 
 from pydantic import Field, field_validator, model_validator, computed_field
@@ -55,7 +53,7 @@ class SupervisorAssignment(BaseResponseSchema):
     )
     
     # Activity tracking
-    last_active: Optional[datetime] = Field(
+    last_active: Union[datetime, None] = Field(
         default=None,
         description="Last activity timestamp",
     )
@@ -89,7 +87,7 @@ class AssignmentRequest(BaseCreateSchema):
     )
     
     # Employment details
-    employee_id: Optional[str] = Field(
+    employee_id: Union[str, None] = Field(
         default=None,
         max_length=100,
         description="Employee/Staff ID",
@@ -103,18 +101,18 @@ class AssignmentRequest(BaseCreateSchema):
         pattern=r"^(full_time|part_time|contract)$",
         description="Employment type",
     )
-    shift_timing: Optional[str] = Field(
+    shift_timing: Union[str, None] = Field(
         default=None,
         max_length=100,
         description="Shift timing",
     )
     
     # Permissions (optional, will use defaults)
-    permissions: Optional[dict] = Field(
+    permissions: Union[dict, None] = Field(
         default=None,
         description="Custom permissions (uses template defaults if not provided)",
     )
-    permission_template: Optional[str] = Field(
+    permission_template: Union[str, None] = Field(
         default="junior_supervisor",
         description="Permission template to apply",
     )
@@ -149,35 +147,35 @@ class AssignmentUpdate(BaseUpdateSchema):
     Allows modification of employment details and assignment status.
     """
 
-    employee_id: Optional[str] = Field(
+    employee_id: Union[str, None] = Field(
         default=None,
         max_length=100,
         description="Employee ID",
     )
-    employment_type: Optional[str] = Field(
+    employment_type: Union[str, None] = Field(
         default=None,
         pattern=r"^(full_time|part_time|contract)$",
         description="Employment type",
     )
-    shift_timing: Optional[str] = Field(
+    shift_timing: Union[str, None] = Field(
         default=None,
         max_length=100,
         description="Shift timing",
     )
-    is_active: Optional[bool] = Field(
+    is_active: Union[bool, None] = Field(
         default=None,
         description="Assignment active status",
     )
     
     # Permission updates
-    permissions: Optional[dict] = Field(
+    permissions: Union[dict, None] = Field(
         default=None,
         description="Updated permissions",
     )
 
     @field_validator("employment_type")
     @classmethod
-    def normalize_employment_type(cls, v: Optional[str]) -> Optional[str]:
+    def normalize_employment_type(cls, v: Union[str, None]) -> Union[str, None]:
         """Normalize employment type."""
         return v.lower().strip() if v else None
 
@@ -205,11 +203,11 @@ class RevokeAssignmentRequest(BaseCreateSchema):
     )
     
     # Handover
-    handover_to_supervisor_id: Optional[str] = Field(
+    handover_to_supervisor_id: Union[str, None] = Field(
         default=None,
         description="Transfer responsibilities to another supervisor",
     )
-    handover_notes: Optional[str] = Field(
+    handover_notes: Union[str, None] = Field(
         default=None,
         max_length=1000,
         description="Handover instructions",
@@ -284,11 +282,11 @@ class AssignmentTransfer(BaseCreateSchema):
         default=True,
         description="Keep same permission set",
     )
-    new_permissions: Optional[dict] = Field(
+    new_permissions: Union[dict, None] = Field(
         default=None,
         description="New permissions if not retaining",
     )
-    permission_template: Optional[str] = Field(
+    permission_template: Union[str, None] = Field(
         default=None,
         description="Permission template to apply at new hostel",
     )
@@ -365,7 +363,7 @@ class AssignmentSummary(BaseSchema):
     )
     
     # Performance summary
-    average_performance_rating: Optional[Decimal] = Field(
+    average_performance_rating: Union[Decimal, None] = Field(
         default=None,
         ge=0,
         le=5,

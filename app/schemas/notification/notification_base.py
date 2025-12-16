@@ -6,10 +6,8 @@ This module provides core notification schemas for creating, updating,
 and managing notifications across different channels (email, SMS, push).
 """
 
-from __future__ import annotations
-
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Union
 from uuid import UUID
 
 from pydantic import Field, field_validator, model_validator
@@ -36,15 +34,15 @@ class NotificationBase(BaseSchema):
     """
 
     # Recipient information (at least one must be provided)
-    recipient_user_id: Optional[UUID] = Field(
+    recipient_user_id: Union[UUID, None] = Field(
         default=None,
         description="Recipient user ID for user-based routing",
     )
-    recipient_email: Optional[str] = Field(
+    recipient_email: Union[str, None] = Field(
         default=None,
         description="Recipient email address for email notifications",
     )
-    recipient_phone: Optional[str] = Field(
+    recipient_phone: Union[str, None] = Field(
         default=None,
         description="Recipient phone number for SMS notifications",
     )
@@ -56,7 +54,7 @@ class NotificationBase(BaseSchema):
     )
 
     # Template support
-    template_code: Optional[str] = Field(
+    template_code: Union[str, None] = Field(
         default=None,
         min_length=3,
         max_length=100,
@@ -64,7 +62,7 @@ class NotificationBase(BaseSchema):
     )
 
     # Content
-    subject: Optional[str] = Field(
+    subject: Union[str, None] = Field(
         default=None,
         min_length=1,
         max_length=255,
@@ -82,7 +80,7 @@ class NotificationBase(BaseSchema):
         default=Priority.MEDIUM,
         description="Notification delivery priority",
     )
-    scheduled_at: Optional[datetime] = Field(
+    scheduled_at: Union[datetime, None] = Field(
         default=None,
         description="Scheduled delivery time (null for immediate delivery)",
     )
@@ -94,14 +92,14 @@ class NotificationBase(BaseSchema):
     )
 
     # Related entity
-    hostel_id: Optional[UUID] = Field(
+    hostel_id: Union[UUID, None] = Field(
         default=None,
         description="Associated hostel ID for hostel-specific notifications",
     )
 
     @field_validator("recipient_email")
     @classmethod
-    def validate_email(cls, v: Optional[str]) -> Optional[str]:
+    def validate_email(cls, v: Union[str, None]) -> Union[str, None]:
         """Validate email format if provided."""
         if v is not None:
             # Basic email validation
@@ -113,7 +111,7 @@ class NotificationBase(BaseSchema):
 
     @field_validator("recipient_phone")
     @classmethod
-    def validate_phone(cls, v: Optional[str]) -> Optional[str]:
+    def validate_phone(cls, v: Union[str, None]) -> Union[str, None]:
         """Validate phone number format if provided."""
         if v is not None:
             import re
@@ -127,7 +125,7 @@ class NotificationBase(BaseSchema):
 
     @field_validator("scheduled_at")
     @classmethod
-    def validate_scheduled_time(cls, v: Optional[datetime]) -> Optional[datetime]:
+    def validate_scheduled_time(cls, v: Union[datetime, None]) -> Union[datetime, None]:
         """Validate scheduled time is in the future."""
         if v is not None and v <= datetime.utcnow():
             raise ValueError("Scheduled time must be in the future")
@@ -193,15 +191,15 @@ class NotificationUpdate(BaseUpdateSchema):
     Content updates are not permitted to maintain audit trail.
     """
 
-    scheduled_at: Optional[datetime] = Field(
+    scheduled_at: Union[datetime, None] = Field(
         default=None,
         description="Update scheduled delivery time",
     )
-    priority: Optional[Priority] = Field(
+    priority: Union[Priority, None] = Field(
         default=None,
         description="Update notification priority",
     )
-    status: Optional[str] = Field(
+    status: Union[str, None] = Field(
         default=None,
         pattern="^(queued|processing|sent|delivered|failed|cancelled)$",
         description="Update notification status",
@@ -209,7 +207,7 @@ class NotificationUpdate(BaseUpdateSchema):
 
     @field_validator("scheduled_at")
     @classmethod
-    def validate_scheduled_time(cls, v: Optional[datetime]) -> Optional[datetime]:
+    def validate_scheduled_time(cls, v: Union[datetime, None]) -> Union[datetime, None]:
         """Validate scheduled time is in the future if provided."""
         if v is not None and v <= datetime.utcnow():
             raise ValueError("Scheduled time must be in the future")
@@ -234,7 +232,7 @@ class MarkAsRead(BaseCreateSchema):
         ...,
         description="ID of the user marking the notification as read",
     )
-    read_at: Optional[datetime] = Field(
+    read_at: Union[datetime, None] = Field(
         default_factory=datetime.utcnow,
         description="Timestamp when the notification was read",
     )
@@ -253,7 +251,7 @@ class BulkMarkAsRead(BaseCreateSchema):
         ...,
         description="ID of the user marking notifications as read",
     )
-    read_at: Optional[datetime] = Field(
+    read_at: Union[datetime, None] = Field(
         default_factory=datetime.utcnow,
         description="Timestamp for all read operations",
     )
@@ -286,7 +284,7 @@ class NotificationDelete(BaseCreateSchema):
         default=False,
         description="If True, permanently delete; if False, soft delete",
     )
-    deletion_reason: Optional[str] = Field(
+    deletion_reason: Union[str, None] = Field(
         default=None,
         max_length=500,
         description="Reason for deletion (optional, for audit purposes)",

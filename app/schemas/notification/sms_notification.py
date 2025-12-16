@@ -6,11 +6,9 @@ This module provides schemas for SMS-specific notifications including
 sending, delivery tracking, templates, and bulk operations.
 """
 
-from __future__ import annotations
-
 from datetime import date as Date, datetime
 from decimal import Decimal
-from typing import Annotated, Any, Dict, List, Optional
+from typing import Annotated, Any, Dict, List, Union
 from uuid import UUID
 
 from pydantic import Field, field_validator, model_validator
@@ -52,19 +50,19 @@ class SMSRequest(BaseCreateSchema):
     )
 
     # Template support
-    template_code: Optional[str] = Field(
+    template_code: Union[str, None] = Field(
         default=None,
         min_length=3,
         max_length=100,
         description="Template code (overrides direct message)",
     )
-    template_variables: Optional[Dict[str, str]] = Field(
+    template_variables: Union[Dict[str, str], None] = Field(
         default=None,
         description="Variables for template rendering",
     )
 
     # Sender configuration
-    sender_id: Optional[str] = Field(
+    sender_id: Union[str, None] = Field(
         default=None,
         min_length=3,
         max_length=11,
@@ -80,19 +78,19 @@ class SMSRequest(BaseCreateSchema):
     )
 
     # DLT compliance (India-specific)
-    dlt_template_id: Optional[str] = Field(
+    dlt_template_id: Union[str, None] = Field(
         default=None,
         max_length=50,
         description="DLT template ID for regulatory compliance (India)",
     )
-    dlt_entity_id: Optional[str] = Field(
+    dlt_entity_id: Union[str, None] = Field(
         default=None,
         max_length=50,
         description="DLT entity ID (India)",
     )
 
     # Scheduling
-    send_at: Optional[datetime] = Field(
+    send_at: Union[datetime, None] = Field(
         default=None,
         description="Schedule SMS for future delivery",
     )
@@ -143,7 +141,7 @@ class SMSRequest(BaseCreateSchema):
 
     @field_validator("send_at")
     @classmethod
-    def validate_send_time(cls, v: Optional[datetime]) -> Optional[datetime]:
+    def validate_send_time(cls, v: Union[datetime, None]) -> Union[datetime, None]:
         """Validate scheduled send time is in the future."""
         if v is not None and v <= datetime.utcnow():
             raise ValueError("Scheduled send time must be in the future")
@@ -180,17 +178,17 @@ class SMSConfig(BaseSchema):
     )
 
     # API credentials
-    account_sid: Optional[str] = Field(
+    account_sid: Union[str, None] = Field(
         default=None,
         max_length=255,
         description="Account SID/ID",
     )
-    auth_token: Optional[str] = Field(
+    auth_token: Union[str, None] = Field(
         default=None,
         max_length=500,
         description="Authentication token/API key",
     )
-    api_key: Optional[str] = Field(
+    api_key: Union[str, None] = Field(
         default=None,
         max_length=500,
         description="API key (alternative to auth_token)",
@@ -240,13 +238,13 @@ class SMSConfig(BaseSchema):
         default=False,
         description="Enable DLT compliance checking",
     )
-    dlt_entity_id: Optional[str] = Field(
+    dlt_entity_id: Union[str, None] = Field(
         default=None,
         description="Default DLT entity ID",
     )
 
     # Delivery reports
-    delivery_report_webhook_url: Optional[str] = Field(
+    delivery_report_webhook_url: Union[str, None] = Field(
         default=None,
         max_length=500,
         description="Webhook URL for delivery reports",
@@ -254,7 +252,7 @@ class SMSConfig(BaseSchema):
 
     # Cost settings
     # Note: Pydantic v2 - Using Annotated for Decimal constraints
-    cost_per_sms: Optional[Annotated[Decimal, Field(ge=0)]] = Field(
+    cost_per_sms: Union[Annotated[Decimal, Field(ge=0)], None] = Field(
         default=None,
         description="Cost per SMS unit",
     )
@@ -294,38 +292,38 @@ class DeliveryStatus(BaseSchema):
         ...,
         description="When SMS was queued",
     )
-    sent_at: Optional[datetime] = Field(
+    sent_at: Union[datetime, None] = Field(
         default=None,
         description="When SMS was sent to provider",
     )
-    delivered_at: Optional[datetime] = Field(
+    delivered_at: Union[datetime, None] = Field(
         default=None,
         description="When SMS was delivered to recipient",
     )
-    failed_at: Optional[datetime] = Field(
+    failed_at: Union[datetime, None] = Field(
         default=None,
         description="When delivery failed",
     )
 
     # Error information
-    error_code: Optional[str] = Field(
+    error_code: Union[str, None] = Field(
         default=None,
         max_length=50,
         description="Error code from provider",
     )
-    error_message: Optional[str] = Field(
+    error_message: Union[str, None] = Field(
         default=None,
         max_length=500,
         description="Human-readable error message",
     )
 
     # Provider details
-    provider_message_id: Optional[str] = Field(
+    provider_message_id: Union[str, None] = Field(
         default=None,
         max_length=255,
         description="Provider's unique message ID",
     )
-    provider_status: Optional[str] = Field(
+    provider_status: Union[str, None] = Field(
         default=None,
         max_length=100,
         description="Raw status from provider",
@@ -350,11 +348,11 @@ class DeliveryStatus(BaseSchema):
     )
 
     # Cost
-    cost: Optional[Annotated[Decimal, Field(ge=0)]] = Field(
+    cost: Union[Annotated[Decimal, Field(ge=0)], None] = Field(
         default=None,
         description="Cost for this SMS",
     )
-    currency: Optional[str] = Field(
+    currency: Union[str, None] = Field(
         default=None,
         min_length=3,
         max_length=3,
@@ -416,7 +414,7 @@ class SMSTemplate(BaseSchema):
     )
 
     # DLT compliance (India)
-    dlt_template_id: Optional[str] = Field(
+    dlt_template_id: Union[str, None] = Field(
         default=None,
         max_length=50,
         description="DLT approved template ID",
@@ -425,13 +423,13 @@ class SMSTemplate(BaseSchema):
         default=False,
         description="Whether template is DLT approved",
     )
-    dlt_approval_date: Optional[Date] = Field(
+    dlt_approval_date: Union[Date, None] = Field(
         default=None,
         description="Date of DLT approval",
     )
 
     # Category
-    category: Optional[str] = Field(
+    category: Union[str, None] = Field(
         default=None,
         max_length=50,
         pattern="^(transactional|promotional|otp|alert)$",
@@ -462,19 +460,19 @@ class BulkSMSRequest(BaseCreateSchema):
     )
 
     # Template support
-    template_code: Optional[str] = Field(
+    template_code: Union[str, None] = Field(
         default=None,
         description="Template code for all SMS",
     )
 
     # Per-recipient customization
-    recipient_variables: Optional[Dict[str, Dict[str, str]]] = Field(
+    recipient_variables: Union[Dict[str, Dict[str, str]], None] = Field(
         default=None,
         description="Per-recipient variable mapping (phone -> variables)",
     )
 
     # Sender
-    sender_id: Optional[str] = Field(
+    sender_id: Union[str, None] = Field(
         default=None,
         max_length=11,
         description="Sender ID for all SMS",
@@ -495,19 +493,19 @@ class BulkSMSRequest(BaseCreateSchema):
     )
 
     # Scheduling
-    send_at: Optional[datetime] = Field(
+    send_at: Union[datetime, None] = Field(
         default=None,
         description="Schedule bulk send for future",
     )
 
     # DLT (India)
-    dlt_template_id: Optional[str] = Field(
+    dlt_template_id: Union[str, None] = Field(
         default=None,
         description="DLT template ID for all SMS",
     )
 
     # Metadata
-    campaign_name: Optional[str] = Field(
+    campaign_name: Union[str, None] = Field(
         default=None,
         max_length=100,
         description="Campaign name for tracking",

@@ -3,10 +3,8 @@
 User profile update schemas with comprehensive field validation.
 """
 
-from __future__ import annotations
-
 from datetime import date as Date
-from typing import Optional
+from typing import Union
 
 from pydantic import BaseModel, EmailStr, Field, HttpUrl, field_validator
 
@@ -28,50 +26,50 @@ class ProfileUpdate(BaseUpdateSchema):
     Comprehensive profile update with personal and address information.
     """
 
-    full_name: Optional[str] = Field(
+    full_name: Union[str, None] = Field(
         default=None,
         min_length=2,
         max_length=255,
         description="Full name",
         examples=["John Doe"],
     )
-    gender: Optional[Gender] = Field(
+    gender: Union[Gender, None] = Field(
         default=None,
         description="Gender",
     )
-    date_of_birth: Optional[Date] = Field(
+    date_of_birth: Union[Date, None] = Field(
         default=None,
         description="Date of birth",
     )
-    address_line1: Optional[str] = Field(
+    address_line1: Union[str, None] = Field(
         default=None,
         min_length=5,
         max_length=255,
         description="Address line 1",
     )
-    address_line2: Optional[str] = Field(
+    address_line2: Union[str, None] = Field(
         default=None,
         max_length=255,
         description="Address line 2 (optional)",
     )
-    city: Optional[str] = Field(
+    city: Union[str, None] = Field(
         default=None,
         min_length=2,
         max_length=100,
         description="City",
     )
-    state: Optional[str] = Field(
+    state: Union[str, None] = Field(
         default=None,
         min_length=2,
         max_length=100,
         description="State",
     )
-    pincode: Optional[str] = Field(
+    pincode: Union[str, None] = Field(
         default=None,
         pattern=r"^\d{6}$",
         description="6-digit pincode",
     )
-    country: Optional[str] = Field(
+    country: Union[str, None] = Field(
         default=None,
         min_length=2,
         max_length=100,
@@ -80,7 +78,7 @@ class ProfileUpdate(BaseUpdateSchema):
 
     @field_validator("full_name")
     @classmethod
-    def validate_full_name(cls, v: Optional[str]) -> Optional[str]:
+    def validate_full_name(cls, v: Union[str, None]) -> Union[str, None]:
         """Validate and normalize full name."""
         if v is not None:
             v = v.strip()
@@ -94,8 +92,8 @@ class ProfileUpdate(BaseUpdateSchema):
 
     @field_validator("date_of_birth")
     @classmethod
-    def validate_age(cls, v: Optional[Date]) -> Optional[Date]:
-        """Validate date of birth for reasonable age constraints."""
+    def validate_age(cls, v: Union[Date, None]) -> Union[Date, None]:
+        """Validate Date of birth for reasonable age constraints."""
         if v is not None:
             today = Date.today()
             if v >= today:
@@ -105,12 +103,12 @@ class ProfileUpdate(BaseUpdateSchema):
             if age < 16:
                 raise ValueError("User must be at least 16 years old")
             if age > 100:
-                raise ValueError("Invalid date of birth")
+                raise ValueError("Invalid Date of birth")
         return v
 
     @field_validator("city", "state", "country")
     @classmethod
-    def validate_text_fields(cls, v: Optional[str]) -> Optional[str]:
+    def validate_text_fields(cls, v: Union[str, None]) -> Union[str, None]:
         """Validate and normalize text fields."""
         if v is not None:
             v = v.strip()
@@ -141,29 +139,29 @@ class ContactInfoUpdate(BaseUpdateSchema):
     Includes phone, email, and emergency contact details.
     """
 
-    phone: Optional[str] = Field(
+    phone: Union[str, None] = Field(
         default=None,
         pattern=r"^\+?[1-9]\d{9,14}$",
         description="Phone number (E.164 format recommended)",
         examples=["+919876543210"],
     )
-    email: Optional[EmailStr] = Field(
+    email: Union[EmailStr, None] = Field(
         default=None,
         description="Email address",
         examples=["user@example.com"],
     )
-    emergency_contact_name: Optional[str] = Field(
+    emergency_contact_name: Union[str, None] = Field(
         default=None,
         min_length=2,
         max_length=255,
         description="Emergency contact name",
     )
-    emergency_contact_phone: Optional[str] = Field(
+    emergency_contact_phone: Union[str, None] = Field(
         default=None,
         pattern=r"^\+?[1-9]\d{9,14}$",
         description="Emergency contact phone number",
     )
-    emergency_contact_relation: Optional[str] = Field(
+    emergency_contact_relation: Union[str, None] = Field(
         default=None,
         min_length=2,
         max_length=100,
@@ -173,7 +171,7 @@ class ContactInfoUpdate(BaseUpdateSchema):
 
     @field_validator("phone", "emergency_contact_phone")
     @classmethod
-    def normalize_phone(cls, v: Optional[str]) -> Optional[str]:
+    def normalize_phone(cls, v: Union[str, None]) -> Union[str, None]:
         """Normalize phone number by removing spaces and dashes."""
         if v is not None:
             return v.replace(" ", "").replace("-", "").strip()
@@ -181,7 +179,7 @@ class ContactInfoUpdate(BaseUpdateSchema):
 
     @field_validator("email")
     @classmethod
-    def normalize_email(cls, v: Optional[EmailStr]) -> Optional[EmailStr]:
+    def normalize_email(cls, v: Union[EmailStr, None]) -> Union[EmailStr, None]:
         """Normalize email to lowercase and trim whitespace."""
         if v is not None:
             return EmailStr(v.lower().strip())
@@ -189,7 +187,7 @@ class ContactInfoUpdate(BaseUpdateSchema):
 
     @field_validator("emergency_contact_name", "emergency_contact_relation")
     @classmethod
-    def validate_text_fields(cls, v: Optional[str]) -> Optional[str]:
+    def validate_text_fields(cls, v: Union[str, None]) -> Union[str, None]:
         """Validate and normalize text fields."""
         if v is not None:
             v = v.strip()
@@ -247,19 +245,19 @@ class NotificationPreferencesUpdate(BaseUpdateSchema):
     )
 
     # Advanced preferences
-    digest_frequency: Optional[str] = Field(
+    digest_frequency: Union[str, None] = Field(
         default=None,
         pattern=r"^(immediate|daily|weekly|never)$",
         description="Notification digest frequency",
         examples=["immediate", "daily", "weekly", "never"],
     )
-    quiet_hours_start: Optional[str] = Field(
+    quiet_hours_start: Union[str, None] = Field(
         default=None,
         pattern=r"^([01]?[0-9]|2[0-3]):[0-5][0-9]$",
         description="Quiet hours start time (HH:MM format)",
         examples=["22:00"],
     )
-    quiet_hours_end: Optional[str] = Field(
+    quiet_hours_end: Union[str, None] = Field(
         default=None,
         pattern=r"^([01]?[0-9]|2[0-3]):[0-5][0-9]$",
         description="Quiet hours end time (HH:MM format)",
@@ -268,7 +266,7 @@ class NotificationPreferencesUpdate(BaseUpdateSchema):
 
     @field_validator("digest_frequency")
     @classmethod
-    def normalize_digest_frequency(cls, v: Optional[str]) -> Optional[str]:
+    def normalize_digest_frequency(cls, v: Union[str, None]) -> Union[str, None]:
         """Normalize digest frequency to lowercase."""
         if v is not None:
             return v.lower().strip()

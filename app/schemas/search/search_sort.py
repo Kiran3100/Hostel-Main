@@ -10,10 +10,8 @@ Pydantic v2 Migration Notes:
 - Enum-based fields work identically in v2
 """
 
-from __future__ import annotations
-
 from enum import Enum
-from typing import Optional
+from typing import Union
 
 from pydantic import Field, field_validator, computed_field
 
@@ -67,11 +65,11 @@ class SortCriteria(BaseSchema):
     )
 
     # Secondary sort (for tie-breaking)
-    secondary_sort_by: Optional[SearchSortField] = Field(
+    secondary_sort_by: Union[SearchSortField, None] = Field(
         default=None,
         description="Secondary sort field for tie-breaking",
     )
-    secondary_sort_order: Optional[SearchSortOrder] = Field(
+    secondary_sort_order: Union[SearchSortOrder, None] = Field(
         default=None,
         description="Secondary sort direction",
     )
@@ -93,7 +91,7 @@ class SortCriteria(BaseSchema):
         # No validation needed - just documenting the behavior
         return v
 
-    @computed_field  # type: ignore[misc]
+    @computed_field  # type: ignore[prop-decorator]
     @property
     def effective_sort_order(self) -> SearchSortOrder:
         """

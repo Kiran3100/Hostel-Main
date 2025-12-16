@@ -6,10 +6,8 @@ This module provides schemas for generating unique referral codes
 and validating their usage.
 """
 
-from __future__ import annotations
-
 from datetime import datetime
-from typing import Optional
+from typing import List, Union
 from uuid import UUID
 
 from pydantic import Field, field_validator
@@ -49,7 +47,7 @@ class ReferralCodeGenerate(BaseCreateSchema):
         pattern="^[A-Z]+$",
         description="Code prefix (uppercase letters only)",
     )
-    custom_suffix: Optional[str] = Field(
+    custom_suffix: Union[str, None] = Field(
         None,
         min_length=3,
         max_length=10,
@@ -58,7 +56,7 @@ class ReferralCodeGenerate(BaseCreateSchema):
     )
 
     # Validity
-    expires_at: Optional[datetime] = Field(
+    expires_at: Union[datetime, None] = Field(
         None,
         description="Code expiration date (optional)",
     )
@@ -80,7 +78,7 @@ class ReferralCodeGenerate(BaseCreateSchema):
 
     @field_validator("expires_at")
     @classmethod
-    def validate_expiration(cls, v: Optional[datetime]) -> Optional[datetime]:
+    def validate_expiration(cls, v: Union[datetime, None]) -> Union[datetime, None]:
         """Validate expiration date is in future."""
         if v is not None and v <= datetime.utcnow():
             raise ValueError("Expiration date must be in the future")
@@ -103,7 +101,7 @@ class ReferralCodeResponse(BaseSchema):
         ...,
         description="Shareable URL with embedded code",
     )
-    qr_code_url: Optional[str] = Field(
+    qr_code_url: Union[str, None] = Field(
         None,
         description="QR code image URL",
     )
@@ -128,7 +126,7 @@ class ReferralCodeResponse(BaseSchema):
     # Validity
     is_active: bool = Field(..., description="Whether code is currently active")
     created_at: datetime = Field(..., description="Code creation time")
-    expires_at: Optional[datetime] = Field(None, description="Expiration time")
+    expires_at: Union[datetime, None] = Field(None, description="Expiration time")
 
 
 class CodeValidationRequest(BaseCreateSchema):
@@ -144,11 +142,11 @@ class CodeValidationRequest(BaseCreateSchema):
         max_length=50,
         description="Referral code to validate",
     )
-    user_id: Optional[UUID] = Field(
+    user_id: Union[UUID, None] = Field(
         None,
         description="User ID attempting to use the code",
     )
-    context: Optional[str] = Field(
+    context: Union[str, None] = Field(
         None,
         max_length=100,
         description="Context where code is being used (e.g., 'booking', 'registration')",
@@ -172,31 +170,31 @@ class CodeValidationResponse(BaseSchema):
     is_valid: bool = Field(..., description="Whether code is valid")
     
     # Program details (if valid)
-    program_id: Optional[UUID] = Field(
+    program_id: Union[UUID, None] = Field(
         None,
         description="Associated program ID",
     )
-    program_name: Optional[str] = Field(
+    program_name: Union[str, None] = Field(
         None,
         description="Program name",
     )
     
     # Referrer details (if valid)
-    referrer_id: Optional[UUID] = Field(
+    referrer_id: Union[UUID, None] = Field(
         None,
         description="Referrer user ID",
     )
-    referrer_name: Optional[str] = Field(
+    referrer_name: Union[str, None] = Field(
         None,
         description="Referrer name",
     )
     
     # Reward information (if valid)
-    referee_reward_amount: Optional[str] = Field(
+    referee_reward_amount: Union[str, None] = Field(
         None,
         description="Reward amount for new user",
     )
-    reward_type: Optional[str] = Field(
+    reward_type: Union[str, None] = Field(
         None,
         description="Type of reward",
     )
@@ -206,7 +204,7 @@ class CodeValidationResponse(BaseSchema):
         ...,
         description="Validation message or error reason",
     )
-    validation_errors: list[str] = Field(
+    validation_errors: List[str] = Field(
         default_factory=list,
         description="List of validation errors if invalid",
     )
@@ -214,7 +212,7 @@ class CodeValidationResponse(BaseSchema):
     # Usage information
     times_used: int = Field(default=0, ge=0, description="Times code has been used")
     max_uses: int = Field(default=0, ge=0, description="Maximum allowed uses")
-    expires_at: Optional[datetime] = Field(None, description="Expiration date")
+    expires_at: Union[datetime, None] = Field(None, description="Expiration date")
 
 
 class ReferralCodeStats(BaseSchema):
@@ -275,4 +273,4 @@ class ReferralCodeStats(BaseSchema):
     
     # Time period
     created_at: datetime = Field(..., description="Code creation date")
-    last_used_at: Optional[datetime] = Field(None, description="Last usage date")
+    last_used_at: Union[datetime, None] = Field(None, description="Last usage date")

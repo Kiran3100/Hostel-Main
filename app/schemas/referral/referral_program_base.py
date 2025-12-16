@@ -6,11 +6,9 @@ This module provides schemas for creating and managing referral programs
 with reward structures, eligibility criteria, and validity periods.
 """
 
-from __future__ import annotations
-
 from datetime import date as Date, datetime
 from decimal import Decimal
-from typing import List, Optional
+from typing import List, Union
 from uuid import UUID
 
 from pydantic import Field, field_validator, model_validator
@@ -64,7 +62,7 @@ class ReferralProgramBase(BaseSchema):
         max_length=100,
         description="Unique program name",
     )
-    program_code: Optional[str] = Field(
+    program_code: Union[str, None] = Field(
         None,
         min_length=3,
         max_length=50,
@@ -78,7 +76,7 @@ class ReferralProgramBase(BaseSchema):
     )
 
     # Program description
-    description: Optional[str] = Field(
+    description: Union[str, None] = Field(
         None,
         max_length=1000,
         description="Program description and benefits",
@@ -90,12 +88,12 @@ class ReferralProgramBase(BaseSchema):
         pattern="^(cash|discount|voucher|free_month|points)$",
         description="Type of reward offered",
     )
-    referrer_reward_amount: Optional[Decimal] = Field(
+    referrer_reward_amount: Union[Decimal, None] = Field(
         None,
         ge=0,
         description="Reward amount for the referrer",
     )
-    referee_reward_amount: Optional[Decimal] = Field(
+    referee_reward_amount: Union[Decimal, None] = Field(
         None,
         ge=0,
         description="Reward amount for the referee (new user)",
@@ -109,31 +107,31 @@ class ReferralProgramBase(BaseSchema):
     )
 
     # Reward caps
-    max_referrer_rewards_per_month: Optional[int] = Field(
+    max_referrer_rewards_per_month: Union[int, None] = Field(
         None,
         ge=1,
         le=100,
         description="Maximum rewards referrer can earn per month",
     )
-    max_total_reward_amount: Optional[Decimal] = Field(
+    max_total_reward_amount: Union[Decimal, None] = Field(
         None,
         ge=0,
         description="Maximum total reward amount per referrer",
     )
 
     # Eligibility criteria
-    min_booking_amount: Optional[Decimal] = Field(
+    min_booking_amount: Union[Decimal, None] = Field(
         None,
         ge=0,
         description="Minimum booking amount to qualify for reward",
     )
-    min_stay_months: Optional[int] = Field(
+    min_stay_months: Union[int, None] = Field(
         None,
         ge=1,
         le=24,
         description="Minimum stay duration in months to qualify",
     )
-    min_referrer_stay_months: Optional[int] = Field(
+    min_referrer_stay_months: Union[int, None] = Field(
         None,
         ge=0,
         le=12,
@@ -141,7 +139,7 @@ class ReferralProgramBase(BaseSchema):
     )
 
     # Referral limitations
-    max_referrals_per_user: Optional[int] = Field(
+    max_referrals_per_user: Union[int, None] = Field(
         None,
         ge=1,
         le=1000,
@@ -157,17 +155,17 @@ class ReferralProgramBase(BaseSchema):
         default=True,
         description="Whether program is currently active",
     )
-    valid_from: Optional[Date] = Field(
+    valid_from: Union[Date, None] = Field(
         None,
         description="Program start Date",
     )
-    valid_to: Optional[Date] = Field(
+    valid_to: Union[Date, None] = Field(
         None,
         description="Program end Date",
     )
 
     # Terms and conditions
-    terms_and_conditions: Optional[str] = Field(
+    terms_and_conditions: Union[str, None] = Field(
         None,
         max_length=5000,
         description="Detailed terms and conditions",
@@ -220,7 +218,7 @@ class ReferralProgramBase(BaseSchema):
 
     @field_validator("referrer_reward_amount", "referee_reward_amount", "min_booking_amount", "max_total_reward_amount")
     @classmethod
-    def validate_decimal_places(cls, v: Optional[Decimal]) -> Optional[Decimal]:
+    def validate_decimal_places(cls, v: Union[Decimal, None]) -> Union[Decimal, None]:
         """Ensure decimal values have at most 2 decimal places."""
         if v is None:
             return None
@@ -303,69 +301,69 @@ class ProgramUpdate(BaseUpdateSchema):
     Allows partial updates with proper validation.
     """
 
-    program_name: Optional[str] = Field(
+    program_name: Union[str, None] = Field(
         None,
         min_length=3,
         max_length=100,
     )
-    description: Optional[str] = Field(
+    description: Union[str, None] = Field(
         None,
         max_length=1000,
     )
-    reward_type: Optional[str] = Field(
+    reward_type: Union[str, None] = Field(
         None,
         pattern="^(cash|discount|voucher|free_month|points)$",
     )
-    referrer_reward_amount: Optional[Decimal] = Field(
+    referrer_reward_amount: Union[Decimal, None] = Field(
         None,
         ge=0,
     )
-    referee_reward_amount: Optional[Decimal] = Field(
+    referee_reward_amount: Union[Decimal, None] = Field(
         None,
         ge=0,
     )
-    min_booking_amount: Optional[Decimal] = Field(
+    min_booking_amount: Union[Decimal, None] = Field(
         None,
         ge=0,
     )
-    min_stay_months: Optional[int] = Field(
+    min_stay_months: Union[int, None] = Field(
         None,
         ge=1,
         le=24,
     )
-    min_referrer_stay_months: Optional[int] = Field(
+    min_referrer_stay_months: Union[int, None] = Field(
         None,
         ge=0,
         le=12,
     )
-    max_referrals_per_user: Optional[int] = Field(
+    max_referrals_per_user: Union[int, None] = Field(
         None,
         ge=1,
         le=1000,
     )
-    max_referrer_rewards_per_month: Optional[int] = Field(
+    max_referrer_rewards_per_month: Union[int, None] = Field(
         None,
         ge=1,
         le=100,
     )
-    max_total_reward_amount: Optional[Decimal] = Field(
+    max_total_reward_amount: Union[Decimal, None] = Field(
         None,
         ge=0,
     )
-    allowed_user_roles: Optional[List[str]] = None
-    terms_and_conditions: Optional[str] = Field(
+    allowed_user_roles: Union[List[str], None] = None
+    terms_and_conditions: Union[str, None] = Field(
         None,
         max_length=5000,
     )
-    is_active: Optional[bool] = None
-    valid_from: Optional[Date] = None
-    valid_to: Optional[Date] = None
-    auto_approve_rewards: Optional[bool] = None
-    track_conversion: Optional[bool] = None
+    is_active: Union[bool, None] = None
+    valid_from: Union[Date, None] = None
+    valid_to: Union[Date, None] = None
+    auto_approve_rewards: Union[bool, None] = None
+    track_conversion: Union[bool, None] = None
 
     @field_validator("referrer_reward_amount", "referee_reward_amount", "min_booking_amount", "max_total_reward_amount")
     @classmethod
-    def validate_decimal_places(cls, v: Optional[Decimal]) -> Optional[Decimal]:
+    def validate_decimal_places(cls, v: Union[Decimal, None]) -> Union[Decimal, None]:
         """Ensure decimal values have at most 2 decimal places."""
         if v is None:
             return None

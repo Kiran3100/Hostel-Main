@@ -6,10 +6,8 @@ This module provides schemas for routing notifications to appropriate
 recipients with hierarchical escalation and rule-based routing.
 """
 
-from __future__ import annotations
-
 from datetime import datetime
-from typing import Dict, List, Optional
+from typing import Dict, List, Union
 from uuid import UUID
 
 from pydantic import Field, field_validator, model_validator
@@ -36,44 +34,44 @@ class RoutingCondition(BaseSchema):
     """
 
     # Event matching
-    event_type: Optional[str] = Field(
+    event_type: Union[str, None] = Field(
         default=None,
         max_length=100,
         description="Event type to match (e.g., 'complaint', 'payment')",
     )
-    event_category: Optional[str] = Field(
+    event_category: Union[str, None] = Field(
         default=None,
         max_length=100,
         description="Event category",
     )
 
     # Priority matching
-    priority: Optional[Priority] = Field(
+    priority: Union[Priority, None] = Field(
         default=None,
         description="Priority level to match",
     )
-    min_priority: Optional[Priority] = Field(
+    min_priority: Union[Priority, None] = Field(
         default=None,
         description="Minimum priority level",
     )
 
     # Entity matching
-    hostel_id: Optional[UUID] = Field(
+    hostel_id: Union[UUID, None] = Field(
         default=None,
         description="Specific hostel ID",
     )
-    room_id: Optional[UUID] = Field(
+    room_id: Union[UUID, None] = Field(
         default=None,
         description="Specific room ID",
     )
 
     # Time-based
-    time_of_day_start: Optional[str] = Field(
+    time_of_day_start: Union[str, None] = Field(
         default=None,
         pattern=r"^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$",
         description="Start time for time-based routing (HH:MM)",
     )
-    time_of_day_end: Optional[str] = Field(
+    time_of_day_end: Union[str, None] = Field(
         default=None,
         pattern=r"^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$",
         description="End time for time-based routing (HH:MM)",
@@ -93,7 +91,7 @@ class RoutingRule(BaseSchema):
     Defines how notifications should be routed based on conditions.
     """
 
-    rule_id: Optional[UUID] = Field(
+    rule_id: Union[UUID, None] = Field(
         default=None,
         description="Rule ID (auto-generated if not provided)",
     )
@@ -103,7 +101,7 @@ class RoutingRule(BaseSchema):
         max_length=100,
         description="Human-readable rule name",
     )
-    description: Optional[str] = Field(
+    description: Union[str, None] = Field(
         default=None,
         max_length=500,
         description="Rule description",
@@ -145,7 +143,7 @@ class RoutingRule(BaseSchema):
     )
 
     # Template
-    template_code: Optional[str] = Field(
+    template_code: Union[str, None] = Field(
         default=None,
         description="Template to use for this rule",
     )
@@ -283,7 +281,7 @@ class EscalationLevel(BaseSchema):
     )
 
     # Template
-    template_code: Optional[str] = Field(
+    template_code: Union[str, None] = Field(
         default=None,
         description="Template for escalation notification",
     )
@@ -391,7 +389,7 @@ class EscalationRouting(BaseCreateSchema):
         ge=0,
         description="Current escalation level (0 = not escalated)",
     )
-    last_escalated_at: Optional[datetime] = Field(
+    last_escalated_at: Union[datetime, None] = Field(
         default=None,
         description="When last escalation occurred",
     )
@@ -452,11 +450,11 @@ class NotificationRoute(BaseSchema):
     )
 
     # Matched rule
-    matched_rule_id: Optional[UUID] = Field(
+    matched_rule_id: Union[UUID, None] = Field(
         default=None,
         description="ID of routing rule that matched",
     )
-    matched_rule_name: Optional[str] = Field(
+    matched_rule_name: Union[str, None] = Field(
         default=None,
         description="Name of matched routing rule",
     )
@@ -479,7 +477,7 @@ class NotificationRoute(BaseSchema):
     )
 
     # Template
-    template_code: Optional[str] = Field(
+    template_code: Union[str, None] = Field(
         default=None,
         description="Template to use",
     )
@@ -489,7 +487,7 @@ class NotificationRoute(BaseSchema):
         default=False,
         description="Whether escalation is enabled",
     )
-    escalation_path: Optional[List[EscalationLevel]] = Field(
+    escalation_path: Union[List[EscalationLevel], None] = Field(
         default=None,
         description="Escalation levels if enabled",
     )

@@ -6,11 +6,9 @@ This module provides schemas for tracking individual referrals,
 their status, and associated rewards.
 """
 
-from __future__ import annotations
-
 from datetime import datetime
 from decimal import Decimal
-from typing import Optional
+from typing import Union
 from uuid import UUID
 
 from pydantic import EmailStr, Field, field_validator, model_validator
@@ -45,20 +43,20 @@ class ReferralBase(BaseSchema):
     )
 
     # Referee information (at least one required)
-    referee_email: Optional[EmailStr] = Field(
+    referee_email: Union[EmailStr, None] = Field(
         None,
         description="Email address of referred person",
     )
-    referee_phone: Optional[str] = Field(
+    referee_phone: Union[str, None] = Field(
         None,
         pattern=r"^\+?[1-9]\d{9,14}$",
         description="Phone number of referred person",
     )
-    referee_user_id: Optional[UUID] = Field(
+    referee_user_id: Union[UUID, None] = Field(
         None,
         description="User ID of referred person (after registration)",
     )
-    referee_name: Optional[str] = Field(
+    referee_name: Union[str, None] = Field(
         None,
         min_length=2,
         max_length=100,
@@ -81,23 +79,23 @@ class ReferralBase(BaseSchema):
     )
 
     # Conversion tracking
-    booking_id: Optional[UUID] = Field(
+    booking_id: Union[UUID, None] = Field(
         None,
         description="Booking ID if referral converted",
     )
-    conversion_date: Optional[datetime] = Field(
+    conversion_date: Union[datetime, None] = Field(
         None,
         description="When referral converted to booking",
     )
 
     # Reward tracking
     # Note: Decimal precision handled in field validators for Pydantic v2 compatibility
-    referrer_reward_amount: Optional[Decimal] = Field(
+    referrer_reward_amount: Union[Decimal, None] = Field(
         None,
         ge=0,
         description="Reward amount for referrer",
     )
-    referee_reward_amount: Optional[Decimal] = Field(
+    referee_reward_amount: Union[Decimal, None] = Field(
         None,
         ge=0,
         description="Reward amount for referee",
@@ -120,18 +118,18 @@ class ReferralBase(BaseSchema):
     )
 
     # Source tracking
-    referral_source: Optional[str] = Field(
+    referral_source: Union[str, None] = Field(
         None,
         max_length=100,
         description="Source of referral (e.g., 'whatsapp', 'email', 'social')",
     )
-    campaign_id: Optional[UUID] = Field(
+    campaign_id: Union[UUID, None] = Field(
         None,
         description="Marketing campaign ID if applicable",
     )
 
     # Metadata
-    notes: Optional[str] = Field(
+    notes: Union[str, None] = Field(
         None,
         max_length=1000,
         description="Additional notes or context",
@@ -148,7 +146,7 @@ class ReferralBase(BaseSchema):
 
     @field_validator("referee_phone")
     @classmethod
-    def normalize_phone_number(cls, v: Optional[str]) -> Optional[str]:
+    def normalize_phone_number(cls, v: Union[str, None]) -> Union[str, None]:
         """Normalize phone number format."""
         if v is None:
             return None
@@ -167,7 +165,7 @@ class ReferralBase(BaseSchema):
 
     @field_validator("referrer_reward_amount", "referee_reward_amount")
     @classmethod
-    def validate_decimal_places(cls, v: Optional[Decimal]) -> Optional[Decimal]:
+    def validate_decimal_places(cls, v: Union[Decimal, None]) -> Union[Decimal, None]:
         """Ensure decimal values have at most 2 decimal places."""
         if v is None:
             return None
@@ -215,7 +213,7 @@ class ReferralCreate(ReferralBase, BaseCreateSchema):
     """
 
     # Override to make some fields optional for creation
-    referral_code: Optional[str] = Field(
+    referral_code: Union[str, None] = Field(
         None,
         description="Referral code (auto-generated if not provided)",
     )
@@ -256,11 +254,11 @@ class ReferralUpdate(BaseSchema):
     """
 
     # Referee information updates
-    referee_user_id: Optional[UUID] = Field(
+    referee_user_id: Union[UUID, None] = Field(
         None,
         description="Update referee user ID after registration",
     )
-    referee_name: Optional[str] = Field(
+    referee_name: Union[str, None] = Field(
         None,
         min_length=2,
         max_length=100,
@@ -268,33 +266,33 @@ class ReferralUpdate(BaseSchema):
     )
 
     # Status updates
-    status: Optional[ReferralStatus] = Field(
+    status: Union[ReferralStatus, None] = Field(
         None,
         description="Update referral status",
     )
 
     # Conversion updates
-    booking_id: Optional[UUID] = Field(
+    booking_id: Union[UUID, None] = Field(
         None,
         description="Link booking to referral",
     )
-    conversion_date: Optional[datetime] = Field(
+    conversion_date: Union[datetime, None] = Field(
         None,
-        description="Set conversion Date",
+        description="Set conversion date",
     )
 
     # Reward updates
-    referrer_reward_status: Optional[RewardStatus] = Field(
+    referrer_reward_status: Union[RewardStatus, None] = Field(
         None,
         description="Update referrer reward status",
     )
-    referee_reward_status: Optional[RewardStatus] = Field(
+    referee_reward_status: Union[RewardStatus, None] = Field(
         None,
         description="Update referee reward status",
     )
 
     # Notes
-    notes: Optional[str] = Field(
+    notes: Union[str, None] = Field(
         None,
         max_length=1000,
         description="Add or update notes",
@@ -327,7 +325,7 @@ class ReferralConversion(BaseCreateSchema):
         le=24,
         description="Stay duration in months",
     )
-    conversion_date: Optional[datetime] = Field(
+    conversion_date: Union[datetime, None] = Field(
         default_factory=datetime.utcnow,
         description="Conversion timestamp",
     )
@@ -340,7 +338,7 @@ class ReferralConversion(BaseCreateSchema):
 
     @model_validator(mode="after")
     def validate_conversion_date(self) -> "ReferralConversion":
-        """Ensure conversion Date is not in future."""
+        """Ensure conversion date is not in future."""
         if self.conversion_date > datetime.utcnow():
-            raise ValueError("Conversion Date cannot be in the future")
+            raise ValueError("Conversion date cannot be in the future")
         return self

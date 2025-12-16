@@ -17,8 +17,6 @@ Example:
     )
 """
 
-from __future__ import annotations
-
 from app.schemas.search.search_analytics import (
     PopularSearchTerm,
     SearchAnalytics,

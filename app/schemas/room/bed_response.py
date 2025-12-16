@@ -11,11 +11,9 @@ Pydantic v2 Migration Notes:
 - All Decimal fields now have explicit max_digits/decimal_places constraints
 """
 
-from __future__ import annotations
-
 from datetime import date as Date, datetime
 from decimal import Decimal
-from typing import Annotated, List, Optional
+from typing import Annotated, List, Union
 
 from pydantic import Field, computed_field
 
@@ -43,16 +41,16 @@ class BedResponse(BaseResponseSchema):
     bed_number: str = Field(..., description="Bed identifier")
     is_occupied: bool = Field(..., description="Currently occupied")
     status: BedStatus = Field(..., description="Bed status")
-    current_student_id: Optional[str] = Field(
+    current_student_id: Union[str, None] = Field(
         default=None,
         description="Current occupant ID",
     )
-    occupied_from: Optional[Date] = Field(
+    occupied_from: Union[Date, None] = Field(
         default=None,
-        description="Occupancy start date",
+        description="Occupancy start Date",
     )
 
-    @computed_field  # type: ignore[misc]
+    @computed_field  # type: ignore[prop-decorator]
     @property
     def is_available(self) -> bool:
         """Check if bed is available for assignment."""
@@ -74,23 +72,23 @@ class BedAvailability(BaseSchema):
     # Availability
     is_available: bool = Field(..., description="Available for assignment")
     status: BedStatus = Field(..., description="Current status")
-    available_from: Optional[Date] = Field(
+    available_from: Union[Date, None] = Field(
         default=None,
         description="Date when bed becomes available",
     )
     
     # Current occupant (if any)
-    current_student_name: Optional[str] = Field(
+    current_student_name: Union[str, None] = Field(
         default=None,
         description="Current occupant name",
     )
-    current_student_id: Optional[str] = Field(
+    current_student_id: Union[str, None] = Field(
         default=None,
         description="Current occupant ID",
     )
-    expected_vacate_date: Optional[Date] = Field(
+    expected_vacate_date: Union[Date, None] = Field(
         default=None,
-        description="Expected checkout date",
+        description="Expected checkout Date",
     )
     
     # Room info with proper Decimal constraints
@@ -110,9 +108,9 @@ class BedAvailability(BaseSchema):
         description="Attached bathroom",
     )
 
-    @computed_field  # type: ignore[misc]
+    @computed_field  # type: ignore[prop-decorator]
     @property
-    def days_until_available(self) -> Optional[int]:
+    def days_until_available(self) -> Union[int, None]:
         """Calculate days until bed becomes available."""
         if not self.available_from:
             return None
@@ -139,24 +137,24 @@ class BedAssignment(BaseResponseSchema):
     # Student info
     student_id: str = Field(..., description="Student ID")
     student_name: str = Field(..., description="Student name")
-    student_email: Optional[str] = Field(
+    student_email: Union[str, None] = Field(
         default=None,
         description="Student email",
     )
-    student_phone: Optional[str] = Field(
+    student_phone: Union[str, None] = Field(
         default=None,
         description="Student phone",
     )
     
     # Assignment dates
-    occupied_from: Date = Field(..., description="Occupancy start date")
-    expected_vacate_date: Optional[Date] = Field(
+    occupied_from: Date = Field(..., description="Occupancy start Date")
+    expected_vacate_date: Union[Date, None] = Field(
         default=None,
-        description="Expected checkout date",
+        description="Expected checkout Date",
     )
-    actual_vacate_date: Optional[Date] = Field(
+    actual_vacate_date: Union[Date, None] = Field(
         default=None,
-        description="Actual checkout date (if completed)",
+        description="Actual checkout Date (if completed)",
     )
     
     # Pricing with proper Decimal constraints
@@ -171,7 +169,7 @@ class BedAssignment(BaseResponseSchema):
     ]
     
     # Related records
-    booking_id: Optional[str] = Field(
+    booking_id: Union[str, None] = Field(
         default=None,
         description="Related booking ID",
     )
@@ -184,25 +182,25 @@ class BedAssignment(BaseResponseSchema):
     
     # Metadata
     assigned_at: datetime = Field(..., description="Assignment timestamp")
-    assigned_by: Optional[str] = Field(
+    assigned_by: Union[str, None] = Field(
         default=None,
         description="Admin who created assignment",
     )
-    notes: Optional[str] = Field(
+    notes: Union[str, None] = Field(
         default=None,
         description="Assignment notes",
     )
 
-    @computed_field  # type: ignore[misc]
+    @computed_field  # type: ignore[prop-decorator]
     @property
     def days_occupied(self) -> int:
         """Calculate days occupied."""
         end_date = self.actual_vacate_date or Date.today()
         return (end_date - self.occupied_from).days
 
-    @computed_field  # type: ignore[misc]
+    @computed_field  # type: ignore[prop-decorator]
     @property
-    def expected_duration_days(self) -> Optional[int]:
+    def expected_duration_days(self) -> Union[int, None]:
         """Calculate expected duration in days."""
         if not self.expected_vacate_date:
             return None
@@ -219,12 +217,12 @@ class BedAssignmentHistory(BaseSchema):
     assignment_id: str = Field(..., description="Assignment ID")
     student_id: str = Field(..., description="Student ID")
     student_name: str = Field(..., description="Student name")
-    move_in_date: Date = Field(..., description="Move-in date")
-    move_out_date: Optional[Date] = Field(
+    move_in_date: Date = Field(..., description="Move-in Date")
+    move_out_date: Union[Date, None] = Field(
         default=None,
-        description="Move-out date (null if current)",
+        description="Move-out Date (null if current)",
     )
-    duration_days: Optional[int] = Field(
+    duration_days: Union[int, None] = Field(
         default=None,
         description="Total duration in days",
     )
@@ -253,9 +251,9 @@ class BedAssignmentHistory(BaseSchema):
         description="Currently active assignment",
     )
 
-    @computed_field  # type: ignore[misc]
+    @computed_field  # type: ignore[prop-decorator]
     @property
-    def duration_months(self) -> Optional[Decimal]:
+    def duration_months(self) -> Union[Decimal, None]:
         """Calculate duration in months."""
         if self.duration_days is None:
             return None
@@ -297,7 +295,7 @@ class BedHistory(BaseSchema):
         ge=0,
         description="Total days occupied",
     )
-    average_stay_duration_days: Optional[
+    average_stay_duration_days: Union[
         Annotated[
             Decimal,
             Field(
@@ -306,16 +304,17 @@ class BedHistory(BaseSchema):
                 decimal_places=1,
                 description="Average stay duration",
             ),
-        ]
+        ],
+        None,
     ] = None
-    last_occupied_date: Optional[Date] = Field(
+    last_occupied_date: Union[Date, None] = Field(
         default=None,
-        description="Last occupancy date",
+        description="Last occupancy Date",
     )
 
-    @computed_field  # type: ignore[misc]
+    @computed_field  # type: ignore[prop-decorator]
     @property
-    def utilization_rate(self) -> Optional[Decimal]:
+    def utilization_rate(self) -> Union[Decimal, None]:
         """
         Calculate utilization rate since first assignment.
         
@@ -353,47 +352,47 @@ class BedDetailedStatus(BaseResponseSchema):
     is_available: bool = Field(..., description="Available for assignment")
     
     # Current assignment
-    current_student_id: Optional[str] = Field(
+    current_student_id: Union[str, None] = Field(
         default=None,
         description="Current student ID",
     )
-    current_student_name: Optional[str] = Field(
+    current_student_name: Union[str, None] = Field(
         default=None,
         description="Current student name",
     )
-    occupied_from: Optional[Date] = Field(
+    occupied_from: Union[Date, None] = Field(
         default=None,
-        description="Current occupancy start date",
+        description="Current occupancy start Date",
     )
-    expected_vacate_date: Optional[Date] = Field(
+    expected_vacate_date: Union[Date, None] = Field(
         default=None,
-        description="Expected checkout date",
+        description="Expected checkout Date",
     )
     
     # Maintenance
-    last_maintenance_date: Optional[Date] = Field(
+    last_maintenance_date: Union[Date, None] = Field(
         default=None,
-        description="Last maintenance date",
+        description="Last maintenance Date",
     )
-    next_scheduled_maintenance: Optional[Date] = Field(
+    next_scheduled_maintenance: Union[Date, None] = Field(
         default=None,
         description="Next scheduled maintenance",
     )
-    maintenance_notes: Optional[str] = Field(
+    maintenance_notes: Union[str, None] = Field(
         default=None,
         description="Maintenance notes",
     )
     
     # Condition
-    condition_rating: Optional[int] = Field(
+    condition_rating: Union[int, None] = Field(
         default=None,
         ge=1,
         le=5,
         description="Condition rating (1-5, 5 being excellent)",
     )
-    last_inspection_date: Optional[Date] = Field(
+    last_inspection_date: Union[Date, None] = Field(
         default=None,
-        description="Last inspection date",
+        description="Last inspection Date",
     )
     reported_issues: List[str] = Field(
         default_factory=list,
@@ -406,23 +405,23 @@ class BedDetailedStatus(BaseResponseSchema):
         ge=0,
         description="Total historical assignments",
     )
-    average_stay_duration_days: Optional[int] = Field(
+    average_stay_duration_days: Union[int, None] = Field(
         default=None,
         ge=0,
         description="Average stay duration",
     )
     
     # Metadata
-    notes: Optional[str] = Field(
+    notes: Union[str, None] = Field(
         default=None,
         description="General notes",
     )
-    last_status_change: Optional[datetime] = Field(
+    last_status_change: Union[datetime, None] = Field(
         default=None,
         description="Last status change timestamp",
     )
 
-    @computed_field  # type: ignore[misc]
+    @computed_field  # type: ignore[prop-decorator]
     @property
     def needs_maintenance(self) -> bool:
         """Check if bed needs maintenance."""
@@ -438,9 +437,9 @@ class BedDetailedStatus(BaseResponseSchema):
             return True
         return False
 
-    @computed_field  # type: ignore[misc]
+    @computed_field  # type: ignore[prop-decorator]
     @property
-    def current_occupancy_days(self) -> Optional[int]:
+    def current_occupancy_days(self) -> Union[int, None]:
         """Calculate days of current occupancy."""
         if not self.occupied_from:
             return None

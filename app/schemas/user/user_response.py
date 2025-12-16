@@ -3,10 +3,8 @@
 User response schemas with comprehensive user information.
 """
 
-from __future__ import annotations
-
 from datetime import date as Date, datetime
-from typing import Optional
+from typing import Union
 from uuid import UUID
 
 from pydantic import BaseModel, Field
@@ -58,11 +56,11 @@ class UserResponse(BaseResponseSchema):
         ...,
         description="Phone verification status",
     )
-    profile_image_url: Optional[str] = Field(
+    profile_image_url: Union[str, None] = Field(
         default=None,
         description="Profile image URL",
     )
-    last_login_at: Optional[datetime] = Field(
+    last_login_at: Union[datetime, None] = Field(
         default=None,
         description="Last login timestamp (UTC)",
     )
@@ -80,37 +78,37 @@ class UserDetail(BaseResponseSchema):
     phone: str = Field(..., description="Phone number")
     full_name: str = Field(..., description="Full name")
     user_role: UserRole = Field(..., description="User role")
-    gender: Optional[Gender] = Field(default=None, description="Gender")
-    date_of_birth: Optional[Date] = Field(default=None, description="Date of birth")
-    profile_image_url: Optional[str] = Field(
+    gender: Union[Gender, None] = Field(default=None, description="Gender")
+    date_of_birth: Union[Date, None] = Field(default=None, description="Date of birth")
+    profile_image_url: Union[str, None] = Field(
         default=None,
         description="Profile image URL",
     )
 
     # Address information
-    address_line1: Optional[str] = Field(
+    address_line1: Union[str, None] = Field(
         default=None,
         description="Address line 1",
     )
-    address_line2: Optional[str] = Field(
+    address_line2: Union[str, None] = Field(
         default=None,
         description="Address line 2",
     )
-    city: Optional[str] = Field(default=None, description="City")
-    state: Optional[str] = Field(default=None, description="State")
-    country: Optional[str] = Field(default=None, description="Country")
-    pincode: Optional[str] = Field(default=None, description="Pincode")
+    city: Union[str, None] = Field(default=None, description="City")
+    state: Union[str, None] = Field(default=None, description="State")
+    country: Union[str, None] = Field(default=None, description="Country")
+    pincode: Union[str, None] = Field(default=None, description="Pincode")
 
     # Emergency contact
-    emergency_contact_name: Optional[str] = Field(
+    emergency_contact_name: Union[str, None] = Field(
         default=None,
         description="Emergency contact name",
     )
-    emergency_contact_phone: Optional[str] = Field(
+    emergency_contact_phone: Union[str, None] = Field(
         default=None,
         description="Emergency contact phone",
     )
-    emergency_contact_relation: Optional[str] = Field(
+    emergency_contact_relation: Union[str, None] = Field(
         default=None,
         description="Relation to emergency contact",
     )
@@ -119,19 +117,19 @@ class UserDetail(BaseResponseSchema):
     is_active: bool = Field(..., description="Account active status")
     is_email_verified: bool = Field(..., description="Email verification status")
     is_phone_verified: bool = Field(..., description="Phone verification status")
-    email_verified_at: Optional[datetime] = Field(
+    email_verified_at: Union[datetime, None] = Field(
         default=None,
         description="Email verification timestamp",
     )
-    phone_verified_at: Optional[datetime] = Field(
+    phone_verified_at: Union[datetime, None] = Field(
         default=None,
         description="Phone verification timestamp",
     )
-    last_login_at: Optional[datetime] = Field(
+    last_login_at: Union[datetime, None] = Field(
         default=None,
         description="Last login timestamp",
     )
-    last_password_change_at: Optional[datetime] = Field(
+    last_password_change_at: Union[datetime, None] = Field(
         default=None,
         description="Last password change timestamp",
     )
@@ -149,12 +147,12 @@ class UserListItem(BaseSchema):
     full_name: str = Field(..., description="Full name")
     user_role: UserRole = Field(..., description="User role")
     is_active: bool = Field(..., description="Account active status")
-    profile_image_url: Optional[str] = Field(
+    profile_image_url: Union[str, None] = Field(
         default=None,
         description="Profile image URL",
     )
-    created_at: datetime = Field(..., description="Registration date")
-    last_login_at: Optional[datetime] = Field(
+    created_at: datetime = Field(..., description="Registration Date")
+    last_login_at: Union[datetime, None] = Field(
         default=None,
         description="Last login timestamp",
     )
@@ -169,14 +167,14 @@ class UserProfile(BaseSchema):
 
     id: UUID = Field(..., description="User ID")
     full_name: str = Field(..., description="Full name")
-    profile_image_url: Optional[str] = Field(
+    profile_image_url: Union[str, None] = Field(
         default=None,
         description="Profile image URL",
     )
     user_role: UserRole = Field(..., description="User role")
     member_since: datetime = Field(
         ...,
-        description="Member since (registration date)",
+        description="Member since (registration Date)",
     )
 
 
@@ -225,7 +223,7 @@ class UserStats(BaseSchema):
         ge=0,
         description="Number of resolved complaints",
     )
-    average_rating_given: Optional[float] = Field(
+    average_rating_given: Union[float, None] = Field(
         default=None,
         ge=0,
         le=5,
@@ -236,7 +234,7 @@ class UserStats(BaseSchema):
         ge=0,
         description="Account age in days",
     )
-    last_activity_at: Optional[datetime] = Field(
+    last_activity_at: Union[datetime, None] = Field(
         default=None,
         description="Last activity timestamp",
     )

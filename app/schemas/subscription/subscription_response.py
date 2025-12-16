@@ -5,11 +5,9 @@ Provides comprehensive response structures for subscription
 data, billing history, and subscription summaries.
 """
 
-from __future__ import annotations
-
 from datetime import date as Date, datetime
 from decimal import Decimal
-from typing import List, Optional, Annotated
+from typing import List, Union, Annotated
 from uuid import UUID
 
 from pydantic import Field, HttpUrl, computed_field, model_validator, ConfigDict
@@ -64,13 +62,13 @@ class SubscriptionResponse(BaseResponseSchema):
     start_date: Date = Field(..., description="Subscription start Date")
     end_date: Date = Field(..., description="Subscription end Date")
     auto_renew: bool = Field(..., description="Auto-renewal enabled")
-    next_billing_date: Optional[Date] = Field(
+    next_billing_date: Union[Date, None] = Field(
         None, description="Next billing Date"
     )
     status: SubscriptionStatus = Field(..., description="Current status")
 
     # Trial info
-    trial_end_date: Optional[Date] = Field(
+    trial_end_date: Union[Date, None] = Field(
         None, description="Trial period end Date"
     )
     is_in_trial: bool = Field(
@@ -78,24 +76,25 @@ class SubscriptionResponse(BaseResponseSchema):
     )
 
     # Payment info
-    last_payment_date: Optional[Date] = Field(
+    last_payment_date: Union[Date, None] = Field(
         None, description="Last payment Date"
     )
-    last_payment_amount: Optional[Annotated[Decimal, Field(
+    last_payment_amount: Union[Annotated[Decimal, Field(
         None,
         ge=Decimal("0"),
         description="Last payment amount",
-    )]]
+    )], None]
 
     # Cancellation info (if applicable)
-    cancelled_at: Optional[datetime] = Field(
+    cancelled_at: Union[datetime, None] = Field(
         None, description="Cancellation timestamp"
     )
-    cancellation_effective_date: Optional[Date] = Field(
+    cancellation_effective_date: Union[Date, None] = Field(
         None, description="When cancellation takes effect"
     )
 
-    @computed_field
+    @computed_field  # type: ignore[misc]
+    @property
     def days_until_expiry(self) -> int:
         """Calculate days until subscription expires."""
         today = Date.today()
@@ -103,8 +102,9 @@ class SubscriptionResponse(BaseResponseSchema):
             return 0
         return (self.end_date - today).days
 
-    @computed_field
-    def days_until_billing(self) -> Optional[int]:
+    @computed_field  # type: ignore[misc]
+    @property
+    def days_until_billing(self) -> Union[int, None]:
         """Calculate days until next billing."""
         if self.next_billing_date is None:
             return None
@@ -113,17 +113,20 @@ class SubscriptionResponse(BaseResponseSchema):
             return 0
         return (self.next_billing_date - today).days
 
-    @computed_field
+    @computed_field  # type: ignore[misc]
+    @property
     def is_active(self) -> bool:
         """Check if subscription is currently active."""
         return self.status == SubscriptionStatus.ACTIVE
 
-    @computed_field
+    @computed_field  # type: ignore[misc]
+    @property
     def is_expiring_soon(self) -> bool:
         """Check if subscription expires within 7 days."""
         return 0 < self.days_until_expiry <= 7
 
-    @computed_field
+    @computed_field  # type: ignore[misc]
+    @property
     def amount_formatted(self) -> str:
         """Format amount with currency."""
         cycle_label = "mo" if self.billing_cycle == BillingCycle.MONTHLY else "yr"
@@ -166,7 +169,7 @@ class BillingHistoryItem(BaseSchema):
     """
     model_config = ConfigDict(populate_by_name=True)
 
-    id: Optional[UUID] = Field(None, description="Transaction ID")
+    id: Union[UUID, None] = Field(None, description="Transaction ID")
     billing_date: Date = Field(..., description="Billing Date")
 
     # Amounts
@@ -182,39 +185,40 @@ class BillingHistoryItem(BaseSchema):
         ...,
         description="Payment status (pending, paid, failed, refunded)",
     )
-    payment_reference: Optional[str] = Field(
+    payment_reference: Union[str, None] = Field(
         None,
         max_length=100,
         description="Payment transaction reference",
     )
-    payment_method: Optional[str] = Field(
+    payment_method: Union[str, None] = Field(
         None, description="Payment method used"
     )
 
     # Invoice
-    invoice_number: Optional[str] = Field(
+    invoice_number: Union[str, None] = Field(
         None, description="Associated invoice number"
     )
-    invoice_url: Optional[HttpUrl] = Field(
+    invoice_url: Union[HttpUrl, None] = Field(
         None, description="Invoice download URL"
     )
 
     # Description
-    description: Optional[str] = Field(
+    description: Union[str, None] = Field(
         None,
         max_length=255,
         description="Billing description",
     )
 
     # Period covered
-    period_start: Optional[Date] = Field(
+    period_start: Union[Date, None] = Field(
         None, description="Billing period start"
     )
-    period_end: Optional[Date] = Field(
+    period_end: Union[Date, None] = Field(
         None, description="Billing period end"
     )
 
-    @computed_field
+    @computed_field  # type: ignore[misc]
+    @property
     def is_paid(self) -> bool:
         """Check if billing item is paid."""
         return self.status.lower() == "paid"
@@ -230,7 +234,7 @@ class BillingHistory(BaseSchema):
 
     subscription_id: UUID = Field(..., description="Subscription ID")
     hostel_id: UUID = Field(..., description="Hostel ID")
-    hostel_name: Optional[str] = Field(None, description="Hostel name")
+    hostel_name: Union[str, None] = Field(None, description="Hostel name")
 
     # Billing items
     items: List[BillingHistoryItem] = Field(
@@ -284,12 +288,14 @@ class BillingHistory(BaseSchema):
             )
         return self
 
-    @computed_field
+    @computed_field  # type: ignore[misc]
+    @property
     def has_outstanding(self) -> bool:
         """Check if there's outstanding balance."""
         return self.total_outstanding > Decimal("0")
 
-    @computed_field
+    @computed_field  # type: ignore[misc]
+    @property
     def payment_rate(self) -> Decimal:
         """Calculate payment collection rate percentage."""
         if self.total_billed == Decimal("0"):

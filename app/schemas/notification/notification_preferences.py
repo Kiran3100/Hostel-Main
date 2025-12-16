@@ -6,9 +6,7 @@ This module provides schemas for managing user notification preferences
 including channel selection, frequency settings, and quiet hours.
 """
 
-from __future__ import annotations
-
-from typing import Dict, List, Optional
+from typing import Dict, List, Union
 from uuid import UUID
 
 from pydantic import Field, field_validator, model_validator
@@ -59,7 +57,7 @@ class FrequencySettings(BaseSchema):
         default=False,
         description="Enable daily digest",
     )
-    daily_digest_time: Optional[str] = Field(
+    daily_digest_time: Union[str, None] = Field(
         default=None,
         pattern=r"^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$",
         description="Daily digest time in HH:MM format (24-hour)",
@@ -69,12 +67,12 @@ class FrequencySettings(BaseSchema):
         default=False,
         description="Enable weekly digest",
     )
-    weekly_digest_day: Optional[str] = Field(
+    weekly_digest_day: Union[str, None] = Field(
         default=None,
         pattern="^(monday|tuesday|wednesday|thursday|friday|saturday|sunday)$",
         description="Day for weekly digest",
     )
-    weekly_digest_time: Optional[str] = Field(
+    weekly_digest_time: Union[str, None] = Field(
         default=None,
         pattern=r"^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$",
         description="Weekly digest time in HH:MM format",
@@ -107,12 +105,12 @@ class QuietHours(BaseSchema):
         description="Enable quiet hours",
     )
 
-    start_time: Optional[str] = Field(
+    start_time: Union[str, None] = Field(
         default=None,
         pattern=r"^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$",
         description="Quiet hours start time (HH:MM, 24-hour format)",
     )
-    end_time: Optional[str] = Field(
+    end_time: Union[str, None] = Field(
         default=None,
         pattern=r"^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$",
         description="Quiet hours end time (HH:MM, 24-hour format)",
@@ -445,62 +443,62 @@ class PreferenceUpdate(BaseUpdateSchema):
     """
 
     # Global toggles
-    notifications_enabled: Optional[bool] = Field(
+    notifications_enabled: Union[bool, None] = Field(
         default=None,
         description="Update master notification toggle",
     )
-    email_enabled: Optional[bool] = Field(
+    email_enabled: Union[bool, None] = Field(
         default=None,
         description="Update email notifications",
     )
-    sms_enabled: Optional[bool] = Field(
+    sms_enabled: Union[bool, None] = Field(
         default=None,
         description="Update SMS notifications",
     )
-    push_enabled: Optional[bool] = Field(
+    push_enabled: Union[bool, None] = Field(
         default=None,
         description="Update push notifications",
     )
 
     # Quiet hours
-    quiet_hours_enabled: Optional[bool] = Field(
+    quiet_hours_enabled: Union[bool, None] = Field(
         default=None,
         description="Enable/disable quiet hours",
     )
-    quiet_hours_start: Optional[str] = Field(
+    quiet_hours_start: Union[str, None] = Field(
         default=None,
         pattern=r"^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$",
         description="Update quiet hours start time",
     )
-    quiet_hours_end: Optional[str] = Field(
+    quiet_hours_end: Union[str, None] = Field(
         default=None,
         pattern=r"^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$",
         description="Update quiet hours end time",
     )
 
     # Category toggles
-    payment_notifications: Optional[bool] = None
-    booking_notifications: Optional[bool] = None
-    complaint_notifications: Optional[bool] = None
-    announcement_notifications: Optional[bool] = None
-    maintenance_notifications: Optional[bool] = None
-    attendance_notifications: Optional[bool] = None
-    marketing_notifications: Optional[bool] = None
+    payment_notifications: Union[bool, None] = None
+    booking_notifications: Union[bool, None] = None
+    complaint_notifications: Union[bool, None] = None
+    announcement_notifications: Union[bool, None] = None
+    maintenance_notifications: Union[bool, None] = None
+    attendance_notifications: Union[bool, None] = None
+    marketing_notifications: Union[bool, None] = None
 
     # Frequency
-    immediate_notifications: Optional[bool] = None
-    batch_notifications: Optional[bool] = None
-    daily_digest_enabled: Optional[bool] = None
-    weekly_digest_enabled: Optional[bool] = None
+    immediate_notifications: Union[bool, None] = None
+    batch_notifications: Union[bool, None] = None
+    daily_digest_enabled: Union[bool, None] = None
+    weekly_digest_enabled: Union[bool, None] = None
 
     # Language and timezone
-    preferred_language: Optional[str] = Field(
+    preferred_language: Union[str, None] = Field(
         default=None,
         min_length=2,
         max_length=5,
         description="Update preferred language",
     )
-    timezone: Optional[str] = Field(
+    timezone: Union[str, None] = Field(
         default=None,
         max_length=100,
         description="Update timezone",
@@ -533,14 +531,14 @@ class UnsubscribeRequest(BaseSchema):
     )
 
     # Category (if specific_category)
-    category: Optional[str] = Field(
+    category: Union[str, None] = Field(
         default=None,
         max_length=100,
         description="Specific category to unsubscribe from",
     )
 
     # Reason
-    reason: Optional[str] = Field(
+    reason: Union[str, None] = Field(
         default=None,
         max_length=500,
         description="Reason for unsubscribing (optional)",

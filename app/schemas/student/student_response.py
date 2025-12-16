@@ -5,11 +5,9 @@ Provides various response formats for student data including
 detailed views, list items, profiles, and specialized information.
 """
 
-from __future__ import annotations
-
 from datetime import date as Date, datetime
 from decimal import Decimal
-from typing import List, Optional, Annotated
+from typing import List, Union, Annotated
 
 from pydantic import Field, computed_field, ConfigDict
 
@@ -49,16 +47,16 @@ class StudentResponse(BaseResponseSchema):
     user_id: str = Field(..., description="User ID")
     hostel_id: str = Field(..., description="Hostel ID")
     hostel_name: str = Field(..., description="Hostel name")
-    room_id: Optional[str] = Field(default=None, description="Room ID")
-    room_number: Optional[str] = Field(default=None, description="Room number")
-    bed_id: Optional[str] = Field(default=None, description="Bed ID")
-    bed_number: Optional[str] = Field(default=None, description="Bed number")
+    room_id: Union[str, None] = Field(default=None, description="Room ID")
+    room_number: Union[str, None] = Field(default=None, description="Room number")
+    bed_id: Union[str, None] = Field(default=None, description="Bed ID")
+    bed_number: Union[str, None] = Field(default=None, description="Bed number")
 
     # Personal info (from user)
     full_name: str = Field(..., description="Student full name")
     email: str = Field(..., description="Email address")
     phone: str = Field(..., description="Phone number")
-    profile_image_url: Optional[str] = Field(
+    profile_image_url: Union[str, None] = Field(
         default=None,
         description="Profile image URL",
     )
@@ -69,17 +67,17 @@ class StudentResponse(BaseResponseSchema):
 
     # Status
     student_status: StudentStatus = Field(..., description="Student status")
-    check_in_date: Optional[Date] = Field(
+    check_in_date: Union[Date, None] = Field(
         default=None,
         description="Check-in Date",
     )
-    expected_checkout_date: Optional[Date] = Field(
+    expected_checkout_date: Union[Date, None] = Field(
         default=None,
         description="Expected checkout Date",
     )
 
     # Financial
-    monthly_rent_amount: Optional[MoneyAmount] = Field(
+    monthly_rent_amount: Union[MoneyAmount, None] = Field(
         default=None,
         description="Monthly rent",
     )
@@ -97,7 +95,7 @@ class StudentResponse(BaseResponseSchema):
 
     @computed_field
     @property
-    def days_in_hostel(self) -> Optional[int]:
+    def days_in_hostel(self) -> Union[int, None]:
         """Calculate days stayed in hostel."""
         if not self.check_in_date:
             return None
@@ -131,9 +129,9 @@ class StudentDetail(BaseResponseSchema):
     full_name: str = Field(..., description="Full name")
     email: str = Field(..., description="Email")
     phone: str = Field(..., description="Phone")
-    gender: Optional[str] = Field(default=None, description="Gender")
-    date_of_birth: Optional[Date] = Field(default=None, description="Date of birth")
-    profile_image_url: Optional[str] = Field(
+    gender: Union[str, None] = Field(default=None, description="Gender")
+    date_of_birth: Union[Date, None] = Field(default=None, description="Date of birth")
+    profile_image_url: Union[str, None] = Field(
         default=None,
         description="Profile image",
     )
@@ -141,23 +139,23 @@ class StudentDetail(BaseResponseSchema):
     # Hostel assignment
     hostel_id: str = Field(..., description="Hostel ID")
     hostel_name: str = Field(..., description="Hostel name")
-    room_id: Optional[str] = Field(default=None, description="Room ID")
-    room_number: Optional[str] = Field(default=None, description="Room number")
-    room_type: Optional[str] = Field(default=None, description="Room type")
-    floor_number: Optional[int] = Field(default=None, description="Floor number")
-    bed_id: Optional[str] = Field(default=None, description="Bed ID")
-    bed_number: Optional[str] = Field(default=None, description="Bed number")
+    room_id: Union[str, None] = Field(default=None, description="Room ID")
+    room_number: Union[str, None] = Field(default=None, description="Room number")
+    room_type: Union[str, None] = Field(default=None, description="Room type")
+    floor_number: Union[int, None] = Field(default=None, description="Floor number")
+    bed_id: Union[str, None] = Field(default=None, description="Bed ID")
+    bed_number: Union[str, None] = Field(default=None, description="Bed number")
 
     # Identification
-    id_proof_type: Optional[IDProofType] = Field(
+    id_proof_type: Union[IDProofType, None] = Field(
         default=None,
         description="ID proof type",
     )
-    id_proof_number: Optional[str] = Field(
+    id_proof_number: Union[str, None] = Field(
         default=None,
         description="ID proof number",
     )
-    id_proof_document_url: Optional[str] = Field(
+    id_proof_document_url: Union[str, None] = Field(
         default=None,
         description="ID proof document URL",
     )
@@ -169,47 +167,47 @@ class StudentDetail(BaseResponseSchema):
     # Guardian information
     guardian_name: str = Field(..., description="Guardian name")
     guardian_phone: str = Field(..., description="Guardian phone")
-    guardian_email: Optional[str] = Field(default=None, description="Guardian email")
-    guardian_relation: Optional[str] = Field(
+    guardian_email: Union[str, None] = Field(default=None, description="Guardian email")
+    guardian_relation: Union[str, None] = Field(
         default=None,
         description="Guardian relation",
     )
-    guardian_address: Optional[str] = Field(
+    guardian_address: Union[str, None] = Field(
         default=None,
         description="Guardian address",
     )
 
     # Institutional information
-    institution_name: Optional[str] = Field(
+    institution_name: Union[str, None] = Field(
         default=None,
         description="Institution name",
     )
-    course: Optional[str] = Field(default=None, description="Course")
-    year_of_study: Optional[str] = Field(default=None, description="Year of study")
-    student_id_number: Optional[str] = Field(
+    course: Union[str, None] = Field(default=None, description="Course")
+    year_of_study: Union[str, None] = Field(default=None, description="Year of study")
+    student_id_number: Union[str, None] = Field(
         default=None,
         description="Student ID number",
     )
-    institutional_id_url: Optional[str] = Field(
+    institutional_id_url: Union[str, None] = Field(
         default=None,
         description="Institutional ID URL",
     )
 
     # Employment information
-    company_name: Optional[str] = Field(default=None, description="Company name")
-    designation: Optional[str] = Field(default=None, description="Designation")
-    company_id_url: Optional[str] = Field(
+    company_name: Union[str, None] = Field(default=None, description="Company name")
+    designation: Union[str, None] = Field(default=None, description="Designation")
+    company_id_url: Union[str, None] = Field(
         default=None,
         description="Company ID URL",
     )
 
     # Dates
-    check_in_date: Optional[Date] = Field(default=None, description="Check-in Date")
-    expected_checkout_date: Optional[Date] = Field(
+    check_in_date: Union[Date, None] = Field(default=None, description="Check-in Date")
+    expected_checkout_date: Union[Date, None] = Field(
         default=None,
         description="Expected checkout",
     )
-    actual_checkout_date: Optional[Date] = Field(
+    actual_checkout_date: Union[Date, None] = Field(
         default=None,
         description="Actual checkout",
     )
@@ -223,39 +221,39 @@ class StudentDetail(BaseResponseSchema):
         ...,
         description="Security deposit paid",
     )
-    security_deposit_paid_date: Optional[Date] = Field(
+    security_deposit_paid_date: Union[Date, None] = Field(
         default=None,
         description="Deposit paid Date",
     )
-    monthly_rent_amount: Optional[MoneyAmount] = Field(
+    monthly_rent_amount: Union[MoneyAmount, None] = Field(
         default=None,
         description="Monthly rent",
     )
 
     # Meal preferences
     mess_subscribed: bool = Field(..., description="Mess subscription")
-    dietary_preference: Optional[DietaryPreference] = Field(
+    dietary_preference: Union[DietaryPreference, None] = Field(
         default=None,
         description="Dietary preference",
     )
-    food_allergies: Optional[str] = Field(
+    food_allergies: Union[str, None] = Field(
         default=None,
         description="Food allergies",
     )
 
     # Status
     student_status: StudentStatus = Field(..., description="Student status")
-    notice_period_start: Optional[Date] = Field(
+    notice_period_start: Union[Date, None] = Field(
         default=None,
         description="Notice period start",
     )
-    notice_period_end: Optional[Date] = Field(
+    notice_period_end: Union[Date, None] = Field(
         default=None,
         description="Notice period end",
     )
 
     # Source
-    booking_id: Optional[str] = Field(
+    booking_id: Union[str, None] = Field(
         default=None,
         description="Source booking ID",
     )
@@ -268,7 +266,7 @@ class StudentDetail(BaseResponseSchema):
 
     @computed_field
     @property
-    def age(self) -> Optional[int]:
+    def age(self) -> Union[int, None]:
         """Calculate age from Date of birth."""
         if not self.date_of_birth:
             return None
@@ -284,7 +282,7 @@ class StudentDetail(BaseResponseSchema):
 
     @computed_field
     @property
-    def days_in_hostel(self) -> Optional[int]:
+    def days_in_hostel(self) -> Union[int, None]:
         """Calculate total days in hostel."""
         if not self.check_in_date:
             return None
@@ -323,26 +321,26 @@ class StudentProfile(BaseSchema):
 
     id: str = Field(..., description="Student ID")
     full_name: str = Field(..., description="Full name")
-    profile_image_url: Optional[str] = Field(
+    profile_image_url: Union[str, None] = Field(
         default=None,
         description="Profile image",
     )
     hostel_name: str = Field(..., description="Hostel name")
-    room_number: Optional[str] = Field(default=None, description="Room number")
-    check_in_date: Optional[Date] = Field(default=None, description="Check-in Date")
+    room_number: Union[str, None] = Field(default=None, description="Room number")
+    check_in_date: Union[Date, None] = Field(default=None, description="Check-in Date")
 
     # Optional info (based on privacy settings)
-    institution_name: Optional[str] = Field(
+    institution_name: Union[str, None] = Field(
         default=None,
         description="Institution name",
     )
-    course: Optional[str] = Field(default=None, description="Course")
-    year_of_study: Optional[str] = Field(default=None, description="Year")
-    company_name: Optional[str] = Field(default=None, description="Company")
+    course: Union[str, None] = Field(default=None, description="Course")
+    year_of_study: Union[str, None] = Field(default=None, description="Year")
+    company_name: Union[str, None] = Field(default=None, description="Company")
 
     @computed_field
     @property
-    def duration_in_hostel(self) -> Optional[str]:
+    def duration_in_hostel(self) -> Union[str, None]:
         """Human-readable duration in hostel."""
         if not self.check_in_date:
             return None
@@ -370,21 +368,21 @@ class StudentListItem(BaseSchema):
     full_name: str = Field(..., description="Full name")
     email: str = Field(..., description="Email")
     phone: str = Field(..., description="Phone")
-    profile_image_url: Optional[str] = Field(
+    profile_image_url: Union[str, None] = Field(
         default=None,
         description="Profile image",
     )
 
     # Room assignment
-    room_number: Optional[str] = Field(default=None, description="Room number")
-    bed_number: Optional[str] = Field(default=None, description="Bed number")
+    room_number: Union[str, None] = Field(default=None, description="Room number")
+    bed_number: Union[str, None] = Field(default=None, description="Bed number")
 
     # Status
     student_status: StudentStatus = Field(..., description="Status")
-    check_in_date: Optional[Date] = Field(default=None, description="Check-in Date")
+    check_in_date: Union[Date, None] = Field(default=None, description="Check-in Date")
 
     # Financial
-    monthly_rent: Optional[MoneyAmount] = Field(default=None, description="Monthly rent")
+    monthly_rent: Union[MoneyAmount, None] = Field(default=None, description="Monthly rent")
     payment_status: str = Field(
         ...,
         description="Payment status (current/overdue/advance)",
@@ -399,7 +397,7 @@ class StudentListItem(BaseSchema):
 
     @computed_field
     @property
-    def days_in_hostel(self) -> Optional[int]:
+    def days_in_hostel(self) -> Union[int, None]:
         """Calculate days in hostel."""
         if not self.check_in_date:
             return None
@@ -428,7 +426,7 @@ class StudentFinancialInfo(BaseSchema):
     # Security deposit
     security_deposit_amount: MoneyAmount = Field(..., description="Security deposit")
     security_deposit_paid: bool = Field(..., description="Deposit paid status")
-    security_deposit_paid_date: Optional[Date] = Field(
+    security_deposit_paid_date: Union[Date, None] = Field(
         default=None,
         description="Deposit paid Date",
     )
@@ -440,11 +438,11 @@ class StudentFinancialInfo(BaseSchema):
     # Payments
     total_paid: MoneyAmount = Field(..., description="Total amount paid")
     total_due: MoneyAmount = Field(..., description="Total amount due")
-    last_payment_date: Optional[Date] = Field(
+    last_payment_date: Union[Date, None] = Field(
         default=None,
         description="Last payment Date",
     )
-    next_due_date: Optional[Date] = Field(default=None, description="Next due Date")
+    next_due_date: Union[Date, None] = Field(default=None, description="Next due Date")
 
     # Outstanding
     overdue_amount: MoneyAmount = Field(..., description="Overdue amount")
@@ -503,41 +501,41 @@ class StudentContactInfo(BaseSchema):
     # Student contact
     email: str = Field(..., description="Email")
     phone: str = Field(..., description="Phone")
-    alternate_phone: Optional[str] = Field(default=None, description="Alternate phone")
+    alternate_phone: Union[str, None] = Field(default=None, description="Alternate phone")
 
     # Guardian contact
     guardian_name: str = Field(..., description="Guardian name")
     guardian_phone: str = Field(..., description="Guardian phone")
-    guardian_email: Optional[str] = Field(default=None, description="Guardian email")
-    guardian_relation: Optional[str] = Field(
+    guardian_email: Union[str, None] = Field(default=None, description="Guardian email")
+    guardian_relation: Union[str, None] = Field(
         default=None,
         description="Guardian relation",
     )
-    guardian_address: Optional[str] = Field(
+    guardian_address: Union[str, None] = Field(
         default=None,
         description="Guardian address",
     )
 
     # Emergency contact (from user profile)
-    emergency_contact_name: Optional[str] = Field(
+    emergency_contact_name: Union[str, None] = Field(
         default=None,
         description="Emergency contact name",
     )
-    emergency_contact_phone: Optional[str] = Field(
+    emergency_contact_phone: Union[str, None] = Field(
         default=None,
         description="Emergency contact phone",
     )
-    emergency_contact_relation: Optional[str] = Field(
+    emergency_contact_relation: Union[str, None] = Field(
         default=None,
         description="Emergency relation",
     )
 
     # Current address (hostel)
     current_hostel: str = Field(..., description="Current hostel")
-    current_room: Optional[str] = Field(default=None, description="Current room")
+    current_room: Union[str, None] = Field(default=None, description="Current room")
 
     # Forwarding address (if checked out)
-    forwarding_address: Optional[str] = Field(
+    forwarding_address: Union[str, None] = Field(
         default=None,
         description="Forwarding address",
     )
@@ -554,15 +552,15 @@ class StudentDocumentInfo(BaseSchema):
     student_name: str = Field(..., description="Student name")
 
     # ID documents
-    id_proof_type: Optional[IDProofType] = Field(
+    id_proof_type: Union[IDProofType, None] = Field(
         default=None,
         description="ID proof type",
     )
-    id_proof_number: Optional[str] = Field(
+    id_proof_number: Union[str, None] = Field(
         default=None,
         description="ID proof number",
     )
-    id_proof_url: Optional[str] = Field(
+    id_proof_url: Union[str, None] = Field(
         default=None,
         description="ID proof document URL",
     )
@@ -570,13 +568,13 @@ class StudentDocumentInfo(BaseSchema):
         default=False,
         description="ID verification status",
     )
-    id_proof_verified_at: Optional[datetime] = Field(
+    id_proof_verified_at: Union[datetime, None] = Field(
         default=None,
         description="Verification timestamp",
     )
 
     # Institutional documents
-    institutional_id_url: Optional[str] = Field(
+    institutional_id_url: Union[str, None] = Field(
         default=None,
         description="College/University ID",
     )
@@ -586,7 +584,7 @@ class StudentDocumentInfo(BaseSchema):
     )
 
     # Employment documents
-    company_id_url: Optional[str] = Field(
+    company_id_url: Union[str, None] = Field(
         default=None,
         description="Company ID card",
     )

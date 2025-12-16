@@ -6,11 +6,9 @@ Provides optimized response formats with computed properties
 and efficient data serialization.
 """
 
-from __future__ import annotations
-
 from datetime import date as Date, datetime
 from decimal import Decimal
-from typing import Dict, Optional
+from typing import Dict, Union
 
 from pydantic import Field, computed_field
 
@@ -38,7 +36,7 @@ class SupervisorResponse(BaseResponseSchema):
     full_name: str = Field(..., description="Supervisor full name")
     email: str = Field(..., description="Email address")
     phone: str = Field(..., description="Phone number")
-    profile_image_url: Optional[str] = Field(
+    profile_image_url: Union[str, None] = Field(
         default=None,
         description="Profile image URL",
     )
@@ -48,10 +46,10 @@ class SupervisorResponse(BaseResponseSchema):
     hostel_name: str = Field(..., description="Hostel name")
 
     # Employment
-    employee_id: Optional[str] = Field(default=None, description="Employee ID")
+    employee_id: Union[str, None] = Field(default=None, description="Employee ID")
     join_date: Date = Field(..., description="Joining Date")
     employment_type: EmploymentType = Field(..., description="Employment type")
-    designation: Optional[str] = Field(default=None, description="Designation")
+    designation: Union[str, None] = Field(default=None, description="Designation")
 
     # Status
     status: SupervisorStatus = Field(..., description="Current status")
@@ -92,9 +90,9 @@ class SupervisorDetail(BaseResponseSchema):
     full_name: str = Field(..., description="Full name")
     email: str = Field(..., description="Email")
     phone: str = Field(..., description="Phone")
-    gender: Optional[str] = Field(default=None, description="Gender")
-    date_of_birth: Optional[Date] = Field(default=None, description="Date of birth")
-    profile_image_url: Optional[str] = Field(
+    gender: Union[str, None] = Field(default=None, description="Gender")
+    date_of_birth: Union[Date, None] = Field(default=None, description="Date of birth")
+    profile_image_url: Union[str, None] = Field(
         default=None,
         description="Profile image",
     )
@@ -107,12 +105,12 @@ class SupervisorDetail(BaseResponseSchema):
     assigned_date: Date = Field(..., description="Assignment Date")
 
     # Employment details
-    employee_id: Optional[str] = Field(default=None, description="Employee ID")
+    employee_id: Union[str, None] = Field(default=None, description="Employee ID")
     join_date: Date = Field(..., description="Joining Date")
     employment_type: EmploymentType = Field(..., description="Employment type")
-    shift_timing: Optional[str] = Field(default=None, description="Shift timing")
-    designation: Optional[str] = Field(default=None, description="Designation")
-    salary: Optional[Decimal] = Field(
+    shift_timing: Union[str, None] = Field(default=None, description="Shift timing")
+    designation: Union[str, None] = Field(default=None, description="Designation")
+    salary: Union[Decimal, None] = Field(
         default=None,
         description="Monthly salary (admin view only)",
     )
@@ -122,35 +120,35 @@ class SupervisorDetail(BaseResponseSchema):
     is_active: bool = Field(..., description="Active status")
 
     # Termination information
-    termination_date: Optional[Date] = Field(
+    termination_date: Union[Date, None] = Field(
         default=None,
         description="Termination Date",
     )
-    termination_reason: Optional[str] = Field(
+    termination_reason: Union[str, None] = Field(
         default=None,
         description="Termination reason",
     )
-    eligible_for_rehire: Optional[bool] = Field(
+    eligible_for_rehire: Union[bool, None] = Field(
         default=None,
         description="Rehire eligibility",
     )
 
     # Suspension information
-    suspension_start_date: Optional[Date] = Field(
+    suspension_start_date: Union[Date, None] = Field(
         default=None,
         description="Suspension start Date",
     )
-    suspension_end_date: Optional[Date] = Field(
+    suspension_end_date: Union[Date, None] = Field(
         default=None,
         description="Suspension end Date",
     )
-    suspension_reason: Optional[str] = Field(
+    suspension_reason: Union[str, None] = Field(
         default=None,
         description="Suspension reason",
     )
 
     # Permissions (optimized structure)
-    permissions: Dict[str, bool | int | Decimal] = Field(
+    permissions: Dict[str, Union[bool, int, Decimal]] = Field(
         default_factory=dict,
         description="Permission settings",
     )
@@ -176,11 +174,11 @@ class SupervisorDetail(BaseResponseSchema):
         ge=0,
         description="Total maintenance requests",
     )
-    last_performance_review: Optional[Date] = Field(
+    last_performance_review: Union[Date, None] = Field(
         default=None,
         description="Last performance review Date",
     )
-    performance_rating: Optional[Decimal] = Field(
+    performance_rating: Union[Decimal, None] = Field(
         default=None,
         ge=0,
         le=5,
@@ -188,7 +186,7 @@ class SupervisorDetail(BaseResponseSchema):
     )
 
     # Activity tracking
-    last_login: Optional[datetime] = Field(
+    last_login: Union[datetime, None] = Field(
         default=None,
         description="Last login timestamp",
     )
@@ -197,20 +195,20 @@ class SupervisorDetail(BaseResponseSchema):
         ge=0,
         description="Total login count",
     )
-    last_activity: Optional[datetime] = Field(
+    last_activity: Union[datetime, None] = Field(
         default=None,
         description="Last activity timestamp",
     )
 
     # Administrative notes
-    notes: Optional[str] = Field(
+    notes: Union[str, None] = Field(
         default=None,
         description="Administrative notes",
     )
 
     @computed_field
     @property
-    def age(self) -> Optional[int]:
+    def age(self) -> Union[int, None]:
         """Calculate age from Date of birth."""
         if not self.date_of_birth:
             return None
@@ -249,14 +247,14 @@ class SupervisorDetail(BaseResponseSchema):
 
     @computed_field
     @property
-    def suspension_days_remaining(self) -> Optional[int]:
+    def suspension_days_remaining(self) -> Union[int, None]:
         """Calculate remaining suspension days if currently suspended."""
         if self.status != SupervisorStatus.SUSPENDED or not self.suspension_end_date:
             return None
         
         remaining = (self.suspension_end_date - Date.today()).days
         return max(0, remaining)
-# Continuing supervisor_response.py...
+
 
 class SupervisorListItem(BaseSchema):
     """
@@ -270,15 +268,15 @@ class SupervisorListItem(BaseSchema):
     full_name: str = Field(..., description="Full name")
     email: str = Field(..., description="Email")
     phone: str = Field(..., description="Phone")
-    profile_image_url: Optional[str] = Field(
+    profile_image_url: Union[str, None] = Field(
         default=None,
         description="Profile image",
     )
 
     # Assignment
     hostel_name: str = Field(..., description="Assigned hostel")
-    employee_id: Optional[str] = Field(default=None, description="Employee ID")
-    designation: Optional[str] = Field(default=None, description="Designation")
+    employee_id: Union[str, None] = Field(default=None, description="Employee ID")
+    designation: Union[str, None] = Field(default=None, description="Designation")
 
     # Employment
     employment_type: EmploymentType = Field(..., description="Employment type")
@@ -289,7 +287,7 @@ class SupervisorListItem(BaseSchema):
     is_active: bool = Field(..., description="Active status")
 
     # Performance (current month)
-    performance_rating: Optional[Decimal] = Field(
+    performance_rating: Union[Decimal, None] = Field(
         default=None,
         ge=0,
         le=5,
@@ -302,7 +300,7 @@ class SupervisorListItem(BaseSchema):
     )
 
     # Activity
-    last_login: Optional[datetime] = Field(
+    last_login: Union[datetime, None] = Field(
         default=None,
         description="Last login",
     )
@@ -337,13 +335,13 @@ class SupervisorSummary(BaseSchema):
     full_name: str = Field(..., description="Full name")
     email: str = Field(..., description="Email")
     phone: str = Field(..., description="Phone")
-    employee_id: Optional[str] = Field(default=None, description="Employee ID")
-    designation: Optional[str] = Field(default=None, description="Designation")
+    employee_id: Union[str, None] = Field(default=None, description="Employee ID")
+    designation: Union[str, None] = Field(default=None, description="Designation")
 
     # Status
     status: SupervisorStatus = Field(..., description="Status")
     is_active: bool = Field(..., description="Active status")
-    shift_timing: Optional[str] = Field(default=None, description="Shift timing")
+    shift_timing: Union[str, None] = Field(default=None, description="Shift timing")
 
     # Current month metrics
     complaints_handled_this_month: int = Field(
@@ -368,7 +366,7 @@ class SupervisorSummary(BaseSchema):
     )
 
     # Activity
-    last_active: Optional[datetime] = Field(
+    last_active: Union[datetime, None] = Field(
         default=None,
         description="Last activity",
     )
@@ -423,18 +421,18 @@ class SupervisorEmploymentInfo(BaseSchema):
     supervisor_name: str = Field(..., description="Supervisor name")
 
     # Employment details
-    employee_id: Optional[str] = Field(default=None, description="Employee ID")
+    employee_id: Union[str, None] = Field(default=None, description="Employee ID")
     join_date: Date = Field(..., description="Joining Date")
     employment_type: EmploymentType = Field(..., description="Employment type")
-    designation: Optional[str] = Field(default=None, description="Designation")
-    shift_timing: Optional[str] = Field(default=None, description="Shift timing")
+    designation: Union[str, None] = Field(default=None, description="Designation")
+    shift_timing: Union[str, None] = Field(default=None, description="Shift timing")
 
     # Contract
-    contract_start_date: Optional[Date] = Field(
+    contract_start_date: Union[Date, None] = Field(
         default=None,
         description="Contract start Date",
     )
-    contract_end_date: Optional[Date] = Field(
+    contract_end_date: Union[Date, None] = Field(
         default=None,
         description="Contract end Date",
     )
@@ -444,11 +442,11 @@ class SupervisorEmploymentInfo(BaseSchema):
     )
 
     # Compensation
-    salary: Optional[Decimal] = Field(
+    salary: Union[Decimal, None] = Field(
         default=None,
         description="Monthly salary",
     )
-    last_salary_revision: Optional[Date] = Field(
+    last_salary_revision: Union[Date, None] = Field(
         default=None,
         description="Last salary revision Date",
     )
@@ -463,15 +461,15 @@ class SupervisorEmploymentInfo(BaseSchema):
     assigned_date: Date = Field(..., description="Assignment Date")
 
     # Termination
-    termination_date: Optional[Date] = Field(
+    termination_date: Union[Date, None] = Field(
         default=None,
         description="Termination Date",
     )
-    termination_reason: Optional[str] = Field(
+    termination_reason: Union[str, None] = Field(
         default=None,
         description="Termination reason",
     )
-    eligible_for_rehire: Optional[bool] = Field(
+    eligible_for_rehire: Union[bool, None] = Field(
         default=None,
         description="Rehire eligibility",
     )

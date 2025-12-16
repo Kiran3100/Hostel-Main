@@ -6,10 +6,8 @@ This module defines the core visitor schemas for profile management,
 preferences, and notification settings.
 """
 
-from __future__ import annotations
-
 from decimal import Decimal
-from typing import Annotated, List, Optional
+from typing import Annotated, List, Union
 from uuid import UUID
 
 from pydantic import BaseModel, Field, field_validator, model_validator
@@ -39,17 +37,17 @@ class VisitorBase(BaseSchema):
     )
 
     # Room Preferences
-    preferred_room_type: Optional[RoomType] = Field(
+    preferred_room_type: Union[RoomType, None] = Field(
         default=None,
         description="Preferred room type (single, double, triple, etc.)",
     )
 
     # Budget Constraints - Updated for Pydantic v2
-    budget_min: Optional[Annotated[Decimal, Field(ge=0, decimal_places=2)]] = Field(
+    budget_min: Union[Annotated[Decimal, Field(ge=0, decimal_places=2)], None] = Field(
         default=None,
         description="Minimum budget per month in local currency",
     )
-    budget_max: Optional[Annotated[Decimal, Field(ge=0, decimal_places=2)]] = Field(
+    budget_max: Union[Annotated[Decimal, Field(ge=0, decimal_places=2)], None] = Field(
         default=None,
         description="Maximum budget per month in local currency",
     )
@@ -91,7 +89,7 @@ class VisitorBase(BaseSchema):
 
     @field_validator("budget_min", "budget_max")
     @classmethod
-    def validate_budget_positive(cls, v: Optional[Decimal]) -> Optional[Decimal]:
+    def validate_budget_positive(cls, v: Union[Decimal, None]) -> Union[Decimal, None]:
         """Ensure budget values are positive if provided."""
         if v is not None and v < 0:
             raise ValueError("Budget must be a positive value")
@@ -228,50 +226,50 @@ class VisitorUpdate(BaseUpdateSchema):
     """
 
     # Room Preferences
-    preferred_room_type: Optional[RoomType] = Field(
+    preferred_room_type: Union[RoomType, None] = Field(
         default=None,
         description="Update preferred room type",
     )
 
     # Budget - Updated for Pydantic v2
-    budget_min: Optional[Annotated[Decimal, Field(ge=0, decimal_places=2)]] = Field(
+    budget_min: Union[Annotated[Decimal, Field(ge=0, decimal_places=2)], None] = Field(
         default=None,
         description="Update minimum budget",
     )
-    budget_max: Optional[Annotated[Decimal, Field(ge=0, decimal_places=2)]] = Field(
+    budget_max: Union[Annotated[Decimal, Field(ge=0, decimal_places=2)], None] = Field(
         default=None,
         description="Update maximum budget",
     )
 
     # Location
-    preferred_cities: Optional[List[str]] = Field(
+    preferred_cities: Union[List[str], None] = Field(
         default=None,
         description="Update preferred cities list",
     )
 
     # Amenities
-    preferred_amenities: Optional[List[str]] = Field(
+    preferred_amenities: Union[List[str], None] = Field(
         default=None,
         description="Update preferred amenities list",
     )
 
     # Notification Preferences
-    email_notifications: Optional[bool] = Field(
+    email_notifications: Union[bool, None] = Field(
         default=None,
         description="Enable/disable email notifications",
     )
-    sms_notifications: Optional[bool] = Field(
+    sms_notifications: Union[bool, None] = Field(
         default=None,
         description="Enable/disable SMS notifications",
     )
-    push_notifications: Optional[bool] = Field(
+    push_notifications: Union[bool, None] = Field(
         default=None,
         description="Enable/disable push notifications",
     )
 
     @field_validator("budget_min", "budget_max")
     @classmethod
-    def validate_budget_positive(cls, v: Optional[Decimal]) -> Optional[Decimal]:
+    def validate_budget_positive(cls, v: Union[Decimal, None]) -> Union[Decimal, None]:
         """Ensure budget values are positive if provided."""
         if v is not None and v < 0:
             raise ValueError("Budget must be a positive value")
@@ -293,7 +291,7 @@ class VisitorUpdate(BaseUpdateSchema):
 
     @field_validator("preferred_cities")
     @classmethod
-    def validate_cities(cls, v: Optional[List[str]]) -> Optional[List[str]]:
+    def validate_cities(cls, v: Union[List[str], None]) -> Union[List[str], None]:
         """Validate and normalize city names."""
         if v is None:
             return v
@@ -314,7 +312,7 @@ class VisitorUpdate(BaseUpdateSchema):
 
     @field_validator("preferred_amenities")
     @classmethod
-    def validate_amenities(cls, v: Optional[List[str]]) -> Optional[List[str]]:
+    def validate_amenities(cls, v: Union[List[str], None]) -> Union[List[str], None]:
         """Validate and normalize amenity names."""
         if v is None:
             return v

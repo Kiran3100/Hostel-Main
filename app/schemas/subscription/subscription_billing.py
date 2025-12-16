@@ -5,12 +5,10 @@ Handles billing cycle information, invoice generation,
 and invoice tracking for subscriptions.
 """
 
-from __future__ import annotations
-
 from datetime import date as Date, datetime
 from decimal import Decimal
 from enum import Enum
-from typing import Optional, Annotated
+from typing import Union, Annotated
 from uuid import UUID
 
 from pydantic import Field, HttpUrl, model_validator, computed_field, ConfigDict
@@ -86,7 +84,7 @@ class BillingCycleInfo(BaseSchema):
     is_in_trial: bool = Field(
         default=False, description="Whether currently in trial period"
     )
-    trial_days_remaining: Optional[int] = Field(
+    trial_days_remaining: Union[int, None] = Field(
         None, description="Days remaining in trial"
     )
 
@@ -115,27 +113,27 @@ class GenerateInvoiceRequest(BaseCreateSchema):
     )
 
     # Optional overrides
-    amount_override: Optional[Annotated[Decimal, Field(
+    amount_override: Union[Annotated[Decimal, Field(
         None,
         ge=Decimal("0"),
         description="Override standard billing amount",
-    )]]
-    due_date_override: Optional[Date] = Field(
+    )], None]
+    due_date_override: Union[Date, None] = Field(
         None, description="Override standard due Date"
     )
-    notes: Optional[str] = Field(
+    notes: Union[str, None] = Field(
         None,
         max_length=500,
         description="Additional invoice notes",
     )
 
     # Line item adjustments
-    discount_amount: Optional[Annotated[Decimal, Field(
+    discount_amount: Union[Annotated[Decimal, Field(
         None,
         ge=Decimal("0"),
         description="Discount amount to apply",
-    )]]
-    discount_reason: Optional[str] = Field(
+    )], None]
+    discount_reason: Union[str, None] = Field(
         None,
         max_length=200,
         description="Reason for discount",
@@ -220,15 +218,15 @@ class InvoiceInfo(BaseSchema):
     )
 
     # Access URLs
-    invoice_url: Optional[HttpUrl] = Field(
+    invoice_url: Union[HttpUrl, None] = Field(
         None, description="URL to view/download invoice"
     )
-    payment_url: Optional[HttpUrl] = Field(
+    payment_url: Union[HttpUrl, None] = Field(
         None, description="URL to pay invoice online"
     )
 
     # Metadata
-    notes: Optional[str] = Field(None, description="Invoice notes")
+    notes: Union[str, None] = Field(None, description="Invoice notes")
 
     @model_validator(mode="after")
     def validate_invoice_dates_and_amounts(self) -> "InvoiceInfo":
@@ -252,7 +250,8 @@ class InvoiceInfo(BaseSchema):
 
         return self
 
-    @computed_field
+    @computed_field  # type: ignore[misc]
+    @property
     def is_overdue(self) -> bool:
         """Check if invoice is overdue based on current Date."""
         return (
@@ -260,7 +259,8 @@ class InvoiceInfo(BaseSchema):
             and Date.today() > self.due_date
         )
 
-    @computed_field
+    @computed_field  # type: ignore[misc]
+    @property
     def is_fully_paid(self) -> bool:
         """Check if invoice is fully paid."""
         return self.amount_due <= Decimal("0")

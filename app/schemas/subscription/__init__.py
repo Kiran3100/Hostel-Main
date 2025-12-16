@@ -9,8 +9,6 @@ This module provides comprehensive schemas for:
 - Commission tracking
 """
 
-from __future__ import annotations
-
 # Commission schemas
 from app.schemas.subscription.commission import (
     BookingCommissionResponse,

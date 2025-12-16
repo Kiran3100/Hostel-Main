@@ -6,11 +6,9 @@ This module defines schemas for various types of payment requests
 including online payments, manual payments, and bulk operations.
 """
 
-from __future__ import annotations
-
 from datetime import date as Date, datetime
 from decimal import Decimal
-from typing import List, Optional
+from typing import List, Union
 from uuid import UUID
 
 from pydantic import Field, HttpUrl, field_validator, model_validator
@@ -38,11 +36,11 @@ class PaymentRequest(BaseCreateSchema):
         ...,
         description="Hostel ID",
     )
-    student_id: Optional[UUID] = Field(
+    student_id: Union[UUID, None] = Field(
         None,
         description="Student ID (for recurring fee payments)",
     )
-    booking_id: Optional[UUID] = Field(
+    booking_id: Union[UUID, None] = Field(
         None,
         description="Booking ID (for booking-related payments)",
     )
@@ -58,11 +56,11 @@ class PaymentRequest(BaseCreateSchema):
     )
 
     # Payment Period (for recurring fees)
-    payment_period_start: Optional[Date] = Field(
+    payment_period_start: Union[Date, None] = Field(
         None,
         description="Period start Date",
     )
-    payment_period_end: Optional[Date] = Field(
+    payment_period_end: Union[Date, None] = Field(
         None,
         description="Period end Date",
     )
@@ -79,15 +77,15 @@ class PaymentRequest(BaseCreateSchema):
     )
 
     # Return URLs
-    success_url: Optional[HttpUrl] = Field(
+    success_url: Union[HttpUrl, None] = Field(
         None,
         description="URL to redirect on successful payment",
     )
-    failure_url: Optional[HttpUrl] = Field(
+    failure_url: Union[HttpUrl, None] = Field(
         None,
         description="URL to redirect on payment failure",
     )
-    cancel_url: Optional[HttpUrl] = Field(
+    cancel_url: Union[HttpUrl, None] = Field(
         None,
         description="URL to redirect if payment is cancelled",
     )
@@ -180,11 +178,11 @@ class PaymentInitiation(BaseSchema):
     )
 
     # Checkout Information
-    checkout_url: Optional[HttpUrl] = Field(
+    checkout_url: Union[HttpUrl, None] = Field(
         None,
         description="Direct checkout URL (for redirect-based flows)",
     )
-    checkout_token: Optional[str] = Field(
+    checkout_token: Union[str, None] = Field(
         None,
         description="Checkout session token",
     )
@@ -196,7 +194,7 @@ class PaymentInitiation(BaseSchema):
     )
 
     # Expiry
-    expires_at: Optional[datetime] = Field(
+    expires_at: Union[datetime, None] = Field(
         None,
         description="When this payment initiation expires",
     )
@@ -235,38 +233,38 @@ class ManualPaymentRequest(BaseCreateSchema):
     )
 
     # Cheque Details
-    cheque_number: Optional[str] = Field(
+    cheque_number: Union[str, None] = Field(
         None,
         max_length=50,
         description="Cheque number (if payment_method is cheque)",
     )
-    cheque_date: Optional[Date] = Field(
+    cheque_date: Union[Date, None] = Field(
         None,
         description="Cheque Date",
     )
-    bank_name: Optional[str] = Field(
+    bank_name: Union[str, None] = Field(
         None,
         max_length=100,
         description="Bank name (for cheque/bank transfer)",
     )
 
     # Bank Transfer Details
-    transaction_reference: Optional[str] = Field(
+    transaction_reference: Union[str, None] = Field(
         None,
         max_length=100,
         description="Bank transaction reference number",
     )
-    transfer_date: Optional[Date] = Field(
+    transfer_date: Union[Date, None] = Field(
         None,
         description="Date of bank transfer",
     )
 
     # Payment Period
-    payment_period_start: Optional[Date] = Field(
+    payment_period_start: Union[Date, None] = Field(
         None,
         description="Period start Date",
     )
-    payment_period_end: Optional[Date] = Field(
+    payment_period_end: Union[Date, None] = Field(
         None,
         description="Period end Date",
     )
@@ -281,7 +279,7 @@ class ManualPaymentRequest(BaseCreateSchema):
         description="Date payment was collected",
     )
 
-    notes: Optional[str] = Field(
+    notes: Union[str, None] = Field(
         None,
         max_length=500,
         description="Additional notes",
@@ -377,12 +375,12 @@ class SinglePaymentRecord(BaseSchema):
     )
 
     # Optional Fields
-    transaction_reference: Optional[str] = Field(
+    transaction_reference: Union[str, None] = Field(
         None,
         max_length=100,
         description="Transaction reference",
     )
-    notes: Optional[str] = Field(
+    notes: Union[str, None] = Field(
         None,
         max_length=500,
         description="Payment notes",

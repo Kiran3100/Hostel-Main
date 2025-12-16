@@ -6,8 +6,6 @@ This module exports all payment-related schemas for easy importing
 across the application.
 """
 
-from __future__ import annotations
-
 from app.schemas.payment.payment_base import (
     PaymentBase,
     PaymentCreate,

@@ -5,10 +5,8 @@ Autocomplete and suggestion schemas for search.
 Provides real-time search suggestions as users type.
 """
 
-from __future__ import annotations
-
 from enum import Enum
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Union
 
 from pydantic import Field, field_validator, ConfigDict
 
@@ -56,7 +54,7 @@ class AutocompleteRequest(BaseCreateSchema):
         description="Search prefix (user's partial input)",
         examples=["mumb", "boys host", "pg near"],
     )
-    suggestion_type: Optional[SuggestionType] = Field(
+    suggestion_type: Union[SuggestionType, None] = Field(
         default=None,
         description="Filter suggestions by type (optional)",
     )
@@ -68,13 +66,13 @@ class AutocompleteRequest(BaseCreateSchema):
     )
 
     # Context for personalization
-    user_latitude: Optional[float] = Field(
+    user_latitude: Union[float, None] = Field(
         default=None,
         ge=-90,
         le=90,
         description="User latitude for location-based suggestions",
     )
-    user_longitude: Optional[float] = Field(
+    user_longitude: Union[float, None] = Field(
         default=None,
         ge=-180,
         le=180,
@@ -82,12 +80,12 @@ class AutocompleteRequest(BaseCreateSchema):
     )
 
     # Filtering
-    include_types: Optional[List[SuggestionType]] = Field(
+    include_types: Union[List[SuggestionType], None] = Field(
         default=None,
         description="Include only these suggestion types",
         examples=[["hostel", "city"]],
     )
-    exclude_types: Optional[List[SuggestionType]] = Field(
+    exclude_types: Union[List[SuggestionType], None] = Field(
         default=None,
         description="Exclude these suggestion types",
     )
@@ -110,8 +108,8 @@ class AutocompleteRequest(BaseCreateSchema):
     @classmethod
     def validate_type_lists(
         cls,
-        v: Optional[List[SuggestionType]],
-    ) -> Optional[List[SuggestionType]]:
+        v: Union[List[SuggestionType], None],
+    ) -> Union[List[SuggestionType], None]:
         """Remove duplicates from type lists."""
         if v is not None:
             return list(dict.fromkeys(v))  # Preserve order while removing dupes
@@ -152,19 +150,19 @@ class Suggestion(BaseSchema):
         ge=0,
         description="Relevance/popularity score",
     )
-    result_count: Optional[int] = Field(
+    result_count: Union[int, None] = Field(
         default=None,
         ge=0,
         description="Estimated number of results for this suggestion",
     )
 
     # Rich data (optional)
-    icon: Optional[str] = Field(
+    icon: Union[str, None] = Field(
         default=None,
         description="Icon identifier for UI display",
         examples=["location", "building", "search"],
     )
-    thumbnail_url: Optional[str] = Field(
+    thumbnail_url: Union[str, None] = Field(
         default=None,
         description="Thumbnail image URL (for hostel suggestions)",
     )
@@ -180,7 +178,7 @@ class Suggestion(BaseSchema):
     )
 
     # Highlighting
-    highlighted_label: Optional[str] = Field(
+    highlighted_label: Union[str, None] = Field(
         default=None,
         description="Label with matched portions highlighted (HTML)",
         examples=["<strong>Mumb</strong>ai, Maharashtra"],
@@ -205,7 +203,7 @@ class AutocompleteResponse(BaseSchema):
     )
 
     # Grouped suggestions (optional, for categorized display)
-    grouped_suggestions: Optional[Dict[str, List[Suggestion]]] = Field(
+    grouped_suggestions: Union[Dict[str, List[Suggestion]], None] = Field(
         default=None,
         description="Suggestions grouped by type",
         examples=[
@@ -233,7 +231,7 @@ class AutocompleteResponse(BaseSchema):
     )
 
     # Popular searches (shown when no prefix match)
-    popular_searches: Optional[List[str]] = Field(
+    popular_searches: Union[List[str], None] = Field(
         default=None,
         description="Popular search terms (shown for empty/short prefix)",
         examples=[["Boys Hostel Mumbai", "PG in Bangalore", "Hostel near me"]],

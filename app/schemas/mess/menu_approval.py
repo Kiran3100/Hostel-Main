@@ -6,14 +6,12 @@ Provides schemas for menu approval requests, responses,
 and workflow tracking with comprehensive validation.
 """
 
-from __future__ import annotations
-
 from datetime import date as Date, datetime
 from decimal import Decimal
-from typing import List, Optional
+from typing import List, Union
+from uuid import UUID
 
 from pydantic import Field, field_validator, model_validator, computed_field
-from uuid import UUID
 
 from app.schemas.common.base import BaseCreateSchema, BaseSchema
 
@@ -44,7 +42,7 @@ class MenuApprovalRequest(BaseCreateSchema):
     )
     
     # Submission details
-    submission_notes: Optional[str] = Field(
+    submission_notes: Union[str, None] = Field(
         None,
         max_length=500,
         description="Notes for approver",
@@ -57,17 +55,17 @@ class MenuApprovalRequest(BaseCreateSchema):
     
     # Budget information
     # Pydantic v2: Decimal fields with precision handled via field_validator
-    estimated_cost_per_person: Optional[Decimal] = Field(
+    estimated_cost_per_person: Union[Decimal, None] = Field(
         None,
         ge=0,
         description="Estimated cost per person",
     )
-    total_estimated_cost: Optional[Decimal] = Field(
+    total_estimated_cost: Union[Decimal, None] = Field(
         None,
         ge=0,
         description="Total estimated cost",
     )
-    expected_students: Optional[int] = Field(
+    expected_students: Union[int, None] = Field(
         None,
         ge=1,
         le=10000,
@@ -86,7 +84,7 @@ class MenuApprovalRequest(BaseCreateSchema):
     )
     
     # Justification
-    reason_for_special_menu: Optional[str] = Field(
+    reason_for_special_menu: Union[str, None] = Field(
         None,
         max_length=1000,
         description="Justification for special/expensive menu",
@@ -94,7 +92,7 @@ class MenuApprovalRequest(BaseCreateSchema):
 
     @field_validator("submission_notes", "reason_for_special_menu", mode="before")
     @classmethod
-    def normalize_text(cls, v: Optional[str]) -> Optional[str]:
+    def normalize_text(cls, v: Union[str, None]) -> Union[str, None]:
         """Normalize text fields."""
         if v is not None:
             v = v.strip()
@@ -103,7 +101,7 @@ class MenuApprovalRequest(BaseCreateSchema):
 
     @field_validator("estimated_cost_per_person", "total_estimated_cost", mode="after")
     @classmethod
-    def round_cost_decimals(cls, v: Optional[Decimal]) -> Optional[Decimal]:
+    def round_cost_decimals(cls, v: Union[Decimal, None]) -> Union[Decimal, None]:
         """Round cost values to 2 decimal places."""
         if v is not None:
             return v.quantize(Decimal("0.01"))
@@ -196,34 +194,34 @@ class MenuApprovalResponse(BaseSchema):
     )
     
     # Feedback and conditions
-    approval_notes: Optional[str] = Field(
+    approval_notes: Union[str, None] = Field(
         None,
         max_length=500,
         description="Approver's notes",
     )
-    conditions: Optional[str] = Field(
+    conditions: Union[str, None] = Field(
         None,
         max_length=500,
         description="Conditions for approval (if any)",
     )
-    rejection_reason: Optional[str] = Field(
+    rejection_reason: Union[str, None] = Field(
         None,
         max_length=500,
         description="Reason for rejection",
     )
-    suggested_changes: Optional[str] = Field(
+    suggested_changes: Union[str, None] = Field(
         None,
         max_length=1000,
         description="Suggested modifications",
     )
     
     # Cost approval
-    approved_budget: Optional[Decimal] = Field(
+    approved_budget: Union[Decimal, None] = Field(
         None,
         ge=0,
         description="Approved budget amount",
     )
-    budget_notes: Optional[str] = Field(
+    budget_notes: Union[str, None] = Field(
         None,
         max_length=500,
         description="Notes about budget approval",
@@ -247,7 +245,7 @@ class MenuApprovalResponse(BaseSchema):
 
     @field_validator("approved_budget", mode="after")
     @classmethod
-    def round_budget(cls, v: Optional[Decimal]) -> Optional[Decimal]:
+    def round_budget(cls, v: Union[Decimal, None]) -> Union[Decimal, None]:
         """Round budget to 2 decimal places."""
         if v is not None:
             return v.quantize(Decimal("0.01"))
@@ -315,39 +313,39 @@ class ApprovalWorkflow(BaseSchema):
         ...,
         description="Menu creation timestamp",
     )
-    submitted_for_approval_at: Optional[datetime] = Field(
+    submitted_for_approval_at: Union[datetime, None] = Field(
         None,
         description="Submission timestamp",
     )
-    approved_at: Optional[datetime] = Field(
+    approved_at: Union[datetime, None] = Field(
         None,
         description="Approval timestamp",
     )
-    rejected_at: Optional[datetime] = Field(
+    rejected_at: Union[datetime, None] = Field(
         None,
         description="Rejection timestamp",
     )
-    published_at: Optional[datetime] = Field(
+    published_at: Union[datetime, None] = Field(
         None,
         description="Publication timestamp",
     )
     
     # Current approver
-    pending_with: Optional[UUID] = Field(
+    pending_with: Union[UUID, None] = Field(
         None,
         description="User ID of current approver",
     )
-    pending_with_name: Optional[str] = Field(
+    pending_with_name: Union[str, None] = Field(
         None,
         description="Name of current approver",
     )
-    pending_with_role: Optional[str] = Field(
+    pending_with_role: Union[str, None] = Field(
         None,
         description="Role of current approver",
     )
     
     # Deadlines
-    approval_deadline: Optional[datetime] = Field(
+    approval_deadline: Union[datetime, None] = Field(
         None,
         description="Approval deadline",
     )
@@ -362,14 +360,14 @@ class ApprovalWorkflow(BaseSchema):
         ge=0,
         description="Number of revisions made",
     )
-    last_revision_at: Optional[datetime] = Field(
+    last_revision_at: Union[datetime, None] = Field(
         None,
         description="Last revision timestamp",
     )
 
     @computed_field
     @property
-    def days_pending(self) -> Optional[int]:
+    def days_pending(self) -> Union[int, None]:
         """Calculate days approval has been pending."""
         if self.submitted_for_approval_at and self.approval_status == "pending":
             return (datetime.now() - self.submitted_for_approval_at).days
@@ -377,7 +375,7 @@ class ApprovalWorkflow(BaseSchema):
 
     @computed_field
     @property
-    def time_to_approval_hours(self) -> Optional[Decimal]:
+    def time_to_approval_hours(self) -> Union[Decimal, None]:
         """Calculate hours taken for approval."""
         if self.submitted_for_approval_at and self.approved_at:
             hours = (self.approved_at - self.submitted_for_approval_at).total_seconds() / 3600
@@ -406,24 +404,24 @@ class BulkApproval(BaseCreateSchema):
         ...,
         description="Approver user ID",
     )
-    approval_notes: Optional[str] = Field(
+    approval_notes: Union[str, None] = Field(
         None,
         max_length=500,
         description="Common notes for all menus",
     )
-    rejection_reason: Optional[str] = Field(
+    rejection_reason: Union[str, None] = Field(
         None,
         max_length=500,
         description="Common rejection reason (if rejecting)",
     )
-    apply_conditions: Optional[str] = Field(
+    apply_conditions: Union[str, None] = Field(
         None,
         max_length=500,
         description="Common conditions to apply",
     )
     
     # Budget approval
-    approved_budget_per_menu: Optional[Decimal] = Field(
+    approved_budget_per_menu: Union[Decimal, None] = Field(
         None,
         ge=0,
         description="Approved budget for each menu",
@@ -431,7 +429,7 @@ class BulkApproval(BaseCreateSchema):
 
     @field_validator("approved_budget_per_menu", mode="after")
     @classmethod
-    def round_budget(cls, v: Optional[Decimal]) -> Optional[Decimal]:
+    def round_budget(cls, v: Union[Decimal, None]) -> Union[Decimal, None]:
         """Round budget to 2 decimal places."""
         if v is not None:
             return v.quantize(Decimal("0.01"))
@@ -479,28 +477,28 @@ class ApprovalAttempt(BaseSchema):
         ...,
         description="Submission timestamp",
     )
-    reviewed_by: Optional[UUID] = Field(
+    reviewed_by: Union[UUID, None] = Field(
         None,
         description="Reviewer user ID",
     )
-    reviewed_by_name: Optional[str] = Field(
+    reviewed_by_name: Union[str, None] = Field(
         None,
         description="Reviewer name",
     )
-    reviewed_at: Optional[datetime] = Field(
+    reviewed_at: Union[datetime, None] = Field(
         None,
         description="Review timestamp",
     )
-    decision: Optional[str] = Field(
+    decision: Union[str, None] = Field(
         None,
         pattern=r"^(approved|rejected|revision_requested|pending)$",
         description="Approval decision",
     )
-    feedback: Optional[str] = Field(
+    feedback: Union[str, None] = Field(
         None,
         description="Reviewer feedback",
     )
-    changes_made: Optional[str] = Field(
+    changes_made: Union[str, None] = Field(
         None,
         description="Changes made in this revision",
     )
@@ -534,7 +532,7 @@ class ApprovalHistory(BaseSchema):
         ...,
         description="Current approval status",
     )
-    final_approver: Optional[str] = Field(
+    final_approver: Union[str, None] = Field(
         None,
         description="Final approver name",
     )

@@ -11,13 +11,11 @@ Pydantic v2 Migration Notes:
 - HttpUrl type works identically in v1 and v2
 """
 
-from __future__ import annotations
-
 from decimal import Decimal
-from typing import Annotated, List, Optional
+from typing import Annotated, List, Union
+from uuid import UUID
 
 from pydantic import Field, HttpUrl, field_validator, model_validator
-from uuid import UUID
 
 from app.schemas.common.base import BaseCreateSchema, BaseUpdateSchema, BaseSchema
 
@@ -36,55 +34,55 @@ class DetailedRatings(BaseSchema):
     Allows reviewers to rate specific aspects of their experience.
     """
     
-    cleanliness_rating: Optional[int] = Field(
+    cleanliness_rating: Union[int, None] = Field(
         default=None,
         ge=1,
         le=5,
         description="Cleanliness and hygiene rating",
     )
-    food_quality_rating: Optional[int] = Field(
+    food_quality_rating: Union[int, None] = Field(
         default=None,
         ge=1,
         le=5,
         description="Food quality rating (if mess facility available)",
     )
-    staff_behavior_rating: Optional[int] = Field(
+    staff_behavior_rating: Union[int, None] = Field(
         default=None,
         ge=1,
         le=5,
         description="Staff courtesy and helpfulness rating",
     )
-    security_rating: Optional[int] = Field(
+    security_rating: Union[int, None] = Field(
         default=None,
         ge=1,
         le=5,
         description="Safety and security measures rating",
     )
-    value_for_money_rating: Optional[int] = Field(
+    value_for_money_rating: Union[int, None] = Field(
         default=None,
         ge=1,
         le=5,
         description="Value for money rating",
     )
-    amenities_rating: Optional[int] = Field(
+    amenities_rating: Union[int, None] = Field(
         default=None,
         ge=1,
         le=5,
         description="Facilities and amenities quality rating",
     )
-    location_rating: Optional[int] = Field(
+    location_rating: Union[int, None] = Field(
         default=None,
         ge=1,
         le=5,
         description="Location convenience rating",
     )
-    wifi_quality_rating: Optional[int] = Field(
+    wifi_quality_rating: Union[int, None] = Field(
         default=None,
         ge=1,
         le=5,
         description="Internet/WiFi quality rating",
     )
-    maintenance_rating: Optional[int] = Field(
+    maintenance_rating: Union[int, None] = Field(
         default=None,
         ge=1,
         le=5,
@@ -102,11 +100,11 @@ class ReviewBase(BaseSchema):
     # Identifiers
     hostel_id: UUID = Field(..., description="Hostel being reviewed")
     reviewer_id: UUID = Field(..., description="User submitting the review")
-    student_id: Optional[UUID] = Field(
+    student_id: Union[UUID, None] = Field(
         default=None,
         description="Student profile ID (for verified stay reviews)",
     )
-    booking_id: Optional[UUID] = Field(
+    booking_id: Union[UUID, None] = Field(
         default=None,
         description="Related booking reference for verification",
     )
@@ -140,37 +138,37 @@ class ReviewBase(BaseSchema):
     )
     
     # Detailed aspect ratings (optional but encouraged)
-    cleanliness_rating: Optional[int] = Field(
+    cleanliness_rating: Union[int, None] = Field(
         default=None,
         ge=1,
         le=5,
         description="Cleanliness rating",
     )
-    food_quality_rating: Optional[int] = Field(
+    food_quality_rating: Union[int, None] = Field(
         default=None,
         ge=1,
         le=5,
         description="Food quality rating",
     )
-    staff_behavior_rating: Optional[int] = Field(
+    staff_behavior_rating: Union[int, None] = Field(
         default=None,
         ge=1,
         le=5,
         description="Staff behavior rating",
     )
-    security_rating: Optional[int] = Field(
+    security_rating: Union[int, None] = Field(
         default=None,
         ge=1,
         le=5,
         description="Security rating",
     )
-    value_for_money_rating: Optional[int] = Field(
+    value_for_money_rating: Union[int, None] = Field(
         default=None,
         ge=1,
         le=5,
         description="Value for money rating",
     )
-    amenities_rating: Optional[int] = Field(
+    amenities_rating: Union[int, None] = Field(
         default=None,
         ge=1,
         le=5,
@@ -297,7 +295,7 @@ class ReviewCreate(ReviewBase, BaseCreateSchema):
         description="Would the reviewer recommend this hostel?",
     )
     
-    stay_duration_months: Optional[int] = Field(
+    stay_duration_months: Union[int, None] = Field(
         default=None,
         ge=1,
         le=24,
@@ -336,13 +334,13 @@ class ReviewUpdate(BaseUpdateSchema):
     """
     
     # Content updates
-    title: Optional[str] = Field(
+    title: Union[str, None] = Field(
         default=None,
         min_length=5,
         max_length=255,
         description="Updated review title",
     )
-    review_text: Optional[str] = Field(
+    review_text: Union[str, None] = Field(
         default=None,
         min_length=50,
         max_length=5000,
@@ -350,7 +348,7 @@ class ReviewUpdate(BaseUpdateSchema):
     )
     
     # Rating updates with proper Decimal constraints
-    overall_rating: Optional[
+    overall_rating: Union[
         Annotated[
             Decimal,
             Field(
@@ -360,19 +358,20 @@ class ReviewUpdate(BaseUpdateSchema):
                 decimal_places=1,
                 description="Updated overall rating",
             ),
-        ]
+        ],
+        None,
     ] = None
     
     # Detailed ratings updates
-    cleanliness_rating: Optional[int] = Field(default=None, ge=1, le=5)
-    food_quality_rating: Optional[int] = Field(default=None, ge=1, le=5)
-    staff_behavior_rating: Optional[int] = Field(default=None, ge=1, le=5)
-    security_rating: Optional[int] = Field(default=None, ge=1, le=5)
-    value_for_money_rating: Optional[int] = Field(default=None, ge=1, le=5)
-    amenities_rating: Optional[int] = Field(default=None, ge=1, le=5)
+    cleanliness_rating: Union[int, None] = Field(default=None, ge=1, le=5)
+    food_quality_rating: Union[int, None] = Field(default=None, ge=1, le=5)
+    staff_behavior_rating: Union[int, None] = Field(default=None, ge=1, le=5)
+    security_rating: Union[int, None] = Field(default=None, ge=1, le=5)
+    value_for_money_rating: Union[int, None] = Field(default=None, ge=1, le=5)
+    amenities_rating: Union[int, None] = Field(default=None, ge=1, le=5)
     
     # Media updates
-    photos: Optional[List[HttpUrl]] = Field(
+    photos: Union[List[HttpUrl], None] = Field(
         default=None,
         max_length=10,
         description="Updated photo list",
@@ -380,7 +379,7 @@ class ReviewUpdate(BaseUpdateSchema):
     
     @field_validator("overall_rating")
     @classmethod
-    def round_rating_to_half(cls, v: Optional[Decimal]) -> Optional[Decimal]:
+    def round_rating_to_half(cls, v: Union[Decimal, None]) -> Union[Decimal, None]:
         """Round overall rating to nearest 0.5."""
         if v is None:
             return v
@@ -388,7 +387,7 @@ class ReviewUpdate(BaseUpdateSchema):
     
     @field_validator("title")
     @classmethod
-    def validate_title(cls, v: Optional[str]) -> Optional[str]:
+    def validate_title(cls, v: Union[str, None]) -> Union[str, None]:
         """Validate updated title."""
         if v is None:
             return v
@@ -406,7 +405,7 @@ class ReviewUpdate(BaseUpdateSchema):
     
     @field_validator("review_text")
     @classmethod
-    def validate_review_text(cls, v: Optional[str]) -> Optional[str]:
+    def validate_review_text(cls, v: Union[str, None]) -> Union[str, None]:
         """Validate updated review text."""
         if v is None:
             return v
@@ -425,7 +424,7 @@ class ReviewUpdate(BaseUpdateSchema):
     
     @field_validator("photos")
     @classmethod
-    def validate_photos(cls, v: Optional[List[HttpUrl]]) -> Optional[List[HttpUrl]]:
+    def validate_photos(cls, v: Union[List[HttpUrl], None]) -> Union[List[HttpUrl], None]:
         """Validate updated photos."""
         if v is None:
             return v

@@ -6,11 +6,9 @@ This module provides response schemas for referral program queries,
 including detailed program information, lists, and statistics.
 """
 
-from __future__ import annotations
-
 from datetime import date as Date, datetime
 from decimal import Decimal
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Union
 from uuid import UUID
 
 from pydantic import Field, computed_field
@@ -37,29 +35,29 @@ class ProgramResponse(BaseResponseSchema):
     program_name: str = Field(..., description="Program name")
     program_code: str = Field(..., description="Program code")
     program_type: str = Field(..., description="Program type")
-    description: Optional[str] = Field(None, description="Program description")
+    description: Union[str, None] = Field(None, description="Program description")
 
     # Reward details
     reward_type: str = Field(..., description="Reward type")
-    referrer_reward_amount: Optional[Decimal] = Field(None, description="Referrer reward")
-    referee_reward_amount: Optional[Decimal] = Field(None, description="Referee reward")
+    referrer_reward_amount: Union[Decimal, None] = Field(None, description="Referrer reward")
+    referee_reward_amount: Union[Decimal, None] = Field(None, description="Referee reward")
     currency: str = Field(..., description="Currency code")
 
     # Reward caps
-    max_referrer_rewards_per_month: Optional[int] = Field(
+    max_referrer_rewards_per_month: Union[int, None] = Field(
         None,
         description="Max rewards per month",
     )
-    max_total_reward_amount: Optional[Decimal] = Field(
+    max_total_reward_amount: Union[Decimal, None] = Field(
         None,
         description="Max total reward amount",
     )
 
     # Eligibility criteria
-    min_booking_amount: Optional[Decimal] = Field(None, description="Minimum booking amount")
-    min_stay_months: Optional[int] = Field(None, description="Minimum stay duration")
-    min_referrer_stay_months: Optional[int] = Field(None, description="Minimum referrer stay")
-    max_referrals_per_user: Optional[int] = Field(None, description="Max referrals per user")
+    min_booking_amount: Union[Decimal, None] = Field(None, description="Minimum booking amount")
+    min_stay_months: Union[int, None] = Field(None, description="Minimum stay duration")
+    min_referrer_stay_months: Union[int, None] = Field(None, description="Minimum referrer stay")
+    max_referrals_per_user: Union[int, None] = Field(None, description="Max referrals per user")
     allowed_user_roles: List[str] = Field(
         default_factory=list,
         description="Allowed user roles",
@@ -67,11 +65,11 @@ class ProgramResponse(BaseResponseSchema):
 
     # Status
     is_active: bool = Field(..., description="Active status")
-    valid_from: Optional[Date] = Field(None, description="Start Date")
-    valid_to: Optional[Date] = Field(None, description="End Date")
+    valid_from: Union[Date, None] = Field(None, description="Start Date")
+    valid_to: Union[Date, None] = Field(None, description="End Date")
 
     # Terms
-    terms_and_conditions: Optional[str] = Field(None, description="T&C")
+    terms_and_conditions: Union[str, None] = Field(None, description="T&C")
     auto_approve_rewards: bool = Field(..., description="Auto-approve rewards")
     track_conversion: bool = Field(default=True, description="Track conversion metrics")
 
@@ -88,10 +86,10 @@ class ProgramResponse(BaseResponseSchema):
     # Timestamps
     created_at: datetime = Field(..., description="Creation timestamp")
     updated_at: datetime = Field(..., description="Last update timestamp")
-    created_by: Optional[UUID] = Field(None, description="Creator user ID")
-    updated_by: Optional[UUID] = Field(None, description="Last updater user ID")
+    created_by: Union[UUID, None] = Field(None, description="Creator user ID")
+    updated_by: Union[UUID, None] = Field(None, description="Last updater user ID")
 
-    @computed_field
+    @computed_field  # type: ignore[prop-decorator]
     @property
     def is_expired(self) -> bool:
         """Check if program has expired."""
@@ -99,7 +97,7 @@ class ProgramResponse(BaseResponseSchema):
             return False
         return Date.today() > self.valid_to
 
-    @computed_field
+    @computed_field  # type: ignore[prop-decorator]
     @property
     def is_upcoming(self) -> bool:
         """Check if program hasn't started yet."""
@@ -107,7 +105,7 @@ class ProgramResponse(BaseResponseSchema):
             return False
         return Date.today() < self.valid_from
 
-    @computed_field
+    @computed_field  # type: ignore[prop-decorator]
     @property
     def conversion_rate(self) -> Decimal:
         """Calculate conversion rate percentage."""
@@ -116,9 +114,9 @@ class ProgramResponse(BaseResponseSchema):
         rate = (self.successful_referrals / self.total_referrals) * 100
         return Decimal(str(rate)).quantize(Decimal("0.01"))
 
-    @computed_field
+    @computed_field  # type: ignore[prop-decorator]
     @property
-    def days_remaining(self) -> Optional[int]:
+    def days_remaining(self) -> Union[int, None]:
         """Calculate days remaining until expiration."""
         if self.valid_to is None:
             return None
@@ -163,13 +161,13 @@ class ProgramList(BaseSchema):
     page_size: int = Field(default=10, ge=1, le=100, description="Items per page")
     total_pages: int = Field(default=1, ge=1, description="Total number of pages")
 
-    @computed_field
+    @computed_field  # type: ignore[prop-decorator]
     @property
     def has_next_page(self) -> bool:
         """Check if there are more pages."""
         return self.page < self.total_pages
 
-    @computed_field
+    @computed_field  # type: ignore[prop-decorator]
     @property
     def has_previous_page(self) -> bool:
         """Check if there are previous pages."""
@@ -257,7 +255,7 @@ class ProgramStats(BaseSchema):
         description="When statistics were generated",
     )
 
-    @computed_field
+    @computed_field  # type: ignore[prop-decorator]
     @property
     def roi_percentage(self) -> Decimal:
         """Calculate return on investment percentage."""
@@ -268,7 +266,7 @@ class ProgramStats(BaseSchema):
         roi = (profit / self.total_rewards_paid) * 100
         return Decimal(str(roi)).quantize(Decimal("0.01"))
 
-    @computed_field
+    @computed_field  # type: ignore[prop-decorator]
     @property
     def average_reward_per_conversion(self) -> Decimal:
         """Calculate average reward per successful conversion."""
@@ -328,15 +326,15 @@ class ProgramAnalytics(BaseSchema):
     )
 
     # Performance indicators
-    best_performing_day: Optional[str] = Field(
+    best_performing_day: Union[str, None] = Field(
         None,
         description="Day with highest conversions",
     )
-    best_performing_month: Optional[str] = Field(
+    best_performing_month: Union[str, None] = Field(
         None,
         description="Month with highest conversions",
     )
-    peak_referral_time: Optional[str] = Field(
+    peak_referral_time: Union[str, None] = Field(
         None,
         description="Time of day with most referrals",
     )
@@ -402,15 +400,15 @@ class ProgramPerformance(BaseSchema):
     )
 
     # Rankings
-    best_conversion_rate: Optional[str] = Field(
+    best_conversion_rate: Union[str, None] = Field(
         None,
         description="Program with best conversion rate",
     )
-    highest_revenue: Optional[str] = Field(
+    highest_revenue: Union[str, None] = Field(
         None,
         description="Program with highest revenue",
     )
-    most_cost_effective: Optional[str] = Field(
+    most_cost_effective: Union[str, None] = Field(
         None,
         description="Program with best ROI",
     )

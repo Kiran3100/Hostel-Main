@@ -6,11 +6,9 @@ This module defines schemas for payment gateway requests, responses,
 webhooks, callbacks, and refund operations.
 """
 
-from __future__ import annotations
-
 from datetime import datetime
 from decimal import Decimal
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Union
 from uuid import UUID
 
 from pydantic import Field, field_validator, model_validator
@@ -83,7 +81,7 @@ class GatewayRequest(BaseSchema):
         max_length=500,
         description="Payment description",
     )
-    notes: Optional[Dict[str, Any]] = Field(
+    notes: Union[Dict[str, Any], None] = Field(
         None,
         description="Additional metadata",
     )
@@ -93,7 +91,7 @@ class GatewayRequest(BaseSchema):
         ...,
         description="URL for payment callback",
     )
-    cancel_url: Optional[str] = Field(
+    cancel_url: Union[str, None] = Field(
         None,
         description="URL if payment is cancelled",
     )
@@ -129,7 +127,7 @@ class GatewayResponse(BaseSchema):
         ...,
         description="Gateway's order ID",
     )
-    gateway_payment_id: Optional[str] = Field(
+    gateway_payment_id: Union[str, None] = Field(
         None,
         description="Gateway's payment ID (if available)",
     )
@@ -145,17 +143,17 @@ class GatewayResponse(BaseSchema):
     )
 
     # Checkout Details
-    checkout_url: Optional[str] = Field(
+    checkout_url: Union[str, None] = Field(
         None,
         description="URL to redirect user for payment",
     )
-    checkout_token: Optional[str] = Field(
+    checkout_token: Union[str, None] = Field(
         None,
         description="Checkout session token",
     )
 
     # SDK Options
-    sdk_options: Optional[Dict[str, Any]] = Field(
+    sdk_options: Union[Dict[str, Any], None] = Field(
         None,
         description="Options for client-side SDK integration",
     )
@@ -171,17 +169,17 @@ class GatewayResponse(BaseSchema):
         ...,
         description="When payment was initiated",
     )
-    expires_at: Optional[datetime] = Field(
+    expires_at: Union[datetime, None] = Field(
         None,
         description="When checkout session expires",
     )
 
     # Error Details
-    error_code: Optional[str] = Field(
+    error_code: Union[str, None] = Field(
         None,
         description="Error code if initiation failed",
     )
-    error_message: Optional[str] = Field(
+    error_message: Union[str, None] = Field(
         None,
         description="Error message if initiation failed",
     )
@@ -213,7 +211,7 @@ class GatewayWebhook(BaseSchema):
         ...,
         description="Gateway order ID",
     )
-    gateway_payment_id: Optional[str] = Field(
+    gateway_payment_id: Union[str, None] = Field(
         None,
         description="Gateway payment ID",
     )
@@ -225,12 +223,12 @@ class GatewayWebhook(BaseSchema):
     )
 
     # Amount
-    amount: Optional[Decimal] = Field(
+    amount: Union[Decimal, None] = Field(
         None,
         ge=0,
         description="Payment amount",
     )
-    currency: Optional[str] = Field(
+    currency: Union[str, None] = Field(
         None,
         min_length=3,
         max_length=3,
@@ -244,7 +242,7 @@ class GatewayWebhook(BaseSchema):
     )
 
     # Signature (for verification)
-    signature: Optional[str] = Field(
+    signature: Union[str, None] = Field(
         None,
         description="Webhook signature for verification",
     )
@@ -272,7 +270,7 @@ class GatewayCallback(BaseSchema):
         ...,
         description="Gateway order ID",
     )
-    gateway_payment_id: Optional[str] = Field(
+    gateway_payment_id: Union[str, None] = Field(
         None,
         description="Gateway payment ID",
     )
@@ -288,18 +286,18 @@ class GatewayCallback(BaseSchema):
     )
 
     # Transaction Details
-    transaction_id: Optional[str] = Field(
+    transaction_id: Union[str, None] = Field(
         None,
         description="Transaction reference ID",
     )
-    amount: Optional[Decimal] = Field(
+    amount: Union[Decimal, None] = Field(
         None,
         ge=0,
         description="Paid amount",
     )
 
     # Signature (for verification)
-    signature: Optional[str] = Field(
+    signature: Union[str, None] = Field(
         None,
         description="Callback signature",
     )
@@ -359,7 +357,7 @@ class GatewayRefundRequest(BaseSchema):
     )
 
     # Notes
-    notes: Optional[Dict[str, Any]] = Field(
+    notes: Union[Dict[str, Any], None] = Field(
         None,
         description="Additional refund metadata",
     )
@@ -446,11 +444,11 @@ class GatewayRefundResponse(BaseSchema):
         ...,
         description="When refund was initiated",
     )
-    processed_at: Optional[datetime] = Field(
+    processed_at: Union[datetime, None] = Field(
         None,
         description="When refund was processed",
     )
-    expected_completion: Optional[datetime] = Field(
+    expected_completion: Union[datetime, None] = Field(
         None,
         description="Expected refund completion time",
     )
@@ -462,11 +460,11 @@ class GatewayRefundResponse(BaseSchema):
     )
 
     # Error Details
-    error_code: Optional[str] = Field(
+    error_code: Union[str, None] = Field(
         None,
         description="Error code if refund failed",
     )
-    error_message: Optional[str] = Field(
+    error_message: Union[str, None] = Field(
         None,
         description="Error message if refund failed",
     )
@@ -484,7 +482,7 @@ class GatewayVerification(BaseSchema):
         ...,
         description="Gateway order ID to verify",
     )
-    gateway_payment_id: Optional[str] = Field(
+    gateway_payment_id: Union[str, None] = Field(
         None,
         description="Gateway payment ID",
     )
@@ -515,11 +513,11 @@ class GatewayVerification(BaseSchema):
     )
 
     # Transaction Details
-    transaction_id: Optional[str] = Field(
+    transaction_id: Union[str, None] = Field(
         None,
         description="Transaction reference",
     )
-    payment_method_used: Optional[str] = Field(
+    payment_method_used: Union[str, None] = Field(
         None,
         description="Actual payment method used",
     )
@@ -529,7 +527,7 @@ class GatewayVerification(BaseSchema):
         default_factory=datetime.utcnow,
         description="When verification was performed",
     )
-    payment_completed_at: Optional[datetime] = Field(
+    payment_completed_at: Union[datetime, None] = Field(
         None,
         description="When payment was completed (if applicable)",
     )
@@ -545,7 +543,7 @@ class GatewayVerification(BaseSchema):
         False,
         description="Whether any discrepancy was detected",
     )
-    discrepancy_details: Optional[str] = Field(
+    discrepancy_details: Union[str, None] = Field(
         None,
         description="Details of any discrepancy",
     )

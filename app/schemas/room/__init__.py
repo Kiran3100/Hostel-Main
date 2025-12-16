@@ -8,8 +8,6 @@ Example:
     from app.schemas.room import RoomCreate, BedAssignment, AvailabilityResponse
 """
 
-from __future__ import annotations
-
 from app.schemas.room.bed_base import (
     BedAssignmentRequest,
     BedBase,

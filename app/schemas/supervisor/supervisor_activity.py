@@ -6,10 +6,8 @@ Provides comprehensive activity monitoring, audit trails, and
 performance analytics with optimized filtering and export capabilities.
 """
 
-from __future__ import annotations
-
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Union
 
 from pydantic import Field, field_validator, computed_field, model_validator
 
@@ -62,16 +60,16 @@ class SupervisorActivityLog(BaseResponseSchema):
     )
     
     # Entity affected
-    entity_type: Optional[str] = Field(
+    entity_type: Union[str, None] = Field(
         default=None,
         description="Type of entity affected",
         examples=["complaint", "student", "room", "maintenance_request"],
     )
-    entity_id: Optional[str] = Field(
+    entity_id: Union[str, None] = Field(
         default=None,
         description="ID of affected entity",
     )
-    entity_name: Optional[str] = Field(
+    entity_name: Union[str, None] = Field(
         default=None,
         description="Name/title of affected entity",
     )
@@ -83,21 +81,21 @@ class SupervisorActivityLog(BaseResponseSchema):
     )
     
     # Technical details
-    ip_address: Optional[str] = Field(
+    ip_address: Union[str, None] = Field(
         default=None,
         description="IP address of action origin",
     )
-    user_agent: Optional[str] = Field(
+    user_agent: Union[str, None] = Field(
         default=None,
         description="User agent string",
     )
-    device_type: Optional[str] = Field(
+    device_type: Union[str, None] = Field(
         default=None,
         description="Device type (mobile/desktop/tablet)",
     )
     
     # Performance tracking
-    response_time_ms: Optional[int] = Field(
+    response_time_ms: Union[int, None] = Field(
         default=None,
         ge=0,
         description="Action response time in milliseconds",
@@ -106,7 +104,7 @@ class SupervisorActivityLog(BaseResponseSchema):
         default=True,
         description="Whether action completed successfully",
     )
-    error_message: Optional[str] = Field(
+    error_message: Union[str, None] = Field(
         default=None,
         description="Error message if action failed",
     )
@@ -147,45 +145,45 @@ class ActivityDetail(BaseSchema):
     action_description: str = Field(..., description="Action description")
     
     # Entity details
-    entity_type: Optional[str] = Field(default=None, description="Entity type")
-    entity_id: Optional[str] = Field(default=None, description="Entity ID")
-    entity_name: Optional[str] = Field(default=None, description="Entity name")
+    entity_type: Union[str, None] = Field(default=None, description="Entity type")
+    entity_id: Union[str, None] = Field(default=None, description="Entity ID")
+    entity_name: Union[str, None] = Field(default=None, description="Entity name")
     
     # Change tracking
-    old_values: Optional[Dict[str, Any]] = Field(
+    old_values: Union[Dict[str, Any], None] = Field(
         default=None,
         description="Previous values before change",
     )
-    new_values: Optional[Dict[str, Any]] = Field(
+    new_values: Union[Dict[str, Any], None] = Field(
         default=None,
         description="New values after change",
     )
     
     # Context
-    ip_address: Optional[str] = Field(default=None, description="IP address")
-    user_agent: Optional[str] = Field(default=None, description="User agent")
-    location: Optional[str] = Field(default=None, description="Geographic location")
-    device_info: Optional[Dict[str, str]] = Field(
+    ip_address: Union[str, None] = Field(default=None, description="IP address")
+    user_agent: Union[str, None] = Field(default=None, description="User agent")
+    location: Union[str, None] = Field(default=None, description="Geographic location")
+    device_info: Union[Dict[str, str], None] = Field(
         default=None,
         description="Device information",
     )
     
     # Result
     success: bool = Field(default=True, description="Action success status")
-    error_message: Optional[str] = Field(default=None, description="Error message")
-    response_time_ms: Optional[int] = Field(
+    error_message: Union[str, None] = Field(default=None, description="Error message")
+    response_time_ms: Union[int, None] = Field(
         default=None,
         ge=0,
         description="Response time in milliseconds",
     )
     
     # Impact assessment
-    impact_level: Optional[str] = Field(
+    impact_level: Union[str, None] = Field(
         default=None,
         pattern=r"^(low|medium|high|critical)$",
         description="Impact level of the action",
     )
-    affected_users_count: Optional[int] = Field(
+    affected_users_count: Union[int, None] = Field(
         default=None,
         ge=0,
         description="Number of users affected by action",
@@ -199,7 +197,7 @@ class ActivityDetail(BaseSchema):
 
     @computed_field
     @property
-    def change_summary(self) -> Optional[str]:
+    def change_summary(self) -> Union[str, None]:
         """Generate summary of changes made."""
         if not self.has_changes:
             return None
@@ -227,7 +225,7 @@ class TopActivity(BaseSchema):
     action_display_name: str = Field(..., description="Human-readable name")
     count: int = Field(..., ge=0, description="Number of times performed")
     last_performed: datetime = Field(..., description="Last time performed")
-    average_response_time_ms: Optional[int] = Field(
+    average_response_time_ms: Union[int, None] = Field(
         default=None,
         ge=0,
         description="Average response time",
@@ -274,7 +272,7 @@ class ActivityTimelinePoint(BaseSchema):
     )
     
     # Performance metrics
-    average_response_time_ms: Optional[int] = Field(
+    average_response_time_ms: Union[int, None] = Field(
         default=None,
         ge=0,
         description="Average response time",
@@ -317,7 +315,7 @@ class ActivityMetrics(BaseSchema):
         le=100,
         description="Overall success rate percentage",
     )
-    average_response_time_ms: Optional[int] = Field(
+    average_response_time_ms: Union[int, None] = Field(
         default=None,
         ge=0,
         description="Average response time",
@@ -330,13 +328,13 @@ class ActivityMetrics(BaseSchema):
     )
     
     # Peak activity analysis
-    peak_hour: Optional[int] = Field(
+    peak_hour: Union[int, None] = Field(
         default=None,
         ge=0,
         le=23,
         description="Hour with most activity (0-23)",
     )
-    peak_day_of_week: Optional[int] = Field(
+    peak_day_of_week: Union[int, None] = Field(
         default=None,
         ge=0,
         le=6,
@@ -349,7 +347,7 @@ class ActivityMetrics(BaseSchema):
         ge=0,
         description="Average actions per active day",
     )
-    response_time_trend: Optional[str] = Field(
+    response_time_trend: Union[str, None] = Field(
         default=None,
         pattern=r"^(improving|stable|declining)$",
         description="Response time trend",
@@ -427,7 +425,7 @@ class ActivitySummary(BaseSchema):
         default_factory=list,
         description="Hours with most activity (0-23)",
     )
-    most_productive_day: Optional[str] = Field(
+    most_productive_day: Union[str, None] = Field(
         default=None,
         description="Day of week with highest activity",
     )
@@ -447,7 +445,7 @@ class ActivitySummary(BaseSchema):
 
     @computed_field
     @property
-    def most_common_activity(self) -> Optional[str]:
+    def most_common_activity(self) -> Union[str, None]:
         """Get most frequently performed activity."""
         if not self.top_activities:
             return None
@@ -490,82 +488,82 @@ class ActivityFilterParams(BaseFilterSchema):
     """
 
     # Supervisor filters
-    supervisor_id: Optional[str] = Field(
+    supervisor_id: Union[str, None] = Field(
         default=None,
         description="Filter by specific supervisor",
     )
-    supervisor_ids: Optional[List[str]] = Field(
+    supervisor_ids: Union[List[str], None] = Field(
         default=None,
         max_length=20,
         description="Filter by multiple supervisors (max 20)",
     )
     
     # Hostel filter
-    hostel_id: Optional[str] = Field(
+    hostel_id: Union[str, None] = Field(
         default=None,
         description="Filter by hostel",
     )
     
     # Time range
-    date_range: Optional[DateTimeRangeFilter] = Field(
+    date_range: Union[DateTimeRangeFilter, None] = Field(
         default=None,
         description="Filter by Date/time range",
     )
     
     # Action filters
-    action_category: Optional[AuditActionCategory] = Field(
+    action_category: Union[AuditActionCategory, None] = Field(
         default=None,
         description="Filter by action category",
     )
-    action_categories: Optional[List[AuditActionCategory]] = Field(
+    action_categories: Union[List[AuditActionCategory], None] = Field(
         default=None,
         max_length=10,
         description="Filter by multiple categories",
     )
-    action_type: Optional[str] = Field(
+    action_type: Union[str, None] = Field(
         default=None,
         description="Filter by specific action type",
     )
-    action_types: Optional[List[str]] = Field(
+    action_types: Union[List[str], None] = Field(
         default=None,
         max_length=20,
         description="Filter by multiple action types",
     )
     
     # Entity filter
-    entity_type: Optional[str] = Field(
+    entity_type: Union[str, None] = Field(
         default=None,
         description="Filter by entity type",
     )
-    entity_id: Optional[str] = Field(
+    entity_id: Union[str, None] = Field(
         default=None,
         description="Filter by specific entity",
     )
     
     # Success filter
-    success_only: Optional[bool] = Field(
+    success_only: Union[bool, None] = Field(
         default=None,
         description="Show only successful actions",
     )
-    failed_only: Optional[bool] = Field(
+    failed_only: Union[bool, None] = Field(
         default=None,
         description="Show only failed actions",
     )
     
     # Performance filters
-    min_response_time_ms: Optional[int] = Field(
+    min_response_time_ms: Union[int, None] = Field(
         default=None,
         ge=0,
         description="Minimum response time filter",
     )
-    max_response_time_ms: Optional[int] = Field(
+    max_response_time_ms: Union[int, None] = Field(
         default=None,
         ge=0,
         description="Maximum response time filter",
     )
     
     # Device filters
-    device_type: Optional[str] = Field(
+    device_type: Union[str, None] = Field(
         default=None,
         pattern=r"^(mobile|desktop|tablet)$",
         description="Filter by device type",
@@ -587,7 +585,7 @@ class ActivityFilterParams(BaseFilterSchema):
 
     @field_validator("supervisor_ids")
     @classmethod
-    def validate_supervisor_ids(cls, v: Optional[List[str]]) -> Optional[List[str]]:
+    def validate_supervisor_ids(cls, v: Union[List[str], None]) -> Union[List[str], None]:
         """Validate supervisor IDs list."""
         if v is not None:
             # Remove duplicates while preserving order

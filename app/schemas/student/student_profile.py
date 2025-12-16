@@ -5,10 +5,8 @@ Provides schemas for student profile creation, updates, document management,
 and preference settings.
 """
 
-from __future__ import annotations
-
 from datetime import datetime
-from typing import List, Optional, Annotated
+from typing import List, Union, Annotated
 
 from pydantic import Field, HttpUrl, field_validator, model_validator, ConfigDict
 
@@ -52,73 +50,73 @@ class StudentProfileCreate(BaseCreateSchema):
         pattern=r"^\+?[1-9]\d{9,14}$",
         description="Guardian contact phone",
     )
-    guardian_email: Optional[str] = Field(
+    guardian_email: Union[str, None] = Field(
         default=None,
         description="Guardian email address",
     )
-    guardian_relation: Optional[str] = Field(
+    guardian_relation: Union[str, None] = Field(
         default=None,
         max_length=50,
         description="Relation to student",
         examples=["Father", "Mother", "Uncle", "Guardian"],
     )
-    guardian_address: Optional[str] = Field(
+    guardian_address: Union[str, None] = Field(
         default=None,
         max_length=500,
         description="Guardian residential address",
     )
 
     # Institutional information (for students)
-    institution_name: Optional[str] = Field(
+    institution_name: Union[str, None] = Field(
         default=None,
         max_length=255,
         description="Educational institution name",
     )
-    course: Optional[str] = Field(
+    course: Union[str, None] = Field(
         default=None,
         max_length=255,
         description="Course/program name",
     )
-    year_of_study: Optional[str] = Field(
+    year_of_study: Union[str, None] = Field(
         default=None,
         max_length=50,
         description="Current year/semester",
     )
-    student_id_number: Optional[str] = Field(
+    student_id_number: Union[str, None] = Field(
         default=None,
         max_length=100,
         description="College/University ID",
     )
 
     # Employment information (for working professionals)
-    company_name: Optional[str] = Field(
+    company_name: Union[str, None] = Field(
         default=None,
         max_length=255,
         description="Employer name",
     )
-    designation: Optional[str] = Field(
+    designation: Union[str, None] = Field(
         default=None,
         max_length=255,
         description="Job designation",
     )
 
     # ID proof
-    id_proof_type: Optional[IDProofType] = Field(
+    id_proof_type: Union[IDProofType, None] = Field(
         default=None,
         description="Type of ID proof",
     )
-    id_proof_number: Optional[str] = Field(
+    id_proof_number: Union[str, None] = Field(
         default=None,
         max_length=50,
         description="ID proof number",
     )
 
     # Preferences
-    dietary_preference: Optional[DietaryPreference] = Field(
+    dietary_preference: Union[DietaryPreference, None] = Field(
         default=None,
         description="Dietary preference",
     )
-    food_allergies: Optional[str] = Field(
+    food_allergies: Union[str, None] = Field(
         default=None,
         max_length=500,
         description="Food allergies and restrictions",
@@ -143,7 +141,7 @@ class StudentProfileCreate(BaseCreateSchema):
 
     @field_validator("guardian_email")
     @classmethod
-    def normalize_guardian_email(cls, v: Optional[str]) -> Optional[str]:
+    def normalize_guardian_email(cls, v: Union[str, None]) -> Union[str, None]:
         """Normalize guardian email."""
         if v is not None:
             return v.lower().strip()
@@ -156,7 +154,7 @@ class StudentProfileCreate(BaseCreateSchema):
         "designation",
     )
     @classmethod
-    def normalize_text_fields(cls, v: Optional[str]) -> Optional[str]:
+    def normalize_text_fields(cls, v: Union[str, None]) -> Union[str, None]:
         """Normalize text fields."""
         if v is not None:
             v = v.strip()
@@ -167,7 +165,7 @@ class StudentProfileCreate(BaseCreateSchema):
 
     @field_validator("id_proof_number")
     @classmethod
-    def normalize_id_proof(cls, v: Optional[str]) -> Optional[str]:
+    def normalize_id_proof(cls, v: Union[str, None]) -> Union[str, None]:
         """Normalize ID proof number."""
         if v is not None:
             v = v.strip().upper()
@@ -214,83 +212,83 @@ class StudentProfileUpdate(BaseUpdateSchema):
     )
 
     # Guardian updates
-    guardian_name: Optional[str] = Field(
+    guardian_name: Union[str, None] = Field(
         default=None,
         min_length=2,
         max_length=255,
         description="Guardian name",
     )
-    guardian_phone: Optional[str] = Field(
+    guardian_phone: Union[str, None] = Field(
         default=None,
         pattern=r"^\+?[1-9]\d{9,14}$",
         description="Guardian phone",
     )
-    guardian_email: Optional[str] = Field(
+    guardian_email: Union[str, None] = Field(
         default=None,
         description="Guardian email",
     )
-    guardian_relation: Optional[str] = Field(
+    guardian_relation: Union[str, None] = Field(
         default=None,
         max_length=50,
         description="Guardian relation",
     )
-    guardian_address: Optional[str] = Field(
+    guardian_address: Union[str, None] = Field(
         default=None,
         max_length=500,
         description="Guardian address",
     )
 
     # Institutional updates
-    institution_name: Optional[str] = Field(
+    institution_name: Union[str, None] = Field(
         default=None,
         max_length=255,
         description="Institution name",
     )
-    course: Optional[str] = Field(
+    course: Union[str, None] = Field(
         default=None,
         max_length=255,
         description="Course",
     )
-    year_of_study: Optional[str] = Field(
+    year_of_study: Union[str, None] = Field(
         default=None,
         max_length=50,
         description="Year of study",
     )
-    student_id_number: Optional[str] = Field(
+    student_id_number: Union[str, None] = Field(
         default=None,
         max_length=100,
         description="Student ID",
     )
 
     # Employment updates
-    company_name: Optional[str] = Field(
+    company_name: Union[str, None] = Field(
         default=None,
         max_length=255,
         description="Company name",
     )
-    designation: Optional[str] = Field(
+    designation: Union[str, None] = Field(
         default=None,
         max_length=255,
         description="Designation",
     )
 
     # ID proof updates
-    id_proof_type: Optional[IDProofType] = Field(
+    id_proof_type: Union[IDProofType, None] = Field(
         default=None,
         description="ID proof type",
     )
-    id_proof_number: Optional[str] = Field(
+    id_proof_number: Union[str, None] = Field(
         default=None,
         max_length=50,
         description="ID proof number",
     )
 
     # Preferences
-    dietary_preference: Optional[DietaryPreference] = Field(
+    dietary_preference: Union[DietaryPreference, None] = Field(
         default=None,
         description="Dietary preference",
     )
-    food_allergies: Optional[str] = Field(
+    food_allergies: Union[str, None] = Field(
         default=None,
         max_length=500,
         description="Food allergies",
@@ -299,21 +297,21 @@ class StudentProfileUpdate(BaseUpdateSchema):
     # Apply validators
     @field_validator("guardian_name")
     @classmethod
-    def validate_guardian_name(cls, v: Optional[str]) -> Optional[str]:
+    def validate_guardian_name(cls, v: Union[str, None]) -> Union[str, None]:
         if v is not None:
             return StudentProfileCreate.validate_guardian_name(v)
         return v
 
     @field_validator("guardian_phone")
     @classmethod
-    def normalize_guardian_phone(cls, v: Optional[str]) -> Optional[str]:
+    def normalize_guardian_phone(cls, v: Union[str, None]) -> Union[str, None]:
         if v is not None:
             return StudentProfileCreate.normalize_guardian_phone(v)
         return v
 
     @field_validator("guardian_email")
     @classmethod
-    def normalize_guardian_email(cls, v: Optional[str]) -> Optional[str]:
+    def normalize_guardian_email(cls, v: Union[str, None]) -> Union[str, None]:
         return StudentProfileCreate.normalize_guardian_email(v)
 
     @field_validator(
@@ -323,12 +321,12 @@ class StudentProfileUpdate(BaseUpdateSchema):
         "designation",
     )
     @classmethod
-    def normalize_text_fields(cls, v: Optional[str]) -> Optional[str]:
+    def normalize_text_fields(cls, v: Union[str, None]) -> Union[str, None]:
         return StudentProfileCreate.normalize_text_fields(v)
 
     @field_validator("id_proof_number")
     @classmethod
-    def normalize_id_proof(cls, v: Optional[str]) -> Optional[str]:
+    def normalize_id_proof(cls, v: Union[str, None]) -> Union[str, None]:
         return StudentProfileCreate.normalize_id_proof(v)
 
 
@@ -360,12 +358,12 @@ class DocumentInfo(BaseSchema):
         ...,
         description="Document storage URL",
     )
-    file_size_bytes: Optional[int] = Field(
+    file_size_bytes: Union[int, None] = Field(
         default=None,
         ge=0,
         description="File size in bytes",
     )
-    mime_type: Optional[str] = Field(
+    mime_type: Union[str, None] = Field(
         default=None,
         description="MIME type",
         examples=["application/pdf", "image/jpeg", "image/png"],
@@ -384,22 +382,22 @@ class DocumentInfo(BaseSchema):
         default=False,
         description="Verification status",
     )
-    verified_by: Optional[str] = Field(
+    verified_by: Union[str, None] = Field(
         default=None,
         description="Admin who verified",
     )
-    verified_at: Optional[datetime] = Field(
+    verified_at: Union[datetime, None] = Field(
         default=None,
         description="Verification timestamp",
     )
-    verification_notes: Optional[str] = Field(
+    verification_notes: Union[str, None] = Field(
         default=None,
         max_length=500,
         description="Verification notes",
     )
 
     # Expiry (for documents like ID proofs)
-    expiry_date: Optional[datetime] = Field(
+    expiry_date: Union[datetime, None] = Field(
         default=None,
         description="Document expiry date",
     )
@@ -470,21 +468,21 @@ class DocumentUploadRequest(BaseCreateSchema):
         ...,
         description="Document URL (after upload to storage)",
     )
-    file_size_bytes: Optional[int] = Field(
+    file_size_bytes: Union[int, None] = Field(
         default=None,
         ge=0,
         le=10485760,  # 10MB
         description="File size in bytes (max 10MB)",
     )
-    mime_type: Optional[str] = Field(
+    mime_type: Union[str, None] = Field(
         default=None,
         description="MIME type",
     )
-    expiry_date: Optional[datetime] = Field(
+    expiry_date: Union[datetime, None] = Field(
         default=None,
         description="Document expiry date (for ID proofs)",
     )
-    notes: Optional[str] = Field(
+    notes: Union[str, None] = Field(
         default=None,
         max_length=500,
         description="Additional notes",
@@ -507,7 +505,7 @@ class DocumentUploadRequest(BaseCreateSchema):
 
     @field_validator("mime_type")
     @classmethod
-    def validate_mime_type(cls, v: Optional[str]) -> Optional[str]:
+    def validate_mime_type(cls, v: Union[str, None]) -> Union[str, None]:
         """Validate MIME type is allowed."""
         if v is not None:
             allowed_types = [
@@ -525,7 +523,7 @@ class DocumentUploadRequest(BaseCreateSchema):
 
     @field_validator("expiry_date")
     @classmethod
-    def validate_expiry_date(cls, v: Optional[datetime]) -> Optional[datetime]:
+    def validate_expiry_date(cls, v: Union[datetime, None]) -> Union[datetime, None]:
         """Validate expiry date is in the future."""
         if v is not None:
             if v < datetime.now():
@@ -548,12 +546,12 @@ class DocumentVerificationRequest(BaseCreateSchema):
         ...,
         description="Verification status (true=verified, false=rejected)",
     )
-    verification_notes: Optional[str] = Field(
+    verification_notes: Union[str, None] = Field(
         default=None,
         max_length=500,
         description="Verification notes/comments",
     )
-    reject_reason: Optional[str] = Field(
+    reject_reason: Union[str, None] = Field(
         default=None,
         max_length=500,
         description="Rejection reason (if not verified)",
@@ -582,22 +580,22 @@ class StudentPreferences(BaseUpdateSchema):
     )
 
     # Meal preferences
-    mess_subscribed: Optional[bool] = Field(
+    mess_subscribed: Union[bool, None] = Field(
         default=None,
         description="Mess subscription status",
     )
-    dietary_preference: Optional[DietaryPreference] = Field(
+    dietary_preference: Union[DietaryPreference, None] = Field(
         default=None,
         description="Dietary preference",
     )
-    food_allergies: Optional[str] = Field(
+    food_allergies: Union[str, None] = Field(
         default=None,
         max_length=500,
         description="Food allergies and restrictions",
     )
 
     # Meal plan preferences
-    meal_plan_type: Optional[str] = Field(
+    meal_plan_type: Union[str, None] = Field(
         default=None,
         pattern=r"^(full|breakfast_only|lunch_dinner|custom)$",
         description="Meal plan type",
@@ -773,7 +771,7 @@ class StudentBulkImport(BaseCreateSchema):
     )
 
     # Field mapping (if custom columns)
-    field_mapping: Optional[dict] = Field(
+    field_mapping: Union[dict, None] = Field(
         default=None,
         description="Custom field mapping for CSV columns",
         examples=[

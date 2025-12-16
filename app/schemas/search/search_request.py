@@ -10,11 +10,9 @@ Provides schemas for:
 - Search history
 """
 
-from __future__ import annotations
-
 from datetime import date as Date, datetime
 from decimal import Decimal
-from typing import Any, Dict, List, Optional, Annotated
+from typing import Any, Dict, List, Union, Annotated
 from uuid import UUID
 
 from pydantic import Field, field_validator, model_validator, computed_field, ConfigDict
@@ -103,7 +101,7 @@ class AdvancedSearchRequest(BaseFilterSchema):
     )
 
     # Search query
-    query: Optional[str] = Field(
+    query: Union[str, None] = Field(
         default=None,
         max_length=255,
         description="Optional search keywords",
@@ -111,21 +109,21 @@ class AdvancedSearchRequest(BaseFilterSchema):
     )
 
     # Location filters
-    city: Optional[str] = Field(
+    city: Union[str, None] = Field(
         default=None,
         min_length=2,
         max_length=100,
         description="City name",
         examples=["Mumbai", "Bangalore"],
     )
-    state: Optional[str] = Field(
+    state: Union[str, None] = Field(
         default=None,
         min_length=2,
         max_length=100,
         description="State name",
         examples=["Maharashtra", "Karnataka"],
     )
-    pincode: Optional[str] = Field(
+    pincode: Union[str, None] = Field(
         default=None,
         pattern=r"^\d{6}$",
         description="6-digit Indian pincode",
@@ -133,65 +131,65 @@ class AdvancedSearchRequest(BaseFilterSchema):
     )
 
     # Geographic coordinates for proximity search
-    latitude: Optional[Annotated[Decimal, Field(ge=-90, le=90)]] = Field(
+    latitude: Union[Annotated[Decimal, Field(ge=-90, le=90)], None] = Field(
         default=None,
         description="Latitude for proximity search",
         examples=[19.0760],
     )
-    longitude: Optional[Annotated[Decimal, Field(ge=-180, le=180)]] = Field(
+    longitude: Union[Annotated[Decimal, Field(ge=-180, le=180)], None] = Field(
         default=None,
         description="Longitude for proximity search",
         examples=[72.8777],
     )
-    radius_km: Optional[Annotated[Decimal, Field(ge=0.1, le=100)]] = Field(
+    radius_km: Union[Annotated[Decimal, Field(ge=0.1, le=100)], None] = Field(
         default=None,
         description="Search radius in kilometers",
         examples=[5, 10, 25],
     )
 
     # Hostel and room type filters
-    hostel_type: Optional[HostelType] = Field(
+    hostel_type: Union[HostelType, None] = Field(
         default=None,
         description="Filter by hostel type (boys/girls/co-ed)",
     )
-    room_types: Optional[List[RoomType]] = Field(
+    room_types: Union[List[RoomType], None] = Field(
         default=None,
         description="Filter by room types (can select multiple)",
         examples=[["single", "double"]],
     )
 
     # Gender preference (for co-ed hostels)
-    gender_preference: Optional[Gender] = Field(
+    gender_preference: Union[Gender, None] = Field(
         default=None,
         description="Gender preference for room allocation",
     )
 
     # Price range filter
-    min_price: Optional[Annotated[Decimal, Field(ge=0)]] = Field(
+    min_price: Union[Annotated[Decimal, Field(ge=0)], None] = Field(
         default=None,
         description="Minimum monthly price in INR",
         examples=[5000, 10000],
     )
-    max_price: Optional[Annotated[Decimal, Field(ge=0)]] = Field(
+    max_price: Union[Annotated[Decimal, Field(ge=0)], None] = Field(
         default=None,
         description="Maximum monthly price in INR",
         examples=[20000, 30000],
     )
 
     # Amenities filter
-    amenities: Optional[List[str]] = Field(
+    amenities: Union[List[str], None] = Field(
         default=None,
         description="Required amenities (AND logic - hostel must have all)",
         examples=[["wifi", "ac", "parking"]],
     )
-    any_amenities: Optional[List[str]] = Field(
+    any_amenities: Union[List[str], None] = Field(
         default=None,
         description="Optional amenities (OR logic - hostel can have any)",
         examples=[["gym", "laundry", "swimming_pool"]],
     )
 
     # Rating filter
-    min_rating: Optional[Annotated[Decimal, Field(ge=0, le=5)]] = Field(
+    min_rating: Union[Annotated[Decimal, Field(ge=0, le=5)], None] = Field(
         default=None,
         description="Minimum average rating (0-5)",
         examples=[3.5, 4.0],
@@ -212,11 +210,11 @@ class AdvancedSearchRequest(BaseFilterSchema):
     )
 
     # Date-based availability
-    check_in_date: Optional[Date] = Field(
+    check_in_date: Union[Date, None] = Field(
         default=None,
         description="Desired check-in Date for availability check",
     )
-    check_out_date: Optional[Date] = Field(
+    check_out_date: Union[Date, None] = Field(
         default=None,
         description="Desired check-out Date for availability check",
     )
@@ -253,7 +251,7 @@ class AdvancedSearchRequest(BaseFilterSchema):
 
     @field_validator("query")
     @classmethod
-    def normalize_query(cls, v: Optional[str]) -> Optional[str]:
+    def normalize_query(cls, v: Union[str, None]) -> Union[str, None]:
         """Normalize search query."""
         if v is not None:
             normalized = " ".join(v.split())
@@ -262,7 +260,7 @@ class AdvancedSearchRequest(BaseFilterSchema):
 
     @field_validator("city", "state")
     @classmethod
-    def normalize_location(cls, v: Optional[str]) -> Optional[str]:
+    def normalize_location(cls, v: Union[str, None]) -> Union[str, None]:
         """Normalize location strings."""
         if v is not None:
             return v.strip().title()
@@ -270,7 +268,7 @@ class AdvancedSearchRequest(BaseFilterSchema):
 
     @field_validator("amenities", "any_amenities")
     @classmethod
-    def normalize_amenities(cls, v: Optional[List[str]]) -> Optional[List[str]]:
+    def normalize_amenities(cls, v: Union[List[str], None]) -> Union[List[str], None]:
         """Normalize amenity list (lowercase, deduplicate)."""
         if v is not None:
             # Convert to lowercase and remove duplicates while preserving order
@@ -320,7 +318,7 @@ class AdvancedSearchRequest(BaseFilterSchema):
 
         return self
 
-    @computed_field
+    @computed_field  # type: ignore[prop-decorator]
     @property
     def has_location_filter(self) -> bool:
         """Check if any location filter is applied."""
@@ -333,13 +331,13 @@ class AdvancedSearchRequest(BaseFilterSchema):
             ]
         )
 
-    @computed_field
+    @computed_field  # type: ignore[prop-decorator]
     @property
     def has_price_filter(self) -> bool:
         """Check if price filter is applied."""
         return self.min_price is not None or self.max_price is not None
 
-    @computed_field
+    @computed_field  # type: ignore[prop-decorator]
     @property
     def offset(self) -> int:
         """Calculate offset for database queries."""
@@ -372,15 +370,15 @@ class NearbySearchRequest(BaseFilterSchema):
     )
 
     # Optional filters
-    hostel_type: Optional[HostelType] = Field(
+    hostel_type: Union[HostelType, None] = Field(
         default=None,
         description="Filter by hostel type",
     )
-    min_price: Optional[Annotated[Decimal, Field(ge=0)]] = Field(
+    min_price: Union[Annotated[Decimal, Field(ge=0)], None] = Field(
         default=None,
         description="Minimum price filter",
     )
-    max_price: Optional[Annotated[Decimal, Field(ge=0)]] = Field(
+    max_price: Union[Annotated[Decimal, Field(ge=0)], None] = Field(
         default=None,
         description="Maximum price filter",
     )
@@ -435,7 +433,7 @@ class SavedSearchCreate(BaseCreateSchema):
         default=False,
         description="Enable notifications when new matching hostels are added",
     )
-    alert_frequency: Optional[str] = Field(
+    alert_frequency: Union[str, None] = Field(
         default=None,
         pattern=r"^(daily|weekly|instant)$",
         description="Alert notification frequency",
@@ -470,21 +468,21 @@ class SavedSearchUpdate(BaseUpdateSchema):
         validate_assignment=True,
     )
 
-    name: Optional[str] = Field(
+    name: Union[str, None] = Field(
         default=None,
         min_length=1,
         max_length=100,
         description="Updated name",
     )
-    search_criteria: Optional[Dict[str, Any]] = Field(
+    search_criteria: Union[Dict[str, Any], None] = Field(
         default=None,
         description="Updated search parameters",
     )
-    is_alert_enabled: Optional[bool] = Field(
+    is_alert_enabled: Union[bool, None] = Field(
         default=None,
         description="Enable/disable alerts",
     )
-    alert_frequency: Optional[str] = Field(
+    alert_frequency: Union[str, None] = Field(
         default=None,
         pattern=r"^(daily|weekly|instant)$",
         description="Alert frequency",
@@ -492,7 +490,7 @@ class SavedSearchUpdate(BaseUpdateSchema):
 
     @field_validator("name")
     @classmethod
-    def normalize_name(cls, v: Optional[str]) -> Optional[str]:
+    def normalize_name(cls, v: Union[str, None]) -> Union[str, None]:
         """Normalize search name."""
         if v is not None:
             normalized = " ".join(v.split())
@@ -512,8 +510,8 @@ class SavedSearchResponse(BaseResponseSchema):
     name: str = Field(..., description="Search name")
     search_criteria: Dict[str, Any] = Field(..., description="Search parameters")
     is_alert_enabled: bool = Field(..., description="Alert status")
-    alert_frequency: Optional[str] = Field(default=None, description="Alert frequency")
-    last_executed_at: Optional[datetime] = Field(
+    alert_frequency: Union[str, None] = Field(default=None, description="Alert frequency")
+    last_executed_at: Union[datetime, None] = Field(
         default=None,
         description="Last time this search was executed",
     )
@@ -532,7 +530,7 @@ class SearchHistoryResponse(BaseResponseSchema):
         validate_assignment=True,
     )
 
-    user_id: Optional[UUID] = Field(
+    user_id: Union[UUID, None] = Field(
         default=None,
         description="User ID (null for anonymous searches)",
     )

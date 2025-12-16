@@ -6,11 +6,9 @@ This module defines schemas for payment ledger entries, account statements,
 transaction history, and balance adjustments.
 """
 
-from __future__ import annotations
-
 from datetime import date as Date, datetime
 from decimal import Decimal
-from typing import List, Optional
+from typing import List, Union
 from uuid import UUID
 
 from pydantic import Field, field_validator, model_validator, computed_field
@@ -80,11 +78,11 @@ class LedgerEntry(BaseResponseSchema):
     )
 
     # References
-    payment_id: Optional[UUID] = Field(
+    payment_id: Union[UUID, None] = Field(
         None,
         description="Associated payment ID",
     )
-    payment_reference: Optional[str] = Field(
+    payment_reference: Union[str, None] = Field(
         None,
         description="Payment reference number",
     )
@@ -99,7 +97,7 @@ class LedgerEntry(BaseResponseSchema):
         max_length=500,
         description="Entry description",
     )
-    notes: Optional[str] = Field(
+    notes: Union[str, None] = Field(
         None,
         max_length=1000,
         description="Additional notes",
@@ -108,7 +106,7 @@ class LedgerEntry(BaseResponseSchema):
     # Timestamps
     transaction_date: Date = Field(
         ...,
-        description="Transaction date",
+        description="Transaction Date",
     )
     posted_at: datetime = Field(
         ...,
@@ -149,7 +147,7 @@ class TransactionItem(BaseSchema):
 
     transaction_date: Date = Field(
         ...,
-        description="Transaction date",
+        description="Transaction Date",
     )
     reference_number: str = Field(
         ...,
@@ -161,12 +159,12 @@ class TransactionItem(BaseSchema):
     )
 
     # Amount columns
-    debit: Optional[Decimal] = Field(
+    debit: Union[Decimal, None] = Field(
         None,
         ge=0,
         description="Debit amount",
     )
-    credit: Optional[Decimal] = Field(
+    credit: Union[Decimal, None] = Field(
         None,
         ge=0,
         description="Credit amount",
@@ -177,7 +175,7 @@ class TransactionItem(BaseSchema):
     )
 
     # Related Payment
-    payment_reference: Optional[str] = Field(
+    payment_reference: Union[str, None] = Field(
         None,
         description="Payment reference if applicable",
     )
@@ -368,15 +366,15 @@ class LedgerSummary(BaseSchema):
     )
 
     # Last Activity
-    last_payment_date: Optional[Date] = Field(
+    last_payment_date: Union[Date, None] = Field(
         None,
         description="Date of last payment",
     )
-    last_charge_date: Optional[Date] = Field(
+    last_charge_date: Union[Date, None] = Field(
         None,
         description="Date of last charge",
     )
-    last_transaction_date: Optional[Date] = Field(
+    last_transaction_date: Union[Date, None] = Field(
         None,
         description="Date of last transaction",
     )
@@ -420,13 +418,13 @@ class TransactionHistory(BaseSchema):
     )
 
     # Filter Period
-    period_start: Optional[Date] = Field(
+    period_start: Union[Date, None] = Field(
         None,
-        description="Filter from this date",
+        description="Filter from this Date",
     )
-    period_end: Optional[Date] = Field(
+    period_end: Union[Date, None] = Field(
         None,
-        description="Filter to this date",
+        description="Filter to this Date",
     )
 
     # Transactions
@@ -495,7 +493,7 @@ class BalanceAdjustment(BaseCreateSchema):
         max_length=500,
         description="Reason for adjustment",
     )
-    notes: Optional[str] = Field(
+    notes: Union[str, None] = Field(
         None,
         max_length=1000,
         description="Additional notes",
@@ -590,7 +588,7 @@ class WriteOff(BaseCreateSchema):
     )
 
     # Documentation
-    supporting_documents: Optional[List[str]] = Field(
+    supporting_documents: Union[List[str], None] = Field(
         None,
         description="URLs/IDs of supporting documents",
     )

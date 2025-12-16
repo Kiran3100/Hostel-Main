@@ -6,11 +6,9 @@ Provides detailed performance measurement, goal tracking, and
 comparative analysis with peer benchmarking.
 """
 
-from __future__ import annotations
-
 from datetime import date as Date, datetime, timedelta
 from decimal import Decimal
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Union
 
 from pydantic import Field, field_validator, computed_field
 
@@ -162,7 +160,7 @@ class PerformanceMetrics(BaseSchema):
     )
     
     # ============ Student Satisfaction ============
-    student_feedback_score: Optional[Decimal] = Field(
+    student_feedback_score: Union[Decimal, None] = Field(
         default=None,
         ge=0,
         le=5,
@@ -274,7 +272,7 @@ class ComplaintPerformance(BaseSchema):
     )
     
     # Student satisfaction
-    average_complaint_rating: Optional[Decimal] = Field(
+    average_complaint_rating: Union[Decimal, None] = Field(
         default=None,
         ge=0,
         le=5,
@@ -509,7 +507,7 @@ class MaintenancePerformance(BaseSchema):
         
         utilization = (self.total_maintenance_cost / self.budget_allocated) * 100
         return Decimal(str(utilization)).quantize(Decimal("0.01"))
-# Continuing supervisor_performance.py...
+
 
 class PerformanceTrendPoint(BaseSchema):
     """Performance trend data point for analysis."""
@@ -543,7 +541,7 @@ class PerformanceTrendPoint(BaseSchema):
         le=100,
         description="Maintenance management score",
     )
-    student_satisfaction_score: Optional[Decimal] = Field(
+    student_satisfaction_score: Union[Decimal, None] = Field(
         default=None,
         ge=0,
         le=100,
@@ -758,11 +756,11 @@ class PerformanceReport(BaseSchema):
         default_factory=list,
         description="Performance trends over time",
     )
-    comparison_with_peers: Optional[PeerComparison] = Field(
+    comparison_with_peers: Union[PeerComparison, None] = Field(
         default=None,
         description="Comparison with peer supervisors",
     )
-    comparison_with_previous_period: Optional[PeriodComparison] = Field(
+    comparison_with_previous_period: Union[PeriodComparison, None] = Field(
         default=None,
         description="Comparison with previous period",
     )
@@ -782,7 +780,7 @@ class PerformanceReport(BaseSchema):
     )
     
     # Goals and targets
-    current_goals: List[PerformanceGoalProgress] = Field(
+    current_goals: List["PerformanceGoalProgress"] = Field(
         default_factory=list,
         description="Current performance goals progress",
     )
@@ -886,7 +884,7 @@ class PerformanceReview(BaseCreateSchema):
     )
     
     # Additional feedback
-    admin_comments: Optional[str] = Field(
+    admin_comments: Union[str, None] = Field(
         default=None,
         max_length=2000,
         description="Additional admin comments",
@@ -952,7 +950,7 @@ class PerformanceReviewResponse(BaseSchema):
     strengths: str = Field(..., description="Identified strengths")
     areas_for_improvement: str = Field(..., description="Areas for improvement")
     goals_for_next_period: str = Field(..., description="Next period goals")
-    admin_comments: Optional[str] = Field(default=None, description="Admin comments")
+    admin_comments: Union[str, None] = Field(default=None, description="Admin comments")
     
     # Actions and development
     action_items: List[str] = Field(default_factory=list, description="Action items")
@@ -963,11 +961,11 @@ class PerformanceReviewResponse(BaseSchema):
     
     # Supervisor acknowledgment
     acknowledged: bool = Field(default=False, description="Supervisor acknowledged review")
-    acknowledged_at: Optional[datetime] = Field(
+    acknowledged_at: Union[datetime, None] = Field(
         default=None,
         description="Acknowledgment timestamp",
     )
-    supervisor_comments: Optional[str] = Field(
+    supervisor_comments: Union[str, None] = Field(
         default=None,
         max_length=1000,
         description="Supervisor's response comments",
@@ -1022,7 +1020,7 @@ class PerformanceGoal(BaseCreateSchema):
         ...,
         description="Target value to achieve",
     )
-    current_value: Optional[Decimal] = Field(
+    current_value: Union[Decimal, None] = Field(
         default=None,
         description="Current baseline value",
     )
@@ -1077,7 +1075,7 @@ class PerformanceGoalProgress(BaseSchema):
     # Values
     target_value: Decimal = Field(..., description="Target value")
     current_value: Decimal = Field(..., description="Current achieved value")
-    baseline_value: Optional[Decimal] = Field(
+    baseline_value: Union[Decimal, None] = Field(
         default=None,
         description="Starting baseline value",
     )
@@ -1139,7 +1137,7 @@ class PerformanceGoalProgress(BaseSchema):
 
     @computed_field
     @property
-    def projected_completion_date(self) -> Optional[Date]:
+    def projected_completion_date(self) -> Union[Date, None]:
         """Project completion Date based on current progress rate."""
         if self.progress_percentage == 0:
             return None

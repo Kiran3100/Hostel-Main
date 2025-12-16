@@ -6,10 +6,8 @@ This module provides schemas for managing reusable notification templates
 with variable substitution and template rendering.
 """
 
-from __future__ import annotations
-
 from datetime import datetime
-from typing import Dict, List, Optional
+from typing import Dict, List, Union
 from uuid import UUID
 
 from pydantic import Field, field_validator, model_validator
@@ -63,7 +61,7 @@ class TemplateCreate(BaseCreateSchema):
     )
 
     # Content with variable support
-    subject: Optional[str] = Field(
+    subject: Union[str, None] = Field(
         default=None,
         min_length=1,
         max_length=255,
@@ -87,7 +85,7 @@ class TemplateCreate(BaseCreateSchema):
     )
 
     # Metadata
-    category: Optional[str] = Field(
+    category: Union[str, None] = Field(
         default=None,
         max_length=100,
         description="Template category for organization",
@@ -103,7 +101,7 @@ class TemplateCreate(BaseCreateSchema):
         default=True,
         description="Whether template is active and available for use",
     )
-    description: Optional[str] = Field(
+    description: Union[str, None] = Field(
         default=None,
         max_length=500,
         description="Template description and usage notes",
@@ -196,46 +194,46 @@ class TemplateUpdate(BaseUpdateSchema):
     Template code cannot be changed after creation.
     """
 
-    template_name: Optional[str] = Field(
+    template_name: Union[str, None] = Field(
         default=None,
         min_length=3,
         max_length=255,
         description="Updated template name",
     )
-    subject: Optional[str] = Field(
+    subject: Union[str, None] = Field(
         default=None,
         min_length=1,
         max_length=255,
         description="Updated subject template",
     )
-    body_template: Optional[str] = Field(
+    body_template: Union[str, None] = Field(
         default=None,
         min_length=1,
         max_length=10000,
         description="Updated body template",
     )
-    variables: Optional[List[str]] = Field(
+    variables: Union[List[str], None] = Field(
         default=None,
         description="Updated required variables list",
     )
-    optional_variables: Optional[List[str]] = Field(
+    optional_variables: Union[List[str], None] = Field(
         default=None,
         description="Updated optional variables list",
     )
-    category: Optional[str] = Field(
+    category: Union[str, None] = Field(
         default=None,
         max_length=100,
         description="Updated category",
     )
-    tags: Optional[List[str]] = Field(
+    tags: Union[List[str], None] = Field(
         default=None,
         description="Updated tags",
     )
-    is_active: Optional[bool] = Field(
+    is_active: Union[bool, None] = Field(
         default=None,
         description="Updated active status",
     )
-    description: Optional[str] = Field(
+    description: Union[str, None] = Field(
         default=None,
         max_length=500,
         description="Updated description",
@@ -263,7 +261,7 @@ class TemplateResponse(BaseResponseSchema):
     )
 
     # Content
-    subject: Optional[str] = Field(
+    subject: Union[str, None] = Field(
         default=None,
         description="Subject template",
     )
@@ -283,7 +281,7 @@ class TemplateResponse(BaseResponseSchema):
     )
 
     # Metadata
-    category: Optional[str] = Field(
+    category: Union[str, None] = Field(
         default=None,
         description="Template category",
     )
@@ -301,7 +299,7 @@ class TemplateResponse(BaseResponseSchema):
         ...,
         description="Active status",
     )
-    description: Optional[str] = Field(
+    description: Union[str, None] = Field(
         default=None,
         description="Template description",
     )
@@ -312,7 +310,7 @@ class TemplateResponse(BaseResponseSchema):
         ge=0,
         description="Number of times template has been used",
     )
-    last_used_at: Optional[datetime] = Field(
+    last_used_at: Union[datetime, None] = Field(
         default=None,
         description="When template was last used",
     )
@@ -326,7 +324,7 @@ class TemplateResponse(BaseResponseSchema):
         ...,
         description="Last update timestamp",
     )
-    created_by: Optional[UUID] = Field(
+    created_by: Union[UUID, None] = Field(
         default=None,
         description="User who created the template",
     )
@@ -394,7 +392,7 @@ class TemplatePreviewResponse(BaseSchema):
         ...,
         description="Template code",
     )
-    subject: Optional[str] = Field(
+    subject: Union[str, None] = Field(
         default=None,
         description="Rendered subject",
     )
@@ -418,7 +416,7 @@ class TemplatePreviewResponse(BaseSchema):
     )
 
     # Character counts (useful for SMS)
-    subject_length: Optional[int] = Field(
+    subject_length: Union[int, None] = Field(
         default=None,
         description="Length of rendered subject",
     )
@@ -426,7 +424,7 @@ class TemplatePreviewResponse(BaseSchema):
         ...,
         description="Length of rendered body",
     )
-    estimated_sms_segments: Optional[int] = Field(
+    estimated_sms_segments: Union[int, None] = Field(
         default=None,
         description="Estimated SMS segments (if applicable)",
     )
@@ -468,7 +466,7 @@ class TemplateCategory(BaseSchema):
         ...,
         description="Category name",
     )
-    category_description: Optional[str] = Field(
+    category_description: Union[str, None] = Field(
         default=None,
         description="Category description",
     )

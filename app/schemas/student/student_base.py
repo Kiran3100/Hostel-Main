@@ -5,11 +5,9 @@ Provides core student management schemas including creation, updates,
 check-in/check-out operations, and student-specific attributes.
 """
 
-from __future__ import annotations
-
 from datetime import date as Date
 from decimal import Decimal
-from typing import Optional, Annotated
+from typing import Union, List, Annotated
 
 from pydantic import Field, field_validator, model_validator, ConfigDict
 
@@ -61,26 +59,26 @@ class StudentBase(BaseSchema):
         ...,
         description="Current hostel ID",
     )
-    room_id: Optional[str] = Field(
+    room_id: Union[str, None] = Field(
         default=None,
         description="Assigned room ID (null if not assigned)",
     )
-    bed_id: Optional[str] = Field(
+    bed_id: Union[str, None] = Field(
         default=None,
         description="Assigned bed ID (null if not assigned)",
     )
 
     # Identification documents
-    id_proof_type: Optional[IDProofType] = Field(
+    id_proof_type: Union[IDProofType, None] = Field(
         default=None,
         description="Type of ID proof submitted",
     )
-    id_proof_number: Optional[str] = Field(
+    id_proof_number: Union[str, None] = Field(
         default=None,
         max_length=50,
         description="ID proof number/reference",
     )
-    id_proof_document_url: Optional[str] = Field(
+    id_proof_document_url: Union[str, None] = Field(
         default=None,
         description="Uploaded ID proof document URL",
     )
@@ -99,79 +97,79 @@ class StudentBase(BaseSchema):
         description="Guardian contact phone (E.164 format)",
         examples=["+919876543210", "9876543210"],
     )
-    guardian_email: Optional[str] = Field(
+    guardian_email: Union[str, None] = Field(
         default=None,
         description="Guardian email address",
     )
-    guardian_relation: Optional[str] = Field(
+    guardian_relation: Union[str, None] = Field(
         default=None,
         max_length=50,
         description="Relation to student",
         examples=["Father", "Mother", "Uncle", "Guardian"],
     )
-    guardian_address: Optional[str] = Field(
+    guardian_address: Union[str, None] = Field(
         default=None,
         max_length=500,
         description="Guardian residential address",
     )
 
     # Institutional information (for students)
-    institution_name: Optional[str] = Field(
+    institution_name: Union[str, None] = Field(
         default=None,
         max_length=255,
         description="College/University/School name",
         examples=["IIT Delhi", "Delhi University", "XYZ College"],
     )
-    course: Optional[str] = Field(
+    course: Union[str, None] = Field(
         default=None,
         max_length=255,
         description="Course/Program name",
         examples=["B.Tech Computer Science", "MBA", "BA Economics"],
     )
-    year_of_study: Optional[str] = Field(
+    year_of_study: Union[str, None] = Field(
         default=None,
         max_length=50,
         description="Current year/semester",
         examples=["1st Year", "3rd Semester", "Final Year"],
     )
-    student_id_number: Optional[str] = Field(
+    student_id_number: Union[str, None] = Field(
         default=None,
         max_length=100,
         description="College/University ID number",
     )
-    institutional_id_url: Optional[str] = Field(
+    institutional_id_url: Union[str, None] = Field(
         default=None,
         description="Uploaded institutional ID card URL",
     )
 
     # Employment information (for working professionals)
-    company_name: Optional[str] = Field(
+    company_name: Union[str, None] = Field(
         default=None,
         max_length=255,
         description="Employer/Company name",
         examples=["Google India", "Infosys", "Startup XYZ"],
     )
-    designation: Optional[str] = Field(
+    designation: Union[str, None] = Field(
         default=None,
         max_length=255,
         description="Job title/designation",
         examples=["Software Engineer", "Marketing Manager", "Analyst"],
     )
-    company_id_url: Optional[str] = Field(
+    company_id_url: Union[str, None] = Field(
         default=None,
         description="Company ID card URL",
     )
 
     # Check-in/Check-out dates
-    check_in_date: Optional[Date] = Field(
+    check_in_date: Union[Date, None] = Field(
         default=None,
         description="Actual check-in Date",
     )
-    expected_checkout_date: Optional[Date] = Field(
+    expected_checkout_date: Union[Date, None] = Field(
         default=None,
         description="Expected/planned checkout Date",
     )
-    actual_checkout_date: Optional[Date] = Field(
+    actual_checkout_date: Union[Date, None] = Field(
         default=None,
         description="Actual checkout Date (when checked out)",
     )
@@ -185,11 +183,11 @@ class StudentBase(BaseSchema):
         default=False,
         description="Security deposit payment status",
     )
-    security_deposit_paid_date: Optional[Date] = Field(
+    security_deposit_paid_date: Union[Date, None] = Field(
         default=None,
         description="Date security deposit was paid",
     )
-    monthly_rent_amount: Optional[MoneyAmount] = Field(
+    monthly_rent_amount: Union[MoneyAmount, None] = Field(
         default=None,
         description="Monthly rent amount for the student",
     )
@@ -199,11 +197,11 @@ class StudentBase(BaseSchema):
         default=False,
         description="Subscribed to mess/canteen facility",
     )
-    dietary_preference: Optional[DietaryPreference] = Field(
+    dietary_preference: Union[DietaryPreference, None] = Field(
         default=None,
         description="Dietary preference (veg/non-veg/vegan/jain)",
     )
-    food_allergies: Optional[str] = Field(
+    food_allergies: Union[str, None] = Field(
         default=None,
         max_length=500,
         description="Food allergies and restrictions",
@@ -215,11 +213,11 @@ class StudentBase(BaseSchema):
         default=StudentStatus.ACTIVE,
         description="Current student status",
     )
-    notice_period_start: Optional[Date] = Field(
+    notice_period_start: Union[Date, None] = Field(
         default=None,
         description="Notice period start Date (if leaving)",
     )
-    notice_period_end: Optional[Date] = Field(
+    notice_period_end: Union[Date, None] = Field(
         default=None,
         description="Notice period end Date",
     )
@@ -249,7 +247,7 @@ class StudentBase(BaseSchema):
 
     @field_validator("guardian_email")
     @classmethod
-    def normalize_guardian_email(cls, v: Optional[str]) -> Optional[str]:
+    def normalize_guardian_email(cls, v: Union[str, None]) -> Union[str, None]:
         """Normalize guardian email."""
         if v is not None:
             return v.lower().strip()
@@ -257,7 +255,7 @@ class StudentBase(BaseSchema):
 
     @field_validator("id_proof_number")
     @classmethod
-    def validate_id_proof_number(cls, v: Optional[str]) -> Optional[str]:
+    def validate_id_proof_number(cls, v: Union[str, None]) -> Union[str, None]:
         """Validate and normalize ID proof number."""
         if v is not None:
             v = v.strip().upper()
@@ -274,7 +272,7 @@ class StudentBase(BaseSchema):
         "designation",
     )
     @classmethod
-    def normalize_text_fields(cls, v: Optional[str]) -> Optional[str]:
+    def normalize_text_fields(cls, v: Union[str, None]) -> Union[str, None]:
         """Normalize text fields."""
         if v is not None:
             v = v.strip()
@@ -375,7 +373,7 @@ class StudentCreate(StudentBase, BaseCreateSchema):
     )
 
     # Optional link to source booking
-    booking_id: Optional[str] = Field(
+    booking_id: Union[str, None] = Field(
         default=None,
         description="Source booking ID (if converted from booking)",
     )
@@ -395,156 +393,156 @@ class StudentUpdate(BaseUpdateSchema):
     """
 
     # Room assignment updates
-    room_id: Optional[str] = Field(
+    room_id: Union[str, None] = Field(
         default=None,
         description="Updated room ID",
     )
-    bed_id: Optional[str] = Field(
+    bed_id: Union[str, None] = Field(
         default=None,
         description="Updated bed ID",
     )
 
     # Identification updates
-    id_proof_type: Optional[IDProofType] = Field(
+    id_proof_type: Union[IDProofType, None] = Field(
         default=None,
         description="ID proof type",
     )
-    id_proof_number: Optional[str] = Field(
+    id_proof_number: Union[str, None] = Field(
         default=None,
         max_length=50,
         description="ID proof number",
     )
-    id_proof_document_url: Optional[str] = Field(
+    id_proof_document_url: Union[str, None] = Field(
         default=None,
         description="ID proof document URL",
     )
 
     # Guardian updates
-    guardian_name: Optional[str] = Field(
+    guardian_name: Union[str, None] = Field(
         default=None,
         min_length=2,
         max_length=255,
         description="Guardian name",
     )
-    guardian_phone: Optional[str] = Field(
+    guardian_phone: Union[str, None] = Field(
         default=None,
         pattern=r"^\+?[1-9]\d{9,14}$",
         description="Guardian phone",
     )
-    guardian_email: Optional[str] = Field(
+    guardian_email: Union[str, None] = Field(
         default=None,
         description="Guardian email",
     )
-    guardian_relation: Optional[str] = Field(
+    guardian_relation: Union[str, None] = Field(
         default=None,
         max_length=50,
         description="Guardian relation",
     )
-    guardian_address: Optional[str] = Field(
+    guardian_address: Union[str, None] = Field(
         default=None,
         max_length=500,
         description="Guardian address",
     )
 
     # Institutional updates
-    institution_name: Optional[str] = Field(
+    institution_name: Union[str, None] = Field(
         default=None,
         max_length=255,
         description="Institution name",
     )
-    course: Optional[str] = Field(
+    course: Union[str, None] = Field(
         default=None,
         max_length=255,
         description="Course",
     )
-    year_of_study: Optional[str] = Field(
+    year_of_study: Union[str, None] = Field(
         default=None,
         max_length=50,
         description="Year of study",
     )
-    student_id_number: Optional[str] = Field(
+    student_id_number: Union[str, None] = Field(
         default=None,
         max_length=100,
         description="Student ID number",
     )
-    institutional_id_url: Optional[str] = Field(
+    institutional_id_url: Union[str, None] = Field(
         default=None,
         description="Institutional ID URL",
     )
 
     # Employment updates
-    company_name: Optional[str] = Field(
+    company_name: Union[str, None] = Field(
         default=None,
         max_length=255,
         description="Company name",
     )
-    designation: Optional[str] = Field(
+    designation: Union[str, None] = Field(
         default=None,
         max_length=255,
         description="Designation",
     )
-    company_id_url: Optional[str] = Field(
+    company_id_url: Union[str, None] = Field(
         default=None,
         description="Company ID URL",
     )
 
     # Date updates
-    check_in_date: Optional[Date] = Field(
+    check_in_date: Union[Date, None] = Field(
         default=None,
         description="Check-in Date",
     )
-    expected_checkout_date: Optional[Date] = Field(
+    expected_checkout_date: Union[Date, None] = Field(
         default=None,
         description="Expected checkout Date",
     )
-    actual_checkout_date: Optional[Date] = Field(
+    actual_checkout_date: Union[Date, None] = Field(
         default=None,
         description="Actual checkout Date",
     )
 
     # Financial updates - Fixed for Pydantic v2
-    security_deposit_amount: Optional[MoneyAmount] = Field(
+    security_deposit_amount: Union[MoneyAmount, None] = Field(
         default=None,
         description="Security deposit amount",
     )
-    security_deposit_paid: Optional[bool] = Field(
+    security_deposit_paid: Union[bool, None] = Field(
         default=None,
         description="Security deposit paid status",
     )
-    security_deposit_paid_date: Optional[Date] = Field(
+    security_deposit_paid_date: Union[Date, None] = Field(
         default=None,
         description="Security deposit paid Date",
     )
-    monthly_rent_amount: Optional[MoneyAmount] = Field(
+    monthly_rent_amount: Union[MoneyAmount, None] = Field(
         default=None,
         description="Monthly rent amount",
     )
 
     # Meal updates
-    mess_subscribed: Optional[bool] = Field(
+    mess_subscribed: Union[bool, None] = Field(
         default=None,
         description="Mess subscription status",
     )
-    dietary_preference: Optional[DietaryPreference] = Field(
+    dietary_preference: Union[DietaryPreference, None] = Field(
         default=None,
         description="Dietary preference",
     )
-    food_allergies: Optional[str] = Field(
+    food_allergies: Union[str, None] = Field(
         default=None,
         max_length=500,
         description="Food allergies",
     )
 
     # Status updates
-    student_status: Optional[StudentStatus] = Field(
+    student_status: Union[StudentStatus, None] = Field(
         default=None,
         description="Student status",
     )
-    notice_period_start: Optional[Date] = Field(
+    notice_period_start: Union[Date, None] = Field(
         default=None,
         description="Notice period start",
     )
-    notice_period_end: Optional[Date] = Field(
+    notice_period_end: Union[Date, None] = Field(
         default=None,
         description="Notice period end",
     )
@@ -552,26 +550,26 @@ class StudentUpdate(BaseUpdateSchema):
     # Apply same validators as base
     @field_validator("guardian_name")
     @classmethod
-    def validate_guardian_name(cls, v: Optional[str]) -> Optional[str]:
+    def validate_guardian_name(cls, v: Union[str, None]) -> Union[str, None]:
         if v is not None:
             return StudentBase.validate_guardian_name(v)
         return v
 
     @field_validator("guardian_phone")
     @classmethod
-    def normalize_guardian_phone(cls, v: Optional[str]) -> Optional[str]:
+    def normalize_guardian_phone(cls, v: Union[str, None]) -> Union[str, None]:
         if v is not None:
             return StudentBase.normalize_guardian_phone(v)
         return v
 
     @field_validator("guardian_email")
     @classmethod
-    def normalize_guardian_email(cls, v: Optional[str]) -> Optional[str]:
+    def normalize_guardian_email(cls, v: Union[str, None]) -> Union[str, None]:
         return StudentBase.normalize_guardian_email(v)
 
     @field_validator("id_proof_number")
     @classmethod
-    def validate_id_proof_number(cls, v: Optional[str]) -> Optional[str]:
+    def validate_id_proof_number(cls, v: Union[str, None]) -> Union[str, None]:
         return StudentBase.validate_id_proof_number(v)
 
     @field_validator(
@@ -581,7 +579,7 @@ class StudentUpdate(BaseUpdateSchema):
         "designation",
     )
     @classmethod
-    def normalize_text_fields(cls, v: Optional[str]) -> Optional[str]:
+    def normalize_text_fields(cls, v: Union[str, None]) -> Union[str, None]:
         return StudentBase.normalize_text_fields(v)
 
 
@@ -615,7 +613,7 @@ class StudentCheckInRequest(BaseCreateSchema):
         default=False,
         description="Security deposit payment confirmation",
     )
-    security_deposit_payment_id: Optional[str] = Field(
+    security_deposit_payment_id: Union[str, None] = Field(
         default=None,
         description="Security deposit payment reference ID",
     )
@@ -623,7 +621,7 @@ class StudentCheckInRequest(BaseCreateSchema):
         default=False,
         description="First month rent payment confirmation",
     )
-    initial_rent_payment_id: Optional[str] = Field(
+    initial_rent_payment_id: Union[str, None] = Field(
         default=None,
         description="Initial rent payment reference ID",
     )
@@ -649,7 +647,7 @@ class StudentCheckInRequest(BaseCreateSchema):
     )
 
     # Notes
-    check_in_notes: Optional[str] = Field(
+    check_in_notes: Union[str, None] = Field(
         default=None,
         max_length=1000,
         description="Check-in notes and observations",
@@ -709,7 +707,7 @@ class StudentCheckOutRequest(BaseCreateSchema):
         ...,
         description="Actual checkout Date",
     )
-    reason: Optional[str] = Field(
+    reason: Union[str, None] = Field(
         default=None,
         max_length=500,
         description="Reason for checkout",
@@ -734,7 +732,7 @@ class StudentCheckOutRequest(BaseCreateSchema):
         default=True,
         description="Refund security deposit",
     )
-    security_deposit_refund_amount: Optional[MoneyAmount] = Field(
+    security_deposit_refund_amount: Union[MoneyAmount, None] = Field(
         default=None,
         description="Security deposit refund amount (after deductions)",
     )
@@ -742,7 +740,7 @@ class StudentCheckOutRequest(BaseCreateSchema):
         default=Decimal("0.00"),
         description="Deductions from security deposit",
     )
-    deduction_reason: Optional[str] = Field(
+    deduction_reason: Union[str, None] = Field(
         default=None,
         max_length=500,
         description="Reason for deductions",
@@ -791,12 +789,12 @@ class StudentCheckOutRequest(BaseCreateSchema):
     )
 
     # Notes
-    checkout_notes: Optional[str] = Field(
+    checkout_notes: Union[str, None] = Field(
         default=None,
         max_length=1000,
         description="Checkout notes and observations",
     )
-    forwarding_address: Optional[str] = Field(
+    forwarding_address: Union[str, None] = Field(
         default=None,
         max_length=500,
         description="Forwarding address for correspondence",
@@ -870,14 +868,14 @@ class StudentRoomAssignment(BaseCreateSchema):
         ...,
         description="Assignment effective Date",
     )
-    reason: Optional[str] = Field(
+    reason: Union[str, None] = Field(
         default=None,
         max_length=500,
         description="Reason for assignment/reassignment",
     )
 
     # Financial impact - Fixed for Pydantic v2
-    rent_adjustment: Optional[Decimal] = Field(
+    rent_adjustment: Union[Decimal, None] = Field(
         default=None,
         description="Rent adjustment due to room change",
     )
@@ -929,7 +927,7 @@ class StudentStatusUpdate(BaseCreateSchema):
     )
 
     # For notice period status
-    notice_period_days: Optional[int] = Field(
+    notice_period_days: Union[int, None] = Field(
         default=None,
         ge=0,
         le=90,
@@ -937,13 +935,13 @@ class StudentStatusUpdate(BaseCreateSchema):
     )
 
     # For suspension
-    suspension_end_date: Optional[Date] = Field(
+    suspension_end_date: Union[Date, None] = Field(
         default=None,
         description="Suspension end Date (for SUSPENDED status)",
     )
 
     # Additional notes
-    admin_notes: Optional[str] = Field(
+    admin_notes: Union[str, None] = Field(
         default=None,
         max_length=1000,
         description="Administrative notes",

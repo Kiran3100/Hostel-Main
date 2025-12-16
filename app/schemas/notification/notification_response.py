@@ -6,10 +6,8 @@ This module provides response models for notification queries, lists,
 and detailed information returned by the API.
 """
 
-from __future__ import annotations
-
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Union
 from uuid import UUID
 
 from pydantic import Field, computed_field
@@ -35,15 +33,15 @@ class NotificationResponse(BaseResponseSchema):
     """
 
     # Recipient information
-    recipient_user_id: Optional[UUID] = Field(
+    recipient_user_id: Union[UUID, None] = Field(
         default=None,
         description="Recipient user ID",
     )
-    recipient_email: Optional[str] = Field(
+    recipient_email: Union[str, None] = Field(
         default=None,
         description="Recipient email address",
     )
-    recipient_phone: Optional[str] = Field(
+    recipient_phone: Union[str, None] = Field(
         default=None,
         description="Recipient phone number",
     )
@@ -53,7 +51,7 @@ class NotificationResponse(BaseResponseSchema):
         ...,
         description="Notification delivery channel",
     )
-    subject: Optional[str] = Field(
+    subject: Union[str, None] = Field(
         default=None,
         description="Notification subject/title",
     )
@@ -73,11 +71,11 @@ class NotificationResponse(BaseResponseSchema):
     )
 
     # Timing
-    scheduled_at: Optional[datetime] = Field(
+    scheduled_at: Union[datetime, None] = Field(
         default=None,
         description="Scheduled delivery time",
     )
-    sent_at: Optional[datetime] = Field(
+    sent_at: Union[datetime, None] = Field(
         default=None,
         description="Actual send time",
     )
@@ -114,15 +112,15 @@ class NotificationDetail(BaseResponseSchema):
     """
 
     # Recipient information
-    recipient_user_id: Optional[UUID] = Field(
+    recipient_user_id: Union[UUID, None] = Field(
         default=None,
         description="Recipient user ID",
     )
-    recipient_email: Optional[str] = Field(
+    recipient_email: Union[str, None] = Field(
         default=None,
         description="Recipient email address",
     )
-    recipient_phone: Optional[str] = Field(
+    recipient_phone: Union[str, None] = Field(
         default=None,
         description="Recipient phone number",
     )
@@ -132,11 +130,11 @@ class NotificationDetail(BaseResponseSchema):
         ...,
         description="Notification delivery channel",
     )
-    template_code: Optional[str] = Field(
+    template_code: Union[str, None] = Field(
         default=None,
         description="Template code used",
     )
-    subject: Optional[str] = Field(
+    subject: Union[str, None] = Field(
         default=None,
         description="Notification subject/title",
     )
@@ -156,25 +154,25 @@ class NotificationDetail(BaseResponseSchema):
     )
 
     # Scheduling and delivery
-    scheduled_at: Optional[datetime] = Field(
+    scheduled_at: Union[datetime, None] = Field(
         default=None,
         description="Scheduled delivery time",
     )
-    sent_at: Optional[datetime] = Field(
+    sent_at: Union[datetime, None] = Field(
         default=None,
         description="Actual send time",
     )
-    delivered_at: Optional[datetime] = Field(
+    delivered_at: Union[datetime, None] = Field(
         default=None,
         description="Delivery confirmation time",
     )
-    failed_at: Optional[datetime] = Field(
+    failed_at: Union[datetime, None] = Field(
         default=None,
         description="Failure timestamp",
     )
 
     # Retry and error handling
-    failure_reason: Optional[str] = Field(
+    failure_reason: Union[str, None] = Field(
         default=None,
         max_length=1000,
         description="Reason for delivery failure",
@@ -191,11 +189,11 @@ class NotificationDetail(BaseResponseSchema):
     )
 
     # Engagement tracking
-    read_at: Optional[datetime] = Field(
+    read_at: Union[datetime, None] = Field(
         default=None,
         description="When the notification was read",
     )
-    clicked_at: Optional[datetime] = Field(
+    clicked_at: Union[datetime, None] = Field(
         default=None,
         description="When any link in the notification was clicked",
     )
@@ -207,7 +205,7 @@ class NotificationDetail(BaseResponseSchema):
     )
 
     # Related entities
-    hostel_id: Optional[UUID] = Field(
+    hostel_id: Union[UUID, None] = Field(
         default=None,
         description="Associated hostel ID",
     )
@@ -239,7 +237,7 @@ class NotificationDetail(BaseResponseSchema):
 
     @computed_field  # type: ignore[prop-decorator]
     @property
-    def delivery_duration_seconds(self) -> Optional[int]:
+    def delivery_duration_seconds(self) -> Union[int, None]:
         """Calculate delivery duration in seconds."""
         if self.sent_at and self.delivered_at:
             return int((self.delivered_at - self.sent_at).total_seconds())
@@ -264,7 +262,7 @@ class NotificationListItem(BaseSchema):
     )
 
     # Content preview
-    subject: Optional[str] = Field(
+    subject: Union[str, None] = Field(
         default=None,
         description="Notification subject",
     )
@@ -289,7 +287,7 @@ class NotificationListItem(BaseSchema):
         default=False,
         description="Whether notification has been read",
     )
-    read_at: Optional[datetime] = Field(
+    read_at: Union[datetime, None] = Field(
         default=None,
         description="When notification was read",
     )
@@ -301,17 +299,17 @@ class NotificationListItem(BaseSchema):
     )
 
     # Actions and UI
-    action_url: Optional[str] = Field(
+    action_url: Union[str, None] = Field(
         default=None,
         max_length=500,
         description="URL to navigate to when notification is clicked",
     )
-    icon: Optional[str] = Field(
+    icon: Union[str, None] = Field(
         default=None,
         max_length=50,
         description="Icon identifier for UI rendering",
     )
-    category: Optional[str] = Field(
+    category: Union[str, None] = Field(
         default=None,
         max_length=50,
         description="Notification category for grouping",
@@ -448,11 +446,11 @@ class NotificationSummary(BaseSchema):
     )
 
     # Recent activity
-    last_notification_at: Optional[datetime] = Field(
+    last_notification_at: Union[datetime, None] = Field(
         default=None,
         description="Timestamp of most recent notification",
     )
-    last_read_at: Optional[datetime] = Field(
+    last_read_at: Union[datetime, None] = Field(
         default=None,
         description="When user last read a notification",
     )

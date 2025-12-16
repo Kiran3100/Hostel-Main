@@ -12,14 +12,12 @@ Pydantic v2 Migration Notes:
 - Average rating fields use max_digits=3, decimal_places=2 for more precision
 """
 
-from __future__ import annotations
-
 from datetime import datetime
 from decimal import Decimal
-from typing import Annotated, List, Optional
+from typing import Annotated, List, Union
+from uuid import UUID
 
 from pydantic import Field, computed_field
-from uuid import UUID
 
 from app.schemas.common.base import BaseResponseSchema, BaseSchema
 
@@ -59,7 +57,7 @@ class HostelResponseDetail(BaseSchema):
         default=False,
         description="Whether response has been edited",
     )
-    edited_at: Optional[datetime] = Field(
+    edited_at: Union[datetime, None] = Field(
         default=None,
         description="Last edit timestamp",
     )
@@ -99,7 +97,7 @@ class ReviewResponse(BaseResponseSchema):
         ...,
         description="Whether stay is verified",
     )
-    verified_at: Optional[datetime] = Field(
+    verified_at: Union[datetime, None] = Field(
         default=None,
         description="Verification timestamp",
     )
@@ -138,14 +136,14 @@ class ReviewDetail(BaseResponseSchema):
     # Reviewer info
     reviewer_id: UUID = Field(..., description="Reviewer ID")
     reviewer_name: str = Field(..., description="Reviewer name")
-    reviewer_profile_image: Optional[str] = Field(
+    reviewer_profile_image: Union[str, None] = Field(
         default=None,
         description="Reviewer profile image URL",
     )
     
     # References
-    student_id: Optional[UUID] = Field(default=None, description="Student profile ID")
-    booking_id: Optional[UUID] = Field(default=None, description="Related booking ID")
+    student_id: Union[UUID, None] = Field(default=None, description="Student profile ID")
+    booking_id: Union[UUID, None] = Field(default=None, description="Related booking ID")
     
     # Ratings with proper constraints
     overall_rating: Annotated[
@@ -158,14 +156,14 @@ class ReviewDetail(BaseResponseSchema):
             description="Overall rating",
         ),
     ]
-    cleanliness_rating: Optional[int] = Field(default=None, ge=1, le=5)
-    food_quality_rating: Optional[int] = Field(default=None, ge=1, le=5)
-    staff_behavior_rating: Optional[int] = Field(default=None, ge=1, le=5)
-    security_rating: Optional[int] = Field(default=None, ge=1, le=5)
-    value_for_money_rating: Optional[int] = Field(default=None, ge=1, le=5)
-    amenities_rating: Optional[int] = Field(default=None, ge=1, le=5)
-    location_rating: Optional[int] = Field(default=None, ge=1, le=5)
-    wifi_quality_rating: Optional[int] = Field(default=None, ge=1, le=5)
+    cleanliness_rating: Union[int, None] = Field(default=None, ge=1, le=5)
+    food_quality_rating: Union[int, None] = Field(default=None, ge=1, le=5)
+    staff_behavior_rating: Union[int, None] = Field(default=None, ge=1, le=5)
+    security_rating: Union[int, None] = Field(default=None, ge=1, le=5)
+    value_for_money_rating: Union[int, None] = Field(default=None, ge=1, le=5)
+    amenities_rating: Union[int, None] = Field(default=None, ge=1, le=5)
+    location_rating: Union[int, None] = Field(default=None, ge=1, le=5)
+    wifi_quality_rating: Union[int, None] = Field(default=None, ge=1, le=5)
     
     # Content
     title: str = Field(..., description="Review title")
@@ -179,21 +177,21 @@ class ReviewDetail(BaseResponseSchema):
     
     # Verification
     is_verified_stay: bool = Field(..., description="Verification status")
-    verified_at: Optional[datetime] = Field(default=None, description="Verification time")
-    verification_method: Optional[str] = Field(
+    verified_at: Union[datetime, None] = Field(default=None, description="Verification time")
+    verification_method: Union[str, None] = Field(
         default=None,
         description="How the stay was verified",
     )
     
     # Moderation
     is_approved: bool = Field(..., description="Approval status")
-    approved_by: Optional[UUID] = Field(default=None, description="Approver ID")
-    approved_at: Optional[datetime] = Field(default=None, description="Approval time")
+    approved_by: Union[UUID, None] = Field(default=None, description="Approver ID")
+    approved_at: Union[datetime, None] = Field(default=None, description="Approval time")
     
     is_flagged: bool = Field(default=False, description="Flagged status")
-    flag_reason: Optional[str] = Field(default=None, description="Flag reason")
-    flagged_by: Optional[UUID] = Field(default=None, description="Flagger ID")
-    flagged_at: Optional[datetime] = Field(default=None, description="Flag time")
+    flag_reason: Union[str, None] = Field(default=None, description="Flag reason")
+    flagged_by: Union[UUID, None] = Field(default=None, description="Flagger ID")
+    flagged_at: Union[datetime, None] = Field(default=None, description="Flag time")
     
     # Engagement
     helpful_count: int = Field(..., ge=0, description="Helpful votes")
@@ -201,7 +199,7 @@ class ReviewDetail(BaseResponseSchema):
     report_count: int = Field(..., ge=0, description="Report count")
     
     # Hostel response
-    hostel_response: Optional[HostelResponseDetail] = Field(
+    hostel_response: Union[HostelResponseDetail, None] = Field(
         default=None,
         description="Hostel's response to this review",
     )
@@ -214,11 +212,11 @@ class ReviewDetail(BaseResponseSchema):
     is_published: bool = Field(..., description="Publication status")
     
     # Additional metadata
-    would_recommend: Optional[bool] = Field(
+    would_recommend: Union[bool, None] = Field(
         default=None,
         description="Whether reviewer recommends the hostel",
     )
-    stay_duration_months: Optional[int] = Field(
+    stay_duration_months: Union[int, None] = Field(
         default=None,
         ge=1,
         le=24,
@@ -233,7 +231,7 @@ class ReviewDetail(BaseResponseSchema):
     
     @computed_field  # type: ignore[misc]
     @property
-    def average_detailed_rating(self) -> Optional[Decimal]:
+    def average_detailed_rating(self) -> Union[Decimal, None]:
         """Calculate average of detailed ratings."""
         ratings = [
             r for r in [
@@ -264,7 +262,7 @@ class ReviewListItem(BaseSchema):
     
     id: UUID = Field(..., description="Review ID")
     reviewer_name: str = Field(..., description="Reviewer name")
-    reviewer_image: Optional[str] = Field(default=None, description="Profile image URL")
+    reviewer_image: Union[str, None] = Field(default=None, description="Profile image URL")
     
     overall_rating: Annotated[
         Decimal,
@@ -348,7 +346,7 @@ class ReviewSummary(BaseSchema):
     ]
     
     # Average detailed ratings with proper constraints
-    average_cleanliness: Optional[
+    average_cleanliness: Union[
         Annotated[
             Decimal,
             Field(
@@ -357,9 +355,10 @@ class ReviewSummary(BaseSchema):
                 max_digits=3,
                 decimal_places=2,
             ),
-        ]
+        ],
+        None,
     ] = None
-    average_food_quality: Optional[
+    average_food_quality: Union[
         Annotated[
             Decimal,
             Field(
@@ -368,9 +367,10 @@ class ReviewSummary(BaseSchema):
                 max_digits=3,
                 decimal_places=2,
             ),
-        ]
+        ],
+        None,
     ] = None
-    average_staff_behavior: Optional[
+    average_staff_behavior: Union[
         Annotated[
             Decimal,
             Field(
@@ -379,9 +379,10 @@ class ReviewSummary(BaseSchema):
                 max_digits=3,
                 decimal_places=2,
             ),
-        ]
+        ],
+        None,
     ] = None
-    average_security: Optional[
+    average_security: Union[
         Annotated[
             Decimal,
             Field(
@@ -390,9 +391,10 @@ class ReviewSummary(BaseSchema):
                 max_digits=3,
                 decimal_places=2,
             ),
-        ]
+        ],
+        None,
     ] = None
-    average_value_for_money: Optional[
+    average_value_for_money: Union[
         Annotated[
             Decimal,
             Field(
@@ -401,9 +403,10 @@ class ReviewSummary(BaseSchema):
                 max_digits=3,
                 decimal_places=2,
             ),
-        ]
+        ],
+        None,
     ] = None
-    average_amenities: Optional[
+    average_amenities: Union[
         Annotated[
             Decimal,
             Field(
@@ -412,7 +415,8 @@ class ReviewSummary(BaseSchema):
                 max_digits=3,
                 decimal_places=2,
             ),
-        ]
+        ],
+        None,
     ] = None
     
     # Recent reviews

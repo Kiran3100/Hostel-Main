@@ -5,11 +5,9 @@ Handles subscription cancellation requests, processing,
 and response tracking.
 """
 
-from __future__ import annotations
-
 from datetime import date as Date, datetime
 from decimal import Decimal
-from typing import Optional, List, Annotated
+from typing import Union, List, Annotated
 from uuid import UUID
 
 from pydantic import Field, model_validator, ConfigDict
@@ -45,7 +43,7 @@ class CancellationRequest(BaseCreateSchema):
         max_length=500,
         description="Detailed reason for cancellation",
     )
-    cancellation_category: Optional[str] = Field(
+    cancellation_category: Union[str, None] = Field(
         None,
         max_length=50,
         description="Cancellation category (e.g., 'pricing', 'features', 'switching')",
@@ -57,12 +55,12 @@ class CancellationRequest(BaseCreateSchema):
     )
 
     # Optional feedback
-    feedback: Optional[str] = Field(
+    feedback: Union[str, None] = Field(
         None,
         max_length=1000,
         description="Additional feedback for improvement",
     )
-    would_recommend: Optional[bool] = Field(
+    would_recommend: Union[bool, None] = Field(
         None, description="Would recommend to others"
     )
 
@@ -157,12 +155,12 @@ class CancellationResponse(BaseSchema):
     refund_issued: bool = Field(
         default=False, description="Whether refund was issued"
     )
-    refund_amount: Optional[Annotated[Decimal, Field(
+    refund_amount: Union[Annotated[Decimal, Field(
         None,
         ge=Decimal("0"),
         description="Refund amount if applicable",
-    )]]
-    refund_reference: Optional[str] = Field(
+    )], None]
+    refund_reference: Union[str, None] = Field(
         None,
         max_length=100,
         description="Refund transaction reference",
@@ -175,7 +173,7 @@ class CancellationResponse(BaseSchema):
         default=True,
         description="Whether subscription can be reactivated",
     )
-    reactivation_deadline: Optional[Date] = Field(
+    reactivation_deadline: Union[Date, None] = Field(
         None, description="Deadline to reactivate subscription"
     )
 

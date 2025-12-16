@@ -6,10 +6,8 @@ Provides comprehensive analytics on search behavior, popular queries,
 and zero-result searches for optimization.
 """
 
-from __future__ import annotations
-
 from datetime import date as Date, datetime
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Union
 
 from pydantic import Field, field_validator, model_validator, computed_field, ConfigDict
 
@@ -73,7 +71,7 @@ class SearchTermStats(BaseSchema):
     )
 
     # Engagement metrics
-    avg_click_position: Optional[float] = Field(
+    avg_click_position: Union[float, None] = Field(
         default=None,
         ge=0,
         description="Average position of clicked results (1-based)",
@@ -96,12 +94,12 @@ class SearchTermStats(BaseSchema):
     )
 
     # Trend indicators
-    trend_direction: Optional[str] = Field(
+    trend_direction: Union[str, None] = Field(
         default=None,
         pattern=r"^(rising|falling|stable)$",
         description="Search trend direction",
     )
-    growth_rate: Optional[float] = Field(
+    growth_rate: Union[float, None] = Field(
         default=None,
         description="Percentage change in search volume (vs previous period)",
     )
@@ -216,7 +214,7 @@ class PopularSearchTerm(BaseSchema):
         ge=0,
         description="Average number of results",
     )
-    change_from_previous: Optional[int] = Field(
+    change_from_previous: Union[int, None] = Field(
         default=None,
         description="Change in rank from previous period (+/- positions)",
     )
@@ -293,7 +291,7 @@ class ZeroResultTerm(BaseSchema):
         ...,
         description="Most recent occurrence",
     )
-    suggested_alternatives: Optional[List[str]] = Field(
+    suggested_alternatives: Union[List[str], None] = Field(
         default=None,
         description="Suggested alternative search terms",
     )
@@ -405,24 +403,24 @@ class SearchAnalytics(BaseSchema):
     )
 
     # Detailed term statistics (optional, for deep dive)
-    term_statistics: Optional[List[SearchTermStats]] = Field(
+    term_statistics: Union[List[SearchTermStats], None] = Field(
         default=None,
         description="Detailed statistics for individual search terms",
     )
 
     # Breakdown by category
-    category_breakdown: Optional[Dict[str, int]] = Field(
+    category_breakdown: Union[Dict[str, int], None] = Field(
         default=None,
         description="Search volume by category (hostel_type, location, etc.)",
     )
 
     # Geographic breakdown
-    geographic_breakdown: Optional[Dict[str, int]] = Field(
+    geographic_breakdown: Union[Dict[str, int], None] = Field(
         default=None,
         description="Search volume by location (city/state)",
     )
 
-    @computed_field
+    @computed_field  # type: ignore[prop-decorator]
     @property
     def has_quality_issues(self) -> bool:
         """
@@ -435,7 +433,7 @@ class SearchAnalytics(BaseSchema):
             or self.metrics.p95_response_time_ms > 1000
         )
 
-    @computed_field
+    @computed_field  # type: ignore[prop-decorator]
     @property
     def engagement_score(self) -> float:
         """

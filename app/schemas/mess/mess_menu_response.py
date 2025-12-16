@@ -6,14 +6,12 @@ Provides various response formats for menu data including
 detailed, summary, weekly, and monthly views with computed fields.
 """
 
-from __future__ import annotations
-
 from datetime import date as Date, datetime, time
 from decimal import Decimal
-from typing import Dict, List, Optional
+from typing import Dict, List, Union
+from uuid import UUID
 
 from pydantic import Field, computed_field
-from uuid import UUID
 
 from app.schemas.common.base import BaseResponseSchema, BaseSchema
 from app.schemas.common.enums import MealType
@@ -72,7 +70,7 @@ class MenuResponse(BaseResponseSchema):
         ...,
         description="Whether this is a special menu",
     )
-    special_occasion: Optional[str] = Field(
+    special_occasion: Union[str, None] = Field(
         None,
         description="Special occasion name",
     )
@@ -138,7 +136,7 @@ class MenuDetail(BaseResponseSchema):
         default_factory=list,
         description="Breakfast menu items",
     )
-    breakfast_time: Optional[time] = Field(
+    breakfast_time: Union[time, None] = Field(
         None,
         description="Breakfast serving time",
     )
@@ -147,7 +145,7 @@ class MenuDetail(BaseResponseSchema):
         default_factory=list,
         description="Lunch menu items",
     )
-    lunch_time: Optional[time] = Field(
+    lunch_time: Union[time, None] = Field(
         None,
         description="Lunch serving time",
     )
@@ -156,7 +154,7 @@ class MenuDetail(BaseResponseSchema):
         default_factory=list,
         description="Snacks menu items",
     )
-    snacks_time: Optional[time] = Field(
+    snacks_time: Union[time, None] = Field(
         None,
         description="Snacks serving time",
     )
@@ -165,7 +163,7 @@ class MenuDetail(BaseResponseSchema):
         default_factory=list,
         description="Dinner menu items",
     )
-    dinner_time: Optional[time] = Field(
+    dinner_time: Union[time, None] = Field(
         None,
         description="Dinner serving time",
     )
@@ -193,11 +191,11 @@ class MenuDetail(BaseResponseSchema):
         ...,
         description="Special menu indicator",
     )
-    special_occasion: Optional[str] = Field(
+    special_occasion: Union[str, None] = Field(
         None,
         description="Special occasion name",
     )
-    special_notes: Optional[str] = Field(
+    special_notes: Union[str, None] = Field(
         None,
         description="Special menu notes",
     )
@@ -216,15 +214,15 @@ class MenuDetail(BaseResponseSchema):
         description="Creation timestamp",
     )
     
-    approved_by: Optional[UUID] = Field(
+    approved_by: Union[UUID, None] = Field(
         None,
         description="Approver user ID",
     )
-    approved_by_name: Optional[str] = Field(
+    approved_by_name: Union[str, None] = Field(
         None,
         description="Approver name",
     )
-    approved_at: Optional[datetime] = Field(
+    approved_at: Union[datetime, None] = Field(
         None,
         description="Approval timestamp",
     )
@@ -234,11 +232,11 @@ class MenuDetail(BaseResponseSchema):
         ...,
         description="Publication status",
     )
-    published_at: Optional[datetime] = Field(
+    published_at: Union[datetime, None] = Field(
         None,
         description="Publication timestamp",
     )
-    published_by: Optional[UUID] = Field(
+    published_by: Union[UUID, None] = Field(
         None,
         description="Publisher user ID",
     )
@@ -255,7 +253,7 @@ class MenuDetail(BaseResponseSchema):
         ge=0,
         description="Total feedback count",
     )
-    rating_breakdown: Optional[Dict[str, int]] = Field(
+    rating_breakdown: Union[Dict[str, int], None] = Field(
         None,
         description="Rating distribution (1-5 stars)",
     )
@@ -265,7 +263,7 @@ class MenuDetail(BaseResponseSchema):
         ...,
         description="Last update timestamp",
     )
-    last_updated_by: Optional[UUID] = Field(
+    last_updated_by: Union[UUID, None] = Field(
         None,
         description="Last updater user ID",
     )
@@ -324,11 +322,11 @@ class DailyMenuSummary(BaseSchema):
         ...,
         description="Special menu indicator",
     )
-    special_occasion: Optional[str] = Field(
+    special_occasion: Union[str, None] = Field(
         None,
         description="Special occasion name",
     )
-    average_rating: Optional[Decimal] = Field(
+    average_rating: Union[Decimal, None] = Field(
         None,
         ge=0,
         le=5,
@@ -416,7 +414,7 @@ class WeeklyMenu(BaseSchema):
         le=7,
         description="Number of special menus",
     )
-    average_weekly_rating: Optional[Decimal] = Field(
+    average_weekly_rating: Union[Decimal, None] = Field(
         None,
         ge=0,
         le=5,
@@ -580,7 +578,7 @@ class TodayMenu(BaseSchema):
         default_factory=list,
         description="Snacks items",
     )
-    snacks_time: Optional[str] = Field(
+    snacks_time: Union[str, None] = Field(
         None,
         description="Snacks timing (formatted)",
     )
@@ -600,21 +598,21 @@ class TodayMenu(BaseSchema):
         ...,
         description="Special menu indicator",
     )
-    special_occasion: Optional[str] = Field(
+    special_occasion: Union[str, None] = Field(
         None,
         description="Special occasion name",
     )
-    special_message: Optional[str] = Field(
+    special_message: Union[str, None] = Field(
         None,
         description="Special message for students",
     )
 
     # Dietary information
-    dietary_note: Optional[str] = Field(
+    dietary_note: Union[str, None] = Field(
         None,
         description="Dietary information note",
     )
-    allergen_warning: Optional[str] = Field(
+    allergen_warning: Union[str, None] = Field(
         None,
         description="Allergen warning",
     )
@@ -696,7 +694,7 @@ class MenuListItem(BaseSchema):
         ...,
         description="Publication status",
     )
-    average_rating: Optional[Decimal] = Field(
+    average_rating: Union[Decimal, None] = Field(
         None,
         ge=0,
         le=5,

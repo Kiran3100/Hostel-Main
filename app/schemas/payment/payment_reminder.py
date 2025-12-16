@@ -6,10 +6,8 @@ This module defines schemas for payment reminder configuration,
 sending reminders, and tracking reminder history.
 """
 
-from __future__ import annotations
-
 from datetime import datetime, timedelta
-from typing import List, Optional
+from typing import List, Union
 from uuid import UUID
 
 from pydantic import Field, field_validator, model_validator, computed_field
@@ -41,11 +39,11 @@ class ReminderConfig(BaseCreateSchema):
     days_before_due: List[int] = Field(
         ...,
         min_length=1,
-        description="Days before due date to send reminders (e.g., [7, 3, 1])",
+        description="Days before due Date to send reminders (e.g., [7, 3, 1])",
     )
     days_after_due: List[int] = Field(
         default_factory=lambda: [1, 3, 7, 14],
-        description="Days after due date to send overdue reminders",
+        description="Days after due Date to send overdue reminders",
     )
 
     # Reminder Settings
@@ -75,12 +73,12 @@ class ReminderConfig(BaseCreateSchema):
     )
 
     # Template Configuration
-    email_template_id: Optional[str] = Field(
+    email_template_id: Union[str, None] = Field(
         None,
         max_length=100,
         description="Custom email template ID",
     )
-    sms_template_id: Optional[str] = Field(
+    sms_template_id: Union[str, None] = Field(
         None,
         max_length=100,
         description="Custom SMS template ID",
@@ -174,7 +172,7 @@ class ReminderLog(BaseResponseSchema):
         ...,
         description="Payer email",
     )
-    payer_phone: Optional[str] = Field(
+    payer_phone: Union[str, None] = Field(
         None,
         description="Payer phone",
     )
@@ -210,7 +208,7 @@ class ReminderLog(BaseResponseSchema):
         ...,
         description="Whether reminder was sent successfully",
     )
-    error_message: Optional[str] = Field(
+    error_message: Union[str, None] = Field(
         None,
         description="Error message if failed",
     )
@@ -220,7 +218,7 @@ class ReminderLog(BaseResponseSchema):
         ...,
         description="When reminder was sent",
     )
-    scheduled_for: Optional[datetime] = Field(
+    scheduled_for: Union[datetime, None] = Field(
         None,
         description="When reminder was scheduled for",
     )
@@ -234,7 +232,7 @@ class ReminderLog(BaseResponseSchema):
         False,
         description="Whether email link was clicked",
     )
-    opened_at: Optional[datetime] = Field(
+    opened_at: Union[datetime, None] = Field(
         None,
         description="When email was opened",
     )
@@ -274,13 +272,13 @@ class SendReminderRequest(BaseCreateSchema):
     """
 
     # Target Selection
-    payment_ids: Optional[List[UUID]] = Field(
+    payment_ids: Union[List[UUID], None] = Field(
         None,
         min_length=1,
         max_length=1000,
         description="Specific payment IDs to remind (null = all eligible)",
     )
-    hostel_id: Optional[UUID] = Field(
+    hostel_id: Union[UUID, None] = Field(
         None,
         description="Send reminders for specific hostel",
     )
@@ -290,12 +288,12 @@ class SendReminderRequest(BaseCreateSchema):
         False,
         description="Only send reminders for overdue payments",
     )
-    days_overdue_min: Optional[int] = Field(
+    days_overdue_min: Union[int, None] = Field(
         None,
         ge=0,
         description="Minimum days overdue",
     )
-    days_overdue_max: Optional[int] = Field(
+    days_overdue_max: Union[int, None] = Field(
         None,
         ge=0,
         description="Maximum days overdue",
@@ -327,7 +325,7 @@ class SendReminderRequest(BaseCreateSchema):
     )
 
     # Custom Message
-    custom_message: Optional[str] = Field(
+    custom_message: Union[str, None] = Field(
         None,
         max_length=500,
         description="Custom message to include (optional)",
@@ -353,7 +351,7 @@ class SendReminderRequest(BaseCreateSchema):
 
     @field_validator("payment_ids")
     @classmethod
-    def validate_payment_ids(cls, v: Optional[List[UUID]]) -> Optional[List[UUID]]:
+    def validate_payment_ids(cls, v: Union[List[UUID], None]) -> Union[List[UUID], None]:
         """Validate payment IDs list."""
         if v is not None:
             if len(v) == 0:
@@ -386,7 +384,7 @@ class ReminderBatch(BaseSchema):
         ...,
         description="When batch started",
     )
-    completed_at: Optional[datetime] = Field(
+    completed_at: Union[datetime, None] = Field(
         None,
         description="When batch completed",
     )
@@ -435,7 +433,7 @@ class ReminderBatch(BaseSchema):
     )
 
     # Error Summary
-    error_summary: Optional[List[str]] = Field(
+    error_summary: Union[List[str], None] = Field(
         None,
         description="Summary of errors encountered",
     )
@@ -450,7 +448,7 @@ class ReminderBatch(BaseSchema):
 
     @computed_field  # type: ignore[prop-decorator]
     @property
-    def duration_seconds(self) -> Optional[float]:
+    def duration_seconds(self) -> Union[float, None]:
         """Calculate batch duration in seconds."""
         if self.completed_at:
             delta = self.completed_at - self.started_at
@@ -476,7 +474,7 @@ class ReminderStats(BaseSchema):
     )
 
     # Hostel Filter
-    hostel_id: Optional[UUID] = Field(
+    hostel_id: Union[UUID, None] = Field(
         None,
         description="Statistics for specific hostel",
     )
@@ -550,7 +548,7 @@ class ReminderStats(BaseSchema):
     before_due_reminders: int = Field(
         ...,
         ge=0,
-        description="Before due date reminders",
+        description="Before due Date reminders",
     )
     overdue_reminders: int = Field(
         ...,

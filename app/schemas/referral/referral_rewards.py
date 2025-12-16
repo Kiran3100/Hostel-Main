@@ -6,11 +6,9 @@ This module provides schemas for managing reward calculations,
 payouts, and tracking for referral programs.
 """
 
-from __future__ import annotations
-
 from datetime import datetime
 from decimal import Decimal
-from typing import Dict, List, Optional
+from typing import Dict, List, Union
 from uuid import UUID
 
 from pydantic import Field, field_validator, model_validator
@@ -191,16 +189,16 @@ class RewardTracking(BaseSchema):
     )
 
     # Payout information
-    last_payout_date: Optional[datetime] = Field(
+    last_payout_date: Union[datetime, None] = Field(
         None,
         description="Date of last payout",
     )
-    last_payout_amount: Optional[Decimal] = Field(
+    last_payout_amount: Union[Decimal, None] = Field(
         None,
         ge=0,
         description="Amount of last payout",
     )
-    next_payout_eligible_date: Optional[datetime] = Field(
+    next_payout_eligible_date: Union[datetime, None] = Field(
         None,
         description="When user is eligible for next payout",
     )
@@ -229,7 +227,7 @@ class RewardTracking(BaseSchema):
         "average_payout_amount",
     )
     @classmethod
-    def validate_decimal_places(cls, v: Optional[Decimal]) -> Optional[Decimal]:
+    def validate_decimal_places(cls, v: Union[Decimal, None]) -> Union[Decimal, None]:
         """Ensure decimal values have at most 2 decimal places."""
         if v is None:
             return None
@@ -385,7 +383,7 @@ class PayoutRequest(BaseCreateSchema):
     )
 
     # Notes
-    notes: Optional[str] = Field(
+    notes: Union[str, None] = Field(
         None,
         max_length=500,
         description="Additional notes or instructions",
@@ -473,34 +471,34 @@ class PayoutRequestResponse(BaseResponseSchema):
     # Status tracking
     status: RewardStatus = Field(..., description="Payout status")
     requested_at: datetime = Field(..., description="Request timestamp")
-    approved_at: Optional[datetime] = Field(None, description="Approval timestamp")
-    processed_at: Optional[datetime] = Field(None, description="Processing timestamp")
-    completed_at: Optional[datetime] = Field(None, description="Completion timestamp")
+    approved_at: Union[datetime, None] = Field(None, description="Approval timestamp")
+    processed_at: Union[datetime, None] = Field(None, description="Processing timestamp")
+    completed_at: Union[datetime, None] = Field(None, description="Completion timestamp")
 
     # Additional information
-    transaction_id: Optional[str] = Field(
+    transaction_id: Union[str, None] = Field(
         None,
         description="External transaction ID",
     )
-    failure_reason: Optional[str] = Field(
+    failure_reason: Union[str, None] = Field(
         None,
         max_length=500,
         description="Reason for failure (if applicable)",
     )
-    admin_notes: Optional[str] = Field(
+    admin_notes: Union[str, None] = Field(
         None,
         description="Admin notes",
     )
 
     # Estimated completion
-    estimated_completion_date: Optional[datetime] = Field(
+    estimated_completion_date: Union[datetime, None] = Field(
         None,
-        description="Estimated completion date",
+        description="Estimated completion Date",
     )
 
     # Audit
-    approved_by: Optional[UUID] = Field(None, description="Admin who approved")
-    processed_by: Optional[UUID] = Field(None, description="Admin who processed")
+    approved_by: Union[UUID, None] = Field(None, description="Admin who approved")
+    processed_by: Union[UUID, None] = Field(None, description="Admin who processed")
 
     @field_validator("amount", "processing_fee", "tax_deduction", "net_amount")
     @classmethod
@@ -545,12 +543,12 @@ class RewardSummary(BaseSchema):
     """
 
     # Time period
-    period_start: datetime = Field(..., description="Period start date")
-    period_end: datetime = Field(..., description="Period end date")
+    period_start: datetime = Field(..., description="Period start Date")
+    period_end: datetime = Field(..., description="Period end Date")
 
     # User filter (optional)
-    user_id: Optional[UUID] = Field(None, description="User ID (null for all users)")
-    program_id: Optional[UUID] = Field(None, description="Program ID (null for all)")
+    user_id: Union[UUID, None] = Field(None, description="User ID (null for all users)")
+    program_id: Union[UUID, None] = Field(None, description="Program ID (null for all)")
 
     # Reward statistics
     total_rewards_earned: Decimal = Field(

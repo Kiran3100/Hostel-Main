@@ -6,11 +6,9 @@ This module defines schemas for managing visitor's favorite hostels,
 including adding, removing, updating notes, and comparing favorites.
 """
 
-from __future__ import annotations
-
 from datetime import datetime
 from decimal import Decimal
-from typing import Annotated, List, Optional
+from typing import Annotated, List, Union
 from uuid import UUID
 
 from pydantic import BaseModel, Field, field_validator, computed_field
@@ -40,7 +38,7 @@ class FavoriteRequest(BaseCreateSchema):
         ...,
         description="True to add to favorites, False to remove",
     )
-    notes: Optional[str] = Field(
+    notes: Union[str, None] = Field(
         default=None,
         max_length=500,
         description="Optional personal notes about this hostel",
@@ -48,7 +46,7 @@ class FavoriteRequest(BaseCreateSchema):
 
     @field_validator("notes")
     @classmethod
-    def validate_notes(cls, v: Optional[str]) -> Optional[str]:
+    def validate_notes(cls, v: Union[str, None]) -> Union[str, None]:
         """Validate and clean notes."""
         if v is not None:
             v = v.strip()
@@ -113,7 +111,7 @@ class FavoriteHostelItem(BaseSchema):
         ...,
         description="Whether price has dropped since saving",
     )
-    price_drop_percentage: Optional[Annotated[Decimal, Field(ge=0, le=100, decimal_places=2)]] = Field(
+    price_drop_percentage: Union[Annotated[Decimal, Field(ge=0, le=100, decimal_places=2)], None] = Field(
         default=None,
         description="Price drop percentage if applicable",
     )
@@ -141,13 +139,13 @@ class FavoriteHostelItem(BaseSchema):
     )
 
     # Media
-    cover_image_url: Optional[str] = Field(
+    cover_image_url: Union[str, None] = Field(
         default=None,
         description="Cover image URL",
     )
 
     # Favorite Metadata
-    notes: Optional[str] = Field(
+    notes: Union[str, None] = Field(
         default=None,
         max_length=500,
         description="Personal notes about this hostel",
@@ -163,14 +161,14 @@ class FavoriteHostelItem(BaseSchema):
         ge=0,
         description="Number of times hostel was viewed",
     )
-    last_viewed: Optional[datetime] = Field(
+    last_viewed: Union[datetime, None] = Field(
         default=None,
         description="When hostel was last viewed",
     )
 
-    @computed_field
+    @computed_field  # type: ignore[misc]
     @property
-    def price_savings(self) -> Optional[Decimal]:
+    def price_savings(self) -> Union[Decimal, None]:
         """Calculate price savings if price dropped."""
         if self.has_price_drop:
             return (self.price_when_saved - self.current_price).quantize(
@@ -178,25 +176,25 @@ class FavoriteHostelItem(BaseSchema):
             )
         return None
 
-    @computed_field
+    @computed_field  # type: ignore[misc]
     @property
     def days_in_favorites(self) -> int:
         """Calculate days since hostel was added to favorites."""
         return (datetime.utcnow() - self.added_to_favorites).days
 
-    @computed_field
+    @computed_field  # type: ignore[misc]
     @property
     def is_highly_rated(self) -> bool:
         """Check if hostel is highly rated (>= 4.0 stars)."""
         return self.average_rating >= Decimal("4.0")
 
-    @computed_field
+    @computed_field  # type: ignore[misc]
     @property
     def is_popular(self) -> bool:
         """Check if hostel is popular (many reviews)."""
         return self.total_reviews >= 50
 
-    @computed_field
+    @computed_field  # type: ignore[misc]
     @property
     def is_frequently_viewed(self) -> bool:
         """Check if visitor views this hostel frequently."""
@@ -222,19 +220,19 @@ class FavoritesList(BaseSchema):
         description="List of favorite hostel items",
     )
 
-    @computed_field
+    @computed_field  # type: ignore[misc]
     @property
     def favorites_with_availability(self) -> int:
         """Count favorites with available beds."""
         return sum(1 for fav in self.favorites if fav.has_availability)
 
-    @computed_field
+    @computed_field  # type: ignore[misc]
     @property
     def favorites_with_price_drops(self) -> int:
         """Count favorites with price drops."""
         return sum(1 for fav in self.favorites if fav.has_price_drop)
 
-    @computed_field
+    @computed_field  # type: ignore[misc]
     @property
     def total_potential_savings(self) -> Decimal:
         """Calculate total potential savings from price drops."""
