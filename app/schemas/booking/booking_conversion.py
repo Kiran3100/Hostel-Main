@@ -1,4 +1,3 @@
-# --- File: app/schemas/booking/booking_conversion.py ---
 """
 Booking to student conversion schemas.
 
@@ -6,11 +5,9 @@ This module defines schemas for converting confirmed bookings
 into active student profiles after check-in.
 """
 
-from __future__ import annotations
-
 from datetime import date as Date, datetime
 from decimal import Decimal
-from typing import List, Optional
+from typing import List, Union
 from uuid import UUID
 
 from pydantic import Field, field_validator, model_validator
@@ -57,12 +54,12 @@ class ConvertToStudentRequest(BaseCreateSchema):
     )
 
     # Additional Student Details (if not already in booking)
-    student_id_number: Optional[str] = Field(
+    student_id_number: Union[str, None] = Field(
         None,
         max_length=50,
         description="Student ID or enrollment number",
     )
-    guardian_address: Optional[str] = Field(
+    guardian_address: Union[str, None] = Field(
         None,
         max_length=500,
         description="Guardian's address",
@@ -79,7 +76,7 @@ class ConvertToStudentRequest(BaseCreateSchema):
     )
 
     # Notes
-    notes: Optional[str] = Field(
+    notes: Union[str, None] = Field(
         None,
         max_length=500,
         description="Conversion notes for internal reference",
@@ -120,7 +117,7 @@ class ConvertToStudentRequest(BaseCreateSchema):
 
     @field_validator("notes")
     @classmethod
-    def clean_notes(cls, v: Optional[str]) -> Optional[str]:
+    def clean_notes(cls, v: Union[str, None]) -> Union[str, None]:
         """Clean notes field."""
         if v is not None:
             v = v.strip()
@@ -222,11 +219,11 @@ class ChecklistItem(BaseSchema):
         ...,
         description="Whether this item is mandatory for conversion",
     )
-    completed_at: Optional[datetime] = Field(
+    completed_at: Union[datetime, None] = Field(
         None,
         description="When this item was completed",
     )
-    notes: Optional[str] = Field(
+    notes: Union[str, None] = Field(
         None,
         max_length=500,
         description="Additional notes about this item",

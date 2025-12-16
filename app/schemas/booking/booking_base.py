@@ -1,4 +1,3 @@
-# --- File: app/schemas/booking/booking_base.py ---
 """
 Booking base schemas with comprehensive validation.
 
@@ -6,11 +5,9 @@ This module defines the core booking schemas including creation,
 updates, and base validation logic for the booking lifecycle.
 """
 
-from __future__ import annotations
-
 from datetime import date as Date, timedelta
 from decimal import Decimal
-from typing import Optional
+from typing import Union
 from uuid import UUID
 
 from pydantic import EmailStr, Field, field_validator, model_validator, computed_field
@@ -81,12 +78,12 @@ class BookingBase(BaseSchema):
     )
 
     # Special Requirements
-    special_requests: Optional[str] = Field(
+    special_requests: Union[str, None] = Field(
         None,
         max_length=1000,
         description="Any special requests or requirements from the guest",
     )
-    dietary_preferences: Optional[str] = Field(
+    dietary_preferences: Union[str, None] = Field(
         None,
         max_length=255,
         description="Dietary preferences (vegetarian, vegan, etc.)",
@@ -95,7 +92,7 @@ class BookingBase(BaseSchema):
         False,
         description="Whether guest has a vehicle requiring parking",
     )
-    vehicle_details: Optional[str] = Field(
+    vehicle_details: Union[str, None] = Field(
         None,
         max_length=255,
         description="Vehicle details (type, registration number)",
@@ -106,7 +103,7 @@ class BookingBase(BaseSchema):
         BookingSource.WEBSITE,
         description="Source of the booking (website, app, referral, etc.)",
     )
-    referral_code: Optional[str] = Field(
+    referral_code: Union[str, None] = Field(
         None,
         max_length=50,
         description="Referral code used during booking",
@@ -221,7 +218,7 @@ class BookingBase(BaseSchema):
 
     @field_validator("special_requests", "dietary_preferences")
     @classmethod
-    def clean_text_fields(cls, v: Optional[str]) -> Optional[str]:
+    def clean_text_fields(cls, v: Union[str, None]) -> Union[str, None]:
         """Clean and validate text fields."""
         if v is not None:
             v = v.strip()
@@ -277,41 +274,41 @@ class BookingCreate(BookingBase, BaseCreateSchema):
     )
 
     # Optional ID Proof (can be provided later)
-    guest_id_proof_type: Optional[str] = Field(
+    guest_id_proof_type: Union[str, None] = Field(
         None,
         pattern=r"^(aadhaar|passport|driving_license|voter_id|pan_card)$",
         description="Type of ID proof",
     )
-    guest_id_proof_number: Optional[str] = Field(
+    guest_id_proof_number: Union[str, None] = Field(
         None,
         max_length=50,
         description="ID proof number",
     )
 
     # Emergency Contact Information
-    emergency_contact_name: Optional[str] = Field(
+    emergency_contact_name: Union[str, None] = Field(
         None,
         max_length=255,
         description="Emergency contact person name",
     )
-    emergency_contact_phone: Optional[str] = Field(
+    emergency_contact_phone: Union[str, None] = Field(
         None,
         pattern=r"^\+?[1-9]\d{9,14}$",
         description="Emergency contact phone number",
     )
-    emergency_contact_relation: Optional[str] = Field(
+    emergency_contact_relation: Union[str, None] = Field(
         None,
         max_length=50,
         description="Relation to emergency contact",
     )
 
     # Institutional/Employment Details
-    institution_or_company: Optional[str] = Field(
+    institution_or_company: Union[str, None] = Field(
         None,
         max_length=255,
         description="Name of institution or company",
     )
-    designation_or_course: Optional[str] = Field(
+    designation_or_course: Union[str, None] = Field(
         None,
         max_length=255,
         description="Designation (if employed) or course (if student)",
@@ -391,15 +388,15 @@ class BookingUpdate(BaseUpdateSchema):
     """
 
     # Booking Details (modifiable)
-    room_type_requested: Optional[RoomType] = Field(
+    room_type_requested: Union[RoomType, None] = Field(
         None,
         description="Update requested room type",
     )
-    preferred_check_in_date: Optional[Date] = Field(
+    preferred_check_in_date: Union[Date, None] = Field(
         None,
         description="Update preferred check-in Date",
     )
-    stay_duration_months: Optional[int] = Field(
+    stay_duration_months: Union[int, None] = Field(
         None,
         ge=1,
         le=24,
@@ -407,35 +404,35 @@ class BookingUpdate(BaseUpdateSchema):
     )
 
     # Special Requirements
-    special_requests: Optional[str] = Field(
+    special_requests: Union[str, None] = Field(
         None,
         max_length=1000,
         description="Update special requests",
     )
-    dietary_preferences: Optional[str] = Field(
+    dietary_preferences: Union[str, None] = Field(
         None,
         max_length=255,
         description="Update dietary preferences",
     )
-    has_vehicle: Optional[bool] = Field(
+    has_vehicle: Union[bool, None] = Field(
         None,
         description="Update vehicle status",
     )
-    vehicle_details: Optional[str] = Field(
+    vehicle_details: Union[str, None] = Field(
         None,
         max_length=255,
         description="Update vehicle details",
     )
 
     # Status Updates (admin only)
-    booking_status: Optional[BookingStatus] = Field(
+    booking_status: Union[BookingStatus, None] = Field(
         None,
         description="Update booking status (admin only)",
     )
 
     @field_validator("preferred_check_in_date")
     @classmethod
-    def validate_check_in_date(cls, v: Optional[Date]) -> Optional[Date]:
+    def validate_check_in_date(cls, v: Union[Date, None]) -> Union[Date, None]:
         """Validate updated check-in Date."""
         if v is not None and v < Date.today():
             raise ValueError(
@@ -445,7 +442,7 @@ class BookingUpdate(BaseUpdateSchema):
 
     @field_validator("special_requests", "dietary_preferences")
     @classmethod
-    def clean_text_fields(cls, v: Optional[str]) -> Optional[str]:
+    def clean_text_fields(cls, v: Union[str, None]) -> Union[str, None]:
         """Clean text fields."""
         if v is not None:
             v = v.strip()

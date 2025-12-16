@@ -32,8 +32,6 @@ Example Usage:
     )
 """
 
-from __future__ import annotations
-
 # Base schemas
 from app.schemas.announcement.announcement_base import (
     AnnouncementBase,

@@ -1,4 +1,3 @@
-# --- File: app/schemas/inquiry/inquiry_response.py ---
 """
 Inquiry response schemas for API responses.
 
@@ -6,10 +5,8 @@ This module defines response schemas for inquiry data including
 basic responses, detailed information, and list items.
 """
 
-from __future__ import annotations
-
 from datetime import date as Date, datetime
-from typing import Dict, Optional
+from typing import Dict, Union
 from uuid import UUID
 
 from pydantic import ConfigDict, Field, computed_field
@@ -74,15 +71,15 @@ class InquiryResponse(BaseResponseSchema):
     )
 
     # Preferences
-    preferred_check_in_date: Optional[Date] = Field(
+    preferred_check_in_date: Union[Date, None] = Field(
         default=None,
         description="Preferred check-in Date",
     )
-    stay_duration_months: Optional[int] = Field(
+    stay_duration_months: Union[int, None] = Field(
         default=None,
         description="Intended stay duration",
     )
-    room_type_preference: Optional[RoomType] = Field(
+    room_type_preference: Union[RoomType, None] = Field(
         default=None,
         description="Room type preference",
     )
@@ -184,21 +181,21 @@ class InquiryDetail(BaseResponseSchema):
     )
 
     # Preferences
-    preferred_check_in_date: Optional[Date] = Field(
+    preferred_check_in_date: Union[Date, None] = Field(
         default=None,
         description="Preferred check-in Date",
     )
-    stay_duration_months: Optional[int] = Field(
+    stay_duration_months: Union[int, None] = Field(
         default=None,
         description="Stay duration in months",
     )
-    room_type_preference: Optional[RoomType] = Field(
+    room_type_preference: Union[RoomType, None] = Field(
         default=None,
         description="Room type preference",
     )
 
     # Inquiry Details
-    message: Optional[str] = Field(
+    message: Union[str, None] = Field(
         default=None,
         description="Visitor's message or questions",
     )
@@ -214,35 +211,35 @@ class InquiryDetail(BaseResponseSchema):
     )
 
     # Contact/Follow-up Information
-    contacted_by: Optional[UUID] = Field(
+    contacted_by: Union[UUID, None] = Field(
         default=None,
         description="Admin who contacted the visitor",
     )
-    contacted_by_name: Optional[str] = Field(
+    contacted_by_name: Union[str, None] = Field(
         default=None,
         description="Name of admin who made contact",
     )
-    contacted_at: Optional[datetime] = Field(
+    contacted_at: Union[datetime, None] = Field(
         default=None,
         description="When visitor was contacted",
     )
 
     # Assignment Information
-    assigned_to: Optional[UUID] = Field(
+    assigned_to: Union[UUID, None] = Field(
         default=None,
         description="Admin assigned to handle this inquiry",
     )
-    assigned_to_name: Optional[str] = Field(
+    assigned_to_name: Union[str, None] = Field(
         default=None,
         description="Name of assigned admin",
     )
-    assigned_at: Optional[datetime] = Field(
+    assigned_at: Union[datetime, None] = Field(
         default=None,
         description="When inquiry was assigned",
     )
 
     # Internal Notes
-    notes: Optional[str] = Field(
+    notes: Union[str, None] = Field(
         default=None,
         description="Internal notes about this inquiry",
     )
@@ -277,7 +274,7 @@ class InquiryDetail(BaseResponseSchema):
 
     @computed_field  # type: ignore[misc]
     @property
-    def response_time_hours(self) -> Optional[float]:
+    def response_time_hours(self) -> Union[float, None]:
         """Calculate response time in hours if contacted."""
         if self.contacted_at is None:
             return None
@@ -287,7 +284,7 @@ class InquiryDetail(BaseResponseSchema):
 
     @computed_field  # type: ignore[misc]
     @property
-    def days_since_contact(self) -> Optional[int]:
+    def days_since_contact(self) -> Union[int, None]:
         """Calculate days since last contact."""
         if self.contacted_at is None:
             return None
@@ -337,15 +334,15 @@ class InquiryListItem(BaseSchema):
     )
 
     # Preferences
-    preferred_check_in_date: Optional[Date] = Field(
+    preferred_check_in_date: Union[Date, None] = Field(
         default=None,
         description="Preferred check-in Date",
     )
-    stay_duration_months: Optional[int] = Field(
+    stay_duration_months: Union[int, None] = Field(
         default=None,
         description="Stay duration",
     )
-    room_type_preference: Optional[RoomType] = Field(
+    room_type_preference: Union[RoomType, None] = Field(
         default=None,
         description="Room type preference",
     )
@@ -439,7 +436,7 @@ class InquiryStats(BaseSchema):
     )
 
     # Response Metrics
-    average_response_time_hours: Optional[float] = Field(
+    average_response_time_hours: Union[float, None] = Field(
         default=None,
         ge=0,
         description="Average time to first contact in hours",

@@ -6,11 +6,9 @@ Provides alert generation, configuration, and management schemas
 for identifying and responding to attendance issues.
 """
 
-from __future__ import annotations
-
 from datetime import date as Date, datetime, time
 from decimal import Decimal
-from typing import Dict, List, Optional, Any
+from typing import Dict, List, Union, Any
 
 from pydantic import Field, field_validator, model_validator
 from pydantic.types import UUID4 as UUID
@@ -55,7 +53,7 @@ class AttendanceAlert(BaseResponseSchema):
         ...,
         description="Student full name",
     )
-    room_number: Optional[str] = Field(
+    room_number: Union[str, None] = Field(
         None,
         description="Student room number",
     )
@@ -88,7 +86,7 @@ class AttendanceAlert(BaseResponseSchema):
         ...,
         description="Alert-specific details (JSON)",
     )
-    recommendation: Optional[str] = Field(
+    recommendation: Union[str, None] = Field(
         None,
         max_length=500,
         description="Recommended action to resolve alert",
@@ -99,7 +97,7 @@ class AttendanceAlert(BaseResponseSchema):
         ...,
         description="Alert trigger timestamp",
     )
-    triggered_by_rule: Optional[str] = Field(
+    triggered_by_rule: Union[str, None] = Field(
         None,
         description="Name of rule that triggered alert",
     )
@@ -107,7 +105,7 @@ class AttendanceAlert(BaseResponseSchema):
         default=True,
         description="Whether alert was auto-generated",
     )
-    manual_trigger_by: Optional[UUID] = Field(
+    manual_trigger_by: Union[UUID, None] = Field(
         None,
         description="User ID if manually triggered",
     )
@@ -117,19 +115,19 @@ class AttendanceAlert(BaseResponseSchema):
         False,
         description="Whether alert has been acknowledged",
     )
-    acknowledged_by: Optional[UUID] = Field(
+    acknowledged_by: Union[UUID, None] = Field(
         None,
         description="User ID who acknowledged",
     )
-    acknowledged_by_name: Optional[str] = Field(
+    acknowledged_by_name: Union[str, None] = Field(
         None,
         description="Name of user who acknowledged",
     )
-    acknowledged_at: Optional[datetime] = Field(
+    acknowledged_at: Union[datetime, None] = Field(
         None,
         description="Acknowledgment timestamp",
     )
-    acknowledgment_notes: Optional[str] = Field(
+    acknowledgment_notes: Union[str, None] = Field(
         None,
         max_length=1000,
         description="Notes added during acknowledgment",
@@ -140,11 +138,11 @@ class AttendanceAlert(BaseResponseSchema):
         default_factory=list,
         description="List of actions taken in response",
     )
-    assigned_to: Optional[UUID] = Field(
+    assigned_to: Union[UUID, None] = Field(
         None,
         description="User ID assigned to handle alert",
     )
-    assigned_to_name: Optional[str] = Field(
+    assigned_to_name: Union[str, None] = Field(
         None,
         description="Name of assigned user",
     )
@@ -152,15 +150,15 @@ class AttendanceAlert(BaseResponseSchema):
         False,
         description="Whether alert has been resolved",
     )
-    resolved_at: Optional[datetime] = Field(
+    resolved_at: Union[datetime, None] = Field(
         None,
         description="Resolution timestamp",
     )
-    resolved_by: Optional[UUID] = Field(
+    resolved_by: Union[UUID, None] = Field(
         None,
         description="User ID who resolved",
     )
-    resolution_notes: Optional[str] = Field(
+    resolution_notes: Union[str, None] = Field(
         None,
         max_length=1000,
         description="Resolution details",
@@ -171,7 +169,7 @@ class AttendanceAlert(BaseResponseSchema):
         default=False,
         description="Whether alert has been escalated",
     )
-    escalated_at: Optional[datetime] = Field(
+    escalated_at: Union[datetime, None] = Field(
         None,
         description="Escalation timestamp",
     )
@@ -190,7 +188,7 @@ class AttendanceAlert(BaseResponseSchema):
 
     @field_validator("message", "recommendation", "acknowledgment_notes", "resolution_notes")
     @classmethod
-    def validate_text_fields(cls, v: Optional[str]) -> Optional[str]:
+    def validate_text_fields(cls, v: Union[str, None]) -> Union[str, None]:
         """Normalize text fields."""
         if v is not None:
             v = v.strip()
@@ -378,11 +376,11 @@ class AlertConfig(BaseSchema):
         default=False,
         description="Only send alerts during specified hours",
     )
-    alert_start_time: Optional[time] = Field(
+    alert_start_time: Union[time, None] = Field(
         None,
         description="Start time for alert notifications",
     )
-    alert_end_time: Optional[time] = Field(
+    alert_end_time: Union[time, None] = Field(
         None,
         description="End time for alert notifications",
     )
@@ -453,11 +451,11 @@ class AlertTrigger(BaseCreateSchema):
         max_length=500,
         description="Custom alert message",
     )
-    details: Optional[Dict[str, Any]] = Field(
+    details: Union[Dict[str, Any], None] = Field(
         None,
         description="Additional alert details",
     )
-    assign_to: Optional[UUID] = Field(
+    assign_to: Union[UUID, None] = Field(
         None,
         description="User ID to assign alert to",
     )
@@ -501,7 +499,7 @@ class AlertAcknowledgment(BaseCreateSchema):
         max_length=500,
         description="Description of action taken",
     )
-    assign_to: Optional[UUID] = Field(
+    assign_to: Union[UUID, None] = Field(
         None,
         description="User ID to assign for follow-up",
     )
@@ -509,7 +507,7 @@ class AlertAcknowledgment(BaseCreateSchema):
         default=False,
         description="Mark alert as resolved",
     )
-    additional_notes: Optional[str] = Field(
+    additional_notes: Union[str, None] = Field(
         None,
         max_length=1000,
         description="Additional notes",
@@ -517,7 +515,7 @@ class AlertAcknowledgment(BaseCreateSchema):
 
     @field_validator("action_taken", "additional_notes")
     @classmethod
-    def validate_text_fields(cls, v: Optional[str], info) -> Optional[str]:
+    def validate_text_fields(cls, v: Union[str, None], info) -> Union[str, None]:
         """Normalize and validate text fields."""
         if v is None:
             return None
@@ -534,19 +532,19 @@ class AlertList(BaseSchema):
     Provides paginated alert list with aggregate metrics.
     """
 
-    hostel_id: Optional[UUID] = Field(
+    hostel_id: Union[UUID, None] = Field(
         None,
         description="Hostel filter (if applicable)",
     )
-    student_id: Optional[UUID] = Field(
+    student_id: Union[UUID, None] = Field(
         None,
         description="Student filter (if applicable)",
     )
-    date_from: Optional[Date] = Field(
+    date_from: Union[Date, None] = Field(
         None,
         description="Filter alerts from this Date",
     )
-    date_to: Optional[Date] = Field(
+    date_to: Union[Date, None] = Field(
         None,
         description="Filter alerts to this Date",
     )
@@ -705,12 +703,12 @@ class AlertSummary(BaseSchema):
     )
 
     # Performance metrics
-    average_resolution_time_hours: Optional[Decimal] = Field(
+    average_resolution_time_hours: Union[Decimal, None] = Field(
         None,
         ge=Decimal("0"),
         description="Average time to resolve alerts (hours)",
     )
-    average_acknowledgment_time_hours: Optional[Decimal] = Field(
+    average_acknowledgment_time_hours: Union[Decimal, None] = Field(
         None,
         ge=Decimal("0"),
         description="Average time to acknowledge alerts (hours)",

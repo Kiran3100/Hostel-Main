@@ -1,4 +1,3 @@
-# --- File: app/schemas/analytics/occupancy_analytics.py ---
 """
 Occupancy analytics schemas with forecasting capabilities.
 
@@ -12,7 +11,7 @@ Provides detailed occupancy metrics including:
 
 from datetime import date as Date, datetime
 from decimal import Decimal
-from typing import Dict, List, Optional, Annotated
+from typing import Dict, List, Union, Annotated
 from enum import Enum
 
 from pydantic import BaseModel, Field, field_validator, computed_field, model_validator, AfterValidator
@@ -67,11 +66,11 @@ class OccupancyKPI(BaseSchema):
     planning and performance monitoring.
     """
     
-    hostel_id: Optional[UUID] = Field(
+    hostel_id: Union[UUID, None] = Field(
         None,
         description="Hostel identifier. None for platform-wide metrics"
     )
-    hostel_name: Optional[str] = Field(
+    hostel_name: Union[str, None] = Field(
         None,
         min_length=1,
         max_length=255,
@@ -130,7 +129,7 @@ class OccupancyKPI(BaseSchema):
         ...,
         description="Actual utilization rate (occupied / available)"
     )
-    turnover_rate: Optional[DecimalNonNegative] = Field(
+    turnover_rate: Union[DecimalNonNegative, None] = Field(
         None,
         description="Bed turnover rate (check-ins + check-outs)"
     )
@@ -271,7 +270,7 @@ class OccupancyByRoomType(BaseSchema):
         ...,
         description="Room type category"
     )
-    room_type_name: Optional[str] = Field(
+    room_type_name: Union[str, None] = Field(
         None,
         max_length=100,
         description="Human-readable room type name"
@@ -298,11 +297,11 @@ class OccupancyByRoomType(BaseSchema):
     )
     
     # Revenue metrics
-    average_rate: Optional[DecimalNonNegative] = Field(
+    average_rate: Union[DecimalNonNegative, None] = Field(
         None,
         description="Average rate charged for this room type"
     )
-    revenue_generated: Optional[DecimalNonNegative] = Field(
+    revenue_generated: Union[DecimalNonNegative, None] = Field(
         None,
         description="Total revenue from this room type"
     )
@@ -323,7 +322,7 @@ class OccupancyByRoomType(BaseSchema):
     
     @computed_field  # type: ignore[misc]
     @property
-    def revenue_per_bed(self) -> Optional[Decimal]:
+    def revenue_per_bed(self) -> Union[Decimal, None]:
         """Calculate revenue per bed."""
         if self.revenue_generated is None or self.total_beds == 0:
             return None
@@ -341,7 +340,7 @@ class OccupancyByFloor(BaseSchema):
         ...,
         description="Floor number"
     )
-    floor_name: Optional[str] = Field(
+    floor_name: Union[str, None] = Field(
         None,
         max_length=100,
         description="Floor name/identifier"
@@ -398,15 +397,15 @@ class ForecastPoint(BaseSchema):
     )
     
     # Confidence intervals
-    lower_bound: Optional[DecimalPercentage] = Field(
+    lower_bound: Union[DecimalPercentage, None] = Field(
         None,
         description="Lower confidence bound"
     )
-    upper_bound: Optional[DecimalPercentage] = Field(
+    upper_bound: Union[DecimalPercentage, None] = Field(
         None,
         description="Upper confidence bound"
     )
-    confidence_level: Optional[DecimalPercentage] = Field(
+    confidence_level: Union[DecimalPercentage, None] = Field(
         None,
         description="Confidence level (e.g., 95%)"
     )
@@ -495,25 +494,25 @@ class ForecastData(BaseSchema):
         ...,
         description="Forecasting model used"
     )
-    model_accuracy: Optional[DecimalPercentage] = Field(
+    model_accuracy: Union[DecimalPercentage, None] = Field(
         None,
         description="Historical model accuracy percentage"
     )
-    confidence_interval: Optional[DecimalPercentage] = Field(
+    confidence_interval: Union[DecimalPercentage, None] = Field(
         None,
         description="Confidence interval for forecasts (e.g., 95%)"
     )
     
     # Training data info
-    training_data_start: Optional[Date] = Field(
+    training_data_start: Union[Date, None] = Field(
         None,
         description="Start date of training data"
     )
-    training_data_end: Optional[Date] = Field(
+    training_data_end: Union[Date, None] = Field(
         None,
         description="End date of training data"
     )
-    training_samples: Optional[int] = Field(
+    training_samples: Union[int, None] = Field(
         None,
         ge=0,
         description="Number of data points used for training"
@@ -530,7 +529,7 @@ class ForecastData(BaseSchema):
         default_factory=datetime.utcnow,
         description="Forecast generation timestamp"
     )
-    last_updated: Optional[datetime] = Field(
+    last_updated: Union[datetime, None] = Field(
         None,
         description="Last update timestamp"
     )
@@ -572,7 +571,7 @@ class ForecastData(BaseSchema):
     
     @computed_field  # type: ignore[misc]
     @property
-    def peak_forecasted_date(self) -> Optional[Date]:
+    def peak_forecasted_date(self) -> Union[Date, None]:
         """Identify date with highest forecasted occupancy."""
         if not self.forecast_points:
             return None
@@ -583,7 +582,7 @@ class ForecastData(BaseSchema):
     
     @computed_field  # type: ignore[misc]
     @property
-    def low_forecasted_date(self) -> Optional[Date]:
+    def low_forecasted_date(self) -> Union[Date, None]:
         """Identify date with lowest forecasted occupancy."""
         if not self.forecast_points:
             return None
@@ -601,11 +600,11 @@ class OccupancyReport(BaseSchema):
     breakdowns, and forecasts into a complete occupancy view.
     """
     
-    hostel_id: Optional[UUID] = Field(
+    hostel_id: Union[UUID, None] = Field(
         None,
         description="Hostel identifier. None for platform-wide report"
     )
-    hostel_name: Optional[str] = Field(
+    hostel_name: Union[str, None] = Field(
         None,
         min_length=1,
         max_length=255,
@@ -650,7 +649,7 @@ class OccupancyReport(BaseSchema):
     )
     
     # Forecast
-    forecast: Optional[ForecastData] = Field(
+    forecast: Union[ForecastData, None] = Field(
         None,
         description="Occupancy forecast"
     )
@@ -676,7 +675,7 @@ class OccupancyReport(BaseSchema):
     
     @computed_field  # type: ignore[misc]
     @property
-    def best_performing_room_type(self) -> Optional[RoomType]:
+    def best_performing_room_type(self) -> Union[RoomType, None]:
         """Identify room type with highest occupancy."""
         if not self.by_room_type:
             return None
@@ -687,7 +686,7 @@ class OccupancyReport(BaseSchema):
     
     @computed_field  # type: ignore[misc]
     @property
-    def worst_performing_room_type(self) -> Optional[RoomType]:
+    def worst_performing_room_type(self) -> Union[RoomType, None]:
         """Identify room type with lowest occupancy."""
         if not self.by_room_type:
             return None

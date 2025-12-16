@@ -6,11 +6,9 @@ Provides schemas for tracking leave entitlements, usage,
 and remaining balance with validation.
 """
 
-from __future__ import annotations
-
 from datetime import date as Date
 from decimal import Decimal
-from typing import List, Optional
+from typing import List, Union
 
 from pydantic import ConfigDict, Field, computed_field, field_validator
 from uuid import UUID
@@ -57,7 +55,7 @@ class LeaveBalance(BaseSchema):
         le=365,
         description="Total days allocated per year",
     )
-    allocated_per_semester: Optional[int] = Field(
+    allocated_per_semester: Union[int, None] = Field(
         None,
         ge=0,
         le=180,
@@ -83,7 +81,7 @@ class LeaveBalance(BaseSchema):
         ge=0,
         description="Days carried forward from previous period",
     )
-    max_consecutive_days: Optional[int] = Field(
+    max_consecutive_days: Union[int, None] = Field(
         None,
         ge=1,
         description="Maximum consecutive days allowed for this leave type",
@@ -192,7 +190,7 @@ class LeaveBalanceSummary(BaseSchema):
         ...,
         description="Hostel name",
     )
-    room_number: Optional[str] = Field(
+    room_number: Union[str, None] = Field(
         None,
         description="Room number",
     )
@@ -206,7 +204,7 @@ class LeaveBalanceSummary(BaseSchema):
         ...,
         description="Academic year end Date",
     )
-    current_semester: Optional[str] = Field(
+    current_semester: Union[str, None] = Field(
         None,
         description="Current semester (if applicable)",
     )
@@ -321,13 +319,13 @@ class LeaveQuota(BaseSchema):
         le=365,
         description="Annual leave quota in days",
     )
-    semester_quota: Optional[int] = Field(
+    semester_quota: Union[int, None] = Field(
         None,
         ge=0,
         le=180,
         description="Semester quota (if applicable)",
     )
-    monthly_quota: Optional[int] = Field(
+    monthly_quota: Union[int, None] = Field(
         None,
         ge=0,
         le=31,
@@ -345,7 +343,7 @@ class LeaveQuota(BaseSchema):
         le=30,
         description="Minimum advance notice required (days)",
     )
-    requires_document_after_days: Optional[int] = Field(
+    requires_document_after_days: Union[int, None] = Field(
         None,
         ge=1,
         description="Requires supporting document after N days",
@@ -354,12 +352,12 @@ class LeaveQuota(BaseSchema):
         default=False,
         description="Allow unused quota to carry forward",
     )
-    carry_forward_max_days: Optional[int] = Field(
+    carry_forward_max_days: Union[int, None] = Field(
         None,
         ge=0,
         description="Maximum days that can be carried forward",
     )
-    carry_forward_expiry_months: Optional[int] = Field(
+    carry_forward_expiry_months: Union[int, None] = Field(
         None,
         ge=1,
         le=12,
@@ -372,7 +370,7 @@ class LeaveQuota(BaseSchema):
 
     @field_validator("carry_forward_max_days")
     @classmethod
-    def validate_carry_forward(cls, v: Optional[int], info) -> Optional[int]:
+    def validate_carry_forward(cls, v: Union[int, None], info) -> Union[int, None]:
         """Validate carry forward configuration."""
         if v is not None:
             if not info.data.get("allow_carry_forward"):
@@ -434,7 +432,7 @@ class LeaveUsageDetail(BaseSchema):
         ...,
         description="Application Date",
     )
-    approved_at: Optional[Date] = Field(
+    approved_at: Union[Date, None] = Field(
         None,
         description="Approval Date",
     )
@@ -454,7 +452,7 @@ class LeaveUsageDetail(BaseSchema):
 
     @computed_field
     @property
-    def approval_turnaround_days(self) -> Optional[int]:
+    def approval_turnaround_days(self) -> Union[int, None]:
         """Calculate days taken for approval."""
         if self.approved_at is None:
             return None

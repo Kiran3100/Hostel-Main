@@ -1,4 +1,3 @@
-# --- File: app/schemas/booking/booking_filters.py ---
 """
 Booking filter and search schemas.
 
@@ -6,10 +5,8 @@ This module defines schemas for filtering, searching, sorting,
 and exporting booking data.
 """
 
-from __future__ import annotations
-
 from datetime import date as Date
-from typing import List, Optional
+from typing import List, Union
 from uuid import UUID
 
 from pydantic import Field, field_validator
@@ -35,89 +32,89 @@ class BookingFilterParams(BaseFilterSchema):
     """
 
     # Text Search
-    search: Optional[str] = Field(
+    search: Union[str, None] = Field(
         None,
         max_length=255,
         description="Search in booking reference, guest name, email, or phone",
     )
 
     # Hostel Filters
-    hostel_id: Optional[UUID] = Field(
+    hostel_id: Union[UUID, None] = Field(
         None,
         description="Filter by specific hostel",
     )
-    hostel_ids: Optional[List[UUID]] = Field(
+    hostel_ids: Union[List[UUID], None] = Field(
         None,
         max_length=20,
         description="Filter by multiple hostels (max 20)",
     )
 
     # Status Filters
-    status: Optional[BookingStatus] = Field(
+    status: Union[BookingStatus, None] = Field(
         None,
         description="Filter by specific status",
     )
-    statuses: Optional[List[BookingStatus]] = Field(
+    statuses: Union[List[BookingStatus], None] = Field(
         None,
         max_length=10,
         description="Filter by multiple statuses",
     )
 
     # Date Filters
-    booking_date_from: Optional[Date] = Field(
+    booking_date_from: Union[Date, None] = Field(
         None,
         description="Filter bookings created from this Date",
     )
-    booking_date_to: Optional[Date] = Field(
+    booking_date_to: Union[Date, None] = Field(
         None,
         description="Filter bookings created until this Date",
     )
-    check_in_date_from: Optional[Date] = Field(
+    check_in_date_from: Union[Date, None] = Field(
         None,
         description="Filter by check-in Date from",
     )
-    check_in_date_to: Optional[Date] = Field(
+    check_in_date_to: Union[Date, None] = Field(
         None,
         description="Filter by check-in Date until",
     )
 
     # Room Type Filter
-    room_type: Optional[RoomType] = Field(
+    room_type: Union[RoomType, None] = Field(
         None,
         description="Filter by room type",
     )
 
     # Source Filter
-    source: Optional[BookingSource] = Field(
+    source: Union[BookingSource, None] = Field(
         None,
         description="Filter by booking source",
     )
 
     # Payment Status
-    advance_paid: Optional[bool] = Field(
+    advance_paid: Union[bool, None] = Field(
         None,
         description="Filter by advance payment status",
     )
 
     # Conversion Status
-    converted_to_student: Optional[bool] = Field(
+    converted_to_student: Union[bool, None] = Field(
         None,
         description="Filter by student conversion status",
     )
 
     # Urgency Filters
-    expiring_soon: Optional[bool] = Field(
+    expiring_soon: Union[bool, None] = Field(
         None,
         description="Show only bookings expiring in next 24 hours",
     )
-    expired: Optional[bool] = Field(
+    expired: Union[bool, None] = Field(
         None,
         description="Show only expired bookings",
     )
 
     @field_validator("booking_date_to")
     @classmethod
-    def validate_booking_date_range(cls, v: Optional[Date], info) -> Optional[Date]:
+    def validate_booking_date_range(cls, v: Union[Date, None], info) -> Union[Date, None]:
         """Validate booking Date range."""
         booking_date_from = info.data.get("booking_date_from")
         if v is not None and booking_date_from is not None:
@@ -129,7 +126,7 @@ class BookingFilterParams(BaseFilterSchema):
 
     @field_validator("check_in_date_to")
     @classmethod
-    def validate_check_in_date_range(cls, v: Optional[Date], info) -> Optional[Date]:
+    def validate_check_in_date_range(cls, v: Union[Date, None], info) -> Union[Date, None]:
         """Validate check-in Date range."""
         check_in_date_from = info.data.get("check_in_date_from")
         if v is not None and check_in_date_from is not None:
@@ -153,7 +150,7 @@ class BookingSearchRequest(BaseFilterSchema):
         max_length=255,
         description="Search query string",
     )
-    hostel_id: Optional[UUID] = Field(
+    hostel_id: Union[UUID, None] = Field(
         None,
         description="Limit search to specific hostel",
     )
@@ -177,7 +174,7 @@ class BookingSearchRequest(BaseFilterSchema):
     )
 
     # Status Filter
-    status: Optional[BookingStatus] = Field(
+    status: Union[BookingStatus, None] = Field(
         None,
         description="Limit search to specific status",
     )
@@ -237,11 +234,11 @@ class BookingExportRequest(BaseFilterSchema):
     Supports multiple export formats with customizable fields.
     """
 
-    hostel_id: Optional[UUID] = Field(
+    hostel_id: Union[UUID, None] = Field(
         None,
         description="Export bookings for specific hostel",
     )
-    filters: Optional[BookingFilterParams] = Field(
+    filters: Union[BookingFilterParams, None] = Field(
         None,
         description="Apply filters to export",
     )
@@ -282,7 +279,7 @@ class BookingAnalyticsRequest(BaseFilterSchema):
     a specified Date range.
     """
 
-    hostel_id: Optional[UUID] = Field(
+    hostel_id: Union[UUID, None] = Field(
         None,
         description="Generate analytics for specific hostel (or all)",
     )

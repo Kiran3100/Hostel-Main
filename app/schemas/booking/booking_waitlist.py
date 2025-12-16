@@ -1,4 +1,3 @@
-# --- File: app/schemas/booking/booking_waitlist.py ---
 """
 Booking waitlist schemas for managing waiting lists.
 
@@ -6,10 +5,8 @@ This module defines schemas for waitlist management when hostels
 are fully booked, including notifications and conversions.
 """
 
-from __future__ import annotations
-
 from datetime import date as Date, datetime
-from typing import List, Optional
+from typing import List, Union
 from uuid import UUID
 
 from pydantic import EmailStr, Field, field_validator, computed_field
@@ -68,7 +65,7 @@ class WaitlistRequest(BaseCreateSchema):
     )
 
     # Additional Information
-    notes: Optional[str] = Field(
+    notes: Union[str, None] = Field(
         None,
         max_length=500,
         description="Additional notes or preferences",
@@ -93,7 +90,7 @@ class WaitlistRequest(BaseCreateSchema):
 
     @field_validator("notes")
     @classmethod
-    def clean_notes(cls, v: Optional[str]) -> Optional[str]:
+    def clean_notes(cls, v: Union[str, None]) -> Union[str, None]:
         """Clean notes field."""
         if v is not None:
             v = v.strip()
@@ -154,7 +151,7 @@ class WaitlistResponse(BaseResponseSchema):
     )
 
     # Estimated Timeline
-    estimated_availability_date: Optional[Date] = Field(
+    estimated_availability_date: Union[Date, None] = Field(
         None,
         description="Estimated Date when room might become available",
     )
@@ -218,7 +215,7 @@ class WaitlistStatusInfo(BaseSchema):
     )
 
     # Notification Tracking
-    last_notification_sent: Optional[datetime] = Field(
+    last_notification_sent: Union[datetime, None] = Field(
         None,
         description="When last notification was sent",
     )
@@ -229,7 +226,7 @@ class WaitlistStatusInfo(BaseSchema):
     )
 
     # Wait Estimation
-    estimated_wait_days: Optional[int] = Field(
+    estimated_wait_days: Union[int, None] = Field(
         None,
         ge=0,
         description="Estimated days until availability",
@@ -345,7 +342,7 @@ class WaitlistCancellation(BaseCreateSchema):
         ...,
         description="Waitlist entry ID to cancel",
     )
-    cancellation_reason: Optional[str] = Field(
+    cancellation_reason: Union[str, None] = Field(
         None,
         max_length=500,
         description="Reason for cancelling waitlist entry",
@@ -353,7 +350,7 @@ class WaitlistCancellation(BaseCreateSchema):
 
     @field_validator("cancellation_reason")
     @classmethod
-    def clean_reason(cls, v: Optional[str]) -> Optional[str]:
+    def clean_reason(cls, v: Union[str, None]) -> Union[str, None]:
         """Clean cancellation reason."""
         if v is not None:
             v = v.strip()

@@ -5,10 +5,8 @@ Handles complaint escalation workflow, auto-escalation rules,
 and escalation history management.
 """
 
-from __future__ import annotations
-
 from datetime import datetime
-from typing import List, Optional
+from typing import List, Union
 
 from pydantic import ConfigDict, Field, field_validator, model_validator
 
@@ -128,7 +126,7 @@ class EscalationEntry(BaseResponseSchema):
     priority_after: str = Field(..., description="Priority after escalation")
 
     # Response tracking
-    response_time_hours: Optional[int] = Field(
+    response_time_hours: Union[int, None] = Field(
         default=None,
         ge=0,
         description="Time taken to respond (hours)",
@@ -212,7 +210,7 @@ class AutoEscalationRule(BaseSchema):
         ...,
         description="First level escalation target user ID",
     )
-    second_escalation_to: Optional[str] = Field(
+    second_escalation_to: Union[str, None] = Field(
         default=None,
         description="Second level escalation target (if first unresolved)",
     )
@@ -223,7 +221,7 @@ class AutoEscalationRule(BaseSchema):
     )
 
     @model_validator(mode="after")
-    def validate_escalation_thresholds(self) -> "AutoEscalationRule":
+    def validate_escalation_thresholds(self):
         """
         Validate escalation time thresholds are logical.
         

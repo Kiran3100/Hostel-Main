@@ -6,8 +6,6 @@ These enums represent the core domain concepts for the hostel management
 system (users, hostels, rooms, bookings, payments, complaints, etc.).
 """
 
-from __future__ import annotations
-
 from enum import Enum
 
 __all__ = [

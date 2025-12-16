@@ -6,10 +6,8 @@ This module defines foundational schemas for announcements with
 comprehensive validation and targeting capabilities.
 """
 
-from __future__ import annotations
-
 from datetime import datetime
-from typing import Optional
+from typing import Optional, Union
 from uuid import UUID
 
 from pydantic import (
@@ -116,7 +114,7 @@ class AnnouncementBase(BaseSchema):
     )
     
     # Expiry
-    expires_at: Optional[datetime] = Field(
+    expires_at: Union[datetime, None] = Field(
         None,
         description="When the announcement expires and becomes inactive",
     )
@@ -153,7 +151,7 @@ class AnnouncementBase(BaseSchema):
     
     @field_validator("expires_at")
     @classmethod
-    def validate_expiry(cls, v: Optional[datetime]) -> Optional[datetime]:
+    def validate_expiry(cls, v: Union[datetime, None]) -> Union[datetime, None]:
         """Ensure expiry is in the future."""
         if v is not None and v <= datetime.utcnow():
             raise ValueError("Expiry date must be in the future")
@@ -217,7 +215,7 @@ class AnnouncementCreate(AnnouncementBase, BaseCreateSchema):
     )
     
     # Scheduling
-    scheduled_publish_at: Optional[datetime] = Field(
+    scheduled_publish_at: Union[datetime, None] = Field(
         None,
         description="Schedule for future publication (None = immediate)",
     )
@@ -227,14 +225,14 @@ class AnnouncementCreate(AnnouncementBase, BaseCreateSchema):
         False,
         description="Whether recipients must acknowledge reading",
     )
-    acknowledgment_deadline: Optional[datetime] = Field(
+    acknowledgment_deadline: Union[datetime, None] = Field(
         None,
         description="Deadline for acknowledgment if required",
     )
     
     @field_validator("scheduled_publish_at")
     @classmethod
-    def validate_schedule(cls, v: Optional[datetime]) -> Optional[datetime]:
+    def validate_schedule(cls, v: Union[datetime, None]) -> Union[datetime, None]:
         """Ensure scheduled time is in the future."""
         if v is not None and v <= datetime.utcnow():
             raise ValueError("Scheduled publish time must be in the future")
@@ -274,45 +272,45 @@ class AnnouncementUpdate(BaseUpdateSchema):
     
     model_config = ConfigDict(from_attributes=True)
     
-    title: Optional[str] = Field(
+    title: Union[str, None] = Field(
         None,
         min_length=5,
         max_length=255,
         description="Updated announcement title",
     )
-    content: Optional[str] = Field(
+    content: Union[str, None] = Field(
         None,
         min_length=10,
         max_length=5000,
         description="Updated announcement content",
     )
-    category: Optional[AnnouncementCategory] = Field(
+    category: Union[AnnouncementCategory, None] = Field(
         None,
         description="Updated category",
     )
-    priority: Optional[Priority] = Field(
+    priority: Union[Priority, None] = Field(
         None,
         description="Updated priority level",
     )
     
     # Visibility
-    is_urgent: Optional[bool] = Field(
+    is_urgent: Union[bool, None] = Field(
         None,
         description="Update urgent flag",
     )
-    is_pinned: Optional[bool] = Field(
+    is_pinned: Union[bool, None] = Field(
         None,
         description="Update pinned flag",
     )
     
     # Expiry
-    expires_at: Optional[datetime] = Field(
+    expires_at: Union[datetime, None] = Field(
         None,
         description="Updated expiry datetime",
     )
     
     # Attachments
-    attachments: Optional[list[HttpUrl]] = Field(
+    attachments: Union[list[HttpUrl], None] = Field(
         None,
         max_length=10,
         description="Updated attachment list",
@@ -323,7 +321,7 @@ class AnnouncementUpdate(BaseUpdateSchema):
     
     @field_validator("title")
     @classmethod
-    def validate_title(cls, v: Optional[str]) -> Optional[str]:
+    def validate_title(cls, v: Union[str, None]) -> Union[str, None]:
         """Normalize title if provided."""
         if v is not None:
             normalized = " ".join(v.split())
@@ -334,7 +332,7 @@ class AnnouncementUpdate(BaseUpdateSchema):
     
     @field_validator("expires_at")
     @classmethod
-    def validate_expiry(cls, v: Optional[datetime]) -> Optional[datetime]:
+    def validate_expiry(cls, v: Union[datetime, None]) -> Union[datetime, None]:
         """Ensure expiry is in the future."""
         if v is not None and v <= datetime.utcnow():
             raise ValueError("Expiry date must be in the future")
@@ -373,7 +371,7 @@ class AnnouncementPublish(BaseCreateSchema):
         True,
         description="Publish now or schedule for later",
     )
-    scheduled_publish_at: Optional[datetime] = Field(
+    scheduled_publish_at: Union[datetime, None] = Field(
         None,
         description="Scheduled publication time if not immediate",
     )

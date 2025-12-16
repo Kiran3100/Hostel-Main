@@ -6,11 +6,9 @@ Provides comprehensive cost tracking, budget allocation, expense reporting,
 and vendor invoice management with detailed analytics.
 """
 
-from __future__ import annotations
-
 from datetime import date as Date, datetime
 from decimal import Decimal
-from typing import Annotated, Any, Dict, List, Optional
+from typing import Annotated, Any, Dict, List, Union
 
 from pydantic import ConfigDict, Field, computed_field, field_validator, model_validator
 from uuid import UUID
@@ -161,7 +159,7 @@ class CategoryBudget(BaseSchema):
         ...,
         description="Maintenance category name",
     )
-    category_code: Optional[str] = Field(
+    category_code: Union[str, None] = Field(
         None,
         max_length=50,
         description="Category code",
@@ -301,11 +299,11 @@ class BudgetAllocation(BaseSchema):
     )
     
     # Forecasting
-    projected_annual_spend: Optional[Annotated[Decimal, Field(ge=0, decimal_places=2)]] = Field(
+    projected_annual_spend: Union[Annotated[Decimal, Field(ge=0, decimal_places=2)], None] = Field(
         None,
         description="Projected annual spending",
     )
-    burn_rate_monthly: Optional[Annotated[Decimal, Field(ge=0, decimal_places=2)]] = Field(
+    burn_rate_monthly: Union[Annotated[Decimal, Field(ge=0, decimal_places=2)], None] = Field(
         None,
         description="Average monthly spending rate",
     )
@@ -393,18 +391,18 @@ class MonthlyExpense(BaseSchema):
         ...,
         description="Average cost per request",
     )
-    budget_allocated: Optional[Annotated[Decimal, Field(ge=0, decimal_places=2)]] = Field(
+    budget_allocated: Union[Annotated[Decimal, Field(ge=0, decimal_places=2)], None] = Field(
         None,
         description="Budget allocated for the month",
     )
-    variance_from_budget: Optional[Annotated[Decimal, Field(decimal_places=2)]] = Field(
+    variance_from_budget: Union[Annotated[Decimal, Field(decimal_places=2)], None] = Field(
         None,
         description="Variance from monthly budget",
     )
 
     @computed_field  # type: ignore[misc]
     @property
-    def within_budget(self) -> Optional[bool]:
+    def within_budget(self) -> Union[bool, None]:
         """Check if monthly expenses are within budget."""
         if self.budget_allocated is None:
             return None
@@ -468,7 +466,7 @@ class ExpenseItem(BaseSchema):
         ...,
         description="Completion Date",
     )
-    vendor_name: Optional[str] = Field(
+    vendor_name: Union[str, None] = Field(
         None,
         description="Vendor name (if applicable)",
     )
@@ -500,11 +498,11 @@ class ExpenseReport(BaseSchema):
         }
     )
 
-    hostel_id: Optional[UUID] = Field(
+    hostel_id: Union[UUID, None] = Field(
         None,
         description="Hostel ID (if hostel-specific)",
     )
-    hostel_name: Optional[str] = Field(
+    hostel_name: Union[str, None] = Field(
         None,
         description="Hostel name",
     )
@@ -516,7 +514,7 @@ class ExpenseReport(BaseSchema):
         ...,
         description="Report generation timestamp",
     )
-    generated_by: Optional[UUID] = Field(
+    generated_by: Union[UUID, None] = Field(
         None,
         description="User who generated report",
     )
@@ -542,11 +540,11 @@ class ExpenseReport(BaseSchema):
     )
     
     # Budget comparison
-    total_budget: Optional[Annotated[Decimal, Field(ge=0, decimal_places=2)]] = Field(
+    total_budget: Union[Annotated[Decimal, Field(ge=0, decimal_places=2)], None] = Field(
         None,
         description="Total budget for period",
     )
-    budget_utilization: Optional[Annotated[Decimal, Field(ge=0, le=100, decimal_places=2)]] = Field(
+    budget_utilization: Union[Annotated[Decimal, Field(ge=0, le=100, decimal_places=2)], None] = Field(
         None,
         description="Budget utilization percentage",
     )
@@ -581,7 +579,7 @@ class ExpenseReport(BaseSchema):
     )
     
     # Vendor analysis
-    top_vendors_by_spending: Optional[List[Dict[str, Any]]] = Field(
+    top_vendors_by_spending: Union[List[Dict[str, Any]], None] = Field(
         None,
         max_length=20,
         description="Top vendors by total spending",
@@ -630,7 +628,7 @@ class InvoiceLineItem(BaseSchema):
         max_length=500,
         description="Item/service description",
     )
-    item_code: Optional[str] = Field(
+    item_code: Union[str, None] = Field(
         None,
         max_length=50,
         description="Item code/SKU",
@@ -723,16 +721,16 @@ class VendorInvoice(BaseCreateSchema):
         max_length=255,
         description="Vendor company name",
     )
-    vendor_id: Optional[UUID] = Field(
+    vendor_id: Union[UUID, None] = Field(
         None,
         description="Vendor ID in system (if registered)",
     )
-    vendor_address: Optional[str] = Field(
+    vendor_address: Union[str, None] = Field(
         None,
         max_length=500,
         description="Vendor billing address",
     )
-    vendor_tax_id: Optional[str] = Field(
+    vendor_tax_id: Union[str, None] = Field(
         None,
         max_length=50,
         description="Vendor tax ID/GST number",
@@ -747,7 +745,7 @@ class VendorInvoice(BaseCreateSchema):
         ...,
         description="Invoice issue Date",
     )
-    purchase_order_number: Optional[str] = Field(
+    purchase_order_number: Union[str, None] = Field(
         None,
         max_length=100,
         description="Our purchase order number",
@@ -788,11 +786,11 @@ class VendorInvoice(BaseCreateSchema):
         max_length=3,
         description="Currency code (ISO 4217)",
     )
-    invoice_document_url: Optional[str] = Field(
+    invoice_document_url: Union[str, None] = Field(
         None,
         description="URL to invoice document/PDF",
     )
-    notes: Optional[str] = Field(
+    notes: Union[str, None] = Field(
         None,
         max_length=1000,
         description="Additional notes",
@@ -873,7 +871,7 @@ class CostAnalysis(BaseSchema):
         ...,
         description="Analysis period",
     )
-    previous_period: Optional[DateRangeFilter] = Field(
+    previous_period: Union[DateRangeFilter, None] = Field(
         None,
         description="Previous period for comparison",
     )
@@ -917,7 +915,7 @@ class CostAnalysis(BaseSchema):
         ...,
         description="Average maintenance cost per room",
     )
-    cost_per_sqft: Optional[Annotated[Decimal, Field(ge=0, decimal_places=2)]] = Field(
+    cost_per_sqft: Union[Annotated[Decimal, Field(ge=0, decimal_places=2)], None] = Field(
         None,
         description="Cost per square foot",
     )
@@ -927,28 +925,28 @@ class CostAnalysis(BaseSchema):
         ...,
         description="Percentage change from previous period",
     )
-    comparison_to_budget: Optional[Annotated[Decimal, Field(decimal_places=2)]] = Field(
+    comparison_to_budget: Union[Annotated[Decimal, Field(decimal_places=2)], None] = Field(
         None,
         description="Percentage variance from budget",
     )
     
     # Predictive insights
-    projected_annual_cost: Optional[Annotated[Decimal, Field(ge=0, decimal_places=2)]] = Field(
+    projected_annual_cost: Union[Annotated[Decimal, Field(ge=0, decimal_places=2)], None] = Field(
         None,
         description="Projected annual cost based on trends",
     )
-    seasonal_variation: Optional[Annotated[Decimal, Field(decimal_places=2)]] = Field(
+    seasonal_variation: Union[Annotated[Decimal, Field(decimal_places=2)], None] = Field(
         None,
         description="Seasonal variation coefficient",
     )
     
     # Recommendations
-    cost_saving_opportunities: Optional[List[str]] = Field(
+    cost_saving_opportunities: Union[List[str], None] = Field(
         None,
         max_length=10,
         description="Identified cost-saving opportunities",
     )
-    risk_areas: Optional[List[str]] = Field(
+    risk_areas: Union[List[str], None] = Field(
         None,
         max_length=10,
         description="Areas of cost risk",

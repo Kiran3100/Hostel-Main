@@ -7,11 +7,9 @@ favorites management, and recent access tracking for improved user experience.
 Fully migrated to Pydantic v2.
 """
 
-from __future__ import annotations
-
 from datetime import datetime
 from decimal import Decimal
-from typing import Dict, List, Optional
+from typing import Dict, List, Union
 from uuid import UUID
 
 from pydantic import Field, computed_field, field_validator, model_validator, ConfigDict
@@ -44,7 +42,7 @@ class HostelSelectorItem(BaseSchema):
     hostel_name: str = Field(..., description="Hostel display name")
     hostel_city: str = Field(..., description="Hostel city location")
     hostel_type: str = Field(..., description="Hostel type (boys/girls/co-ed)")
-    hostel_address: Optional[str] = Field(None, description="Short address for display")
+    hostel_address: Union[str, None] = Field(None, description="Short address for display")
     
     # Visual indicators and flags
     is_active: bool = Field(True, description="Currently active hostel in context")
@@ -69,12 +67,12 @@ class HostelSelectorItem(BaseSchema):
     can_manage: bool = Field(True, description="Has management permissions")
     
     # Activity tracking
-    last_accessed: Optional[datetime] = Field(None, description="Last access timestamp")
+    last_accessed: Union[datetime, None] = Field(None, description="Last access timestamp")
     access_count: int = Field(0, ge=0, description="Total access count")
     
     # Display customization
     display_order: int = Field(0, description="Custom display order")
-    custom_label: Optional[str] = Field(None, description="Custom label/nickname for hostel")
+    custom_label: Union[str, None] = Field(None, description="Custom label/nickname for hostel")
 
     @computed_field
     @property
@@ -135,8 +133,8 @@ class HostelSelectorResponse(BaseSchema):
     active_hostels: int = Field(..., ge=0, description="Active hostel assignments")
     
     # Active context
-    active_hostel_id: Optional[UUID] = Field(None, description="Currently active hostel ID")
-    active_hostel_name: Optional[str] = Field(None, description="Currently active hostel name")
+    active_hostel_id: Union[UUID, None] = Field(None, description="Currently active hostel ID")
+    active_hostel_name: Union[str, None] = Field(None, description="Currently active hostel name")
     
     # Organized hostel lists
     hostels: List[HostelSelectorItem] = Field(
@@ -154,7 +152,7 @@ class HostelSelectorResponse(BaseSchema):
         default_factory=list,
         description="Favorite hostel IDs"
     )
-    primary_hostel_id: Optional[UUID] = Field(None, description="Primary hostel ID")
+    primary_hostel_id: Union[UUID, None] = Field(None, description="Primary hostel ID")
     
     # Hostel requiring attention
     attention_required_ids: List[UUID] = Field(
@@ -282,7 +280,7 @@ class RecentHostels(BaseSchema):
     
     # Summary metrics
     total_recent_hostels: int = Field(0, ge=0, description="Total recent hostels count")
-    most_frequent_hostel_id: Optional[UUID] = Field(None, description="Most frequently accessed hostel")
+    most_frequent_hostel_id: Union[UUID, None] = Field(None, description="Most frequently accessed hostel")
     
     # Time range for recent access
     tracking_period_days: int = Field(30, ge=1, description="Tracking period in days")
@@ -319,10 +317,10 @@ class FavoriteHostelItem(BaseSchema):
     
     # Favorite metadata
     added_to_favorites: datetime = Field(..., description="Timestamp when added to favorites")
-    custom_label: Optional[str] = Field(
+    custom_label: Union[str, None] = Field(
         None, max_length=100, description="Custom label/nickname for hostel"
     )
-    notes: Optional[str] = Field(
+    notes: Union[str, None] = Field(
         None, max_length=500, description="Personal notes about hostel"
     )
     display_order: int = Field(0, description="Custom display order priority")
@@ -334,7 +332,7 @@ class FavoriteHostelItem(BaseSchema):
     pending_items: int = Field(0, ge=0, description="Total pending items count")
     
     # Access tracking for favorites
-    last_accessed: Optional[datetime] = Field(None, description="Last access timestamp")
+    last_accessed: Union[datetime, None] = Field(None, description="Last access timestamp")
     access_count_since_favorited: int = Field(0, ge=0)
 
     @computed_field
@@ -413,17 +411,17 @@ class UpdateFavoriteRequest(BaseCreateSchema):
     is_favorite: bool = Field(..., description="True to add, False to remove")
     
     # Customization options (only used when is_favorite=True)
-    custom_label: Optional[str] = Field(
+    custom_label: Union[str, None] = Field(
         None,
         max_length=100,
         description="Custom label/nickname for hostel"
     )
-    notes: Optional[str] = Field(
+    notes: Union[str, None] = Field(
         None,
         max_length=500,
         description="Personal notes about this hostel"
     )
-    display_order: Optional[int] = Field(
+    display_order: Union[int, None] = Field(
         None,
         ge=0,
         description="Custom display order (0 = highest priority)"
@@ -431,7 +429,7 @@ class UpdateFavoriteRequest(BaseCreateSchema):
 
     @field_validator("custom_label", "notes")
     @classmethod
-    def validate_text_fields(cls, v: Optional[str]) -> Optional[str]:
+    def validate_text_fields(cls, v: Union[str, None]) -> Union[str, None]:
         """Validate and normalize text fields."""
         if v is not None:
             v = v.strip()

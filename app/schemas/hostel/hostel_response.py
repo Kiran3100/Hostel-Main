@@ -3,11 +3,9 @@
 Hostel response schemas for API responses.
 """
 
-from __future__ import annotations
-
 from datetime import datetime, time
 from decimal import Decimal
-from typing import Annotated, List, Optional
+from typing import Annotated, List, Union
 from uuid import UUID
 
 from pydantic import ConfigDict, Field
@@ -36,10 +34,10 @@ class HostelResponse(BaseResponseSchema):
     hostel_type: HostelType = Field(..., description="Hostel type")
     city: str = Field(..., description="City")
     state: str = Field(..., description="State")
-    starting_price_monthly: Optional[Annotated[
+    starting_price_monthly: Union[Annotated[
         Decimal,
         Field(description="Starting monthly price")
-    ]] = None
+    ], None] = None
     average_rating: Annotated[
         Decimal,
         Field(ge=0, le=5, description="Average rating")
@@ -61,7 +59,7 @@ class HostelResponse(BaseResponseSchema):
     )
     is_public: bool = Field(..., description="Public visibility")
     is_featured: bool = Field(..., description="Featured status")
-    cover_image_url: Optional[str] = Field(
+    cover_image_url: Union[str, None] = Field(
         default=None,
         description="Cover image URL",
     )
@@ -78,30 +76,30 @@ class HostelDetail(BaseResponseSchema):
 
     name: str = Field(..., description="Hostel name")
     slug: str = Field(..., description="URL slug")
-    description: Optional[str] = Field(
+    description: Union[str, None] = Field(
         default=None,
         description="Hostel description",
     )
 
     # Type and contact
     hostel_type: HostelType = Field(..., description="Hostel type")
-    contact_email: Optional[str] = Field(
+    contact_email: Union[str, None] = Field(
         default=None,
         description="Contact email",
     )
     contact_phone: str = Field(..., description="Contact phone")
-    alternate_phone: Optional[str] = Field(
+    alternate_phone: Union[str, None] = Field(
         default=None,
         description="Alternate phone",
     )
-    website_url: Optional[str] = Field(
+    website_url: Union[str, None] = Field(
         default=None,
         description="Website URL",
     )
 
     # Address
     address_line1: str = Field(..., description="Address line 1")
-    address_line2: Optional[str] = Field(
+    address_line2: Union[str, None] = Field(
         default=None,
         description="Address line 2",
     )
@@ -109,20 +107,20 @@ class HostelDetail(BaseResponseSchema):
     state: str = Field(..., description="State")
     pincode: str = Field(..., description="Pincode")
     country: str = Field(..., description="Country")
-    latitude: Optional[Decimal] = Field(
+    latitude: Union[Decimal, None] = Field(
         default=None,
         description="Latitude",
     )
-    longitude: Optional[Decimal] = Field(
+    longitude: Union[Decimal, None] = Field(
         default=None,
         description="Longitude",
     )
 
     # Pricing
-    starting_price_monthly: Optional[Annotated[
+    starting_price_monthly: Union[Annotated[
         Decimal,
         Field(description="Starting monthly price")
-    ]] = None
+    ], None] = None
     currency: str = Field(..., description="Currency code")
 
     # Capacity
@@ -173,23 +171,23 @@ class HostelDetail(BaseResponseSchema):
     )
 
     # Policies
-    rules: Optional[str] = Field(
+    rules: Union[str, None] = Field(
         default=None,
         description="Hostel rules",
     )
-    check_in_time: Optional[time] = Field(
+    check_in_time: Union[time, None] = Field(
         default=None,
         description="Check-in time",
     )
-    check_out_time: Optional[time] = Field(
+    check_out_time: Union[time, None] = Field(
         default=None,
         description="Check-out time",
     )
-    visitor_policy: Optional[str] = Field(
+    visitor_policy: Union[str, None] = Field(
         default=None,
         description="Visitor policy",
     )
-    late_entry_policy: Optional[str] = Field(
+    late_entry_policy: Union[str, None] = Field(
         default=None,
         description="Late entry policy",
     )
@@ -199,13 +197,13 @@ class HostelDetail(BaseResponseSchema):
         default_factory=list,
         description="Nearby landmarks",
     )
-    connectivity_info: Optional[str] = Field(
+    connectivity_info: Union[str, None] = Field(
         default=None,
         description="Connectivity information",
     )
 
     # Media
-    cover_image_url: Optional[str] = Field(
+    cover_image_url: Union[str, None] = Field(
         default=None,
         description="Cover image URL",
     )
@@ -213,7 +211,7 @@ class HostelDetail(BaseResponseSchema):
         default_factory=list,
         description="Gallery images",
     )
-    virtual_tour_url: Optional[str] = Field(
+    virtual_tour_url: Union[str, None] = Field(
         default=None,
         description="Virtual tour URL",
     )
@@ -226,15 +224,15 @@ class HostelDetail(BaseResponseSchema):
     is_active: bool = Field(..., description="Active status")
 
     # SEO
-    meta_title: Optional[str] = Field(
+    meta_title: Union[str, None] = Field(
         default=None,
         description="SEO meta title",
     )
-    meta_description: Optional[str] = Field(
+    meta_description: Union[str, None] = Field(
         default=None,
         description="SEO meta description",
     )
-    meta_keywords: Optional[str] = Field(
+    meta_keywords: Union[str, None] = Field(
         default=None,
         description="SEO keywords",
     )
@@ -254,10 +252,10 @@ class HostelListItem(BaseSchema):
     hostel_type: HostelType = Field(..., description="Hostel type")
     city: str = Field(..., description="City")
     state: str = Field(..., description="State")
-    starting_price_monthly: Optional[Annotated[
+    starting_price_monthly: Union[Annotated[
         Decimal,
         Field(description="Starting price")
-    ]] = None
+    ], None] = None
     average_rating: Annotated[
         Decimal,
         Field(ge=0, le=5, description="Average rating")
@@ -272,15 +270,15 @@ class HostelListItem(BaseSchema):
         ge=0,
         description="Available beds",
     )
-    cover_image_url: Optional[str] = Field(
+    cover_image_url: Union[str, None] = Field(
         default=None,
         description="Cover image",
     )
     is_featured: bool = Field(..., description="Featured status")
-    distance_km: Optional[Annotated[
+    distance_km: Union[Annotated[
         Decimal,
         Field(ge=0, description="Distance from search location")
-    ]] = None
+    ], None] = None
 
 
 class HostelStats(BaseSchema):

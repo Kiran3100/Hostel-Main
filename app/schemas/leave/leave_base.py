@@ -6,10 +6,8 @@ This module provides foundational schemas for leave management including
 applications, updates, and core validation logic.
 """
 
-from __future__ import annotations
-
 from datetime import date as Date
-from typing import Optional
+from typing import Union
 
 from pydantic import ConfigDict, Field, HttpUrl, field_validator, model_validator
 from uuid import UUID
@@ -78,17 +76,17 @@ class LeaveBase(BaseSchema):
         max_length=1000,
         description="Detailed reason for leave request",
     )
-    contact_during_leave: Optional[str] = Field(
+    contact_during_leave: Union[str, None] = Field(
         None,
         pattern=r"^\+?[1-9]\d{9,14}$",
         description="Contact phone number during leave period",
     )
-    emergency_contact: Optional[str] = Field(
+    emergency_contact: Union[str, None] = Field(
         None,
         pattern=r"^\+?[1-9]\d{9,14}$",
         description="Emergency contact phone number",
     )
-    supporting_document_url: Optional[HttpUrl] = Field(
+    supporting_document_url: Union[HttpUrl, None] = Field(
         None,
         description="URL to supporting document (e.g., medical certificate)",
     )
@@ -142,7 +140,7 @@ class LeaveBase(BaseSchema):
 
     @field_validator("contact_during_leave", "emergency_contact")
     @classmethod
-    def normalize_phone(cls, v: Optional[str]) -> Optional[str]:
+    def normalize_phone(cls, v: Union[str, None]) -> Union[str, None]:
         """Normalize phone numbers by removing spaces and dashes."""
         if v is not None:
             return v.replace(" ", "").replace("-", "").strip()
@@ -235,7 +233,7 @@ class LeaveCreate(LeaveBase, BaseCreateSchema):
     )
 
     # Override total_days to make it optional (will be auto-calculated)
-    total_days: Optional[int] = Field(
+    total_days: Union[int, None] = Field(
         None,
         ge=1,
         le=365,
@@ -272,52 +270,52 @@ class LeaveUpdate(BaseUpdateSchema):
         }
     )
 
-    leave_type: Optional[LeaveType] = Field(
+    leave_type: Union[LeaveType, None] = Field(
         None,
         description="Updated leave type",
     )
-    from_date: Optional[Date] = Field(
+    from_date: Union[Date, None] = Field(
         None,
         description="Updated start Date",
     )
-    to_date: Optional[Date] = Field(
+    to_date: Union[Date, None] = Field(
         None,
         description="Updated end Date",
     )
-    total_days: Optional[int] = Field(
+    total_days: Union[int, None] = Field(
         None,
         ge=1,
         le=365,
         description="Updated total days",
     )
-    reason: Optional[str] = Field(
+    reason: Union[str, None] = Field(
         None,
         min_length=10,
         max_length=1000,
         description="Updated leave reason",
     )
-    contact_during_leave: Optional[str] = Field(
+    contact_during_leave: Union[str, None] = Field(
         None,
         pattern=r"^\+?[1-9]\d{9,14}$",
         description="Updated contact number",
     )
-    emergency_contact: Optional[str] = Field(
+    emergency_contact: Union[str, None] = Field(
         None,
         pattern=r"^\+?[1-9]\d{9,14}$",
         description="Updated emergency contact",
     )
-    supporting_document_url: Optional[HttpUrl] = Field(
+    supporting_document_url: Union[HttpUrl, None] = Field(
         None,
         description="Updated supporting document URL",
     )
-    status: Optional[LeaveStatus] = Field(
+    status: Union[LeaveStatus, None] = Field(
         None,
         description="Updated leave status (restricted to certain roles)",
     )
 
     @field_validator("reason")
     @classmethod
-    def validate_reason(cls, v: Optional[str]) -> Optional[str]:
+    def validate_reason(cls, v: Union[str, None]) -> Union[str, None]:
         """Validate updated reason if provided."""
         if v is not None:
             v = v.strip()
@@ -330,7 +328,7 @@ class LeaveUpdate(BaseUpdateSchema):
 
     @field_validator("contact_during_leave", "emergency_contact")
     @classmethod
-    def normalize_phone(cls, v: Optional[str]) -> Optional[str]:
+    def normalize_phone(cls, v: Union[str, None]) -> Union[str, None]:
         """Normalize phone numbers."""
         if v is not None:
             return v.replace(" ", "").replace("-", "").strip()

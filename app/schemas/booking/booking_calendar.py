@@ -1,4 +1,3 @@
-# --- File: app/schemas/booking/booking_calendar.py ---
 """
 Booking calendar schemas for calendar views and availability tracking.
 
@@ -6,10 +5,8 @@ This module defines schemas for calendar views, booking events,
 and availability tracking across dates.
 """
 
-from __future__ import annotations
-
 import datetime as dt
-from typing import Dict, List, Optional
+from typing import Dict, List, Union
 from uuid import UUID
 
 from pydantic import Field, field_validator, computed_field
@@ -48,7 +45,7 @@ class BookingEvent(BaseSchema):
         ...,
         description="Guest name",
     )
-    room_number: Optional[str] = Field(
+    room_number: Union[str, None] = Field(
         None,
         description="Assigned room number if available",
     )
@@ -205,7 +202,7 @@ class CalendarView(BaseSchema):
         ge=0,
         description="Total check-outs scheduled this month",
     )
-    peak_occupancy_date: Optional[dt.date] = Field(
+    peak_occupancy_date: Union[dt.date, None] = Field(
         None,
         description="date with highest occupancy this month",
     )
@@ -245,7 +242,7 @@ class CalendarView(BaseSchema):
 
     @computed_field
     @property
-    def busiest_week_start(self) -> Optional[dt.date]:
+    def busiest_week_start(self) -> Union[dt.date, None]:
         """Find the start date of the busiest week."""
         if not self.days:
             return None
@@ -282,17 +279,17 @@ class CalendarEvent(BaseSchema):
         ...,
         description="Event start date",
     )
-    end_date: Optional[dt.date] = Field(
+    end_date: Union[dt.date, None] = Field(
         None,
         description="Event end date (for multi-day events)",
     )
 
     # Related Entities
-    booking_id: Optional[UUID] = Field(
+    booking_id: Union[UUID, None] = Field(
         None,
         description="Related booking ID if applicable",
     )
-    room_id: Optional[UUID] = Field(
+    room_id: Union[UUID, None] = Field(
         None,
         description="Related room ID if applicable",
     )
@@ -310,7 +307,7 @@ class CalendarEvent(BaseSchema):
 
     @field_validator("end_date")
     @classmethod
-    def validate_end_date(cls, v: Optional[dt.date], info) -> Optional[dt.date]:
+    def validate_end_date(cls, v: Union[dt.date, None], info) -> Union[dt.date, None]:
         """Validate end date is after or equal to start date."""
         start_date = info.data.get("start_date")
         if v is not None and start_date is not None:
@@ -442,7 +439,7 @@ class AvailabilityCalendar(BaseSchema):
         ...,
         description="Hostel identifier",
     )
-    room_id: Optional[UUID] = Field(
+    room_id: Union[UUID, None] = Field(
         None,
         description="Specific room ID, or None for all rooms",
     )
@@ -496,7 +493,7 @@ class AvailabilityCalendar(BaseSchema):
 
     @computed_field
     @property
-    def peak_occupancy_date(self) -> Optional[str]:
+    def peak_occupancy_date(self) -> Union[str, None]:
         """Find date with highest occupancy."""
         if not self.availability:
             return None

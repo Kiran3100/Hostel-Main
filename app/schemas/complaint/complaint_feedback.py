@@ -5,11 +5,10 @@ Handles student feedback collection, ratings, and
 feedback analytics for service improvement.
 """
 
-from __future__ import annotations
-
-from datetime import date as Date, datetime
+from datetime import datetime
+from datetime import date as Date
 from decimal import Decimal
-from typing import Annotated, Dict, List, Optional
+from typing import Annotated, Dict, List, Union
 
 from pydantic import ConfigDict, Field, field_validator
 
@@ -44,7 +43,7 @@ class FeedbackRequest(BaseCreateSchema):
         description="Overall rating (1-5 stars)",
     )
 
-    feedback: Optional[str] = Field(
+    feedback: Union[str, None] = Field(
         default=None,
         max_length=1000,
         description="Detailed feedback comments",
@@ -64,14 +63,14 @@ class FeedbackRequest(BaseCreateSchema):
         description="Was the staff helpful and professional?",
     )
 
-    would_recommend: Optional[bool] = Field(
+    would_recommend: Union[bool, None] = Field(
         default=None,
         description="Would you recommend this complaint system?",
     )
 
     @field_validator("feedback")
     @classmethod
-    def validate_feedback(cls, v: Optional[str]) -> Optional[str]:
+    def validate_feedback(cls, v: Union[str, None]) -> Union[str, None]:
         """Normalize feedback text if provided."""
         if v is not None:
             v = v.strip()
@@ -104,7 +103,7 @@ class FeedbackResponse(BaseResponseSchema):
     complaint_number: str = Field(..., description="Complaint reference number")
 
     rating: int = Field(..., description="Submitted rating")
-    feedback: Optional[str] = Field(default=None, description="Submitted feedback")
+    feedback: Union[str, None] = Field(default=None, description="Submitted feedback")
 
     submitted_by: str = Field(..., description="Feedback submitter user ID")
     submitted_at: datetime = Field(..., description="Submission timestamp")

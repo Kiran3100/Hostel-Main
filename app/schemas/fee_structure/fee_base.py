@@ -6,11 +6,9 @@ This module defines the core fee structure schemas for managing
 hostel pricing across different room types and billing frequencies.
 """
 
-from __future__ import annotations
-
 from datetime import date as Date
 from decimal import Decimal
-from typing import Optional
+from typing import Union
 from uuid import UUID
 
 from pydantic import Field, field_validator, model_validator, computed_field
@@ -76,7 +74,7 @@ class FeeStructureBase(BaseSchema):
         default=ChargeType.INCLUDED,
         description="How electricity is billed (included/actual/fixed)",
     )
-    electricity_fixed_amount: Optional[Decimal] = Field(
+    electricity_fixed_amount: Union[Decimal, None] = Field(
         default=None,
         ge=Decimal("0"),
         description="Fixed monthly electricity charge (if applicable, precision: 10 digits, 2 decimal places)",
@@ -87,7 +85,7 @@ class FeeStructureBase(BaseSchema):
         default=ChargeType.INCLUDED,
         description="How water is billed (included/actual/fixed)",
     )
-    water_fixed_amount: Optional[Decimal] = Field(
+    water_fixed_amount: Union[Decimal, None] = Field(
         default=None,
         ge=Decimal("0"),
         description="Fixed monthly water charge (if applicable, precision: 10 digits, 2 decimal places)",
@@ -98,7 +96,7 @@ class FeeStructureBase(BaseSchema):
         ...,
         description="Date from which this fee structure is effective",
     )
-    effective_to: Optional[Date] = Field(
+    effective_to: Union[Date, None] = Field(
         default=None,
         description="End Date of fee structure validity (null for indefinite)",
     )
@@ -144,7 +142,7 @@ class FeeStructureBase(BaseSchema):
 
     @field_validator("electricity_fixed_amount", "water_fixed_amount")
     @classmethod
-    def validate_and_quantize_optional_amounts(cls, v: Optional[Decimal]) -> Optional[Decimal]:
+    def validate_and_quantize_optional_amounts(cls, v: Union[Decimal, None]) -> Union[Decimal, None]:
         """Validate and quantize optional decimal amounts to 2 decimal places."""
         if v is not None:
             # Quantize to 2 decimal places
@@ -183,7 +181,7 @@ class FeeStructureBase(BaseSchema):
         return v
 
     @model_validator(mode="after")
-    def validate_fee_structure(self) -> "FeeStructureBase":
+    def validate_fee_structure(self):
         """Validate all fee structure constraints."""
         # Validate security deposit ratio
         if self.security_deposit > 0:
@@ -275,7 +273,7 @@ class FeeStructureBase(BaseSchema):
 
     @computed_field
     @property
-    def days_remaining(self) -> Optional[int]:
+    def days_remaining(self) -> Union[int, None]:
         """Calculate days remaining until fee structure expires."""
         if self.effective_to is None:
             return None
@@ -314,7 +312,7 @@ class FeeStructureCreate(FeeStructureBase, BaseCreateSchema):
     """
 
     @model_validator(mode="after")
-    def validate_no_overlapping_periods(self) -> "FeeStructureCreate":
+    def validate_no_overlapping_periods(self):
         """
         Validate that new fee structure doesn't overlap with existing ones.
         
@@ -334,68 +332,68 @@ class FeeStructureUpdate(BaseUpdateSchema):
     """
 
     # Pricing - max_digits and decimal_places removed
-    amount: Optional[Decimal] = Field(
+    amount: Union[Decimal, None] = Field(
         default=None,
         ge=Decimal("0"),
         description="Update base rent amount (precision: 10 digits, 2 decimal places)",
     )
-    security_deposit: Optional[Decimal] = Field(
+    security_deposit: Union[Decimal, None] = Field(
         default=None,
         ge=Decimal("0"),
         description="Update security deposit (precision: 10 digits, 2 decimal places)",
     )
 
     # Mess
-    includes_mess: Optional[bool] = Field(
+    includes_mess: Union[bool, None] = Field(
         default=None,
         description="Update mess inclusion",
     )
-    mess_charges_monthly: Optional[Decimal] = Field(
+    mess_charges_monthly: Union[Decimal, None] = Field(
         default=None,
         ge=Decimal("0"),
         description="Update mess charges (precision: 10 digits, 2 decimal places)",
     )
 
     # Utilities
-    electricity_charges: Optional[ChargeType] = Field(
+    electricity_charges: Union[ChargeType, None] = Field(
         default=None,
         description="Update electricity billing method",
     )
-    electricity_fixed_amount: Optional[Decimal] = Field(
+    electricity_fixed_amount: Union[Decimal, None] = Field(
         default=None,
         ge=Decimal("0"),
         description="Update fixed electricity amount (precision: 10 digits, 2 decimal places)",
     )
 
-    water_charges: Optional[ChargeType] = Field(
+    water_charges: Union[ChargeType, None] = Field(
         default=None,
         description="Update water billing method",
     )
-    water_fixed_amount: Optional[Decimal] = Field(
+    water_fixed_amount: Union[Decimal, None] = Field(
         default=None,
         ge=Decimal("0"),
         description="Update fixed water amount (precision: 10 digits, 2 decimal places)",
     )
 
     # Validity
-    effective_from: Optional[Date] = Field(
+    effective_from: Union[Date, None] = Field(
         default=None,
         description="Update effective start Date",
     )
-    effective_to: Optional[Date] = Field(
+    effective_to: Union[Date, None] = Field(
         default=None,
         description="Update effective end Date",
     )
 
     # Status
-    is_active: Optional[bool] = Field(
+    is_active: Union[bool, None] = Field(
         default=None,
         description="Update active status",
     )
 
     @field_validator("amount", "security_deposit", "mess_charges_monthly", "electricity_fixed_amount", "water_fixed_amount")
     @classmethod
-    def validate_amounts(cls, v: Optional[Decimal]) -> Optional[Decimal]:
+    def validate_amounts(cls, v: Union[Decimal, None]) -> Union[Decimal, None]:
         """Validate monetary amounts if provided and quantize to 2 decimal places."""
         if v is not None:
             # Quantize to 2 decimal places
@@ -407,7 +405,7 @@ class FeeStructureUpdate(BaseUpdateSchema):
         return v
 
     @model_validator(mode="after")
-    def validate_partial_updates(self) -> "FeeStructureUpdate":
+    def validate_partial_updates(self):
         """Validate consistency in partial updates."""
         # If electricity is being changed to FIXED_MONTHLY, amount must be provided
         if self.electricity_charges == ChargeType.FIXED_MONTHLY:

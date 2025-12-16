@@ -6,10 +6,8 @@ Provides schemas for supervisor/admin leave approval decisions
 with comprehensive tracking and validation.
 """
 
-from __future__ import annotations
-
 from datetime import datetime
-from typing import List, Optional
+from typing import List, Union
 
 from pydantic import ConfigDict, Field, field_validator, model_validator
 from uuid import UUID
@@ -56,18 +54,18 @@ class LeaveApprovalRequest(BaseCreateSchema):
         ...,
         description="True to approve, False to reject",
     )
-    approval_notes: Optional[str] = Field(
+    approval_notes: Union[str, None] = Field(
         None,
         max_length=500,
         description="Additional notes or comments from approver",
     )
-    rejection_reason: Optional[str] = Field(
+    rejection_reason: Union[str, None] = Field(
         None,
         min_length=10,
         max_length=500,
         description="Detailed reason for rejection (required if rejecting)",
     )
-    conditions: Optional[str] = Field(
+    conditions: Union[str, None] = Field(
         None,
         max_length=500,
         description="Conditions or requirements for approved leave",
@@ -83,7 +81,7 @@ class LeaveApprovalRequest(BaseCreateSchema):
 
     @field_validator("approval_notes", "rejection_reason", "conditions")
     @classmethod
-    def validate_text_fields(cls, v: Optional[str]) -> Optional[str]:
+    def validate_text_fields(cls, v: Union[str, None]) -> Union[str, None]:
         """Normalize text fields."""
         if v is not None:
             v = v.strip()
@@ -91,7 +89,7 @@ class LeaveApprovalRequest(BaseCreateSchema):
         return None
 
     @model_validator(mode="after")
-    def validate_approval_decision(self) -> "LeaveApprovalRequest":
+    def validate_approval_decision(self):
         """
         Validate approval decision consistency.
         
@@ -164,16 +162,16 @@ class LeaveApprovalAction(BaseCreateSchema):
         max_length=1000,
         description="Comments explaining the action",
     )
-    requested_changes: Optional[str] = Field(
+    requested_changes: Union[str, None] = Field(
         None,
         max_length=500,
         description="Specific changes requested (if action is 'request_changes')",
     )
-    escalate_to: Optional[UUID] = Field(
+    escalate_to: Union[UUID, None] = Field(
         None,
         description="User ID to escalate to (if action is 'escalate')",
     )
-    conditions: Optional[str] = Field(
+    conditions: Union[str, None] = Field(
         None,
         max_length=500,
         description="Approval conditions",
@@ -195,7 +193,7 @@ class LeaveApprovalAction(BaseCreateSchema):
         return v
 
     @model_validator(mode="after")
-    def validate_action_requirements(self) -> "LeaveApprovalAction":
+    def validate_action_requirements(self):
         """
         Validate action-specific requirements.
         
@@ -263,47 +261,47 @@ class LeaveApprovalResponse(BaseSchema):
         ...,
         description="Updated leave status after decision",
     )
-    previous_status: Optional[LeaveStatus] = Field(
+    previous_status: Union[LeaveStatus, None] = Field(
         None,
         description="Previous leave status",
     )
 
     # Approval details
-    approved_by: Optional[UUID] = Field(
+    approved_by: Union[UUID, None] = Field(
         None,
         description="Approver user ID (if approved)",
     )
-    approved_by_name: Optional[str] = Field(
+    approved_by_name: Union[str, None] = Field(
         None,
         description="Approver full name",
     )
-    approved_at: Optional[datetime] = Field(
+    approved_at: Union[datetime, None] = Field(
         None,
         description="Approval timestamp",
     )
-    approval_notes: Optional[str] = Field(
+    approval_notes: Union[str, None] = Field(
         None,
         description="Approval notes",
     )
-    conditions: Optional[str] = Field(
+    conditions: Union[str, None] = Field(
         None,
         description="Approval conditions",
     )
 
     # Rejection details
-    rejected_by: Optional[UUID] = Field(
+    rejected_by: Union[UUID, None] = Field(
         None,
         description="Rejector user ID (if rejected)",
     )
-    rejected_by_name: Optional[str] = Field(
+    rejected_by_name: Union[str, None] = Field(
         None,
         description="Rejector full name",
     )
-    rejected_at: Optional[datetime] = Field(
+    rejected_at: Union[datetime, None] = Field(
         None,
         description="Rejection timestamp",
     )
-    rejection_reason: Optional[str] = Field(
+    rejection_reason: Union[str, None] = Field(
         None,
         description="Rejection reason",
     )
@@ -317,13 +315,13 @@ class LeaveApprovalResponse(BaseSchema):
         default=False,
         description="Whether notifications were sent",
     )
-    notification_recipients: Optional[List[str]] = Field(
+    notification_recipients: Union[List[str], None] = Field(
         None,
         description="List of notification recipients",
     )
 
     @model_validator(mode="after")
-    def validate_response_consistency(self) -> "LeaveApprovalResponse":
+    def validate_response_consistency(self):
         """
         Validate response data consistency.
         

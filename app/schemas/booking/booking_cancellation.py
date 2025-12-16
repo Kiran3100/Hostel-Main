@@ -1,4 +1,3 @@
-# --- File: app/schemas/booking/booking_cancellation.py ---
 """
 Booking cancellation schemas.
 
@@ -6,11 +5,9 @@ This module defines schemas for cancelling bookings, calculating refunds,
 and managing cancellation policies.
 """
 
-from __future__ import annotations
-
 from datetime import datetime
 from decimal import Decimal
-from typing import Dict, List, Optional
+from typing import Dict, List, Union
 from uuid import UUID
 
 from pydantic import Field, field_validator
@@ -59,7 +56,7 @@ class CancellationRequest(BaseCreateSchema):
     )
 
     # Additional Details
-    additional_comments: Optional[str] = Field(
+    additional_comments: Union[str, None] = Field(
         None,
         max_length=1000,
         description="Additional comments or context",
@@ -84,7 +81,7 @@ class CancellationRequest(BaseCreateSchema):
 
     @field_validator("additional_comments")
     @classmethod
-    def clean_comments(cls, v: Optional[str]) -> Optional[str]:
+    def clean_comments(cls, v: Union[str, None]) -> Union[str, None]:
         """Clean additional comments."""
         if v is not None:
             v = v.strip()

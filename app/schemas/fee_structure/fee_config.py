@@ -6,11 +6,9 @@ This module defines schemas for fee calculations, breakdowns,
 and comprehensive fee configurations.
 """
 
-from __future__ import annotations
-
 from datetime import date as Date
 from decimal import Decimal
-from typing import Dict, Optional
+from typing import Dict, Union
 from uuid import UUID
 
 from pydantic import Field, computed_field, field_validator
@@ -200,7 +198,7 @@ class FeeConfiguration(BaseSchema):
         ...,
         description="Electricity billing method",
     )
-    electricity_fixed_amount: Optional[Decimal] = Field(
+    electricity_fixed_amount: Union[Decimal, None] = Field(
         default=None,
         ge=Decimal("0"),
         description="Fixed electricity amount (precision: 2 decimal places)",
@@ -210,7 +208,7 @@ class FeeConfiguration(BaseSchema):
         ...,
         description="Water billing method",
     )
-    water_fixed_amount: Optional[Decimal] = Field(
+    water_fixed_amount: Union[Decimal, None] = Field(
         default=None,
         ge=Decimal("0"),
         description="Fixed water amount (precision: 2 decimal places)",
@@ -223,7 +221,7 @@ class FeeConfiguration(BaseSchema):
     )
 
     # Additional Configuration
-    description: Optional[str] = Field(
+    description: Union[str, None] = Field(
         default=None,
         max_length=500,
         description="Configuration description or notes",
@@ -237,7 +235,7 @@ class FeeConfiguration(BaseSchema):
 
     @field_validator("electricity_fixed_amount", "water_fixed_amount")
     @classmethod
-    def quantize_optional_decimals(cls, v: Optional[Decimal]) -> Optional[Decimal]:
+    def quantize_optional_decimals(cls, v: Union[Decimal, None]) -> Union[Decimal, None]:
         """Quantize optional decimal fields to 2 decimal places."""
         if v is not None:
             return v.quantize(Decimal("0.01"))
@@ -284,13 +282,13 @@ class DiscountConfiguration(BaseSchema):
     )
 
     # Discount Value - decimal_places removed
-    discount_percentage: Optional[Decimal] = Field(
+    discount_percentage: Union[Decimal, None] = Field(
         default=None,
         ge=Decimal("0"),
         le=Decimal("100"),
         description="Discount percentage (if type is percentage, precision: 2 decimal places)",
     )
-    discount_amount: Optional[Decimal] = Field(
+    discount_amount: Union[Decimal, None] = Field(
         default=None,
         ge=Decimal("0"),
         description="Fixed discount amount (if type is fixed_amount, precision: 2 decimal places)",
@@ -304,7 +302,7 @@ class DiscountConfiguration(BaseSchema):
     )
 
     # Conditions
-    minimum_stay_months: Optional[int] = Field(
+    minimum_stay_months: Union[int, None] = Field(
         default=None,
         ge=1,
         description="Minimum stay required for discount",
@@ -315,11 +313,11 @@ class DiscountConfiguration(BaseSchema):
     )
 
     # Validity
-    valid_from: Optional[Date] = Field(
+    valid_from: Union[Date, None] = Field(
         default=None,
         description="Discount valid from Date",
     )
-    valid_to: Optional[Date] = Field(
+    valid_to: Union[Date, None] = Field(
         default=None,
         description="Discount valid until Date",
     )
@@ -346,7 +344,7 @@ class DiscountConfiguration(BaseSchema):
 
     @field_validator("discount_percentage", "discount_amount")
     @classmethod
-    def quantize_optional_decimals(cls, v: Optional[Decimal]) -> Optional[Decimal]:
+    def quantize_optional_decimals(cls, v: Union[Decimal, None]) -> Union[Decimal, None]:
         """Quantize optional decimal fields to 2 decimal places."""
         if v is not None:
             return v.quantize(Decimal("0.01"))
@@ -401,11 +399,11 @@ class FeeComparison(BaseSchema):
         ...,
         description="Most economical room type",
     )
-    most_popular: Optional[str] = Field(
+    most_popular: Union[str, None] = Field(
         default=None,
         description="Most popular room type",
     )
-    best_value: Optional[str] = Field(
+    best_value: Union[str, None] = Field(
         default=None,
         description="Best value room type",
     )

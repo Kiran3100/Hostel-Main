@@ -6,11 +6,9 @@ This module provides foundational schemas for maintenance request management
 including creation, updates, and core validation logic.
 """
 
-from __future__ import annotations
-
 from datetime import date as Date
 from decimal import Decimal
-from typing import Annotated, List, Optional
+from typing import Annotated, List, Optional, Union
 
 from pydantic import ConfigDict, Field, HttpUrl, field_validator, model_validator
 
@@ -175,7 +173,7 @@ class MaintenanceBase(BaseSchema):
         return v
 
     @model_validator(mode="after")
-    def validate_priority_consistency(self) -> "MaintenanceBase":
+    def validate_priority_consistency(self):
         """
         Validate priority consistency with issue type.
         
@@ -253,7 +251,7 @@ class MaintenanceCreate(MaintenanceBase, BaseCreateSchema):
         return v
 
     @model_validator(mode="after")
-    def validate_emergency_urgency(self) -> "MaintenanceCreate":
+    def validate_emergency_urgency(self):
         """
         Validate emergency requests have appropriate urgency.
         
@@ -336,11 +334,11 @@ class MaintenanceUpdate(BaseUpdateSchema):
     )
 
     # Cost information - Using Annotated for Decimal constraints in Pydantic v2
-    estimated_cost: Optional[Annotated[Decimal, Field(ge=0, decimal_places=2)]] = Field(
+    estimated_cost: Union[Annotated[Decimal, Field(ge=0, decimal_places=2)], None] = Field(
         None,
         description="Estimated repair cost",
     )
-    actual_cost: Optional[Annotated[Decimal, Field(ge=0, decimal_places=2)]] = Field(
+    actual_cost: Union[Annotated[Decimal, Field(ge=0, decimal_places=2)], None] = Field(
         None,
         description="Actual cost incurred",
     )
@@ -369,7 +367,7 @@ class MaintenanceUpdate(BaseUpdateSchema):
         return round(v, 2) if v is not None else None
 
     @model_validator(mode="after")
-    def validate_cost_consistency(self) -> "MaintenanceUpdate":
+    def validate_cost_consistency(self):
         """
         Validate cost fields consistency.
         
@@ -434,7 +432,7 @@ class MaintenanceStatusUpdate(BaseUpdateSchema):
         return None
 
     @model_validator(mode="after")
-    def validate_status_notes_requirement(self) -> "MaintenanceStatusUpdate":
+    def validate_status_notes_requirement(self):
         """
         Validate notes requirement for certain status changes.
         
