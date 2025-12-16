@@ -154,7 +154,7 @@ class DailyAttendanceRecord(BaseSchema):
     for timeline views and detailed reports.
     """
 
-    date: Date = Field(
+    date:Date = Field(
         ...,
         description="Attendance Date",
     )

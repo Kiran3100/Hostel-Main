@@ -74,7 +74,7 @@ class DatabaseSettings(BaseSettings):
     )
     
     # Main database
-    DATABASE_URL: str = Field(default="sqlite:///./app.db")
+    DATABASE_URL: str = Field(default="postgresql://postgres:Kiran$123@localhost:5432/HostelDb")
     DATABASE_ECHO: bool = Field(default=False)
     
     # Connection pool settings

@@ -308,7 +308,7 @@ class DayAvailability(BaseSchema):
     Day-level availability with booking details.
     """
 
-    Date: Date = Field(..., description="Date")
+    date: Date = Field(..., description="Date")
     available_beds: int = Field(..., ge=0, description="Available beds")
     total_beds: int = Field(..., ge=1, description="Total beds")
     is_available: bool = Field(..., description="Has availability")
