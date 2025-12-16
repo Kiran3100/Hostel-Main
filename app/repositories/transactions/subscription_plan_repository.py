@@ -1,7 +1,5 @@
 # app/repositories/transactions/subscription_plan_repository.py
-from __future__ import annotations
-
-from typing import List, Optional
+from typing import List, Union
 
 from sqlalchemy.orm import Session
 
@@ -19,6 +17,6 @@ class SubscriptionPlanRepository(BaseRepository[SubscriptionPlanModel]):
         stmt = stmt.order_by(SubscriptionPlanModel.sort_order.asc())
         return self.session.execute(stmt).scalars().all()
 
-    def get_by_plan_type(self, plan_type: SubscriptionPlanEnum) -> Optional[SubscriptionPlanModel]:
+    def get_by_plan_type(self, plan_type: SubscriptionPlanEnum) -> Union[SubscriptionPlanModel, None]:
         stmt = self._base_select().where(SubscriptionPlanModel.plan_type == plan_type)
         return self.session.execute(stmt).scalar_one_or_none()

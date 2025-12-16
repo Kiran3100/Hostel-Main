@@ -1,7 +1,5 @@
 # models/mixins/backend_sync_mixin.py
-from __future__ import annotations
-
-from typing import Optional
+from typing import Union
 
 from sqlalchemy import String
 from sqlalchemy.orm import Mapped, mapped_column
@@ -9,7 +7,7 @@ from sqlalchemy.orm import Mapped, mapped_column
 
 class BackendSyncMixin:
     """For entities synchronized with a backend/external service."""
-    backend_id: Mapped[Optional[str]] = mapped_column(
+    backend_id: Mapped[Union[str, None]] = mapped_column(
         String(100),
         nullable=True,
         unique=False,

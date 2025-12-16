@@ -1,8 +1,6 @@
 # models/audit/user_activity.py
-from __future__ import annotations
-
 from datetime import datetime
-from typing import Optional
+from typing import Union
 from uuid import UUID
 
 from sqlalchemy import DateTime, String, ForeignKey
@@ -17,9 +15,9 @@ class UserActivity(BaseItem):
 
     user_id: Mapped[UUID] = mapped_column(ForeignKey("core_user.id"), index=True)
     activity_type: Mapped[str] = mapped_column(String(100))  # login, logout, booking_created, etc.
-    description: Mapped[Optional[str]] = mapped_column(String(1000))
+    description: Mapped[Union[str, None]] = mapped_column(String(1000))
 
-    ip_address: Mapped[Optional[str]] = mapped_column(String(50))
-    user_agent: Mapped[Optional[str]] = mapped_column(String(500))
+    ip_address: Mapped[Union[str, None]] = mapped_column(String(50))
+    user_agent: Mapped[Union[str, None]] = mapped_column(String(500))
 
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=datetime.utcnow)

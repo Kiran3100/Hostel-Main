@@ -44,6 +44,7 @@ def delete_all_pycache(
         root_path: Root directory to scan
         dry_run: If True, only simulate deletion
         verbose: If True, print detailed information
+<<<<<<<<< Temporary merge branch 1
     
     Returns:
         ScanStats object with operation statistics
@@ -77,6 +78,7 @@ def delete_all_pycache(
     # Report findings
     if verbose:
         print(f"\n{'=' * 70}")
+        print(f"\n{'=' * 70}")
         print("SCAN RESULTS")
         print(f"{'=' * 70}")
         print(f"Total __pycache__ directories found: {stats.total_pycache}")
@@ -86,6 +88,7 @@ def delete_all_pycache(
     if not pycache_dirs:
         if verbose:
             print("✓ No __pycache__ directories found.")
+            print("✓ No __pycache__ directories found.")
         return stats
    
     # Second pass: delete directories
@@ -93,8 +96,11 @@ def delete_all_pycache(
         if verbose:
             print("[DRY RUN MODE] The following would be deleted:\n")
             for pycache_path in pycache_dirs:
+            for pycache_path in pycache_dirs:
                 size = get_directory_size(pycache_path)
                 stats.total_size_freed += size
+        stats.deleted = len(pycache_dirs)
+        if verbose:
         stats.deleted = len(pycache_dirs)
         if verbose:
             print(f"\nTotal space that would be freed: {format_size(stats.total_size_freed)}")
@@ -173,8 +179,10 @@ def main() -> None:
     if response in ['yes', 'y']:
         print("\nProceeding with deletion...\n")
         stats = delete_all_pycache(
+        stats = delete_all_pycache(
             root_directory,
             dry_run=False,
+            verbose=True
             verbose=True
         )
        
@@ -182,6 +190,7 @@ def main() -> None:
         print("\n" + "=" * 70)
         print("OPERATION SUMMARY")
         print("=" * 70)
+        print(f"Total __pycache__ directories found: {stats.total_pycache}")
         print(f"Total __pycache__ directories found: {stats.total_pycache}")
         print(f"Successfully deleted: {stats.deleted}")
         print(f"Failed to delete: {stats.failed}")

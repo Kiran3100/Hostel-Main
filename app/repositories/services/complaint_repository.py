@@ -1,8 +1,6 @@
 # app/repositories/services/complaint_repository.py
-from __future__ import annotations
-
 from datetime import datetime
-from typing import List, Optional
+from typing import List, Union
 from uuid import UUID
 
 from sqlalchemy import and_, or_
@@ -21,8 +19,8 @@ class ComplaintRepository(BaseRepository[Complaint]):
         self,
         hostel_id: UUID,
         *,
-        category: Optional[ComplaintCategory] = None,
-        priority: Optional[Priority] = None,
+        category: Union[ComplaintCategory, None] = None,
+        priority: Union[Priority, None] = None,
     ) -> List[Complaint]:
         stmt = self._base_select().where(
             Complaint.hostel_id == hostel_id,

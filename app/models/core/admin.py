@@ -1,14 +1,15 @@
 # models/core/admin.py
-from __future__ import annotations
-
 from datetime import datetime
-from typing import Optional
+from typing import Union, TYPE_CHECKING
 from uuid import UUID
 
 from sqlalchemy import Boolean, DateTime, ForeignKey, JSON, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import BaseItem
+
+if TYPE_CHECKING:
+    from app.models.core.user import User
 
 
 class Admin(BaseItem):
@@ -29,6 +30,6 @@ class Admin(BaseItem):
     status: Mapped[str] = mapped_column(String(50), default="active")
 
     permissions: Mapped[dict] = mapped_column(JSON, default=dict)
-    last_login: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
+    last_login: Mapped[Union[datetime, None]] = mapped_column(DateTime(timezone=True))
 
     user: Mapped["User"] = relationship(back_populates="admin_profile")

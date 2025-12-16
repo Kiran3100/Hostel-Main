@@ -1,8 +1,6 @@
 # app/repositories/services/maintenance_repository.py
-from __future__ import annotations
-
 from datetime import date
-from typing import List, Optional
+from typing import List, Union
 from uuid import UUID
 
 from sqlalchemy import and_
@@ -21,8 +19,8 @@ class MaintenanceRepository(BaseRepository[Maintenance]):
         self,
         hostel_id: UUID,
         *,
-        category: Optional[MaintenanceCategory] = None,
-        priority: Optional[Priority] = None,
+        category: Union[MaintenanceCategory, None] = None,
+        priority: Union[Priority, None] = None,
     ) -> List[Maintenance]:
         stmt = self._base_select().where(
             Maintenance.hostel_id == hostel_id,

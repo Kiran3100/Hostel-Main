@@ -1,8 +1,6 @@
 # app.models/associations/admin_hostel.py
-from __future__ import annotations
-
 from datetime import date, datetime
-from typing import Optional
+from typing import Union
 from uuid import UUID
 
 from sqlalchemy import Boolean, Date, DateTime, Enum as SAEnum, ForeignKey, JSON
@@ -28,6 +26,6 @@ class AdminHostel(BaseEntity):
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
 
     assigned_date: Mapped[date] = mapped_column(Date, default=date.today)
-    revoked_date: Mapped[Optional[date]] = mapped_column(Date)
-    revoke_reason: Mapped[Optional[str]] = mapped_column()
-    last_active: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
+    revoked_date: Mapped[Union[date, None]] = mapped_column(Date)
+    revoke_reason: Mapped[Union[str, None]] = mapped_column()
+    last_active: Mapped[Union[datetime, None]] = mapped_column(DateTime(timezone=True))

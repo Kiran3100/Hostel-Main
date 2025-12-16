@@ -1,10 +1,7 @@
 # app.models/analytics/visitor_behavior_analytics.py
-# (Move the previously defined VisitorBehaviorAnalytics here)
-from __future__ import annotations
-
 from datetime import datetime
 from decimal import Decimal
-from typing import List, Optional
+from typing import List, Union
 from uuid import UUID
 
 from sqlalchemy import DateTime, Float, Integer, JSON, Numeric
@@ -21,12 +18,12 @@ class VisitorBehaviorAnalytics(BaseItem):
 
     total_sessions: Mapped[int] = mapped_column(Integer, default=0)
     total_page_views: Mapped[int] = mapped_column(Integer, default=0)
-    avg_session_duration: Mapped[Optional[float]] = mapped_column(Float)
-    bounce_rate: Mapped[Optional[Decimal]] = mapped_column(Numeric(5, 2))
+    avg_session_duration: Mapped[Union[float, None]] = mapped_column(Float)
+    bounce_rate: Mapped[Union[Decimal, None]] = mapped_column(Numeric(5, 2))
 
     total_searches: Mapped[int] = mapped_column(Integer, default=0)
     most_searched_locations: Mapped[List[str]] = mapped_column(JSON, default=list)
-    preferred_price_range: Mapped[Optional[str]] = mapped_column()
+    preferred_price_range: Mapped[Union[str, None]] = mapped_column()
     preferred_amenities: Mapped[List[str]] = mapped_column(JSON, default=list)
 
     hostels_viewed: Mapped[int] = mapped_column(Integer, default=0)
@@ -36,9 +33,9 @@ class VisitorBehaviorAnalytics(BaseItem):
     bookings_made: Mapped[int] = mapped_column(Integer, default=0)
     reviews_written: Mapped[int] = mapped_column(Integer, default=0)
 
-    inquiry_to_booking_rate: Mapped[Optional[Decimal]] = mapped_column(Numeric(5, 2))
-    total_booking_value: Mapped[Optional[Decimal]] = mapped_column(Numeric(12, 2))
+    inquiry_to_booking_rate: Mapped[Union[Decimal, None]] = mapped_column(Numeric(5, 2))
+    total_booking_value: Mapped[Union[Decimal, None]] = mapped_column(Numeric(12, 2))
 
-    last_login: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
-    last_search: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
-    last_booking: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
+    last_login: Mapped[Union[datetime, None]] = mapped_column(DateTime(timezone=True))
+    last_search: Mapped[Union[datetime, None]] = mapped_column(DateTime(timezone=True))
+    last_booking: Mapped[Union[datetime, None]] = mapped_column(DateTime(timezone=True))

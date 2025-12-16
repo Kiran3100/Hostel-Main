@@ -1,10 +1,10 @@
-### Combined Content from Folder: D:\Last Github Push\Last\Hostel-Main\app\repositories ###
+### Combined Content from Folder: C:\Hostel-Main\app\repositories ###
 
 
 
-# ===== Folder: D:\Last Github Push\Last\Hostel-Main\app\repositories =====
+# ===== Folder: C:\Hostel-Main\app\repositories =====
 
-# --- File: D:\Last Github Push\Last\Hostel-Main\app\repositories\base.py ---
+# --- File: C:\Hostel-Main\app\repositories\base.py ---
 # app/repositories/base.py
 from __future__ import annotations
 
@@ -212,7 +212,7 @@ class BaseRepository(Generic[ModelType]):
         self.session.flush()
         return result.rowcount or 0
 
-# --- File: D:\Last Github Push\Last\Hostel-Main\app\repositories\__init__.py ---
+# --- File: C:\Hostel-Main\app\repositories\__init__.py ---
 # app/repositories/__init__.py
 from .base import BaseRepository
 
@@ -221,9 +221,9 @@ __all__ = [
 ]
 
 
-# ===== Folder: D:\Last Github Push\Last\Hostel-Main\app\repositories\analytics =====
+# ===== Folder: C:\Hostel-Main\app\repositories\analytics =====
 
-# --- File: D:\Last Github Push\Last\Hostel-Main\app\repositories\analytics\analytics_data_repository.py ---
+# --- File: C:\Hostel-Main\app\repositories\analytics\analytics_data_repository.py ---
 # app/repositories/analytics/analytics_data_repository.py
 from __future__ import annotations
 
@@ -415,7 +415,7 @@ class SupervisorPerformanceMetricsRepository(BaseRepository[SupervisorPerformanc
         )
         return self.session.execute(stmt).scalar_one_or_none()
 
-# --- File: D:\Last Github Push\Last\Hostel-Main\app\repositories\analytics\visitor_behavior_analytics_repository.py ---
+# --- File: C:\Hostel-Main\app\repositories\analytics\visitor_behavior_analytics_repository.py ---
 # app/repositories/analytics/visitor_behavior_analytics_repository.py
 from __future__ import annotations
 

@@ -1,6 +1,4 @@
 # app.models/system/system_settings.py
-from __future__ import annotations
-
 from typing import Dict, Any
 from uuid import UUID
 

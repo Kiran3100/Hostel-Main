@@ -1,8 +1,6 @@
 # app/repositories/content/notice_repository.py
-from __future__ import annotations
-
 from datetime import datetime
-from typing import List, Optional
+from typing import List, Union
 from uuid import UUID
 
 from sqlalchemy import and_
@@ -20,8 +18,8 @@ class NoticeRepository(BaseRepository[Notice]):
     def list_active_notices(
         self,
         *,
-        hostel_id: Optional[UUID] = None,
-        audience: Optional[TargetAudience] = None,
+        hostel_id: Union[UUID, None] = None,
+        audience: Union[TargetAudience, None] = None,
         now: datetime,
     ) -> List[Notice]:
         stmt = self._base_select().where(

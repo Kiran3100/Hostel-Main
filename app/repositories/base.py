@@ -1,7 +1,5 @@
 # app/repositories/base.py
-from __future__ import annotations
-
-from typing import Any, Dict, Generic, Iterable, Optional, Sequence, Type, TypeVar
+from typing import Any, Dict, Generic, Iterable, Union, Sequence, Type, TypeVar
 from uuid import UUID
 
 from sqlalchemy import Select, delete, func, select, update
@@ -36,7 +34,7 @@ class BaseRepository(Generic[ModelType]):
     def _apply_filters(
         self,
         stmt: Select[tuple[ModelType]],
-        filters: Optional[Dict[str, Any]] = None,
+        filters: Union[Dict[str, Any], None] = None,
     ) -> Select[tuple[ModelType]]:
         if not filters:
             return stmt
@@ -57,7 +55,7 @@ class BaseRepository(Generic[ModelType]):
     # ------------------------------------------------------------------ #
     # Basic CRUD
     # ------------------------------------------------------------------ #
-    def get(self, id_: UUID) -> Optional[ModelType]:
+    def get(self, id_: UUID) -> Union[ModelType, None]:
         stmt = self._base_select().where(self.model.id == id_)
         return self.session.execute(stmt).scalar_one_or_none()
 
@@ -66,8 +64,8 @@ class BaseRepository(Generic[ModelType]):
         *,
         skip: int = 0,
         limit: int = 100,
-        filters: Optional[Dict[str, Any]] = None,
-        order_by: Optional[Iterable[Any]] = None,
+        filters: Union[Dict[str, Any], None] = None,
+        order_by: Union[Iterable[Any], None] = None,
     ) -> Sequence[ModelType]:
         stmt = self._base_select()
         stmt = self._apply_filters(stmt, filters)
@@ -82,7 +80,7 @@ class BaseRepository(Generic[ModelType]):
 
         return self.session.execute(stmt).scalars().all()
 
-    def count(self, filters: Optional[Dict[str, Any]] = None) -> int:
+    def count(self, filters: Union[Dict[str, Any], None] = None) -> int:
         stmt = select(func.count(self.model.id))
         if hasattr(self.model, "is_deleted"):
             stmt = stmt.where(getattr(self.model, "is_deleted").is_(False))
@@ -99,7 +97,7 @@ class BaseRepository(Generic[ModelType]):
                     stmt = stmt.where(column == value)
         return self.session.execute(stmt).scalar_one()
 
-    def create(self, obj_in: Dict[str, Any] | ModelType) -> ModelType:
+    def create(self, obj_in: Union[Dict[str, Any], ModelType]) -> ModelType:
         if isinstance(obj_in, self.model):
             db_obj = obj_in
         else:
@@ -112,7 +110,7 @@ class BaseRepository(Generic[ModelType]):
     def update(
         self,
         db_obj: ModelType,
-        obj_in: Dict[str, Any] | ModelType,
+        obj_in: Union[Dict[str, Any], ModelType],
     ) -> ModelType:
         if isinstance(obj_in, self.model):
             data = {c.name: getattr(obj_in, c.name) for c in self.model.__table__.columns}
@@ -152,7 +150,7 @@ class BaseRepository(Generic[ModelType]):
     # ------------------------------------------------------------------ #
     # Bulk helpers
     # ------------------------------------------------------------------ #
-    def bulk_create(self, objs: Iterable[Dict[str, Any] | ModelType]) -> Sequence[ModelType]:
+    def bulk_create(self, objs: Iterable[Union[Dict[str, Any], ModelType]]) -> Sequence[ModelType]:
         instances: list[ModelType] = []
         for obj in objs:
             if isinstance(obj, self.model):

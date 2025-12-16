@@ -1,7 +1,5 @@
 # app/repositories/core/student_repository.py
-from __future__ import annotations
-
-from typing import List, Optional
+from typing import List, Union
 from uuid import UUID
 
 from sqlalchemy import select
@@ -20,7 +18,7 @@ class StudentRepository(BaseRepository[Student]):
         self,
         hostel_id: UUID,
         *,
-        status: Optional[StudentStatus] = None,
+        status: Union[StudentStatus, None] = None,
     ) -> List[Student]:
         stmt = self._base_select().where(Student.hostel_id == hostel_id)
         if status is not None:
@@ -28,6 +26,6 @@ class StudentRepository(BaseRepository[Student]):
         stmt = stmt.order_by(Student.check_in_date.asc().nulls_last())
         return self.session.execute(stmt).scalars().all()
 
-    def get_by_user_id(self, user_id: UUID) -> Optional[Student]:
+    def get_by_user_id(self, user_id: UUID) -> Union[Student, None]:
         stmt = self._base_select().where(Student.user_id == user_id)
         return self.session.execute(stmt).scalar_one_or_none()

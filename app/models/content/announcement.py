@@ -1,8 +1,6 @@
 # app.models/content/announcement.py
-from __future__ import annotations
-
 from datetime import datetime
-from typing import List, Optional
+from typing import List, Union, TYPE_CHECKING
 from uuid import UUID
 
 from sqlalchemy import Boolean, DateTime, Enum as SAEnum, ForeignKey, JSON, String, Integer
@@ -42,9 +40,9 @@ class Announcement(BaseEntity):
     created_by_role: Mapped[str] = mapped_column(String(50))
 
     is_published: Mapped[bool] = mapped_column(Boolean, default=False)
-    scheduled_publish_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
-    published_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
-    expires_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
+    scheduled_publish_at: Mapped[Union[datetime, None]] = mapped_column(DateTime(timezone=True))
+    published_at: Mapped[Union[datetime, None]] = mapped_column(DateTime(timezone=True))
+    expires_at: Mapped[Union[datetime, None]] = mapped_column(DateTime(timezone=True))
 
     total_recipients: Mapped[int] = mapped_column(Integer, default=0)
     read_count: Mapped[int] = mapped_column(Integer, default=0)

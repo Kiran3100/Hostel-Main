@@ -1,8 +1,6 @@
 # app.models/visitor/visitor_hostel.py
-from __future__ import annotations
-
 from decimal import Decimal
-from typing import List, Optional
+from typing import List, Union
 from uuid import UUID
 
 from sqlalchemy import Float, Integer, JSON, Numeric, String
@@ -21,15 +19,15 @@ class VisitorHostel(BaseVisitorItem):
     hostel_id: Mapped[UUID] = mapped_column(index=True)
 
     hostel_name: Mapped[str] = mapped_column(String(255))
-    description: Mapped[Optional[str]] = mapped_column(String(2000))
+    description: Mapped[Union[str, None]] = mapped_column(String(2000))
     location: Mapped[str] = mapped_column(String(255))
     city: Mapped[str] = mapped_column(String(100))
-    area: Mapped[Optional[str]] = mapped_column(String(100))
+    area: Mapped[Union[str, None]] = mapped_column(String(100))
     pincode: Mapped[str] = mapped_column(String(6))
 
     price_range: Mapped[str] = mapped_column(String(50))
-    min_price: Mapped[Optional[Decimal]] = mapped_column(Numeric(10, 2))
-    max_price: Mapped[Optional[Decimal]] = mapped_column(Numeric(10, 2))
+    min_price: Mapped[Union[Decimal, None]] = mapped_column(Numeric(10, 2))
+    max_price: Mapped[Union[Decimal, None]] = mapped_column(Numeric(10, 2))
 
     room_types: Mapped[List[str]] = mapped_column(JSON, default=list)
     gender_type: Mapped[str] = mapped_column(String(20))
@@ -44,7 +42,7 @@ class VisitorHostel(BaseVisitorItem):
     photos: Mapped[List[str]] = mapped_column(JSON, default=list)
 
     contact_number: Mapped[str] = mapped_column(String(20))
-    contact_email: Mapped[Optional[str]] = mapped_column(String(255))
+    contact_email: Mapped[Union[str, None]] = mapped_column(String(255))
 
-    nearby_landmarks: Mapped[Optional[str]] = mapped_column(String(1000))
+    nearby_landmarks: Mapped[Union[str, None]] = mapped_column(String(1000))
     availability_status: Mapped[str] = mapped_column(String(50))

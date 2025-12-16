@@ -1,9 +1,7 @@
 # app.models/transactions/fee_structure.py
-from __future__ import annotations
-
 from datetime import date
 from decimal import Decimal
-from typing import Optional
+from typing import Union
 from uuid import UUID
 
 from sqlalchemy import Date, Enum as SAEnum, ForeignKey, Numeric
@@ -28,11 +26,11 @@ class FeeStructure(BaseEntity):
     mess_charges_monthly: Mapped[Decimal] = mapped_column(Numeric(10, 2), default=0)
 
     electricity_charges: Mapped[ChargeType] = mapped_column(SAEnum(ChargeType, name="charge_type"))
-    electricity_fixed_amount: Mapped[Optional[Decimal]] = mapped_column(Numeric(10, 2))
+    electricity_fixed_amount: Mapped[Union[Decimal, None]] = mapped_column(Numeric(10, 2))
 
     water_charges: Mapped[ChargeType] = mapped_column(SAEnum(ChargeType, name="water_charge_type"))
-    water_fixed_amount: Mapped[Optional[Decimal]] = mapped_column(Numeric(10, 2))
+    water_fixed_amount: Mapped[Union[Decimal, None]] = mapped_column(Numeric(10, 2))
 
     effective_from: Mapped[date] = mapped_column(Date)
-    effective_to: Mapped[Optional[date]] = mapped_column(Date)
+    effective_to: Mapped[Union[date, None]] = mapped_column(Date)
     is_active: Mapped[bool] = mapped_column(default=True)

@@ -1,7 +1,5 @@
 # app/repositories/system/platform_config_repository.py
-from __future__ import annotations
-
-from typing import Optional
+from typing import Union
 
 from sqlalchemy.orm import Session
 
@@ -16,6 +14,6 @@ class PlatformConfigRepository(BaseRepository[PlatformConfig]):
     def __init__(self, session: Session):
         super().__init__(session, PlatformConfig)
 
-    def get_singleton(self) -> Optional[PlatformConfig]:
+    def get_singleton(self) -> Union[PlatformConfig, None]:
         stmt = self._base_select().limit(1)
         return self.session.execute(stmt).scalar_one_or_none()

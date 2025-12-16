@@ -1,9 +1,7 @@
 # app.models/transactions/booking.py
-from __future__ import annotations
-
 from datetime import date, datetime
 from decimal import Decimal
-from typing import List, Optional
+from typing import List, Union, TYPE_CHECKING
 from uuid import UUID
 
 from sqlalchemy import Date, DateTime, Enum as SAEnum, ForeignKey, Integer, Numeric, String, Boolean
@@ -11,6 +9,9 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.schemas.common.enums import BookingStatus, RoomType, BookingSource
 from app.models.base import BaseEntity
+
+if TYPE_CHECKING:
+    from app.models.transactions.payment import Payment
 
 
 class Booking(BaseEntity):
@@ -34,10 +35,10 @@ class Booking(BaseEntity):
     booking_status: Mapped[BookingStatus] = mapped_column(SAEnum(BookingStatus, name="booking_status"))
 
     source: Mapped[BookingSource] = mapped_column(SAEnum(BookingSource, name="booking_source"))
-    referral_code: Mapped[Optional[str]] = mapped_column(String(50))
+    referral_code: Mapped[Union[str, None]] = mapped_column(String(50))
 
     booking_date: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=datetime.utcnow)
-    expires_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
+    expires_at: Mapped[Union[datetime, None]] = mapped_column(DateTime(timezone=True))
 
     # Guest summary
     guest_name: Mapped[str] = mapped_column(String(255))
@@ -45,8 +46,8 @@ class Booking(BaseEntity):
     guest_phone: Mapped[str] = mapped_column(String(20))
 
     # Assignment (optional)
-    room_id: Mapped[Optional[UUID]] = mapped_column(ForeignKey("core_room.id"))
-    bed_id: Mapped[Optional[UUID]] = mapped_column(ForeignKey("core_bed.id"))
+    room_id: Mapped[Union[UUID, None]] = mapped_column(ForeignKey("core_room.id"))
+    bed_id: Mapped[Union[UUID, None]] = mapped_column(ForeignKey("core_bed.id"))
 
     # Relationships
     payments: Mapped[List["Payment"]] = relationship(back_populates="booking")

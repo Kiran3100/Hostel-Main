@@ -1,7 +1,5 @@
 # app/repositories/workflows/approval_workflow_repository.py
-from __future__ import annotations
-
-from typing import List, Optional
+from typing import List, Union
 from uuid import UUID
 
 from sqlalchemy.orm import Session
@@ -14,7 +12,7 @@ class ApprovalWorkflowRepository(BaseRepository[ApprovalWorkflow]):
     def __init__(self, session: Session):
         super().__init__(session, ApprovalWorkflow)
 
-    def get_for_entity(self, entity_type: str, entity_id: UUID) -> Optional[ApprovalWorkflow]:
+    def get_for_entity(self, entity_type: str, entity_id: UUID) -> Union[ApprovalWorkflow, None]:
         stmt = self._base_select().where(
             ApprovalWorkflow.entity_type == entity_type,
             ApprovalWorkflow.entity_id == entity_id,

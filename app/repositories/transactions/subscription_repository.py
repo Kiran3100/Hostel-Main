@@ -1,8 +1,6 @@
 # app/repositories/transactions/subscription_repository.py
-from __future__ import annotations
-
 from datetime import date
-from typing import List, Optional
+from typing import List, Union
 from uuid import UUID
 
 from sqlalchemy import and_
@@ -17,7 +15,7 @@ class SubscriptionRepository(BaseRepository[Subscription]):
     def __init__(self, session: Session):
         super().__init__(session, Subscription)
 
-    def get_active_for_hostel(self, hostel_id: UUID, as_of: Optional[date] = None) -> Optional[Subscription]:
+    def get_active_for_hostel(self, hostel_id: UUID, as_of: Union[date, None] = None) -> Union[Subscription, None]:
         stmt = self._base_select().where(
             Subscription.hostel_id == hostel_id,
             Subscription.status == SubscriptionStatus.ACTIVE,
