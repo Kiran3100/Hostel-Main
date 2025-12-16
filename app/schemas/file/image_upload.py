@@ -5,9 +5,7 @@ Handles image uploads with variant generation, optimization,
 and format conversion capabilities.
 """
 
-from __future__ import annotations
-
-from typing import List, Optional
+from typing import List, Union
 
 from pydantic import Field, HttpUrl, field_validator, model_validator, computed_field
 
@@ -45,8 +43,8 @@ class ImageUploadInitRequest(BaseCreateSchema):
     )
 
     uploaded_by_user_id: str = Field(...)
-    hostel_id: Optional[str] = Field(default=None)
-    student_id: Optional[str] = Field(default=None)
+    hostel_id: Union[str, None] = Field(default=None)
+    student_id: Union[str, None] = Field(default=None)
 
     # Image context
     usage: str = Field(
@@ -149,7 +147,7 @@ class ImageVariant(BaseSchema):
         default=False,
         description="Whether variant was optimized",
     )
-    quality: Optional[int] = Field(
+    quality: Union[int, None] = Field(
         default=None,
         ge=1,
         le=100,
@@ -193,7 +191,7 @@ class ImageUploadInitResponse(FileUploadInitResponse):
         default=False,
         description="Whether format conversion will occur",
     )
-    target_format: Optional[str] = Field(
+    target_format: Union[str, None] = Field(
         default=None,
         description="Target format if converting",
     )
@@ -226,12 +224,12 @@ class ImageProcessingResult(BaseSchema):
         default="completed",
         description="Processing status",
     )
-    processing_time_seconds: Optional[float] = Field(
+    processing_time_seconds: Union[float, None] = Field(
         default=None,
         ge=0,
         description="Time taken to process",
     )
-    processing_error: Optional[str] = Field(
+    processing_error: Union[str, None] = Field(
         default=None,
         description="Error message if processing failed",
     )
@@ -241,7 +239,7 @@ class ImageProcessingResult(BaseSchema):
         default=False,
         description="Whether optimization was applied",
     )
-    size_reduction_percentage: Optional[float] = Field(
+    size_reduction_percentage: Union[float, None] = Field(
         default=None,
         ge=0,
         le=100,
@@ -325,7 +323,7 @@ class ImageProcessingOptions(BaseSchema):
 
     # Watermark
     watermark_enabled: bool = Field(default=False)
-    watermark_text: Optional[str] = Field(default=None, max_length=50)
+    watermark_text: Union[str, None] = Field(default=None, max_length=50)
     watermark_position: str = Field(
         default="bottom-right",
         pattern=r"^(top-left|top-right|bottom-left|bottom-right|center)$",
@@ -344,7 +342,7 @@ class ImageMetadata(BaseSchema):
     width: int = Field(..., ge=1, description="Width in pixels")
     height: int = Field(..., ge=1, description="Height in pixels")
     format: str = Field(..., description="Image format")
-    mode: Optional[str] = Field(
+    mode: Union[str, None] = Field(
         default=None,
         description="Color mode (RGB, RGBA, L, etc.)",
     )
@@ -354,17 +352,17 @@ class ImageMetadata(BaseSchema):
         default=False,
         description="Whether image has alpha channel",
     )
-    color_space: Optional[str] = Field(
+    color_space: Union[str, None] = Field(
         default=None,
         description="Color space (sRGB, Adobe RGB, etc.)",
     )
 
     # EXIF data (if preserved)
-    camera_make: Optional[str] = Field(default=None, description="Camera manufacturer")
-    camera_model: Optional[str] = Field(default=None, description="Camera model")
-    date_taken: Optional[str] = Field(default=None, description="Date photo was taken")
-    gps_latitude: Optional[float] = Field(default=None, description="GPS latitude")
-    gps_longitude: Optional[float] = Field(default=None, description="GPS longitude")
+    camera_make: Union[str, None] = Field(default=None, description="Camera manufacturer")
+    camera_model: Union[str, None] = Field(default=None, description="Camera model")
+    date_taken: Union[str, None] = Field(default=None, description="Date photo was taken")
+    gps_latitude: Union[float, None] = Field(default=None, description="GPS latitude")
+    gps_longitude: Union[float, None] = Field(default=None, description="GPS longitude")
 
     @computed_field
     @property

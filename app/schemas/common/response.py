@@ -3,9 +3,7 @@
 Standard API response wrappers for success, error, and bulk operations.
 """
 
-from __future__ import annotations
-
-from typing import Any, Dict, Generic, List, Optional, TypeVar
+from typing import Any, Dict, Generic, List, Union, TypeVar
 
 from pydantic import Field
 
@@ -33,14 +31,14 @@ class SuccessResponse(BaseSchema, Generic[T]):
 
     success: bool = Field(default=True, description="Success flag")
     message: str = Field(..., description="Response message")
-    data: Optional[T] = Field(default=None, description="Response data")
+    data: Union[T, None] = Field(default=None, description="Response data")
 
     @classmethod
     def create(
         cls,
         message: str,
-        data: Optional[T] = None,
-    ) -> "SuccessResponse[T]":
+        data: Union[T, None] = None,
+    ):
         """Create success response."""
         return cls(success=True, message=message, data=data)
 
@@ -48,16 +46,16 @@ class SuccessResponse(BaseSchema, Generic[T]):
 class ErrorDetail(BaseSchema):
     """Error detail information."""
 
-    field: Optional[str] = Field(
+    field: Union[str, None] = Field(
         default=None,
         description="Field name causing error",
     )
     message: str = Field(..., description="Error message")
-    code: Optional[str] = Field(
+    code: Union[str, None] = Field(
         default=None,
         description="Error code",
     )
-    location: Optional[List[str]] = Field(
+    location: Union[List[str], None] = Field(
         default=None,
         description="Error location in nested structure",
     )
@@ -68,19 +66,19 @@ class ErrorResponse(BaseSchema):
 
     success: bool = Field(default=False, description="Success flag")
     message: str = Field(..., description="Error message")
-    errors: Optional[List[ErrorDetail]] = Field(
+    errors: Union[List[ErrorDetail], None] = Field(
         default=None,
         description="Detailed errors",
     )
-    error_code: Optional[str] = Field(
+    error_code: Union[str, None] = Field(
         default=None,
         description="Application error code",
     )
-    timestamp: Optional[str] = Field(
+    timestamp: Union[str, None] = Field(
         default=None,
         description="Error timestamp",
     )
-    path: Optional[str] = Field(
+    path: Union[str, None] = Field(
         default=None,
         description="Request path that caused error",
     )
@@ -89,9 +87,9 @@ class ErrorResponse(BaseSchema):
     def create(
         cls,
         message: str,
-        errors: Optional[List[ErrorDetail]] = None,
-        error_code: Optional[str] = None,
-    ) -> "ErrorResponse":
+        errors: Union[List[ErrorDetail], None] = None,
+        error_code: Union[str, None] = None,
+    ):
         """Create error response."""
         return cls(
             success=False,
@@ -107,7 +105,7 @@ class MessageResponse(BaseSchema):
     message: str = Field(..., description="Response message")
 
     @classmethod
-    def create(cls, message: str) -> "MessageResponse":
+    def create(cls, message: str):
         """Create message response."""
         return cls(message=message)
 
@@ -130,11 +128,11 @@ class BulkOperationResponse(BaseSchema):
         ge=0,
         description="Failed items",
     )
-    errors: Optional[List[Dict[str, Any]]] = Field(
+    errors: Union[List[Dict[str, Any]], None] = Field(
         default=None,
         description="Errors for failed items",
     )
-    details: Optional[Dict[str, Any]] = Field(
+    details: Union[Dict[str, Any], None] = Field(
         default=None,
         description="Additional operation details",
     )
@@ -145,9 +143,9 @@ class BulkOperationResponse(BaseSchema):
         total: int,
         successful: int,
         failed: int,
-        errors: Optional[List[Dict[str, Any]]] = None,
-        details: Optional[Dict[str, Any]] = None,
-    ) -> "BulkOperationResponse":
+        errors: Union[List[Dict[str, Any]], None] = None,
+        details: Union[Dict[str, Any], None] = None,
+    ):
         """Create bulk operation response."""
         return cls(
             total=total,
@@ -170,11 +168,11 @@ class ValidationErrorResponse(ErrorResponse):
 class NotFoundResponse(ErrorResponse):
     """Not found error response (404)."""
 
-    resource_type: Optional[str] = Field(
+    resource_type: Union[str, None] = Field(
         default=None,
         description="Type of resource not found",
     )
-    resource_id: Optional[str] = Field(
+    resource_id: Union[str, None] = Field(
         default=None,
         description="ID of resource not found",
     )
@@ -183,7 +181,7 @@ class NotFoundResponse(ErrorResponse):
 class UnauthorizedResponse(ErrorResponse):
     """Unauthorized error response (401)."""
 
-    auth_scheme: Optional[str] = Field(
+    auth_scheme: Union[str, None] = Field(
         default=None,
         description="Authentication scheme required",
     )
@@ -192,11 +190,11 @@ class UnauthorizedResponse(ErrorResponse):
 class ForbiddenResponse(ErrorResponse):
     """Forbidden error response (403)."""
 
-    required_permission: Optional[str] = Field(
+    required_permission: Union[str, None] = Field(
         default=None,
         description="Required permission",
     )
-    user_permissions: Optional[List[str]] = Field(
+    user_permissions: Union[List[str], None] = Field(
         default=None,
         description="User's current permissions",
     )
@@ -205,7 +203,7 @@ class ForbiddenResponse(ErrorResponse):
 class ConflictResponse(ErrorResponse):
     """Conflict error response (409)."""
 
-    conflicting_resource: Optional[str] = Field(
+    conflicting_resource: Union[str, None] = Field(
         default=None,
         description="Conflicting resource identifier",
     )
@@ -214,15 +212,15 @@ class ConflictResponse(ErrorResponse):
 class RateLimitResponse(ErrorResponse):
     """Rate limit exceeded response (429)."""
 
-    retry_after: Optional[int] = Field(
+    retry_after: Union[int, None] = Field(
         default=None,
         description="Seconds to wait before retry",
     )
-    limit: Optional[int] = Field(
+    limit: Union[int, None] = Field(
         default=None,
         description="Rate limit",
     )
-    window: Optional[int] = Field(
+    window: Union[int, None] = Field(
         default=None,
         description="Time window in seconds",
     )

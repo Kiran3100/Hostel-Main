@@ -6,11 +6,9 @@ This module defines schemas for scheduling announcements,
 including one-time and recurring schedules.
 """
 
-from __future__ import annotations
-
 from datetime import datetime, time
 from enum import Enum
-from typing import Optional
+from typing import Optional, Union
 from uuid import UUID
 
 from pydantic import Field, field_validator, model_validator, ConfigDict
@@ -78,7 +76,7 @@ class ScheduleRequest(BaseCreateSchema):
         False,
         description="Automatically expire after specified duration",
     )
-    expire_after_hours: Optional[int] = Field(
+    expire_after_hours: Union[int, None] = Field(
         None,
         ge=1,
         le=720,  # Max 30 days
@@ -128,7 +126,7 @@ class ScheduleConfig(BaseSchema):
         ...,
         description="Whether announcement is scheduled",
     )
-    scheduled_publish_at: Optional[datetime] = Field(
+    scheduled_publish_at: Union[datetime, None] = Field(
         None,
         description="Scheduled publication time",
     )
@@ -142,17 +140,17 @@ class ScheduleConfig(BaseSchema):
         False,
         description="Whether this is a recurring announcement",
     )
-    recurrence_pattern: Optional[RecurrencePattern] = Field(
+    recurrence_pattern: Union[RecurrencePattern, None] = Field(
         None,
         description="Recurrence pattern if recurring",
     )
     
     # End conditions
-    recurrence_end_date: Optional[datetime] = Field(
+    recurrence_end_date: Union[datetime, None] = Field(
         None,
         description="When recurrence ends",
     )
-    max_occurrences: Optional[int] = Field(
+    max_occurrences: Union[int, None] = Field(
         None,
         ge=1,
         description="Maximum number of occurrences",
@@ -164,17 +162,17 @@ class ScheduleConfig(BaseSchema):
     )
     
     # Next occurrence
-    next_publish_at: Optional[datetime] = Field(
+    next_publish_at: Union[datetime, None] = Field(
         None,
         description="Next scheduled publication time",
     )
     
     # Audit
-    scheduled_by: Optional[UUID] = Field(
+    scheduled_by: Union[UUID, None] = Field(
         None,
         description="User who created the schedule",
     )
-    scheduled_at: Optional[datetime] = Field(
+    scheduled_at: Union[datetime, None] = Field(
         None,
         description="When schedule was created",
     )
@@ -224,11 +222,11 @@ class RecurringAnnouncement(BaseCreateSchema):
     )
     
     # End conditions (at least one required)
-    end_date: Optional[datetime] = Field(
+    end_date: Union[datetime, None] = Field(
         None,
         description="When to stop recurring publications",
     )
-    max_occurrences: Optional[int] = Field(
+    max_occurrences: Union[int, None] = Field(
         None,
         ge=1,
         le=365,
@@ -236,7 +234,7 @@ class RecurringAnnouncement(BaseCreateSchema):
     )
     
     # Weekly recurrence options
-    weekdays: Optional[list[int]] = Field(
+    weekdays: Union[list[int], None] = Field(
         None,
         description="Days of week for weekly recurrence (0=Monday, 6=Sunday)",
     )
@@ -285,7 +283,7 @@ class RecurringAnnouncement(BaseCreateSchema):
     
     @field_validator("end_date")
     @classmethod
-    def validate_end_date(cls, v: Optional[datetime], info) -> Optional[datetime]:
+    def validate_end_date(cls, v: Union[datetime, None], info) -> Union[datetime, None]:
         """Ensure end date is after start date."""
         start_date = info.data.get("start_date")
         if v and start_date and v <= start_date:
@@ -294,7 +292,7 @@ class RecurringAnnouncement(BaseCreateSchema):
     
     @field_validator("weekdays")
     @classmethod
-    def validate_weekdays(cls, v: Optional[list[int]]) -> Optional[list[int]]:
+    def validate_weekdays(cls, v: Union[list[int], None]) -> Union[list[int], None]:
         """Validate weekday values."""
         if v:
             if any(d < 0 or d > 6 for d in v):
@@ -345,7 +343,7 @@ class ScheduleUpdate(BaseCreateSchema):
         description="New scheduled publication time",
     )
     
-    reason: Optional[str] = Field(
+    reason: Union[str, None] = Field(
         None,
         max_length=500,
         description="Reason for rescheduling",
@@ -421,7 +419,7 @@ class PublishNow(BaseCreateSchema):
         description="Confirm override of existing schedule",
     )
     
-    reason: Optional[str] = Field(
+    reason: Union[str, None] = Field(
         None,
         max_length=500,
         description="Reason for immediate publication",
@@ -455,15 +453,15 @@ class ScheduledAnnouncementItem(BaseSchema):
         ...,
         description="Whether recurring",
     )
-    recurrence_pattern: Optional[RecurrencePattern] = Field(
+    recurrence_pattern: Union[RecurrencePattern, None] = Field(
         None,
         description="Recurrence pattern",
     )
-    next_occurrence: Optional[datetime] = Field(
+    next_occurrence: Union[datetime, None] = Field(
         None,
         description="Next occurrence after this one",
     )
-    occurrences_remaining: Optional[int] = Field(
+    occurrences_remaining: Union[int, None] = Field(
         None,
         description="Remaining occurrences",
     )
@@ -534,7 +532,7 @@ class ScheduledAnnouncementsList(BaseSchema):
     )
     
     # Next publication
-    next_scheduled: Optional[datetime] = Field(
+    next_scheduled: Union[datetime, None] = Field(
         None,
         description="Next scheduled publication time",
     )

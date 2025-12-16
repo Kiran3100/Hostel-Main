@@ -6,12 +6,10 @@ Provides comprehensive filtering capabilities with validation
 for searches, exports, and advanced queries.
 """
 
-from __future__ import annotations
-
 import re
 from datetime import date as Date
 from decimal import Decimal
-from typing import Annotated, List, Optional
+from typing import Annotated, List, Union
 
 from pydantic import ConfigDict, Field, field_validator, model_validator
 from uuid import UUID
@@ -53,23 +51,23 @@ class MaintenanceFilterParams(BaseFilterSchema):
     )
 
     # Text search
-    search: Optional[str] = Field(
+    search: Union[str, None] = Field(
         None,
         min_length=1,
         max_length=255,
         description="Search in title, description, request number",
     )
-    search_fields: Optional[List[str]] = Field(
+    search_fields: Union[List[str], None] = Field(
         None,
         description="Fields to search in (title, description, notes, etc.)",
     )
     
     # Hostel filters
-    hostel_id: Optional[UUID] = Field(
+    hostel_id: Union[UUID, None] = Field(
         None,
         description="Filter by specific hostel",
     )
-    hostel_ids: Optional[List[UUID]] = Field(
+    hostel_ids: Union[List[UUID], None] = Field(
         None,
         min_length=1,
         max_length=100,
@@ -77,43 +75,43 @@ class MaintenanceFilterParams(BaseFilterSchema):
     )
     
     # User filters
-    requested_by: Optional[UUID] = Field(
+    requested_by: Union[UUID, None] = Field(
         None,
         description="Filter by requester",
     )
-    requested_by_role: Optional[str] = Field(
+    requested_by_role: Union[str, None] = Field(
         None,
         pattern=r"^(student|supervisor|admin)$",
         description="Filter by requester role",
     )
     
     # Assignment filters
-    assigned_to: Optional[UUID] = Field(
+    assigned_to: Union[UUID, None] = Field(
         None,
         description="Filter by assignee",
     )
-    assigned_to_role: Optional[str] = Field(
+    assigned_to_role: Union[str, None] = Field(
         None,
         pattern=r"^(staff|vendor|contractor)$",
         description="Filter by assignee role",
     )
-    unassigned_only: Optional[bool] = Field(
+    unassigned_only: Union[bool, None] = Field(
         None,
         description="Show only unassigned requests",
     )
     
     # Room filters
-    room_id: Optional[UUID] = Field(
+    room_id: Union[UUID, None] = Field(
         None,
         description="Filter by specific room",
     )
-    room_ids: Optional[List[UUID]] = Field(
+    room_ids: Union[List[UUID], None] = Field(
         None,
         min_length=1,
         max_length=100,
         description="Filter by multiple rooms",
     )
-    floor: Optional[int] = Field(
+    floor: Union[int, None] = Field(
         None,
         ge=0,
         le=50,
@@ -121,129 +119,129 @@ class MaintenanceFilterParams(BaseFilterSchema):
     )
     
     # Category filters
-    category: Optional[MaintenanceCategory] = Field(
+    category: Union[MaintenanceCategory, None] = Field(
         None,
         description="Filter by specific category",
     )
-    categories: Optional[List[MaintenanceCategory]] = Field(
+    categories: Union[List[MaintenanceCategory], None] = Field(
         None,
         min_length=1,
         description="Filter by multiple categories",
     )
-    exclude_categories: Optional[List[MaintenanceCategory]] = Field(
+    exclude_categories: Union[List[MaintenanceCategory], None] = Field(
         None,
         description="Exclude specific categories",
     )
     
     # Priority filters
-    priority: Optional[Priority] = Field(
+    priority: Union[Priority, None] = Field(
         None,
         description="Filter by specific priority",
     )
-    priorities: Optional[List[Priority]] = Field(
+    priorities: Union[List[Priority], None] = Field(
         None,
         min_length=1,
         description="Filter by multiple priorities",
     )
-    min_priority: Optional[Priority] = Field(
+    min_priority: Union[Priority, None] = Field(
         None,
         description="Minimum priority level (inclusive)",
     )
     
     # Status filters
-    status: Optional[MaintenanceStatus] = Field(
+    status: Union[MaintenanceStatus, None] = Field(
         None,
         description="Filter by specific status",
     )
-    statuses: Optional[List[MaintenanceStatus]] = Field(
+    statuses: Union[List[MaintenanceStatus], None] = Field(
         None,
         min_length=1,
         description="Filter by multiple statuses",
     )
-    exclude_statuses: Optional[List[MaintenanceStatus]] = Field(
+    exclude_statuses: Union[List[MaintenanceStatus], None] = Field(
         None,
         description="Exclude specific statuses",
     )
     
     # Issue type filter
-    issue_type: Optional[MaintenanceIssueType] = Field(
+    issue_type: Union[MaintenanceIssueType, None] = Field(
         None,
         description="Filter by issue type",
     )
     
     # Date filters
-    created_date_from: Optional[Date] = Field(
+    created_date_from: Union[Date, None] = Field(
         None,
         description="Filter requests created from this Date",
     )
-    created_date_to: Optional[Date] = Field(
+    created_date_to: Union[Date, None] = Field(
         None,
         description="Filter requests created until this Date",
     )
-    completion_date_from: Optional[Date] = Field(
+    completion_date_from: Union[Date, None] = Field(
         None,
         description="Filter by completion Date from",
     )
-    completion_date_to: Optional[Date] = Field(
+    completion_date_to: Union[Date, None] = Field(
         None,
         description="Filter by completion Date to",
     )
-    due_date_from: Optional[Date] = Field(
+    due_date_from: Union[Date, None] = Field(
         None,
         description="Filter by due Date from",
     )
-    due_date_to: Optional[Date] = Field(
+    due_date_to: Union[Date, None] = Field(
         None,
         description="Filter by due Date to",
     )
     
     # Cost filters - Using Annotated for Decimal in v2
-    estimated_cost_min: Optional[Annotated[Decimal, Field(ge=0, decimal_places=2)]] = Field(
+    estimated_cost_min: Union[Annotated[Decimal, Field(ge=0, decimal_places=2)], None] = Field(
         None,
         description="Minimum estimated cost",
     )
-    estimated_cost_max: Optional[Annotated[Decimal, Field(ge=0, decimal_places=2)]] = Field(
+    estimated_cost_max: Union[Annotated[Decimal, Field(ge=0, decimal_places=2)], None] = Field(
         None,
         description="Maximum estimated cost",
     )
-    actual_cost_min: Optional[Annotated[Decimal, Field(ge=0, decimal_places=2)]] = Field(
+    actual_cost_min: Union[Annotated[Decimal, Field(ge=0, decimal_places=2)], None] = Field(
         None,
         description="Minimum actual cost",
     )
-    actual_cost_max: Optional[Annotated[Decimal, Field(ge=0, decimal_places=2)]] = Field(
+    actual_cost_max: Union[Annotated[Decimal, Field(ge=0, decimal_places=2)], None] = Field(
         None,
         description="Maximum actual cost",
     )
     
     # Special filters
-    approval_pending: Optional[bool] = Field(
+    approval_pending: Union[bool, None] = Field(
         None,
         description="Filter requests pending approval",
     )
-    overdue_only: Optional[bool] = Field(
+    overdue_only: Union[bool, None] = Field(
         None,
         description="Show only overdue requests",
     )
-    is_preventive: Optional[bool] = Field(
+    is_preventive: Union[bool, None] = Field(
         None,
         description="Filter preventive maintenance",
     )
-    has_vendor: Optional[bool] = Field(
+    has_vendor: Union[bool, None] = Field(
         None,
         description="Filter requests with vendor assignment",
     )
-    quality_checked: Optional[bool] = Field(
+    quality_checked: Union[bool, None] = Field(
         None,
         description="Filter by quality check status",
     )
-    within_budget: Optional[bool] = Field(
+    within_budget: Union[bool, None] = Field(
         None,
         description="Filter requests within approved budget",
     )
 
     @field_validator("search")
     @classmethod
-    def normalize_search(cls, v: Optional[str]) -> Optional[str]:
+    def normalize_search(cls, v: Union[str, None]) -> Union[str, None]:
         """Normalize search query."""
         if v is not None:
             v = v.strip()
@@ -257,7 +255,7 @@ class MaintenanceFilterParams(BaseFilterSchema):
         "actual_cost_max",
     )
     @classmethod
-    def round_costs(cls, v: Optional[Decimal]) -> Optional[Decimal]:
+    def round_costs(cls, v: Union[Decimal, None]) -> Union[Decimal, None]:
         """Round cost values to 2 decimal places."""
         return round(v, 2) if v is not None else None
 
@@ -362,7 +360,7 @@ class SearchRequest(BaseFilterSchema):
         max_length=500,
         description="Search query string",
     )
-    hostel_id: Optional[UUID] = Field(
+    hostel_id: Union[UUID, None] = Field(
         None,
         description="Limit search to specific hostel",
     )
@@ -382,23 +380,23 @@ class SearchRequest(BaseFilterSchema):
         False,
         description="Search in notes/comments",
     )
-    status: Optional[MaintenanceStatus] = Field(
+    status: Union[MaintenanceStatus, None] = Field(
         None,
         description="Filter by status",
     )
-    category: Optional[MaintenanceCategory] = Field(
+    category: Union[MaintenanceCategory, None] = Field(
         None,
         description="Filter by category",
     )
-    priority: Optional[Priority] = Field(
+    priority: Union[Priority, None] = Field(
         None,
         description="Filter by priority",
     )
-    date_from: Optional[Date] = Field(
+    date_from: Union[Date, None] = Field(
         None,
         description="Search from this Date",
     )
-    date_to: Optional[Date] = Field(
+    date_to: Union[Date, None] = Field(
         None,
         description="Search until this Date",
     )
@@ -469,89 +467,89 @@ class AdvancedFilterParams(MaintenanceFilterParams):
     )
 
     # Time-based filters
-    created_in_last_days: Optional[int] = Field(
+    created_in_last_days: Union[int, None] = Field(
         None,
         ge=1,
         le=365,
         description="Created in last N days",
     )
-    completed_in_last_days: Optional[int] = Field(
+    completed_in_last_days: Union[int, None] = Field(
         None,
         ge=1,
         le=365,
         description="Completed in last N days",
     )
-    pending_for_days: Optional[int] = Field(
+    pending_for_days: Union[int, None] = Field(
         None,
         ge=1,
         description="Pending for more than N days",
     )
     
     # Performance filters
-    completion_time_min_days: Optional[int] = Field(
+    completion_time_min_days: Union[int, None] = Field(
         None,
         ge=0,
         description="Minimum completion time in days",
     )
-    completion_time_max_days: Optional[int] = Field(
+    completion_time_max_days: Union[int, None] = Field(
         None,
         ge=0,
         description="Maximum completion time in days",
     )
     
     # Quality filters
-    quality_rating_min: Optional[int] = Field(
+    quality_rating_min: Union[int, None] = Field(
         None,
         ge=1,
         le=5,
         description="Minimum quality rating",
     )
-    quality_check_failed: Optional[bool] = Field(
+    quality_check_failed: Union[bool, None] = Field(
         None,
         description="Filter failed quality checks",
     )
-    rework_required: Optional[bool] = Field(
+    rework_required: Union[bool, None] = Field(
         None,
         description="Filter requests requiring rework",
     )
     
     # Cost variance filters
-    over_budget: Optional[bool] = Field(
+    over_budget: Union[bool, None] = Field(
         None,
         description="Filter requests over budget",
     )
-    cost_variance_min_percentage: Optional[Annotated[Decimal, Field(decimal_places=2)]] = Field(
+    cost_variance_min_percentage: Union[Annotated[Decimal, Field(decimal_places=2)], None] = Field(
         None,
         description="Minimum cost variance percentage",
     )
-    cost_variance_max_percentage: Optional[Annotated[Decimal, Field(decimal_places=2)]] = Field(
+    cost_variance_max_percentage: Union[Annotated[Decimal, Field(decimal_places=2)], None] = Field(
         None,
         description="Maximum cost variance percentage",
     )
     
     # Vendor filters
-    vendor_name: Optional[str] = Field(
+    vendor_name: Union[str, None] = Field(
         None,
         max_length=255,
         description="Filter by vendor name (partial match)",
     )
-    vendor_id: Optional[UUID] = Field(
+    vendor_id: Union[UUID, None] = Field(
         None,
         description="Filter by vendor ID",
     )
     
     # Warranty filters
-    has_warranty: Optional[bool] = Field(
+    has_warranty: Union[bool, None] = Field(
         None,
         description="Filter by warranty applicability",
     )
-    warranty_active: Optional[bool] = Field(
+    warranty_active: Union[bool, None] = Field(
         None,
         description="Filter by active warranty status",
     )
     
     # Grouping for analytics
-    group_by: Optional[str] = Field(
+    group_by: Union[str, None] = Field(
         None,
         pattern=r"^(category|priority|status|month|assignee|vendor)$",
         description="Group results by field",
@@ -571,7 +569,7 @@ class AdvancedFilterParams(MaintenanceFilterParams):
 
     @field_validator("vendor_name")
     @classmethod
-    def normalize_vendor_name(cls, v: Optional[str]) -> Optional[str]:
+    def normalize_vendor_name(cls, v: Union[str, None]) -> Union[str, None]:
         """Normalize vendor name."""
         if v is not None:
             v = v.strip()
@@ -612,11 +610,11 @@ class MaintenanceExportRequest(BaseFilterSchema):
         }
     )
 
-    hostel_id: Optional[UUID] = Field(
+    hostel_id: Union[UUID, None] = Field(
         None,
         description="Export data for specific hostel",
     )
-    filters: Optional[MaintenanceFilterParams] = Field(
+    filters: Union[MaintenanceFilterParams, None] = Field(
         None,
         description="Apply filters to export",
     )
@@ -661,7 +659,7 @@ class MaintenanceExportRequest(BaseFilterSchema):
     )
     
     # Field selection
-    selected_fields: Optional[List[str]] = Field(
+    selected_fields: Union[List[str], None] = Field(
         None,
         max_length=50,
         description="Specific fields to include (overrides include_* options)",
@@ -676,7 +674,7 @@ class MaintenanceExportRequest(BaseFilterSchema):
         False,
         description="Include charts/graphs (PDF only)",
     )
-    group_by: Optional[str] = Field(
+    group_by: Union[str, None] = Field(
         None,
         pattern=r"^(category|priority|status|month|assignee)$",
         description="Group export by field",
@@ -694,7 +692,7 @@ class MaintenanceExportRequest(BaseFilterSchema):
     )
     
     # Output options
-    file_name: Optional[str] = Field(
+    file_name: Union[str, None] = Field(
         None,
         max_length=255,
         description="Custom filename (without extension)",
@@ -709,11 +707,11 @@ class MaintenanceExportRequest(BaseFilterSchema):
     )
     
     # Date range for export
-    date_from: Optional[Date] = Field(
+    date_from: Union[Date, None] = Field(
         None,
         description="Export data from this Date",
     )
-    date_to: Optional[Date] = Field(
+    date_to: Union[Date, None] = Field(
         None,
         description="Export data until this Date",
     )
@@ -728,7 +726,7 @@ class MaintenanceExportRequest(BaseFilterSchema):
 
     @field_validator("file_name")
     @classmethod
-    def validate_filename(cls, v: Optional[str]) -> Optional[str]:
+    def validate_filename(cls, v: Union[str, None]) -> Union[str, None]:
         """Validate and sanitize filename."""
         if v is not None:
             # Remove invalid characters

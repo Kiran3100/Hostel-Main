@@ -1,5 +1,4 @@
 # --- File: app/schemas/hostel/__init__.py ---
-from __future__ import annotations
 
 from app.schemas.hostel.hostel_admin import (
     HostelAdminView,

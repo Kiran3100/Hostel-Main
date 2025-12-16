@@ -6,11 +6,9 @@ This module defines response schemas with varying levels of detail
 for different use cases (list views, detail views, student views).
 """
 
-from __future__ import annotations
-
 from datetime import datetime
 from decimal import Decimal
-from typing import Annotated, Optional
+from typing import Annotated, Optional, Union
 from uuid import UUID
 
 from pydantic import Field, computed_field, ConfigDict
@@ -97,7 +95,7 @@ class AnnouncementResponse(BaseResponseSchema):
         ...,
         description="Publication status",
     )
-    published_at: Optional[datetime] = Field(
+    published_at: Union[datetime, None] = Field(
         None,
         description="Publication timestamp",
     )
@@ -205,15 +203,15 @@ class AnnouncementDetail(BaseResponseSchema):
     )
     
     # Scheduling and expiry
-    scheduled_publish_at: Optional[datetime] = Field(
+    scheduled_publish_at: Union[datetime, None] = Field(
         None,
         description="Scheduled publication time",
     )
-    published_at: Optional[datetime] = Field(
+    published_at: Union[datetime, None] = Field(
         None,
         description="Actual publication time",
     )
-    expires_at: Optional[datetime] = Field(
+    expires_at: Union[datetime, None] = Field(
         None,
         description="Expiry timestamp",
     )
@@ -241,15 +239,15 @@ class AnnouncementDetail(BaseResponseSchema):
         ...,
         description="Whether approval was required",
     )
-    approved_by: Optional[UUID] = Field(
+    approved_by: Union[UUID, None] = Field(
         None,
         description="Approver UUID",
     )
-    approved_by_name: Optional[str] = Field(
+    approved_by_name: Union[str, None] = Field(
         None,
         description="Approver name",
     )
-    approved_at: Optional[datetime] = Field(
+    approved_at: Union[datetime, None] = Field(
         None,
         description="Approval timestamp",
     )
@@ -269,15 +267,15 @@ class AnnouncementDetail(BaseResponseSchema):
     )
     
     # Delivery timestamps
-    email_sent_at: Optional[datetime] = Field(
+    email_sent_at: Union[datetime, None] = Field(
         None,
         description="Email delivery timestamp",
     )
-    sms_sent_at: Optional[datetime] = Field(
+    sms_sent_at: Union[datetime, None] = Field(
         None,
         description="SMS delivery timestamp",
     )
-    push_sent_at: Optional[datetime] = Field(
+    push_sent_at: Union[datetime, None] = Field(
         None,
         description="Push notification timestamp",
     )
@@ -287,7 +285,7 @@ class AnnouncementDetail(BaseResponseSchema):
         False,
         description="Whether acknowledgment is required",
     )
-    acknowledgment_deadline: Optional[datetime] = Field(
+    acknowledgment_deadline: Union[datetime, None] = Field(
         None,
         description="Acknowledgment deadline",
     )
@@ -309,7 +307,7 @@ class AnnouncementDetail(BaseResponseSchema):
         description="Acknowledgment count",
     )
     
-    # Engagement rate - Using Annotated for Decimal constraints
+    # Engagement rate
     engagement_rate: Annotated[Decimal, Field(ge=0, le=100)] = Field(
         ...,
         description="Engagement rate percentage",
@@ -349,7 +347,7 @@ class AnnouncementDetail(BaseResponseSchema):
     
     @computed_field
     @property
-    def days_until_expiry(self) -> Optional[int]:
+    def days_until_expiry(self) -> Union[int, None]:
         """Calculate days until expiry."""
         if self.expires_at is None:
             return None
@@ -415,11 +413,11 @@ class AnnouncementListItem(BaseSchema):
         ...,
         description="Publication status",
     )
-    published_at: Optional[datetime] = Field(
+    published_at: Union[datetime, None] = Field(
         None,
         description="Publication timestamp",
     )
-    expires_at: Optional[datetime] = Field(
+    expires_at: Union[datetime, None] = Field(
         None,
         description="Expiry timestamp",
     )
@@ -511,11 +509,11 @@ class AnnouncementList(BaseSchema):
     
     model_config = ConfigDict(from_attributes=True)
     
-    hostel_id: Optional[UUID] = Field(
+    hostel_id: Union[UUID, None] = Field(
         None,
         description="Hostel UUID if filtered by hostel",
     )
-    hostel_name: Optional[str] = Field(
+    hostel_name: Union[str, None] = Field(
         None,
         description="Hostel name if filtered by hostel",
     )
@@ -625,7 +623,7 @@ class StudentAnnouncementView(BaseSchema):
         ...,
         description="Publication timestamp",
     )
-    expires_at: Optional[datetime] = Field(
+    expires_at: Union[datetime, None] = Field(
         None,
         description="Expiry timestamp",
     )
@@ -635,7 +633,7 @@ class StudentAnnouncementView(BaseSchema):
         False,
         description="Whether student has read",
     )
-    read_at: Optional[datetime] = Field(
+    read_at: Union[datetime, None] = Field(
         None,
         description="When student read the announcement",
     )
@@ -649,11 +647,11 @@ class StudentAnnouncementView(BaseSchema):
         False,
         description="Whether student has acknowledged",
     )
-    acknowledged_at: Optional[datetime] = Field(
+    acknowledged_at: Union[datetime, None] = Field(
         None,
         description="Acknowledgment timestamp",
     )
-    acknowledgment_deadline: Optional[datetime] = Field(
+    acknowledgment_deadline: Union[datetime, None] = Field(
         None,
         description="Acknowledgment deadline",
     )

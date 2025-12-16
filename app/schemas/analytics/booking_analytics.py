@@ -1,4 +1,3 @@
-# --- File: app/schemas/analytics/booking_analytics.py ---
 """
 Booking analytics schemas with enhanced validation and type safety.
 
@@ -13,7 +12,7 @@ This module provides comprehensive analytics for booking operations including:
 from datetime import datetime
 from datetime import date as Date
 from decimal import Decimal
-from typing import Dict, List, Optional, Any, Annotated
+from typing import Dict, List, Union, Any, Annotated
 
 from pydantic import BaseModel, Field, field_validator, computed_field, model_validator
 from uuid import UUID
@@ -45,11 +44,11 @@ class BookingKPI(BaseSchema):
     and cancellation statistics for a specific hostel or platform-wide.
     """
     
-    hostel_id: Optional[UUID] = Field(
+    hostel_id: Union[UUID, None] = Field(
         None,
         description="Hostel identifier. None indicates platform-wide metrics"
     )
-    hostel_name: Optional[str] = Field(
+    hostel_name: Union[str, None] = Field(
         None,
         min_length=1,
         max_length=255,
@@ -414,7 +413,7 @@ class CancellationAnalytics(BaseSchema):
     
     @computed_field  # type: ignore[misc]
     @property
-    def top_cancellation_reason(self) -> Optional[str]:
+    def top_cancellation_reason(self) -> Union[str, None]:
         """Identify the most common cancellation reason."""
         if not self.cancellations_by_reason:
             return None
@@ -503,11 +502,11 @@ class BookingAnalyticsSummary(BaseSchema):
     into a single comprehensive report.
     """
     
-    hostel_id: Optional[UUID] = Field(
+    hostel_id: Union[UUID, None] = Field(
         None,
         description="Hostel identifier. None for platform-wide analytics"
     )
-    hostel_name: Optional[str] = Field(
+    hostel_name: Union[str, None] = Field(
         None,
         min_length=1,
         max_length=255,
@@ -574,7 +573,7 @@ class BookingAnalyticsSummary(BaseSchema):
     
     @computed_field  # type: ignore[misc]
     @property
-    def best_performing_source(self) -> Optional[BookingSource]:
+    def best_performing_source(self) -> Union[BookingSource, None]:
         """Identify the booking source with highest conversion rate."""
         if not self.source_metrics:
             return None
@@ -586,7 +585,7 @@ class BookingAnalyticsSummary(BaseSchema):
     
     @computed_field  # type: ignore[misc]
     @property
-    def highest_revenue_source(self) -> Optional[BookingSource]:
+    def highest_revenue_source(self) -> Union[BookingSource, None]:
         """Identify the booking source with highest total revenue."""
         if not self.source_metrics:
             return None

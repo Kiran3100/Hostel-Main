@@ -5,10 +5,8 @@ Handles complaint assignment to staff members, reassignments,
 bulk operations, and unassignment flows.
 """
 
-from __future__ import annotations
-
 from datetime import datetime, timezone
-from typing import List, Optional
+from typing import List, Union
 
 from pydantic import ConfigDict, Field, field_validator, model_validator
 
@@ -42,12 +40,12 @@ class AssignmentRequest(BaseCreateSchema):
         description="User ID of assignee (supervisor/staff)",
     )
 
-    estimated_resolution_time: Optional[datetime] = Field(
+    estimated_resolution_time: Union[datetime, None] = Field(
         default=None,
         description="Estimated resolution timestamp",
     )
 
-    assignment_notes: Optional[str] = Field(
+    assignment_notes: Union[str, None] = Field(
         default=None,
         max_length=500,
         description="Assignment context or instructions",
@@ -55,7 +53,7 @@ class AssignmentRequest(BaseCreateSchema):
 
     @field_validator("assignment_notes")
     @classmethod
-    def validate_notes(cls, v: Optional[str]) -> Optional[str]:
+    def validate_notes(cls, v: Union[str, None]) -> Union[str, None]:
         """Normalize assignment notes."""
         if v is not None:
             v = v.strip()
@@ -65,7 +63,7 @@ class AssignmentRequest(BaseCreateSchema):
 
     @field_validator("estimated_resolution_time")
     @classmethod
-    def validate_estimated_time(cls, v: Optional[datetime]) -> Optional[datetime]:
+    def validate_estimated_time(cls, v: Union[datetime, None]) -> Union[datetime, None]:
         """Ensure estimated resolution time is in the future."""
         if v is not None:
             now = datetime.now(timezone.utc)
@@ -169,7 +167,7 @@ class BulkAssignment(BaseCreateSchema):
         description="User ID of assignee for all complaints",
     )
 
-    assignment_notes: Optional[str] = Field(
+    assignment_notes: Union[str, None] = Field(
         default=None,
         max_length=500,
         description="Common assignment notes",
@@ -189,7 +187,7 @@ class BulkAssignment(BaseCreateSchema):
 
     @field_validator("assignment_notes")
     @classmethod
-    def validate_notes(cls, v: Optional[str]) -> Optional[str]:
+    def validate_notes(cls, v: Union[str, None]) -> Union[str, None]:
         """Normalize assignment notes."""
         if v is not None:
             v = v.strip()
@@ -251,17 +249,17 @@ class AssignmentHistory(BaseSchema):
     assigned_by_name: str = Field(..., description="Assigner name")
     
     assigned_at: datetime = Field(..., description="Assignment timestamp")
-    unassigned_at: Optional[datetime] = Field(
+    unassigned_at: Union[datetime, None] = Field(
         default=None,
         description="Unassignment timestamp",
     )
     
-    reason: Optional[str] = Field(
+    reason: Union[str, None] = Field(
         default=None,
         description="Assignment/reassignment reason",
     )
     
-    duration_hours: Optional[int] = Field(
+    duration_hours: Union[int, None] = Field(
         default=None,
         ge=0,
         description="Duration assigned (hours)",

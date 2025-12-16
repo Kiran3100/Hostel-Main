@@ -6,10 +6,8 @@ Provides schemas for student-initiated leave requests and cancellations
 with comprehensive validation.
 """
 
-from __future__ import annotations
-
-from datetime import date as Date 
-from typing import Optional
+from datetime import date as Date
+from typing import Union
 
 from pydantic import ConfigDict, Field, HttpUrl, field_validator, model_validator
 from uuid import UUID
@@ -72,31 +70,31 @@ class LeaveApplicationRequest(BaseCreateSchema):
         max_length=1000,
         description="Detailed reason for leave",
     )
-    contact_during_leave: Optional[str] = Field(
+    contact_during_leave: Union[str, None] = Field(
         None,
         pattern=r"^\+?[1-9]\d{9,14}$",
         description="Contact phone number during leave",
     )
-    emergency_contact: Optional[str] = Field(
+    emergency_contact: Union[str, None] = Field(
         None,
         pattern=r"^\+?[1-9]\d{9,14}$",
         description="Emergency contact phone number",
     )
-    emergency_contact_relation: Optional[str] = Field(
+    emergency_contact_relation: Union[str, None] = Field(
         None,
         max_length=50,
         description="Relation with emergency contact person",
     )
-    supporting_document_url: Optional[HttpUrl] = Field(
+    supporting_document_url: Union[HttpUrl, None] = Field(
         None,
         description="URL to supporting document",
     )
-    destination_address: Optional[str] = Field(
+    destination_address: Union[str, None] = Field(
         None,
         max_length=500,
         description="Destination address during leave",
     )
-    expected_return_date: Optional[Date] = Field(
+    expected_return_date: Union[Date, None] = Field(
         None,
         description="Expected return Date (may differ from to_date)",
     )
@@ -159,7 +157,7 @@ class LeaveApplicationRequest(BaseCreateSchema):
 
     @field_validator("contact_during_leave", "emergency_contact")
     @classmethod
-    def normalize_phone(cls, v: Optional[str]) -> Optional[str]:
+    def normalize_phone(cls, v: Union[str, None]) -> Union[str, None]:
         """Normalize phone numbers."""
         if v is not None:
             return v.replace(" ", "").replace("-", "").strip()
@@ -167,7 +165,7 @@ class LeaveApplicationRequest(BaseCreateSchema):
 
     @field_validator("destination_address")
     @classmethod
-    def validate_destination(cls, v: Optional[str]) -> Optional[str]:
+    def validate_destination(cls, v: Union[str, None]) -> Union[str, None]:
         """Normalize destination address."""
         if v is not None:
             v = v.strip()
@@ -175,7 +173,7 @@ class LeaveApplicationRequest(BaseCreateSchema):
         return None
 
     @model_validator(mode="after")
-    def validate_leave_application(self) -> "LeaveApplicationRequest":
+    def validate_leave_application(self):
         """
         Validate complete leave application.
         
@@ -287,7 +285,7 @@ class LeaveCancellationRequest(BaseCreateSchema):
         default=False,
         description="Whether student is returning immediately (for ongoing leaves)",
     )
-    actual_return_date: Optional[Date] = Field(
+    actual_return_date: Union[Date, None] = Field(
         None,
         description="Actual return Date (for early return from ongoing leave)",
     )
@@ -312,7 +310,7 @@ class LeaveCancellationRequest(BaseCreateSchema):
         return v
 
     @model_validator(mode="after")
-    def validate_cancellation(self) -> "LeaveCancellationRequest":
+    def validate_cancellation(self):
         """
         Validate cancellation request consistency.
         

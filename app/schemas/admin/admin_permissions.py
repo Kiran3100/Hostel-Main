@@ -7,9 +7,7 @@ for fine-grained authorization and access management.
 Migrated to Pydantic v2.
 """
 
-from __future__ import annotations
-
-from typing import Dict, List, Optional, Set
+from typing import Dict, List, Union, Set
 from uuid import UUID
 
 from pydantic import Field, field_validator, model_validator
@@ -274,7 +272,7 @@ class PermissionCheck(BaseSchema):
     permission_key: str = Field(..., description="Permission key to check")
 
     has_permission: bool = Field(..., description="Whether user has permission")
-    reason: Optional[str] = Field(None, description="Reason if permission denied")
+    reason: Union[str, None] = Field(None, description="Reason if permission denied")
 
     @field_validator("permission_key")
     @classmethod

@@ -5,10 +5,9 @@ Handles complaint resolution workflow including marking as resolved,
 reopening, and final closure with comprehensive validation.
 """
 
-from __future__ import annotations
-
-from datetime import date as Date, datetime
-from typing import List, Optional
+from datetime import datetime
+from datetime import date as Date
+from typing import List, Union
 
 from pydantic import ConfigDict, Field, HttpUrl, field_validator, model_validator
 
@@ -50,7 +49,7 @@ class ResolutionRequest(BaseCreateSchema):
         description="Proof of resolution (photos/documents)",
     )
 
-    actual_resolution_time: Optional[datetime] = Field(
+    actual_resolution_time: Union[datetime, None] = Field(
         default=None,
         description="Actual time resolution was completed",
     )
@@ -60,11 +59,11 @@ class ResolutionRequest(BaseCreateSchema):
         default=False,
         description="Whether follow-up check is needed",
     )
-    follow_up_date: Optional[Date] = Field(
+    follow_up_date: Union[Date, None] = Field(
         default=None,
         description="Scheduled follow-up Date",
     )
-    follow_up_notes: Optional[str] = Field(
+    follow_up_notes: Union[str, None] = Field(
         default=None,
         max_length=500,
         description="Follow-up instructions",
@@ -99,7 +98,7 @@ class ResolutionRequest(BaseCreateSchema):
 
     @field_validator("follow_up_date")
     @classmethod
-    def validate_follow_up_date(cls, v: Optional[Date]) -> Optional[Date]:
+    def validate_follow_up_date(cls, v: Union[Date, None]) -> Union[Date, None]:
         """Ensure follow-up Date is in the future."""
         if v is not None and v <= Date.today():
             raise ValueError(
@@ -108,7 +107,7 @@ class ResolutionRequest(BaseCreateSchema):
         return v
 
     @model_validator(mode="after")
-    def validate_follow_up_consistency(self) -> "ResolutionRequest":
+    def validate_follow_up_consistency(self):
         """
         Validate follow-up fields are consistent.
         
@@ -171,18 +170,18 @@ class ResolutionUpdate(BaseCreateSchema):
         description="Complaint identifier",
     )
 
-    resolution_notes: Optional[str] = Field(
+    resolution_notes: Union[str, None] = Field(
         default=None,
         min_length=20,
         max_length=2000,
         description="Updated resolution notes",
     )
-    resolution_attachments: Optional[List[HttpUrl]] = Field(
+    resolution_attachments: Union[List[HttpUrl], None] = Field(
         default=None,
         max_length=10,
         description="Updated resolution attachments",
     )
-    follow_up_notes: Optional[str] = Field(
+    follow_up_notes: Union[str, None] = Field(
         default=None,
         max_length=500,
         description="Updated follow-up notes",
@@ -190,7 +189,7 @@ class ResolutionUpdate(BaseCreateSchema):
 
     @field_validator("resolution_notes")
     @classmethod
-    def validate_resolution_notes(cls, v: Optional[str]) -> Optional[str]:
+    def validate_resolution_notes(cls, v: Union[str, None]) -> Union[str, None]:
         """Validate resolution notes if provided."""
         if v is not None:
             v = v.strip()
@@ -209,8 +208,8 @@ class ResolutionUpdate(BaseCreateSchema):
     @classmethod
     def validate_attachments_limit(
         cls,
-        v: Optional[List[HttpUrl]]
-    ) -> Optional[List[HttpUrl]]:
+        v: Union[List[HttpUrl], None]
+    ) -> Union[List[HttpUrl], None]:
         """Ensure attachment count doesn't exceed limit."""
         if v is not None and len(v) > 10:
             raise ValueError(
@@ -219,7 +218,7 @@ class ResolutionUpdate(BaseCreateSchema):
         return v
 
     @model_validator(mode="after")
-    def validate_has_updates(self) -> "ResolutionUpdate":
+    def validate_has_updates(self):
         """Ensure at least one field is being updated."""
         update_fields = {
             k: v for k, v in self.model_dump(exclude_unset=True).items()
@@ -254,7 +253,7 @@ class ReopenRequest(BaseCreateSchema):
         description="Detailed reason for reopening",
     )
 
-    additional_issues: Optional[str] = Field(
+    additional_issues: Union[str, None] = Field(
         default=None,
         max_length=1000,
         description="Additional issues discovered",
@@ -284,7 +283,7 @@ class ReopenRequest(BaseCreateSchema):
 
     @field_validator("additional_issues")
     @classmethod
-    def validate_additional_issues(cls, v: Optional[str]) -> Optional[str]:
+    def validate_additional_issues(cls, v: Union[str, None]) -> Union[str, None]:
         """Normalize additional issues if provided."""
         if v is not None:
             v = v.strip()
@@ -316,7 +315,7 @@ class CloseRequest(BaseCreateSchema):
         description="Complaint identifier to close",
     )
 
-    closure_notes: Optional[str] = Field(
+    closure_notes: Union[str, None] = Field(
         default=None,
         max_length=500,
         description="Final closure notes",
@@ -329,7 +328,7 @@ class CloseRequest(BaseCreateSchema):
 
     @field_validator("closure_notes")
     @classmethod
-    def validate_closure_notes(cls, v: Optional[str]) -> Optional[str]:
+    def validate_closure_notes(cls, v: Union[str, None]) -> Union[str, None]:
         """Normalize closure notes if provided."""
         if v is not None:
             v = v.strip()

@@ -1,4 +1,3 @@
-# --- File: app/schemas/booking/booking_request.py ---
 """
 Booking request schemas for initiating bookings.
 
@@ -6,10 +5,8 @@ This module defines schemas for various types of booking requests
 including full bookings, inquiries, and quick bookings.
 """
 
-from __future__ import annotations
-
 from datetime import date as Date
-from typing import Optional
+from typing import Union
 from uuid import UUID
 
 from pydantic import EmailStr, Field, field_validator, model_validator
@@ -51,41 +48,41 @@ class GuestInformation(BaseSchema):
     )
 
     # ID Proof (optional at booking, required at check-in)
-    guest_id_proof_type: Optional[str] = Field(
+    guest_id_proof_type: Union[str, None] = Field(
         None,
         pattern=r"^(aadhaar|passport|driving_license|voter_id|pan_card)$",
         description="Type of government-issued ID proof",
     )
-    guest_id_proof_number: Optional[str] = Field(
+    guest_id_proof_number: Union[str, None] = Field(
         None,
         max_length=50,
         description="ID proof number/reference",
     )
 
     # Emergency Contact
-    emergency_contact_name: Optional[str] = Field(
+    emergency_contact_name: Union[str, None] = Field(
         None,
         max_length=255,
         description="Name of emergency contact person",
     )
-    emergency_contact_phone: Optional[str] = Field(
+    emergency_contact_phone: Union[str, None] = Field(
         None,
         pattern=r"^\+?[1-9]\d{9,14}$",
         description="Emergency contact phone number",
     )
-    emergency_contact_relation: Optional[str] = Field(
+    emergency_contact_relation: Union[str, None] = Field(
         None,
         max_length=50,
         description="Relationship to emergency contact (parent, spouse, friend, etc.)",
     )
 
     # Institutional/Employment Details
-    institution_or_company: Optional[str] = Field(
+    institution_or_company: Union[str, None] = Field(
         None,
         max_length=255,
         description="Name of educational institution or employer",
     )
-    designation_or_course: Optional[str] = Field(
+    designation_or_course: Union[str, None] = Field(
         None,
         max_length=255,
         description="Job designation or course/program of study",
@@ -112,7 +109,7 @@ class GuestInformation(BaseSchema):
 
     @field_validator("guest_phone", "emergency_contact_phone")
     @classmethod
-    def validate_phone_number(cls, v: Optional[str]) -> Optional[str]:
+    def validate_phone_number(cls, v: Union[str, None]) -> Union[str, None]:
         """Validate and normalize phone number."""
         if v is None:
             return v
@@ -191,12 +188,12 @@ class BookingRequest(BaseCreateSchema):
     )
 
     # Special Requirements
-    special_requests: Optional[str] = Field(
+    special_requests: Union[str, None] = Field(
         None,
         max_length=1000,
         description="Any special requests or requirements (quiet room, ground floor, etc.)",
     )
-    dietary_preferences: Optional[str] = Field(
+    dietary_preferences: Union[str, None] = Field(
         None,
         max_length=255,
         description="Dietary preferences or restrictions (vegetarian, vegan, allergies, etc.)",
@@ -205,14 +202,14 @@ class BookingRequest(BaseCreateSchema):
         False,
         description="Whether guest has a vehicle and needs parking",
     )
-    vehicle_details: Optional[str] = Field(
+    vehicle_details: Union[str, None] = Field(
         None,
         max_length=255,
         description="Vehicle details if applicable (type, registration, etc.)",
     )
 
     # Referral
-    referral_code: Optional[str] = Field(
+    referral_code: Union[str, None] = Field(
         None,
         max_length=50,
         description="Referral or promo code if applicable",
@@ -249,7 +246,7 @@ class BookingRequest(BaseCreateSchema):
 
     @field_validator("special_requests", "dietary_preferences", "vehicle_details")
     @classmethod
-    def clean_optional_text(cls, v: Optional[str]) -> Optional[str]:
+    def clean_optional_text(cls, v: Union[str, None]) -> Union[str, None]:
         """Clean optional text fields."""
         if v is not None:
             v = v.strip()
@@ -289,15 +286,15 @@ class BookingInquiry(BaseCreateSchema):
     )
 
     # Interest Details (all optional)
-    room_type_interest: Optional[RoomType] = Field(
+    room_type_interest: Union[RoomType, None] = Field(
         None,
         description="Room type of interest",
     )
-    preferred_check_in_date: Optional[Date] = Field(
+    preferred_check_in_date: Union[Date, None] = Field(
         None,
         description="Approximate check-in Date if known",
     )
-    message: Optional[str] = Field(
+    message: Union[str, None] = Field(
         None,
         max_length=1000,
         description="Additional message or questions",
@@ -320,7 +317,7 @@ class BookingInquiry(BaseCreateSchema):
 
     @field_validator("preferred_check_in_date")
     @classmethod
-    def validate_check_in_date(cls, v: Optional[Date]) -> Optional[Date]:
+    def validate_check_in_date(cls, v: Union[Date, None]) -> Union[Date, None]:
         """Validate check-in Date if provided."""
         if v is not None and v < Date.today():
             raise ValueError("Check-in Date cannot be in the past")

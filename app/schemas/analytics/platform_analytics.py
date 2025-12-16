@@ -1,4 +1,3 @@
-# --- File: app/schemas/analytics/platform_analytics.py ---
 """
 Platform-wide analytics schemas for super admin oversight.
 
@@ -12,7 +11,7 @@ Provides comprehensive platform metrics including:
 
 from datetime import date as Date, datetime
 from decimal import Decimal
-from typing import Dict, List, Optional, Union, Annotated
+from typing import Dict, List, Union, Annotated
 from enum import Enum
 
 from pydantic import BaseModel, Field, field_validator, computed_field, model_validator, AfterValidator
@@ -118,7 +117,7 @@ class TenantMetrics(BaseSchema):
     )
     
     # Activity metrics
-    last_login: Optional[datetime] = Field(
+    last_login: Union[datetime, None] = Field(
         None,
         description="Last admin login timestamp"
     )
@@ -328,7 +327,7 @@ class PlatformMetrics(BaseSchema):
     
     @computed_field  # type: ignore[misc]
     @property
-    def user_growth_rate(self) -> Optional[Decimal]:
+    def user_growth_rate(self) -> Union[Decimal, None]:
         """Calculate user growth rate if previous period data available."""
         # This would need previous period data - placeholder
         return None
@@ -350,7 +349,7 @@ class MonthlyMetric(BaseSchema):
         ...,
         description="Metric value for the month"
     )
-    label: Optional[str] = Field(
+    label: Union[str, None] = Field(
         None,
         max_length=100,
         description="Optional display label"
@@ -531,7 +530,7 @@ class GrowthMetrics(BaseSchema):
     
     @computed_field  # type: ignore[misc]
     @property
-    def compound_annual_growth_rate(self) -> Optional[Decimal]:
+    def compound_annual_growth_rate(self) -> Union[Decimal, None]:
         """
         Calculate CAGR if sufficient historical data available.
         
@@ -603,7 +602,7 @@ class ChurnAnalysis(BaseSchema):
     
     @computed_field  # type: ignore[misc]
     @property
-    def top_churn_reason(self) -> Optional[str]:
+    def top_churn_reason(self) -> Union[str, None]:
         """Identify most common churn reason."""
         if not self.churn_reasons:
             return None
@@ -688,29 +687,29 @@ class SystemHealthMetrics(BaseSchema):
     )
     
     # Resource utilization
-    avg_cpu_usage_percent: Optional[DecimalPercentage] = Field(
+    avg_cpu_usage_percent: Union[DecimalPercentage, None] = Field(
         None,
         description="Average CPU usage percentage"
     )
-    peak_cpu_usage_percent: Optional[DecimalPercentage] = Field(
+    peak_cpu_usage_percent: Union[DecimalPercentage, None] = Field(
         None,
         description="Peak CPU usage"
     )
-    avg_memory_usage_percent: Optional[DecimalPercentage] = Field(
+    avg_memory_usage_percent: Union[DecimalPercentage, None] = Field(
         None,
         description="Average memory usage percentage"
     )
-    peak_memory_usage_percent: Optional[DecimalPercentage] = Field(
+    peak_memory_usage_percent: Union[DecimalPercentage, None] = Field(
         None,
         description="Peak memory usage"
     )
     
     # Database performance
-    avg_db_query_time_ms: Optional[DecimalNonNegative] = Field(
+    avg_db_query_time_ms: Union[DecimalNonNegative, None] = Field(
         None,
         description="Average database query time"
     )
-    slow_query_count: Optional[int] = Field(
+    slow_query_count: Union[int, None] = Field(
         None,
         ge=0,
         description="Number of slow queries (>1s)"
@@ -799,7 +798,7 @@ class RevenueMetrics(BaseSchema):
         ...,
         description="Average Revenue Per User (monthly)"
     )
-    ltv: Optional[DecimalNonNegative] = Field(
+    ltv: Union[DecimalNonNegative, None] = Field(
         None,
         description="Lifetime Value estimate"
     )
@@ -927,28 +926,28 @@ class PlatformUsageAnalytics(BaseSchema):
     )
     
     # Resource usage
-    avg_cpu_usage_percent: Optional[DecimalPercentage] = Field(
+    avg_cpu_usage_percent: Union[DecimalPercentage, None] = Field(
         None,
         description="Average CPU usage"
     )
-    avg_memory_usage_percent: Optional[DecimalPercentage] = Field(
+    avg_memory_usage_percent: Union[DecimalPercentage, None] = Field(
         None,
         description="Average memory usage"
     )
     
     # Storage
-    total_storage_used_gb: Optional[DecimalNonNegative] = Field(
+    total_storage_used_gb: Union[DecimalNonNegative, None] = Field(
         None,
         description="Total storage used in GB"
     )
-    avg_storage_per_tenant_gb: Optional[DecimalNonNegative] = Field(
+    avg_storage_per_tenant_gb: Union[DecimalNonNegative, None] = Field(
         None,
         description="Average storage per tenant"
     )
     
     @computed_field  # type: ignore[misc]
     @property
-    def most_used_module(self) -> Optional[str]:
+    def most_used_module(self) -> Union[str, None]:
         """Identify most frequently used module."""
         if not self.requests_by_module:
             return None

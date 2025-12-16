@@ -6,11 +6,9 @@ Provides comprehensive reporting capabilities including summaries,
 trends, comparisons, and multi-level aggregations.
 """
 
-from __future__ import annotations
-
 from datetime import date as Date, datetime, time
 from decimal import Decimal
-from typing import Dict, List, Optional
+from typing import Dict, List, Union
 
 from pydantic import Field, computed_field, field_validator
 from pydantic.types import UUID4 as UUID
@@ -116,7 +114,7 @@ class AttendanceSummary(BaseSchema):
         ...,
         description="Whether attendance meets minimum policy requirement",
     )
-    minimum_requirement_percentage: Optional[Decimal] = Field(
+    minimum_requirement_percentage: Union[Decimal, None] = Field(
         None,
         ge=Decimal("0"),
         le=Decimal("100"),
@@ -168,11 +166,11 @@ class DailyAttendanceRecord(BaseSchema):
         ...,
         description="Attendance status",
     )
-    check_in_time: Optional[time] = Field(
+    check_in_time: Union[time, None] = Field(
         None,
         description="Check-in time",
     )
-    check_out_time: Optional[time] = Field(
+    check_out_time: Union[time, None] = Field(
         None,
         description="Check-out time",
     )
@@ -180,12 +178,12 @@ class DailyAttendanceRecord(BaseSchema):
         ...,
         description="Late arrival indicator",
     )
-    late_minutes: Optional[int] = Field(
+    late_minutes: Union[int, None] = Field(
         None,
         ge=0,
         description="Minutes late",
     )
-    notes: Optional[str] = Field(
+    notes: Union[str, None] = Field(
         None,
         description="Additional notes or remarks",
     )
@@ -350,21 +348,21 @@ class TrendAnalysis(BaseSchema):
     )
     
     # Monthly comparison
-    monthly_comparison: Optional[List[MonthlyComparison]] = Field(
+    monthly_comparison: Union[List[MonthlyComparison], None] = Field(
         None,
         description="Month-by-month comparison data",
     )
     
     # Pattern insights
-    most_absent_day: Optional[str] = Field(
+    most_absent_day: Union[str, None] = Field(
         None,
         description="Day of week with most absences",
     )
-    most_present_day: Optional[str] = Field(
+    most_present_day: Union[str, None] = Field(
         None,
         description="Day of week with best attendance",
     )
-    average_late_minutes: Optional[Decimal] = Field(
+    average_late_minutes: Union[Decimal, None] = Field(
         None,
         ge=Decimal("0"),
         description="Average minutes late across period",
@@ -375,7 +373,7 @@ class TrendAnalysis(BaseSchema):
         ...,
         description="Whether attendance is trending upward",
     )
-    improvement_rate: Optional[Decimal] = Field(
+    improvement_rate: Union[Decimal, None] = Field(
         None,
         description="Rate of improvement (percentage points per month)",
     )
@@ -386,7 +384,7 @@ class TrendAnalysis(BaseSchema):
     )
     
     # Predictive metrics
-    projected_end_of_month_percentage: Optional[Decimal] = Field(
+    projected_end_of_month_percentage: Union[Decimal, None] = Field(
         None,
         ge=Decimal("0"),
         le=Decimal("100"),
@@ -411,19 +409,19 @@ class AttendanceReport(BaseSchema):
     and trend analysis.
     """
 
-    hostel_id: Optional[UUID] = Field(
+    hostel_id: Union[UUID, None] = Field(
         None,
         description="Hostel ID (if hostel-specific report)",
     )
-    hostel_name: Optional[str] = Field(
+    hostel_name: Union[str, None] = Field(
         None,
         description="Hostel name",
     )
-    student_id: Optional[UUID] = Field(
+    student_id: Union[UUID, None] = Field(
         None,
         description="Student ID (if student-specific report)",
     )
-    student_name: Optional[str] = Field(
+    student_name: Union[str, None] = Field(
         None,
         description="Student name",
     )
@@ -435,7 +433,7 @@ class AttendanceReport(BaseSchema):
         ...,
         description="Report generation timestamp",
     )
-    generated_by: Optional[UUID] = Field(
+    generated_by: Union[UUID, None] = Field(
         None,
         description="User who generated the report",
     )
@@ -451,7 +449,7 @@ class AttendanceReport(BaseSchema):
     )
     
     # Analysis
-    trend_analysis: Optional[TrendAnalysis] = Field(
+    trend_analysis: Union[TrendAnalysis, None] = Field(
         None,
         description="Trend analysis and insights",
     )
@@ -493,15 +491,15 @@ class StudentMonthlySummary(BaseSchema):
         ...,
         description="Student full name",
     )
-    room_number: Optional[str] = Field(
+    room_number: Union[str, None] = Field(
         None,
         description="Room number",
     )
-    email: Optional[str] = Field(
+    email: Union[str, None] = Field(
         None,
         description="Student email",
     )
-    phone: Optional[str] = Field(
+    phone: Union[str, None] = Field(
         None,
         description="Student phone",
     )
@@ -551,7 +549,7 @@ class StudentMonthlySummary(BaseSchema):
         ...,
         description="Requires supervisor/admin attention",
     )
-    action_required: Optional[str] = Field(
+    action_required: Union[str, None] = Field(
         None,
         description="Specific action needed (if any)",
     )
@@ -562,7 +560,7 @@ class StudentMonthlySummary(BaseSchema):
         ge=0,
         description="Current consecutive absent days",
     )
-    improvement_from_last_month: Optional[Decimal] = Field(
+    improvement_from_last_month: Union[Decimal, None] = Field(
         None,
         description="Percentage point change from last month",
     )
@@ -674,7 +672,7 @@ class MonthlyReport(BaseSchema):
         ...,
         description="Report generation timestamp",
     )
-    generated_by: Optional[UUID] = Field(
+    generated_by: Union[UUID, None] = Field(
         None,
         description="User who generated report",
     )
@@ -778,7 +776,7 @@ class AttendanceComparison(BaseSchema):
         ...,
         description="Comparison period",
     )
-    hostel_id: Optional[UUID] = Field(
+    hostel_id: Union[UUID, None] = Field(
         None,
         description="Hostel ID (for student/room comparisons)",
     )
@@ -813,7 +811,7 @@ class AttendanceComparison(BaseSchema):
         le=Decimal("100"),
         description="Lowest attendance percentage",
     )
-    standard_deviation: Optional[Decimal] = Field(
+    standard_deviation: Union[Decimal, None] = Field(
         None,
         ge=Decimal("0"),
         description="Standard deviation of attendance",

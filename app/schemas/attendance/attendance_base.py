@@ -6,11 +6,9 @@ This module provides foundational schemas for attendance tracking including
 single and bulk operations with enhanced validation logic.
 """
 
-from __future__ import annotations
-
 from datetime import date as Date, time
 from decimal import Decimal
-from typing import List, Optional
+from typing import List, Union
 
 from pydantic import Field, field_validator, model_validator
 from pydantic.types import UUID4 as UUID
@@ -46,11 +44,11 @@ class AttendanceBase(BaseSchema):
         ...,
         description="Date of attendance record",
     )
-    check_in_time: Optional[time] = Field(
+    check_in_time: Union[time, None] = Field(
         None,
         description="Student check-in time",
     )
-    check_out_time: Optional[time] = Field(
+    check_out_time: Union[time, None] = Field(
         None,
         description="Student check-out time",
     )
@@ -62,7 +60,7 @@ class AttendanceBase(BaseSchema):
         False,
         description="Whether student arrived late",
     )
-    late_minutes: Optional[int] = Field(
+    late_minutes: Union[int, None] = Field(
         None,
         ge=0,
         le=1440,  # Max 24 hours
@@ -76,11 +74,11 @@ class AttendanceBase(BaseSchema):
         ...,
         description="User ID who marked the attendance",
     )
-    supervisor_id: Optional[UUID] = Field(
+    supervisor_id: Union[UUID, None] = Field(
         None,
         description="Supervisor ID who verified/marked attendance",
     )
-    notes: Optional[str] = Field(
+    notes: Union[str, None] = Field(
         None,
         max_length=500,
         description="Additional notes or comments",
@@ -100,7 +98,7 @@ class AttendanceBase(BaseSchema):
 
     @field_validator("notes")
     @classmethod
-    def validate_notes(cls, v: Optional[str]) -> Optional[str]:
+    def validate_notes(cls, v: Union[str, None]) -> Union[str, None]:
         """Normalize notes by stripping whitespace."""
         if v is not None:
             v = v.strip()
@@ -158,19 +156,19 @@ class AttendanceCreate(AttendanceBase, BaseCreateSchema):
     and device information tracking.
     """
 
-    location_lat: Optional[Decimal] = Field(
+    location_lat: Union[Decimal, None] = Field(
         None,
         ge=Decimal("-90"),
         le=Decimal("90"),
         description="Latitude coordinate for mobile check-in",
     )
-    location_lng: Optional[Decimal] = Field(
+    location_lng: Union[Decimal, None] = Field(
         None,
         ge=Decimal("-180"),
         le=Decimal("180"),
         description="Longitude coordinate for mobile check-in",
     )
-    device_info: Optional[dict] = Field(
+    device_info: Union[dict, None] = Field(
         None,
         description="Device information for mobile app check-ins",
     )
@@ -200,29 +198,29 @@ class AttendanceUpdate(BaseUpdateSchema):
     All fields are optional for flexible partial updates.
     """
 
-    check_in_time: Optional[time] = Field(
+    check_in_time: Union[time, None] = Field(
         None,
         description="Updated check-in time",
     )
-    check_out_time: Optional[time] = Field(
+    check_out_time: Union[time, None] = Field(
         None,
         description="Updated check-out time",
     )
-    status: Optional[AttendanceStatus] = Field(
+    status: Union[AttendanceStatus, None] = Field(
         None,
         description="Updated attendance status",
     )
-    is_late: Optional[bool] = Field(
+    is_late: Union[bool, None] = Field(
         None,
         description="Updated late status",
     )
-    late_minutes: Optional[int] = Field(
+    late_minutes: Union[int, None] = Field(
         None,
         ge=0,
         le=1440,
         description="Updated late minutes",
     )
-    notes: Optional[str] = Field(
+    notes: Union[str, None] = Field(
         None,
         max_length=500,
         description="Updated notes",
@@ -230,7 +228,7 @@ class AttendanceUpdate(BaseUpdateSchema):
 
     @field_validator("notes")
     @classmethod
-    def validate_notes(cls, v: Optional[str]) -> Optional[str]:
+    def validate_notes(cls, v: Union[str, None]) -> Union[str, None]:
         """Normalize notes by stripping whitespace."""
         if v is not None:
             v = v.strip()
@@ -272,7 +270,7 @@ class SingleAttendanceRecord(BaseSchema):
         AttendanceStatus.PRESENT,
         description="Attendance status",
     )
-    check_in_time: Optional[time] = Field(
+    check_in_time: Union[time, None] = Field(
         None,
         description="Check-in time",
     )
@@ -280,13 +278,13 @@ class SingleAttendanceRecord(BaseSchema):
         False,
         description="Late arrival flag",
     )
-    late_minutes: Optional[int] = Field(
+    late_minutes: Union[int, None] = Field(
         None,
         ge=0,
         le=1440,
         description="Minutes late",
     )
-    notes: Optional[str] = Field(
+    notes: Union[str, None] = Field(
         None,
         max_length=500,
         description="Additional notes",
@@ -294,7 +292,7 @@ class SingleAttendanceRecord(BaseSchema):
 
     @field_validator("notes")
     @classmethod
-    def validate_notes(cls, v: Optional[str]) -> Optional[str]:
+    def validate_notes(cls, v: Union[str, None]) -> Union[str, None]:
         """Normalize notes by stripping whitespace."""
         if v is not None:
             v = v.strip()
@@ -350,7 +348,7 @@ class BulkAttendanceCreate(BaseCreateSchema):
         ...,
         description="User ID who marked attendance",
     )
-    supervisor_id: Optional[UUID] = Field(
+    supervisor_id: Union[UUID, None] = Field(
         None,
         description="Supervisor ID who verified attendance",
     )

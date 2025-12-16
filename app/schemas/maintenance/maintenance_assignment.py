@@ -6,11 +6,9 @@ Provides schemas for assigning maintenance tasks to staff, vendors,
 and contractors with tracking and history management.
 """
 
-from __future__ import annotations
-
 from datetime import date as Date, datetime
 from decimal import Decimal
-from typing import Annotated, List, Optional
+from typing import Annotated, List, Optional, Union
 
 from pydantic import ConfigDict, EmailStr, Field, field_validator, model_validator
 from uuid import UUID
@@ -94,7 +92,7 @@ class TaskAssignment(BaseSchema):
         max_length=1000,
         description="Specific instructions for assigned staff",
     )
-    estimated_hours: Optional[Annotated[Decimal, Field(ge=0, le=1000, decimal_places=2)]] = Field(
+    estimated_hours: Union[Annotated[Decimal, Field(ge=0, le=1000, decimal_places=2)], None] = Field(
         None,
         description="Estimated hours to complete",
     )
@@ -212,11 +210,11 @@ class VendorAssignment(BaseCreateSchema):
         max_length=500,
         description="Payment terms and conditions",
     )
-    advance_payment_percentage: Optional[Annotated[Decimal, Field(ge=0, le=100, decimal_places=2)]] = Field(
+    advance_payment_percentage: Union[Annotated[Decimal, Field(ge=0, le=100, decimal_places=2)], None] = Field(
         None,
         description="Advance payment percentage",
     )
-    advance_payment_amount: Optional[Annotated[Decimal, Field(ge=0, decimal_places=2)]] = Field(
+    advance_payment_amount: Union[Annotated[Decimal, Field(ge=0, decimal_places=2)], None] = Field(
         None,
         description="Advance payment amount",
     )
@@ -298,7 +296,7 @@ class VendorAssignment(BaseCreateSchema):
         return None
 
     @model_validator(mode="after")
-    def validate_dates_consistency(self) -> "VendorAssignment":
+    def validate_dates_consistency(self):
         """
         Validate Date consistency.
         
@@ -327,7 +325,7 @@ class VendorAssignment(BaseCreateSchema):
         return self
 
     @model_validator(mode="after")
-    def validate_advance_payment(self) -> "VendorAssignment":
+    def validate_advance_payment(self):
         """
         Validate advance payment calculation.
         
@@ -356,7 +354,7 @@ class VendorAssignment(BaseCreateSchema):
         return self
 
     @model_validator(mode="after")
-    def validate_warranty_requirements(self) -> "VendorAssignment":
+    def validate_warranty_requirements(self):
         """
         Validate warranty information.
         
@@ -475,7 +473,7 @@ class AssignmentUpdate(BaseCreateSchema):
         return None
 
     @model_validator(mode="after")
-    def validate_update_requirements(self) -> "AssignmentUpdate":
+    def validate_update_requirements(self):
         """
         Validate update field requirements.
         
@@ -682,7 +680,7 @@ class AssignmentEntry(BaseSchema):
     )
 
     # Performance metrics
-    time_to_complete_hours: Optional[Annotated[Decimal, Field(ge=0, decimal_places=2)]] = Field(
+    time_to_complete_hours: Union[Annotated[Decimal, Field(ge=0, decimal_places=2)], None] = Field(
         None,
         description="Hours taken to complete (if completed)",
     )
@@ -692,7 +690,7 @@ class AssignmentEntry(BaseSchema):
     )
 
     @model_validator(mode="after")
-    def validate_completion_consistency(self) -> "AssignmentEntry":
+    def validate_completion_consistency(self):
         """
         Validate completion data consistency.
         
@@ -765,7 +763,7 @@ class AssignmentHistory(BaseSchema):
     )
     
     # Summary metrics
-    average_assignment_duration_hours: Optional[Annotated[Decimal, Field(ge=0, decimal_places=2)]] = Field(
+    average_assignment_duration_hours: Union[Annotated[Decimal, Field(ge=0, decimal_places=2)], None] = Field(
         None,
         description="Average time per assignment",
     )

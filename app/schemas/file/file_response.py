@@ -5,11 +5,9 @@ Provides comprehensive file metadata and listing capabilities
 with filtering and pagination support.
 """
 
-from __future__ import annotations
-
 from datetime import datetime, timezone
 from decimal import Decimal
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Union
 
 from pydantic import Field, HttpUrl, computed_field, field_validator
 
@@ -35,34 +33,34 @@ class FileMetadata(BaseSchema):
     # Technical metadata
     content_type: str = Field(..., description="MIME type")
     size_bytes: int = Field(..., ge=0, description="File size in bytes")
-    checksum: Optional[str] = Field(
+    checksum: Union[str, None] = Field(
         default=None,
         description="File checksum (MD5/SHA256)",
     )
 
     # Original file information
-    original_filename: Optional[str] = Field(
+    original_filename: Union[str, None] = Field(
         default=None,
         max_length=255,
         description="Original uploaded filename",
     )
-    extension: Optional[str] = Field(
+    extension: Union[str, None] = Field(
         default=None,
         max_length=20,
         description="File extension (without dot)",
     )
 
     # Dimensions (for images/videos)
-    width: Optional[int] = Field(default=None, ge=1, description="Width in pixels")
-    height: Optional[int] = Field(default=None, ge=1, description="Height in pixels")
-    duration_seconds: Optional[int] = Field(
+    width: Union[int, None] = Field(default=None, ge=1, description="Width in pixels")
+    height: Union[int, None] = Field(default=None, ge=1, description="Height in pixels")
+    duration_seconds: Union[int, None] = Field(
         default=None,
         ge=0,
         description="Duration for audio/video files",
     )
 
     # Classification
-    category: Optional[str] = Field(default=None, description="File category")
+    category: Union[str, None] = Field(default=None, description="File category")
     tags: List[str] = Field(default_factory=list, description="Searchable tags")
 
     # Custom metadata
@@ -76,7 +74,7 @@ class FileMetadata(BaseSchema):
         default=False,
         description="Whether post-upload processing is complete",
     )
-    processing_error: Optional[str] = Field(
+    processing_error: Union[str, None] = Field(
         default=None,
         description="Processing error message if failed",
     )
@@ -130,10 +128,10 @@ class FileInfo(BaseResponseSchema):
 
     # Ownership
     uploaded_by_user_id: str = Field(..., description="Uploader user ID")
-    uploaded_by_name: Optional[str] = Field(default=None, description="Uploader name")
+    uploaded_by_name: Union[str, None] = Field(default=None, description="Uploader name")
 
-    hostel_id: Optional[str] = Field(default=None, description="Associated hostel")
-    student_id: Optional[str] = Field(default=None, description="Associated student")
+    hostel_id: Union[str, None] = Field(default=None, description="Associated hostel")
+    student_id: Union[str, None] = Field(default=None, description="Associated student")
 
     # Access control
     is_public: bool = Field(default=False, description="Public access flag")
@@ -141,11 +139,11 @@ class FileInfo(BaseResponseSchema):
 
     # URLs
     url: HttpUrl = Field(..., description="Primary access URL")
-    public_url: Optional[HttpUrl] = Field(
+    public_url: Union[HttpUrl, None] = Field(
         default=None,
         description="Public CDN URL (if is_public=True)",
     )
-    thumbnail_url: Optional[HttpUrl] = Field(
+    thumbnail_url: Union[HttpUrl, None] = Field(
         default=None,
         description="Thumbnail URL (for images)",
     )
@@ -158,7 +156,7 @@ class FileInfo(BaseResponseSchema):
         default="pending",
         description="Antivirus scan status",
     )
-    virus_scan_timestamp: Optional[datetime] = Field(
+    virus_scan_timestamp: Union[datetime, None] = Field(
         default=None,
         description="Virus scan completion timestamp",
     )
@@ -169,7 +167,7 @@ class FileInfo(BaseResponseSchema):
         ge=0,
         description="Number of times file was accessed",
     )
-    last_accessed_at: Optional[datetime] = Field(
+    last_accessed_at: Union[datetime, None] = Field(
         default=None,
         description="Last access timestamp",
     )
@@ -177,7 +175,7 @@ class FileInfo(BaseResponseSchema):
     # Audit timestamps
     created_at: datetime = Field(..., description="Upload timestamp")
     updated_at: datetime = Field(..., description="Last update timestamp")
-    deleted_at: Optional[datetime] = Field(default=None, description="Deletion timestamp")
+    deleted_at: Union[datetime, None] = Field(default=None, description="Deletion timestamp")
 
     @computed_field
     @property
@@ -211,7 +209,7 @@ class FileURL(BaseSchema):
         description="URL type",
     )
 
-    expires_at: Optional[datetime] = Field(
+    expires_at: Union[datetime, None] = Field(
         default=None,
         description="URL expiration timestamp (for signed URLs)",
     )
@@ -234,7 +232,7 @@ class FileURL(BaseSchema):
 
     @computed_field
     @property
-    def time_until_expiry_minutes(self) -> Optional[int]:
+    def time_until_expiry_minutes(self) -> Union[int, None]:
         """Get minutes until URL expires."""
         if self.is_permanent or self.expires_at is None:
             return None
@@ -299,7 +297,7 @@ class FileStats(BaseSchema):
     Provides aggregate statistics for a user, hostel, or system.
     """
 
-    entity_id: Optional[str] = Field(
+    entity_id: Union[str, None] = Field(
         default=None,
         description="Entity ID (user/hostel) or None for system-wide",
     )
@@ -321,7 +319,7 @@ class FileStats(BaseSchema):
 
     # Storage usage
     total_size_bytes: int = Field(..., ge=0, description="Total storage used (bytes)")
-    storage_quota_bytes: Optional[int] = Field(
+    storage_quota_bytes: Union[int, None] = Field(
         default=None,
         ge=0,
         description="Storage quota (bytes)",
@@ -340,7 +338,7 @@ class FileStats(BaseSchema):
 
     @computed_field
     @property
-    def storage_used_percentage(self) -> Optional[Decimal]:
+    def storage_used_percentage(self) -> Union[Decimal, None]:
         """Get storage usage percentage."""
         if self.storage_quota_bytes is None or self.storage_quota_bytes == 0:
             return None
@@ -368,11 +366,11 @@ class FileAccessLog(BaseSchema):
     storage_key: str = Field(..., description="File storage key")
 
     # Access details
-    accessed_by_user_id: Optional[str] = Field(
+    accessed_by_user_id: Union[str, None] = Field(
         default=None,
         description="User who accessed (None for public access)",
     )
-    accessed_by_name: Optional[str] = Field(default=None, description="User name")
+    accessed_by_name: Union[str, None] = Field(default=None, description="User name")
 
     access_type: str = Field(
         ...,
@@ -384,19 +382,19 @@ class FileAccessLog(BaseSchema):
     )
 
     # Request metadata
-    ip_address: Optional[str] = Field(default=None, description="Client IP address")
-    user_agent: Optional[str] = Field(default=None, description="Client user agent")
-    referrer: Optional[str] = Field(default=None, description="HTTP referrer")
+    ip_address: Union[str, None] = Field(default=None, description="Client IP address")
+    user_agent: Union[str, None] = Field(default=None, description="Client user agent")
+    referrer: Union[str, None] = Field(default=None, description="HTTP referrer")
 
     # Geo-location
-    country: Optional[str] = Field(default=None, description="Country code")
-    city: Optional[str] = Field(default=None, description="City")
+    country: Union[str, None] = Field(default=None, description="Country code")
+    city: Union[str, None] = Field(default=None, description="City")
 
     accessed_at: datetime = Field(..., description="Access timestamp")
 
     # Response
     success: bool = Field(..., description="Whether access was successful")
-    error_message: Optional[str] = Field(
+    error_message: Union[str, None] = Field(
         default=None,
         description="Error message if access failed",
     )

@@ -1,4 +1,3 @@
-# --- File: app/schemas/inquiry/inquiry_status.py ---
 """
 Inquiry status management schemas.
 
@@ -6,10 +5,8 @@ This module defines schemas for managing inquiry status changes,
 assignments, timeline tracking, and follow-ups.
 """
 
-from __future__ import annotations
-
 from datetime import datetime
-from typing import Dict, List, Optional
+from typing import Dict, List, Union
 from uuid import UUID
 
 from pydantic import ConfigDict, Field, field_validator, model_validator
@@ -53,21 +50,21 @@ class InquiryStatusUpdate(BaseCreateSchema):
         ...,
         description="New status to set",
     )
-    notes: Optional[str] = Field(
+    notes: Union[str, None] = Field(
         default=None,
         max_length=500,
         description="Notes about status change",
     )
 
     # Metadata
-    updated_by: Optional[UUID] = Field(
+    updated_by: Union[UUID, None] = Field(
         default=None,
         description="Admin updating the status",
     )
 
     @field_validator("notes")
     @classmethod
-    def clean_notes(cls, v: Optional[str]) -> Optional[str]:
+    def clean_notes(cls, v: Union[str, None]) -> Union[str, None]:
         """Clean notes field."""
         if v is not None:
             v = v.strip()
@@ -142,21 +139,21 @@ class InquiryAssignment(BaseCreateSchema):
         description="Admin making the assignment",
     )
 
-    assignment_notes: Optional[str] = Field(
+    assignment_notes: Union[str, None] = Field(
         default=None,
         max_length=500,
         description="Notes about the assignment",
     )
 
     # Due Date for Follow-up
-    follow_up_due: Optional[datetime] = Field(
+    follow_up_due: Union[datetime, None] = Field(
         default=None,
         description="When follow-up should be completed by",
     )
 
     @field_validator("assignment_notes")
     @classmethod
-    def clean_notes(cls, v: Optional[str]) -> Optional[str]:
+    def clean_notes(cls, v: Union[str, None]) -> Union[str, None]:
         """Clean assignment notes."""
         if v is not None:
             v = v.strip()
@@ -166,7 +163,7 @@ class InquiryAssignment(BaseCreateSchema):
 
     @field_validator("follow_up_due")
     @classmethod
-    def validate_follow_up_due(cls, v: Optional[datetime]) -> Optional[datetime]:
+    def validate_follow_up_due(cls, v: Union[datetime, None]) -> Union[datetime, None]:
         """Validate follow-up due date."""
         if v is not None:
             if v < datetime.utcnow():
@@ -224,7 +221,7 @@ class InquiryFollowUp(BaseCreateSchema):
     )
 
     # Next Steps
-    next_follow_up_date: Optional[datetime] = Field(
+    next_follow_up_date: Union[datetime, None] = Field(
         default=None,
         description="When next follow-up should occur",
     )
@@ -240,7 +237,7 @@ class InquiryFollowUp(BaseCreateSchema):
 
     @field_validator("next_follow_up_date")
     @classmethod
-    def validate_next_follow_up(cls, v: Optional[datetime]) -> Optional[datetime]:
+    def validate_next_follow_up(cls, v: Union[datetime, None]) -> Union[datetime, None]:
         """Validate next follow-up date."""
         if v is not None:
             if v < datetime.utcnow():
@@ -273,7 +270,7 @@ class InquiryTimelineEntry(BaseSchema):
         pattern=r"^(status_change|assignment|follow_up|note_added|conversion)$",
         description="Type of timeline event",
     )
-    status: Optional[InquiryStatus] = Field(
+    status: Union[InquiryStatus, None] = Field(
         default=None,
         description="Status at this point (for status_change events)",
     )
@@ -281,15 +278,15 @@ class InquiryTimelineEntry(BaseSchema):
         ...,
         description="When this event occurred",
     )
-    changed_by: Optional[UUID] = Field(
+    changed_by: Union[UUID, None] = Field(
         default=None,
         description="Admin who triggered this event",
     )
-    changed_by_name: Optional[str] = Field(
+    changed_by_name: Union[str, None] = Field(
         default=None,
         description="Name of admin who triggered event",
     )
-    notes: Optional[str] = Field(
+    notes: Union[str, None] = Field(
         default=None,
         max_length=1000,
         description="Notes about this event",
@@ -333,7 +330,7 @@ class InquiryConversion(BaseCreateSchema):
         description="Admin who facilitated conversion",
     )
 
-    conversion_notes: Optional[str] = Field(
+    conversion_notes: Union[str, None] = Field(
         default=None,
         max_length=500,
         description="Notes about the conversion",
@@ -341,7 +338,7 @@ class InquiryConversion(BaseCreateSchema):
 
     @field_validator("conversion_notes")
     @classmethod
-    def clean_notes(cls, v: Optional[str]) -> Optional[str]:
+    def clean_notes(cls, v: Union[str, None]) -> Union[str, None]:
         """Clean conversion notes."""
         if v is not None:
             v = v.strip()
@@ -381,7 +378,7 @@ class BulkInquiryStatusUpdate(BaseCreateSchema):
         ...,
         description="New status for all inquiries",
     )
-    notes: Optional[str] = Field(
+    notes: Union[str, None] = Field(
         default=None,
         max_length=500,
         description="Common notes for all updates",
@@ -409,7 +406,7 @@ class BulkInquiryStatusUpdate(BaseCreateSchema):
 
     @field_validator("notes")
     @classmethod
-    def clean_notes(cls, v: Optional[str]) -> Optional[str]:
+    def clean_notes(cls, v: Union[str, None]) -> Union[str, None]:
         """Clean notes."""
         if v is not None:
             v = v.strip()

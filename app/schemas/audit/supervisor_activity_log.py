@@ -7,9 +7,10 @@ task management, student interactions, facility oversight, and
 performance metrics for accountability and analytics.
 """
 
-from datetime import datetime, date as Date
+from datetime import date as Date, datetime
+
 from decimal import Decimal, ROUND_HALF_UP
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Union
 from enum import Enum
 
 from pydantic import Field, field_validator, computed_field, model_validator
@@ -62,7 +63,7 @@ class SupervisorActivityBase(BaseSchema):
         ...,
         description="Supervisor performing the action"
     )
-    supervisor_name: Optional[str] = Field(
+    supervisor_name: Union[str, None] = Field(
         default=None,
         max_length=255,
         description="Supervisor name (for display)"
@@ -73,7 +74,7 @@ class SupervisorActivityBase(BaseSchema):
         ...,
         description="Hostel where action occurred"
     )
-    hostel_name: Optional[str] = Field(
+    hostel_name: Union[str, None] = Field(
         default=None,
         max_length=255,
         description="Hostel name (for display)"
@@ -98,27 +99,27 @@ class SupervisorActivityBase(BaseSchema):
     )
     
     # Entity affected
-    entity_type: Optional[str] = Field(
+    entity_type: Union[str, None] = Field(
         default=None,
         max_length=50,
         description="Entity type affected (e.g., 'complaint', 'attendance', 'student')"
     )
-    entity_id: Optional[UUID] = Field(
+    entity_id: Union[UUID, None] = Field(
         default=None,
         description="ID of the entity affected (if applicable)"
     )
-    entity_name: Optional[str] = Field(
+    entity_name: Union[str, None] = Field(
         default=None,
         max_length=255,
         description="Display name of affected entity"
     )
     
     # Related entities (for complex actions)
-    related_student_id: Optional[UUID] = Field(
+    related_student_id: Union[UUID, None] = Field(
         default=None,
         description="Student involved in the action"
     )
-    related_room_id: Optional[UUID] = Field(
+    related_room_id: Union[UUID, None] = Field(
         default=None,
         description="Room involved in the action"
     )
@@ -129,7 +130,7 @@ class SupervisorActivityBase(BaseSchema):
         pattern="^(completed|pending|failed|cancelled)$",
         description="Status of the action"
     )
-    outcome: Optional[str] = Field(
+    outcome: Union[str, None] = Field(
         default=None,
         max_length=500,
         description="Brief outcome description"
@@ -142,52 +143,52 @@ class SupervisorActivityBase(BaseSchema):
     )
     
     # Performance metrics
-    time_taken_minutes: Optional[int] = Field(
+    time_taken_minutes: Union[int, None] = Field(
         default=None,
         ge=0,
         description="Time taken to complete the action (minutes)"
     )
-    priority_level: Optional[str] = Field(
+    priority_level: Union[str, None] = Field(
         default=None,
         pattern="^(low|medium|high|urgent|critical)$",
         description="Priority level of the action"
     )
     
     # Request context
-    ip_address: Optional[str] = Field(
+    ip_address: Union[str, None] = Field(
         default=None,
         max_length=45,
         description="IP address from which the action originated"
     )
-    user_agent: Optional[str] = Field(
+    user_agent: Union[str, None] = Field(
         default=None,
         max_length=500,
         description="User-Agent string from supervisor's device"
     )
-    device_type: Optional[str] = Field(
+    device_type: Union[str, None] = Field(
         default=None,
         pattern="^(mobile|tablet|desktop|other)$",
         description="Device type used"
     )
     
     # Location (for field activities)
-    location: Optional[str] = Field(
+    location: Union[str, None] = Field(
         default=None,
         max_length=255,
         description="Physical location where action was performed"
     )
-    gps_coordinates: Optional[str] = Field(
+    gps_coordinates: Union[str, None] = Field(
         default=None,
         pattern=r"^-?\d+\.\d+,-?\d+\.\d+$",
         description="GPS coordinates (latitude,longitude)"
     )
     
     # Shift context
-    shift_id: Optional[UUID] = Field(
+    shift_id: Union[UUID, None] = Field(
         default=None,
         description="Shift during which action occurred"
     )
-    shift_type: Optional[str] = Field(
+    shift_type: Union[str, None] = Field(
         default=None,
         pattern="^(morning|afternoon|evening|night)$",
         description="Type of shift"
@@ -200,13 +201,13 @@ class SupervisorActivityBase(BaseSchema):
     )
     
     # Quality indicators (Note: Decimal fields with 2 decimal places expected)
-    quality_score: Optional[Decimal] = Field(
+    quality_score: Union[Decimal, None] = Field(
         default=None,
         ge=0,
         le=5,
         description="Quality score for the action (0-5, 2 decimal places)"
     )
-    student_feedback_score: Optional[Decimal] = Field(
+    student_feedback_score: Union[Decimal, None] = Field(
         default=None,
         ge=0,
         le=5,
@@ -218,14 +219,14 @@ class SupervisorActivityBase(BaseSchema):
         default=False,
         description="Whether action requires follow-up"
     )
-    follow_up_date: Optional[datetime] = Field(
+    follow_up_date: Union[datetime, None] = Field(
         default=None,
         description="When follow-up is due"
     )
     
     @field_validator("time_taken_minutes")
     @classmethod
-    def validate_time_taken(cls, v: Optional[int]) -> Optional[int]:
+    def validate_time_taken(cls, v: Union[int, None]) -> Union[int, None]:
         """Validate time taken is reasonable."""
         if v is not None and v > 1440:  # More than 24 hours
             raise ValueError("time_taken_minutes cannot exceed 1440 (24 hours)")
@@ -233,7 +234,7 @@ class SupervisorActivityBase(BaseSchema):
     
     @field_validator('quality_score', 'student_feedback_score')
     @classmethod
-    def validate_score_precision(cls, v: Optional[Decimal]) -> Optional[Decimal]:
+    def validate_score_precision(cls, v: Union[Decimal, None]) -> Union[Decimal, None]:
         """Ensure score fields have max 2 decimal places."""
         if v is None:
             return v
@@ -241,7 +242,7 @@ class SupervisorActivityBase(BaseSchema):
     
     @computed_field
     @property
-    def efficiency_score(self) -> Optional[Decimal]:
+    def efficiency_score(self) -> Union[Decimal, None]:
         """
         Calculate efficiency score based on time taken and priority (2 decimal places).
         
@@ -287,7 +288,7 @@ class SupervisorActivityCreate(SupervisorActivityBase, BaseCreateSchema):
         complaint_id: UUID,
         action: str,
         description: str,
-        time_taken: Optional[int] = None,
+        time_taken: Union[int, None] = None,
         **kwargs
     ) -> "SupervisorActivityCreate":
         """
@@ -365,11 +366,11 @@ class SupervisorActivityLogResponse(BaseResponseSchema):
     
     # Actor
     supervisor_id: UUID
-    supervisor_name: Optional[str] = None
+    supervisor_name: Union[str, None] = None
     
     # Context
     hostel_id: UUID
-    hostel_name: Optional[str] = None
+    hostel_name: Union[str, None] = None
     
     # Action
     action_type: str
@@ -377,29 +378,29 @@ class SupervisorActivityLogResponse(BaseResponseSchema):
     action_description: str
     
     # Entity
-    entity_type: Optional[str]
-    entity_id: Optional[UUID]
-    entity_name: Optional[str]
+    entity_type: Union[str, None]
+    entity_id: Union[UUID, None]
+    entity_name: Union[str, None]
     
     # Status
     status: str
-    outcome: Optional[str]
+    outcome: Union[str, None]
     
     # Metrics (Note: Decimal fields with 2 decimal places expected)
-    time_taken_minutes: Optional[int]
-    priority_level: Optional[str]
-    quality_score: Optional[Decimal]
+    time_taken_minutes: Union[int, None]
+    priority_level: Union[str, None]
+    quality_score: Union[Decimal, None]
     
     # Timestamp
     created_at: datetime
     
     # Network
-    ip_address: Optional[str]
-    device_type: Optional[str]
+    ip_address: Union[str, None]
+    device_type: Union[str, None]
     
     @field_validator('quality_score')
     @classmethod
-    def validate_quality_score(cls, v: Optional[Decimal]) -> Optional[Decimal]:
+    def validate_quality_score(cls, v: Union[Decimal, None]) -> Union[Decimal, None]:
         """Ensure quality_score has max 2 decimal places."""
         if v is None:
             return v
@@ -457,12 +458,12 @@ class SupervisorActivityDetail(BaseResponseSchema):
     
     # Actor
     supervisor_id: UUID
-    supervisor_name: Optional[str] = None
-    supervisor_email: Optional[str] = None
+    supervisor_name: Union[str, None] = None
+    supervisor_email: Union[str, None] = None
     
     # Context
     hostel_id: UUID
-    hostel_name: Optional[str] = None
+    hostel_name: Union[str, None] = None
     
     # Action details
     action_type: str
@@ -470,57 +471,57 @@ class SupervisorActivityDetail(BaseResponseSchema):
     action_description: str
     
     # Entity
-    entity_type: Optional[str]
-    entity_id: Optional[UUID]
-    entity_name: Optional[str]
+    entity_type: Union[str, None]
+    entity_id: Union[UUID, None]
+    entity_name: Union[str, None]
     
     # Related entities
-    related_student_id: Optional[UUID]
-    related_student_name: Optional[str]
-    related_room_id: Optional[UUID]
-    related_room_number: Optional[str]
+    related_student_id: Union[UUID, None]
+    related_student_name: Union[str, None]
+    related_room_id: Union[UUID, None]
+    related_room_number: Union[str, None]
     
     # Outcome
     status: str
-    outcome: Optional[str]
+    outcome: Union[str, None]
     
     # Metadata
     metadata: Dict[str, Any]
     
     # Performance (Note: Decimal fields with 2 decimal places expected)
-    time_taken_minutes: Optional[int]
-    priority_level: Optional[str]
-    efficiency_score: Optional[Decimal]
+    time_taken_minutes: Union[int, None]
+    priority_level: Union[str, None]
+    efficiency_score: Union[Decimal, None]
     
     # Quality (Note: Decimal fields with 2 decimal places expected)
-    quality_score: Optional[Decimal]
-    student_feedback_score: Optional[Decimal]
+    quality_score: Union[Decimal, None]
+    student_feedback_score: Union[Decimal, None]
     
     # Request context
-    ip_address: Optional[str]
-    user_agent: Optional[str]
-    device_type: Optional[str]
+    ip_address: Union[str, None]
+    user_agent: Union[str, None]
+    device_type: Union[str, None]
     
     # Location
-    location: Optional[str]
-    gps_coordinates: Optional[str]
+    location: Union[str, None]
+    gps_coordinates: Union[str, None]
     
     # Shift context
-    shift_id: Optional[UUID]
-    shift_type: Optional[str]
+    shift_id: Union[UUID, None]
+    shift_type: Union[str, None]
     
     # Follow-up
     requires_follow_up: bool
-    follow_up_date: Optional[datetime]
-    follow_up_completed: Optional[bool] = None
+    follow_up_date: Union[datetime, None]
+    follow_up_completed: Union[bool, None] = None
     
     # Timestamps
     created_at: datetime
-    updated_at: Optional[datetime] = None
+    updated_at: Union[datetime, None] = None
     
     @field_validator('efficiency_score', 'quality_score', 'student_feedback_score')
     @classmethod
-    def validate_decimal_fields(cls, v: Optional[Decimal]) -> Optional[Decimal]:
+    def validate_decimal_fields(cls, v: Union[Decimal, None]) -> Union[Decimal, None]:
         """Ensure decimal fields have max 2 decimal places."""
         if v is None:
             return v
@@ -579,108 +580,108 @@ class SupervisorActivityFilter(BaseSchema):
     """
     
     # Actor filters
-    supervisor_id: Optional[UUID] = Field(
+    supervisor_id: Union[UUID, None] = Field(
         default=None,
         description="Filter by specific supervisor"
     )
-    supervisor_ids: Optional[List[UUID]] = Field(
+    supervisor_ids: Union[List[UUID], None] = Field(
         default=None,
         max_length=50,
         description="Filter by multiple supervisors"
     )
     
     # Context filters
-    hostel_id: Optional[UUID] = Field(
+    hostel_id: Union[UUID, None] = Field(
         default=None,
         description="Filter by hostel"
     )
-    hostel_ids: Optional[List[UUID]] = Field(
+    hostel_ids: Union[List[UUID], None] = Field(
         default=None,
         max_length=100,
         description="Filter by multiple hostels"
     )
     
     # Action filters
-    action_type: Optional[str] = Field(
+    action_type: Union[str, None] = Field(
         default=None,
         max_length=100,
         description="Filter by action type"
     )
-    action_types: Optional[List[str]] = Field(
+    action_types: Union[List[str], None] = Field(
         default=None,
         max_length=50,
         description="Filter by multiple action types"
     )
-    action_category: Optional[SupervisorActionCategory] = Field(
+    action_category: Union[SupervisorActionCategory, None] = Field(
         default=None,
         description="Filter by action category"
     )
-    action_categories: Optional[List[SupervisorActionCategory]] = Field(
+    action_categories: Union[List[SupervisorActionCategory], None] = Field(
         default=None,
         max_length=12,
         description="Filter by multiple categories"
     )
     
     # Entity filters
-    entity_type: Optional[str] = Field(
+    entity_type: Union[str, None] = Field(
         default=None,
         max_length=50,
         description="Filter by entity type"
     )
-    entity_id: Optional[UUID] = Field(
+    entity_id: Union[UUID, None] = Field(
         default=None,
         description="Filter by specific entity"
     )
     
     # Related entity filters
-    related_student_id: Optional[UUID] = Field(
+    related_student_id: Union[UUID, None] = Field(
         default=None,
         description="Filter by student"
     )
-    related_room_id: Optional[UUID] = Field(
+    related_room_id: Union[UUID, None] = Field(
         default=None,
         description="Filter by room"
     )
     
     # Status filters
-    status: Optional[str] = Field(
+    status: Union[str, None] = Field(
         default=None,
         pattern="^(completed|pending|failed|cancelled)$",
         description="Filter by status"
     )
-    statuses: Optional[List[str]] = Field(
+    statuses: Union[List[str], None] = Field(
         default=None,
         max_length=4,
         description="Filter by multiple statuses"
     )
     
     # Priority filters
-    priority_level: Optional[str] = Field(
+    priority_level: Union[str, None] = Field(
         default=None,
         pattern="^(low|medium|high|urgent|critical)$",
         description="Filter by priority level"
     )
-    min_priority: Optional[str] = Field(
+    min_priority: Union[str, None] = Field(
         default=None,
         description="Minimum priority level"
     )
     
     # Time filters
-    datetime_range: Optional[DateTimeRangeFilter] = Field(
+    datetime_range: Union[DateTimeRangeFilter, None] = Field(
         default=None,
         description="Filter by datetime range"
     )
-    created_after: Optional[datetime] = Field(
+    created_after: Union[datetime, None] = Field(
         default=None,
         description="Filter activities after this datetime"
     )
-    created_before: Optional[datetime] = Field(
+    created_before: Union[datetime, None] = Field(
         default=None,
         description="Filter activities before this datetime"
     )
     
     # Quick time filters
-    last_hours: Optional[int] = Field(
+    last_hours: Union[int, None] = Field(
         default=None,
         ge=1,
         le=168,  # Max 1 week
@@ -692,24 +693,24 @@ class SupervisorActivityFilter(BaseSchema):
     )
     
     # Shift filters
-    shift_id: Optional[UUID] = Field(
+    shift_id: Union[UUID, None] = Field(
         default=None,
         description="Filter by shift"
     )
-    shift_type: Optional[str] = Field(
+    shift_type: Union[str, None] = Field(
         default=None,
         pattern="^(morning|afternoon|evening|night)$",
         description="Filter by shift type"
     )
     
     # Performance filters (Note: Decimal with 2 decimal places expected)
-    min_quality_score: Optional[Decimal] = Field(
+    min_quality_score: Union[Decimal, None] = Field(
         default=None,
         ge=0,
         le=5,
         description="Minimum quality score"
     )
-    min_efficiency_score: Optional[Decimal] = Field(
+    min_efficiency_score: Union[Decimal, None] = Field(
         default=None,
         ge=0,
         le=100,
@@ -717,7 +718,7 @@ class SupervisorActivityFilter(BaseSchema):
     )
     
     # Follow-up filters
-    requires_follow_up: Optional[bool] = Field(
+    requires_follow_up: Union[bool, None] = Field(
         default=None,
         description="Filter by follow-up requirement"
     )
@@ -727,7 +728,7 @@ class SupervisorActivityFilter(BaseSchema):
     )
     
     # Search
-    search_query: Optional[str] = Field(
+    search_query: Union[str, None] = Field(
         default=None,
         min_length=1,
         max_length=500,
@@ -752,7 +753,7 @@ class SupervisorActivityFilter(BaseSchema):
     
     @field_validator('min_quality_score', 'min_efficiency_score')
     @classmethod
-    def validate_min_scores(cls, v: Optional[Decimal]) -> Optional[Decimal]:
+    def validate_min_scores(cls, v: Union[Decimal, None]) -> Union[Decimal, None]:
         """Ensure score filters have max 2 decimal places."""
         if v is None:
             return v
@@ -820,12 +821,12 @@ class SupervisorActivityTimelinePoint(BaseSchema):
     )
     
     # Performance metrics (Note: Decimal fields with 2 decimal places expected)
-    avg_time_taken_minutes: Optional[Decimal] = Field(
+    avg_time_taken_minutes: Union[Decimal, None] = Field(
         default=None,
         ge=0,
         description="Average time taken for actions (2 decimal places)"
     )
-    avg_quality_score: Optional[Decimal] = Field(
+    avg_quality_score: Union[Decimal, None] = Field(
         default=None,
         ge=0,
         le=5,
@@ -841,7 +842,7 @@ class SupervisorActivityTimelinePoint(BaseSchema):
     
     @field_validator('avg_time_taken_minutes', 'avg_quality_score')
     @classmethod
-    def validate_averages(cls, v: Optional[Decimal]) -> Optional[Decimal]:
+    def validate_averages(cls, v: Union[Decimal, None]) -> Union[Decimal, None]:
         """Ensure average fields have max 2 decimal places."""
         if v is None:
             return v
@@ -881,9 +882,9 @@ class SupervisorPerformanceMetrics(BaseSchema):
     """
     
     supervisor_id: UUID
-    supervisor_name: Optional[str] = None
+    supervisor_name: Union[str, None] = None
     hostel_id: UUID
-    hostel_name: Optional[str] = None
+    hostel_name: Union[str, None] = None
     
     period_start: datetime
     period_end: datetime
@@ -1042,9 +1043,9 @@ class SupervisorActivitySummary(BaseSchema):
     """
     
     supervisor_id: UUID
-    supervisor_name: Optional[str] = None
+    supervisor_name: Union[str, None] = None
     hostel_id: UUID
-    hostel_name: Optional[str] = None
+    hostel_name: Union[str, None] = None
     
     period_start: datetime
     period_end: datetime
@@ -1065,7 +1066,7 @@ class SupervisorActivitySummary(BaseSchema):
     )
     
     # Performance metrics
-    performance_metrics: Optional[SupervisorPerformanceMetrics] = None
+    performance_metrics: Union[SupervisorPerformanceMetrics, None] = None
     
     # Timeline
     timeline: List[SupervisorActivityTimelinePoint] = Field(
@@ -1081,17 +1082,17 @@ class SupervisorActivitySummary(BaseSchema):
     )
     
     # Highlights
-    peak_activity_hour: Optional[int] = Field(
+    peak_activity_hour: Union[int, None] = Field(
         default=None,
         ge=0,
         le=23,
         description="Hour with most activity"
     )
-    peak_activity_day: Optional[str] = Field(
+    peak_activity_day: Union[str, None] = Field(
         default=None,
         description="Day of week with most activity"
     )
-    busiest_date: Optional[Date] = Field(
+    busiest_date: Union[Date, None] = Field(
         default=None,
         description="Date with most activities"
     )
@@ -1126,7 +1127,7 @@ class SupervisorActivitySummary(BaseSchema):
     
     @computed_field
     @property
-    def most_common_action(self) -> Optional[str]:
+    def most_common_action(self) -> Union[str, None]:
         """Identify most common action type."""
         if not self.actions_by_type:
             return None
@@ -1179,7 +1180,7 @@ class SupervisorShiftReport(BaseSchema):
     )
     
     # Handover notes
-    handover_notes: Optional[str] = Field(
+    handover_notes: Union[str, None] = Field(
         default=None,
         max_length=2000,
         description="Notes for next shift"
@@ -1226,4 +1227,3 @@ class SupervisorShiftReport(BaseSchema):
         
         result = (Decimal(self.completed_activities) / Decimal(self.total_activities)) * 100
         return result.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
-

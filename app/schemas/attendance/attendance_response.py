@@ -6,11 +6,9 @@ Provides various response formats for attendance data including
 detailed, summary, and list views with computed fields.
 """
 
-from __future__ import annotations
-
 from datetime import date as Date, datetime, time
 from decimal import Decimal
-from typing import Optional
+from typing import Union
 
 from pydantic import Field, computed_field
 from pydantic.types import UUID4 as UUID
@@ -49,7 +47,7 @@ class AttendanceResponse(BaseResponseSchema):
         ...,
         description="Student full name",
     )
-    room_number: Optional[str] = Field(
+    room_number: Union[str, None] = Field(
         None,
         description="Student room number",
     )
@@ -57,11 +55,11 @@ class AttendanceResponse(BaseResponseSchema):
         ...,
         description="Date of attendance",
     )
-    check_in_time: Optional[time] = Field(
+    check_in_time: Union[time, None] = Field(
         None,
         description="Check-in time",
     )
-    check_out_time: Optional[time] = Field(
+    check_out_time: Union[time, None] = Field(
         None,
         description="Check-out time",
     )
@@ -73,7 +71,7 @@ class AttendanceResponse(BaseResponseSchema):
         ...,
         description="Late arrival indicator",
     )
-    late_minutes: Optional[int] = Field(
+    late_minutes: Union[int, None] = Field(
         None,
         description="Minutes late (if applicable)",
     )
@@ -132,7 +130,7 @@ class AttendanceDetail(BaseResponseSchema):
         ...,
         description="Student phone number",
     )
-    room_number: Optional[str] = Field(
+    room_number: Union[str, None] = Field(
         None,
         description="Student room number",
     )
@@ -140,11 +138,11 @@ class AttendanceDetail(BaseResponseSchema):
         ...,
         description="Date of attendance",
     )
-    check_in_time: Optional[time] = Field(
+    check_in_time: Union[time, None] = Field(
         None,
         description="Check-in time",
     )
-    check_out_time: Optional[time] = Field(
+    check_out_time: Union[time, None] = Field(
         None,
         description="Check-out time",
     )
@@ -156,7 +154,7 @@ class AttendanceDetail(BaseResponseSchema):
         ...,
         description="Late arrival indicator",
     )
-    late_minutes: Optional[int] = Field(
+    late_minutes: Union[int, None] = Field(
         None,
         description="Minutes late",
     )
@@ -172,27 +170,27 @@ class AttendanceDetail(BaseResponseSchema):
         ...,
         description="Name of user who marked attendance",
     )
-    supervisor_id: Optional[UUID] = Field(
+    supervisor_id: Union[UUID, None] = Field(
         None,
         description="Supervisor ID who verified",
     )
-    supervisor_name: Optional[str] = Field(
+    supervisor_name: Union[str, None] = Field(
         None,
         description="Supervisor name",
     )
-    notes: Optional[str] = Field(
+    notes: Union[str, None] = Field(
         None,
         description="Additional notes",
     )
-    location_lat: Optional[Decimal] = Field(
+    location_lat: Union[Decimal, None] = Field(
         None,
         description="Latitude (for mobile check-in)",
     )
-    location_lng: Optional[Decimal] = Field(
+    location_lng: Union[Decimal, None] = Field(
         None,
         description="Longitude (for mobile check-in)",
     )
-    device_info: Optional[dict] = Field(
+    device_info: Union[dict, None] = Field(
         None,
         description="Device information (for mobile check-in)",
     )
@@ -243,7 +241,7 @@ class AttendanceListItem(BaseSchema):
         ...,
         description="Student name",
     )
-    room_number: Optional[str] = Field(
+    room_number: Union[str, None] = Field(
         None,
         description="Room number",
     )
@@ -255,7 +253,7 @@ class AttendanceListItem(BaseSchema):
         ...,
         description="Attendance status",
     )
-    check_in_time: Optional[time] = Field(
+    check_in_time: Union[time, None] = Field(
         None,
         description="Check-in time",
     )
@@ -354,7 +352,7 @@ class DailyAttendanceSummary(BaseSchema):
         ...,
         description="Whether attendance marking is complete",
     )
-    marked_at: Optional[datetime] = Field(
+    marked_at: Union[datetime, None] = Field(
         None,
         description="Timestamp when marking was completed",
     )

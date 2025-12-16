@@ -3,9 +3,7 @@
 Pagination schemas for page-based and cursor-based responses.
 """
 
-from __future__ import annotations
-
-from typing import Generic, List, Optional, TypeVar
+from typing import Generic, List, Union, TypeVar
 
 from pydantic import Field, field_validator, computed_field
 
@@ -107,7 +105,7 @@ class PaginatedResponse(BaseSchema, Generic[T]):
         total_items: int,
         page: int,
         page_size: int,
-    ) -> "PaginatedResponse[T]":
+    ):
         """
         Create paginated response with calculated metadata.
 
@@ -144,7 +142,7 @@ class PaginatedResponse(BaseSchema, Generic[T]):
 class CursorPaginationParams(BaseSchema):
     """Cursor-based pagination parameters (for infinite scroll)."""
 
-    cursor: Optional[str] = Field(
+    cursor: Union[str, None] = Field(
         default=None,
         description="Cursor for next page",
     )
@@ -159,7 +157,7 @@ class CursorPaginationParams(BaseSchema):
 class CursorPaginationMeta(BaseSchema):
     """Cursor pagination metadata."""
 
-    next_cursor: Optional[str] = Field(
+    next_cursor: Union[str, None] = Field(
         default=None,
         description="Cursor for next page",
     )

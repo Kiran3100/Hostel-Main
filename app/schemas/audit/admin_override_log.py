@@ -6,9 +6,9 @@ Tracks admin interventions and overrides of supervisor decisions
 for accountability, performance review, and governance.
 """
 
-from datetime import datetime, date 
+from datetime import date as Date, datetime
 from decimal import Decimal, ROUND_HALF_UP
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Union
 
 from pydantic import Field, field_validator, computed_field, model_validator
 from uuid import UUID
@@ -41,17 +41,17 @@ class AdminOverrideBase(BaseSchema):
         ...,
         description="Admin who performed the override"
     )
-    admin_name: Optional[str] = Field(
+    admin_name: Union[str, None] = Field(
         default=None,
         max_length=255,
         description="Admin name (for display)"
     )
     
-    supervisor_id: Optional[UUID] = Field(
+    supervisor_id: Union[UUID, None] = Field(
         default=None,
         description="Supervisor whose decision was overridden (if applicable)"
     )
-    supervisor_name: Optional[str] = Field(
+    supervisor_name: Union[str, None] = Field(
         default=None,
         max_length=255,
         description="Supervisor name (for display)"
@@ -62,7 +62,7 @@ class AdminOverrideBase(BaseSchema):
         ...,
         description="Hostel where the override occurred"
     )
-    hostel_name: Optional[str] = Field(
+    hostel_name: Union[str, None] = Field(
         default=None,
         max_length=255,
         description="Hostel name (for display)"
@@ -92,7 +92,7 @@ class AdminOverrideBase(BaseSchema):
         ...,
         description="Primary key of affected entity"
     )
-    entity_name: Optional[str] = Field(
+    entity_name: Union[str, None] = Field(
         default=None,
         max_length=255,
         description="Display name of entity"
@@ -105,14 +105,14 @@ class AdminOverrideBase(BaseSchema):
         max_length=2000,
         description="Why the admin override was performed"
     )
-    justification_category: Optional[str] = Field(
+    justification_category: Union[str, None] = Field(
         default=None,
         pattern="^(quality_issue|policy_violation|emergency|customer_complaint|other)$",
         description="Category of justification"
     )
     
     # Original and override actions
-    original_action: Optional[Dict[str, Any]] = Field(
+    original_action: Union[Dict[str, Any], None] = Field(
         default=None,
         description="Snapshot of supervisor's original action/decision"
     )
@@ -138,7 +138,7 @@ class AdminOverrideBase(BaseSchema):
         default=False,
         description="Whether supervisor was notified"
     )
-    notification_sent_at: Optional[datetime] = Field(
+    notification_sent_at: Union[datetime, None] = Field(
         default=None,
         description="When notification was sent"
     )
@@ -148,17 +148,17 @@ class AdminOverrideBase(BaseSchema):
         default=False,
         description="Whether override requires higher approval"
     )
-    approved_by: Optional[UUID] = Field(
+    approved_by: Union[UUID, None] = Field(
         default=None,
         description="Senior admin who approved override"
     )
-    approved_at: Optional[datetime] = Field(
+    approved_at: Union[datetime, None] = Field(
         default=None,
         description="When override was approved"
     )
     
     # Outcome
-    outcome: Optional[str] = Field(
+    outcome: Union[str, None] = Field(
         default=None,
         max_length=500,
         description="Outcome of the override"
@@ -180,7 +180,7 @@ class AdminOverrideBase(BaseSchema):
         default=False,
         description="Whether follow-up action is required"
     )
-    follow_up_completed: Optional[bool] = Field(
+    follow_up_completed: Union[bool, None] = Field(
         default=None,
         description="Whether follow-up was completed"
     )
@@ -278,14 +278,14 @@ class AdminOverrideLogResponse(BaseResponseSchema):
     
     # Actors
     admin_id: UUID
-    admin_name: Optional[str] = None
+    admin_name: Union[str, None] = None
     
-    supervisor_id: Optional[UUID]
-    supervisor_name: Optional[str] = None
+    supervisor_id: Union[UUID, None]
+    supervisor_name: Union[str, None] = None
     
     # Context
     hostel_id: UUID
-    hostel_name: Optional[str] = None
+    hostel_name: Union[str, None] = None
     
     # Override details
     override_type: str
@@ -294,11 +294,11 @@ class AdminOverrideLogResponse(BaseResponseSchema):
     # Entity
     entity_type: str
     entity_id: UUID
-    entity_name: Optional[str]
+    entity_name: Union[str, None]
     
     # Reason
     reason: str
-    justification_category: Optional[str]
+    justification_category: Union[str, None]
     
     # Impact (Note: Decimal with 2 decimal places expected)
     severity: str
@@ -364,16 +364,16 @@ class AdminOverrideDetail(BaseResponseSchema):
     
     # Actors
     admin_id: UUID
-    admin_name: Optional[str] = None
-    admin_email: Optional[str] = None
+    admin_name: Union[str, None] = None
+    admin_email: Union[str, None] = None
     
-    supervisor_id: Optional[UUID]
-    supervisor_name: Optional[str] = None
-    supervisor_email: Optional[str] = None
+    supervisor_id: Union[UUID, None]
+    supervisor_name: Union[str, None] = None
+    supervisor_email: Union[str, None] = None
     
     # Context
     hostel_id: UUID
-    hostel_name: Optional[str] = None
+    hostel_name: Union[str, None] = None
     
     # Override details
     override_type: str
@@ -382,14 +382,14 @@ class AdminOverrideDetail(BaseResponseSchema):
     # Entity
     entity_type: str
     entity_id: UUID
-    entity_name: Optional[str]
+    entity_name: Union[str, None]
     
     # Reason and justification
     reason: str
-    justification_category: Optional[str]
+    justification_category: Union[str, None]
     
     # Actions
-    original_action: Optional[Dict[str, Any]]
+    original_action: Union[Dict[str, Any], None]
     override_action: Dict[str, Any]
     
     # Impact (Note: Decimal with 2 decimal places expected)
@@ -399,25 +399,25 @@ class AdminOverrideDetail(BaseResponseSchema):
     
     # Notification
     supervisor_notified: bool
-    notification_sent_at: Optional[datetime]
+    notification_sent_at: Union[datetime, None]
     
     # Approval
     requires_approval: bool
-    approved_by: Optional[UUID]
-    approved_by_name: Optional[str]
-    approved_at: Optional[datetime]
+    approved_by: Union[UUID, None]
+    approved_by_name: Union[str, None]
+    approved_at: Union[datetime, None]
     
     # Outcome
-    outcome: Optional[str]
+    outcome: Union[str, None]
     outcome_status: str
     
     # Follow-up
     follow_up_required: bool
-    follow_up_completed: Optional[bool]
+    follow_up_completed: Union[bool, None]
     
     # Timestamps
     created_at: datetime
-    updated_at: Optional[datetime] = None
+    updated_at: Union[datetime, None] = None
     
     @field_validator('impact_score')
     @classmethod
@@ -433,7 +433,7 @@ class AdminOverrideDetail(BaseResponseSchema):
     
     @computed_field
     @property
-    def time_to_resolution(self) -> Optional[int]:
+    def time_to_resolution(self) -> Union[int, None]:
         """Calculate hours from creation to outcome completion."""
         if self.outcome_status not in ["successful", "failed"]:
             return None
@@ -521,9 +521,9 @@ class SupervisorImpactAnalysis(BaseSchema):
     """
     
     supervisor_id: UUID
-    supervisor_name: Optional[str] = None
+    supervisor_name: Union[str, None] = None
     hostel_id: UUID
-    hostel_name: Optional[str] = None
+    hostel_name: Union[str, None] = None
     
     period_start: datetime
     period_end: datetime
@@ -556,7 +556,7 @@ class SupervisorImpactAnalysis(BaseSchema):
     )
     
     # Trend
-    trend_direction: Optional[str] = Field(
+    trend_direction: Union[str, None] = Field(
         default=None,
         pattern="^(improving|worsening|stable)$",
         description="Trend in override frequency"
@@ -612,11 +612,11 @@ class AdminOverrideSummary(BaseSchema):
     period_end: datetime
     
     # Scope
-    supervisor_id: Optional[UUID] = Field(
+    supervisor_id: Union[UUID, None] = Field(
         default=None,
         description="If summarizing overrides for specific supervisor"
     )
-    hostel_id: Optional[UUID] = Field(
+    hostel_id: Union[UUID, None] = Field(
         default=None,
         description="If summarizing for specific hostel"
     )
@@ -645,7 +645,7 @@ class AdminOverrideSummary(BaseSchema):
     )
     
     # Performance impact (Note: Decimal with 2 decimal places)
-    override_rate_for_supervisor: Optional[Decimal] = Field(
+    override_rate_for_supervisor: Union[Decimal, None] = Field(
         default=None,
         ge=0,
         le=100,
@@ -677,7 +677,7 @@ class AdminOverrideSummary(BaseSchema):
     
     @field_validator('override_rate_for_supervisor', 'percentage_change')
     @classmethod
-    def validate_decimal_precision(cls, v: Optional[Decimal]) -> Optional[Decimal]:
+    def validate_decimal_precision(cls, v: Union[Decimal, None]) -> Union[Decimal, None]:
         """Ensure decimal fields have max 2 decimal places."""
         if v is None:
             return v
@@ -685,7 +685,7 @@ class AdminOverrideSummary(BaseSchema):
     
     @computed_field
     @property
-    def most_common_override_type(self) -> Optional[str]:
+    def most_common_override_type(self) -> Union[str, None]:
         """Identify most common override type."""
         if not self.overrides_by_type:
             return None
@@ -693,7 +693,7 @@ class AdminOverrideSummary(BaseSchema):
     
     @computed_field
     @property
-    def most_overriding_admin(self) -> Optional[str]:
+    def most_overriding_admin(self) -> Union[str, None]:
         """Identify admin performing most overrides."""
         if not self.overrides_by_admin:
             return None

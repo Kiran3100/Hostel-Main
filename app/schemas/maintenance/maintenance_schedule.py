@@ -6,11 +6,9 @@ Provides schemas for scheduled preventive maintenance with recurrence,
 execution tracking, and checklist management.
 """
 
-from __future__ import annotations
-
 from datetime import date as Date, datetime
 from decimal import Decimal
-from typing import Annotated, List, Optional
+from typing import Annotated, List, Union
 
 from pydantic import ConfigDict, Field, computed_field, field_validator, model_validator
 from uuid import UUID
@@ -55,7 +53,7 @@ class ScheduleChecklistItem(BaseSchema):
         }
     )
 
-    item_id: Optional[str] = Field(
+    item_id: Union[str, None] = Field(
         None,
         max_length=50,
         description="Unique item identifier",
@@ -66,7 +64,7 @@ class ScheduleChecklistItem(BaseSchema):
         max_length=500,
         description="Description of check/task to perform",
     )
-    category: Optional[str] = Field(
+    category: Union[str, None] = Field(
         None,
         max_length=100,
         description="Item category",
@@ -85,13 +83,13 @@ class ScheduleChecklistItem(BaseSchema):
         le=1000,
         description="Display order in checklist",
     )
-    estimated_time_minutes: Optional[int] = Field(
+    estimated_time_minutes: Union[int, None] = Field(
         None,
         ge=0,
         le=1440,
         description="Estimated time for this item in minutes",
     )
-    instructions: Optional[str] = Field(
+    instructions: Union[str, None] = Field(
         None,
         max_length=1000,
         description="Detailed instructions for this check",
@@ -99,7 +97,7 @@ class ScheduleChecklistItem(BaseSchema):
 
     @field_validator("item_description", "instructions")
     @classmethod
-    def normalize_text(cls, v: Optional[str]) -> Optional[str]:
+    def normalize_text(cls, v: Union[str, None]) -> Union[str, None]:
         """Normalize text fields."""
         if v is not None:
             v = v.strip()
@@ -137,7 +135,7 @@ class PreventiveSchedule(BaseResponseSchema):
         ...,
         description="Hostel name",
     )
-    schedule_code: Optional[str] = Field(
+    schedule_code: Union[str, None] = Field(
         None,
         max_length=50,
         description="Schedule code/reference",
@@ -146,7 +144,7 @@ class PreventiveSchedule(BaseResponseSchema):
         ...,
         description="Schedule title",
     )
-    description: Optional[str] = Field(
+    description: Union[str, None] = Field(
         None,
         description="Schedule description",
     )
@@ -162,23 +160,23 @@ class PreventiveSchedule(BaseResponseSchema):
         ...,
         description="Next scheduled execution Date",
     )
-    last_execution_date: Optional[Date] = Field(
+    last_execution_date: Union[Date, None] = Field(
         None,
         description="Last execution Date",
     )
-    assigned_to: Optional[UUID] = Field(
+    assigned_to: Union[UUID, None] = Field(
         None,
         description="Default assignee user ID",
     )
-    assigned_to_name: Optional[str] = Field(
+    assigned_to_name: Union[str, None] = Field(
         None,
         description="Default assignee name",
     )
-    estimated_cost: Optional[Annotated[Decimal, Field(ge=0, decimal_places=2)]] = Field(
+    estimated_cost: Union[Annotated[Decimal, Field(ge=0, decimal_places=2)], None] = Field(
         None,
         description="Estimated cost per execution",
     )
-    estimated_duration_hours: Optional[Annotated[Decimal, Field(ge=0, decimal_places=2)]] = Field(
+    estimated_duration_hours: Union[Annotated[Decimal, Field(ge=0, decimal_places=2)], None] = Field(
         None,
         description="Estimated duration in hours",
     )
@@ -191,11 +189,11 @@ class PreventiveSchedule(BaseResponseSchema):
         ge=0,
         description="Total times executed",
     )
-    last_completed_date: Optional[Date] = Field(
+    last_completed_date: Union[Date, None] = Field(
         None,
         description="Last successful completion Date",
     )
-    priority_level: Optional[str] = Field(
+    priority_level: Union[str, None] = Field(
         None,
         pattern=r"^(low|medium|high)$",
         description="Default priority level",
@@ -239,7 +237,7 @@ class ScheduleCreate(BaseCreateSchema):
         ...,
         description="Hostel unique identifier",
     )
-    schedule_code: Optional[str] = Field(
+    schedule_code: Union[str, None] = Field(
         None,
         max_length=50,
         description="Schedule code/reference",
@@ -250,7 +248,7 @@ class ScheduleCreate(BaseCreateSchema):
         max_length=255,
         description="Schedule title",
     )
-    description: Optional[str] = Field(
+    description: Union[str, None] = Field(
         None,
         max_length=1000,
         description="Detailed description",
@@ -267,19 +265,19 @@ class ScheduleCreate(BaseCreateSchema):
         ...,
         description="First scheduled Date",
     )
-    end_date: Optional[Date] = Field(
+    end_date: Union[Date, None] = Field(
         None,
         description="Last scheduled Date (optional)",
     )
-    assigned_to: Optional[UUID] = Field(
+    assigned_to: Union[UUID, None] = Field(
         None,
         description="Default assignee",
     )
-    estimated_cost: Optional[Annotated[Decimal, Field(ge=0, decimal_places=2)]] = Field(
+    estimated_cost: Union[Annotated[Decimal, Field(ge=0, decimal_places=2)], None] = Field(
         None,
         description="Estimated cost per execution",
     )
-    estimated_duration_hours: Optional[Annotated[Decimal, Field(ge=0, le=1000, decimal_places=2)]] = Field(
+    estimated_duration_hours: Union[Annotated[Decimal, Field(ge=0, le=1000, decimal_places=2)], None] = Field(
         None,
         description="Estimated duration in hours",
     )
@@ -298,7 +296,7 @@ class ScheduleCreate(BaseCreateSchema):
         le=30,
         description="Days before due Date to send notification",
     )
-    priority_level: Optional[str] = Field(
+    priority_level: Union[str, None] = Field(
         None,
         pattern=r"^(low|medium|high)$",
         description="Default priority level",
@@ -319,7 +317,7 @@ class ScheduleCreate(BaseCreateSchema):
 
     @field_validator("title", "description")
     @classmethod
-    def normalize_text(cls, v: Optional[str]) -> Optional[str]:
+    def normalize_text(cls, v: Union[str, None]) -> Union[str, None]:
         """Normalize text fields."""
         if v is not None:
             v = v.strip()
@@ -328,7 +326,7 @@ class ScheduleCreate(BaseCreateSchema):
 
     @field_validator("estimated_cost", "estimated_duration_hours")
     @classmethod
-    def round_decimals(cls, v: Optional[Decimal]) -> Optional[Decimal]:
+    def round_decimals(cls, v: Union[Decimal, None]) -> Union[Decimal, None]:
         """Round decimal values."""
         return round(v, 2) if v is not None else None
 
@@ -391,35 +389,35 @@ class RecurrenceConfig(BaseSchema):
         ...,
         description="Recurrence type",
     )
-    interval_days: Optional[int] = Field(
+    interval_days: Union[int, None] = Field(
         None,
         ge=1,
         le=365,
         description="Interval for custom recurrence (in days)",
     )
-    day_of_week: Optional[int] = Field(
+    day_of_week: Union[int, None] = Field(
         None,
         ge=0,
         le=6,
         description="Day of week (0=Monday, 6=Sunday) for weekly recurrence",
     )
-    day_of_month: Optional[int] = Field(
+    day_of_month: Union[int, None] = Field(
         None,
         ge=1,
         le=31,
         description="Day of month for monthly recurrence",
     )
-    month_of_year: Optional[int] = Field(
+    month_of_year: Union[int, None] = Field(
         None,
         ge=1,
         le=12,
         description="Month for yearly recurrence",
     )
-    end_date: Optional[Date] = Field(
+    end_date: Union[Date, None] = Field(
         None,
         description="Stop recurring after this Date",
     )
-    max_occurrences: Optional[int] = Field(
+    max_occurrences: Union[int, None] = Field(
         None,
         ge=1,
         le=1000,
@@ -488,7 +486,7 @@ class ChecklistResult(BaseSchema):
         }
     )
 
-    item_id: Optional[str] = Field(
+    item_id: Union[str, None] = Field(
         None,
         description="Checklist item ID",
     )
@@ -505,22 +503,22 @@ class ChecklistResult(BaseSchema):
         pattern=r"^(pass|fail|na|skipped)$",
         description="Item completion status",
     )
-    notes: Optional[str] = Field(
+    notes: Union[str, None] = Field(
         None,
         max_length=1000,
         description="Notes or observations",
     )
-    issues_found: Optional[str] = Field(
+    issues_found: Union[str, None] = Field(
         None,
         max_length=500,
         description="Issues found during check",
     )
-    action_taken: Optional[str] = Field(
+    action_taken: Union[str, None] = Field(
         None,
         max_length=500,
         description="Action taken to resolve issues",
     )
-    time_taken_minutes: Optional[int] = Field(
+    time_taken_minutes: Union[int, None] = Field(
         None,
         ge=0,
         le=1440,
@@ -529,7 +527,7 @@ class ChecklistResult(BaseSchema):
 
     @field_validator("notes", "issues_found", "action_taken")
     @classmethod
-    def normalize_text(cls, v: Optional[str]) -> Optional[str]:
+    def normalize_text(cls, v: Union[str, None]) -> Union[str, None]:
         """Normalize text fields."""
         if v is not None:
             v = v.strip()
@@ -574,16 +572,16 @@ class ScheduleExecution(BaseCreateSchema):
         ...,
         description="Whether execution was completed successfully",
     )
-    completion_notes: Optional[str] = Field(
+    completion_notes: Union[str, None] = Field(
         None,
         max_length=2000,
         description="Detailed completion notes",
     )
-    actual_cost: Optional[Annotated[Decimal, Field(ge=0, decimal_places=2)]] = Field(
+    actual_cost: Union[Annotated[Decimal, Field(ge=0, decimal_places=2)], None] = Field(
         None,
         description="Actual cost incurred",
     )
-    actual_duration_hours: Optional[Annotated[Decimal, Field(ge=0, le=1000, decimal_places=2)]] = Field(
+    actual_duration_hours: Union[Annotated[Decimal, Field(ge=0, le=1000, decimal_places=2)], None] = Field(
         None,
         description="Actual time taken in hours",
     )
@@ -592,17 +590,17 @@ class ScheduleExecution(BaseCreateSchema):
         max_length=100,
         description="Results for each checklist item",
     )
-    materials_used: Optional[List[dict]] = Field(
+    materials_used: Union[List[dict], None] = Field(
         None,
         max_length=100,
         description="Materials used in execution",
     )
-    issues_found: Optional[str] = Field(
+    issues_found: Union[str, None] = Field(
         None,
         max_length=1000,
         description="Issues or concerns identified",
     )
-    recommendations: Optional[str] = Field(
+    recommendations: Union[str, None] = Field(
         None,
         max_length=1000,
         description="Recommendations for future maintenance",
@@ -611,11 +609,11 @@ class ScheduleExecution(BaseCreateSchema):
         False,
         description="Skip the next scheduled occurrence",
     )
-    reschedule_next_to: Optional[Date] = Field(
+    reschedule_next_to: Union[Date, None] = Field(
         None,
         description="Reschedule next occurrence to specific Date",
     )
-    execution_photos: Optional[List[str]] = Field(
+    execution_photos: Union[List[str], None] = Field(
         None,
         max_length=20,
         description="Execution photographs",
@@ -631,7 +629,7 @@ class ScheduleExecution(BaseCreateSchema):
 
     @field_validator("actual_cost", "actual_duration_hours")
     @classmethod
-    def round_decimals(cls, v: Optional[Decimal]) -> Optional[Decimal]:
+    def round_decimals(cls, v: Union[Decimal, None]) -> Union[Decimal, None]:
         """Round decimal values."""
         return round(v, 2) if v is not None else None
 
@@ -641,7 +639,7 @@ class ScheduleExecution(BaseCreateSchema):
         "recommendations",
     )
     @classmethod
-    def normalize_text(cls, v: Optional[str]) -> Optional[str]:
+    def normalize_text(cls, v: Union[str, None]) -> Union[str, None]:
         """Normalize text fields."""
         if v is not None:
             v = v.strip()
@@ -702,52 +700,52 @@ class ScheduleUpdate(BaseUpdateSchema):
         }
     )
 
-    title: Optional[str] = Field(
+    title: Union[str, None] = Field(
         None,
         min_length=5,
         max_length=255,
         description="Updated title",
     )
-    description: Optional[str] = Field(
+    description: Union[str, None] = Field(
         None,
         max_length=1000,
         description="Updated description",
     )
-    recurrence: Optional[MaintenanceRecurrence] = Field(
+    recurrence: Union[MaintenanceRecurrence, None] = Field(
         None,
         description="Updated recurrence pattern",
     )
-    next_due_date: Optional[Date] = Field(
+    next_due_date: Union[Date, None] = Field(
         None,
         description="Updated next due Date",
     )
-    assigned_to: Optional[UUID] = Field(
+    assigned_to: Union[UUID, None] = Field(
         None,
         description="Updated default assignee",
     )
-    estimated_cost: Optional[Annotated[Decimal, Field(ge=0, decimal_places=2)]] = Field(
+    estimated_cost: Union[Annotated[Decimal, Field(ge=0, decimal_places=2)], None] = Field(
         None,
         description="Updated estimated cost",
     )
-    estimated_duration_hours: Optional[Annotated[Decimal, Field(ge=0, le=1000, decimal_places=2)]] = Field(
+    estimated_duration_hours: Union[Annotated[Decimal, Field(ge=0, le=1000, decimal_places=2)], None] = Field(
         None,
         description="Updated estimated duration",
     )
-    is_active: Optional[bool] = Field(
+    is_active: Union[bool, None] = Field(
         None,
         description="Active status",
     )
-    auto_create_requests: Optional[bool] = Field(
+    auto_create_requests: Union[bool, None] = Field(
         None,
         description="Auto-create maintenance requests",
     )
-    notification_days_before: Optional[int] = Field(
+    notification_days_before: Union[int, None] = Field(
         None,
         ge=0,
         le=30,
         description="Notification days before due Date",
     )
-    priority_level: Optional[str] = Field(
+    priority_level: Union[str, None] = Field(
         None,
         pattern=r"^(low|medium|high)$",
         description="Updated priority level",
@@ -755,7 +753,7 @@ class ScheduleUpdate(BaseUpdateSchema):
 
     @field_validator("title", "description")
     @classmethod
-    def normalize_text(cls, v: Optional[str]) -> Optional[str]:
+    def normalize_text(cls, v: Union[str, None]) -> Union[str, None]:
         """Normalize text fields."""
         if v is not None:
             v = v.strip()
@@ -764,13 +762,13 @@ class ScheduleUpdate(BaseUpdateSchema):
 
     @field_validator("estimated_cost", "estimated_duration_hours")
     @classmethod
-    def round_decimals(cls, v: Optional[Decimal]) -> Optional[Decimal]:
+    def round_decimals(cls, v: Union[Decimal, None]) -> Union[Decimal, None]:
         """Round decimal values."""
         return round(v, 2) if v is not None else None
 
     @field_validator("next_due_date")
     @classmethod
-    def validate_due_date(cls, v: Optional[Date]) -> Optional[Date]:
+    def validate_due_date(cls, v: Union[Date, None]) -> Union[Date, None]:
         """Validate next due Date is reasonable."""
         if v is not None:
             # Should not be too far in past
@@ -826,23 +824,23 @@ class ExecutionHistoryItem(BaseSchema):
         ...,
         description="Whether completed successfully",
     )
-    completed_at: Optional[datetime] = Field(
+    completed_at: Union[datetime, None] = Field(
         None,
         description="Completion timestamp",
     )
-    actual_cost: Optional[Annotated[Decimal, Field(ge=0, decimal_places=2)]] = Field(
+    actual_cost: Union[Annotated[Decimal, Field(ge=0, decimal_places=2)], None] = Field(
         None,
         description="Actual cost",
     )
-    actual_duration_hours: Optional[Annotated[Decimal, Field(ge=0, decimal_places=2)]] = Field(
+    actual_duration_hours: Union[Annotated[Decimal, Field(ge=0, decimal_places=2)], None] = Field(
         None,
         description="Actual duration",
     )
-    completion_notes: Optional[str] = Field(
+    completion_notes: Union[str, None] = Field(
         None,
         description="Completion notes",
     )
-    issues_found: Optional[str] = Field(
+    issues_found: Union[str, None] = Field(
         None,
         description="Issues found",
     )
@@ -854,7 +852,7 @@ class ExecutionHistoryItem(BaseSchema):
         default=0,
         description="Days delayed from scheduled Date",
     )
-    quality_rating: Optional[int] = Field(
+    quality_rating: Union[int, None] = Field(
         None,
         ge=1,
         le=5,
@@ -901,7 +899,7 @@ class ScheduleHistory(BaseSchema):
         ...,
         description="Schedule title",
     )
-    schedule_code: Optional[str] = Field(
+    schedule_code: Union[str, None] = Field(
         None,
         description="Schedule code",
     )
@@ -942,11 +940,11 @@ class ScheduleHistory(BaseSchema):
         default=Decimal("0.00"),
         description="Average cost per execution",
     )
-    average_duration_hours: Optional[Annotated[Decimal, Field(ge=0, decimal_places=2)]] = Field(
+    average_duration_hours: Union[Annotated[Decimal, Field(ge=0, decimal_places=2)], None] = Field(
         None,
         description="Average execution duration",
     )
-    average_quality_rating: Optional[Annotated[Decimal, Field(ge=0, le=5, decimal_places=2)]] = Field(
+    average_quality_rating: Union[Annotated[Decimal, Field(ge=0, le=5, decimal_places=2)], None] = Field(
         None,
         description="Average quality rating",
     )

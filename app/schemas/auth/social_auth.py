@@ -4,9 +4,7 @@ Social authentication schemas with provider-specific validation.
 Pydantic v2 compliant.
 """
 
-from __future__ import annotations
-
-from typing import Optional
+from typing import Union
 from uuid import UUID
 
 from pydantic import EmailStr, Field, HttpUrl, field_validator
@@ -71,7 +69,7 @@ class GoogleAuthRequest(BaseCreateSchema):
         min_length=1,
         description="Google ID token (JWT) from OAuth flow",
     )
-    access_token: Optional[str] = Field(
+    access_token: Union[str, None] = Field(
         default=None,
         description="Google access token (optional, for additional API access)",
     )
@@ -87,7 +85,7 @@ class GoogleAuthRequest(BaseCreateSchema):
 
     @field_validator("access_token", mode="before")
     @classmethod
-    def validate_access_token_format(cls, v: Optional[str]) -> Optional[str]:
+    def validate_access_token_format(cls, v: Union[str, None]) -> Union[str, None]:
         """Validate token format and strip whitespace."""
         if v is not None:
             v = v.strip() if isinstance(v, str) else v
@@ -147,7 +145,7 @@ class SocialUserInfo(BaseSchema):
         ...,
         description="User role",
     )
-    profile_image_url: Optional[str] = Field(
+    profile_image_url: Union[str, None] = Field(
         default=None,
         description="Profile image URL from social provider",
     )
@@ -176,23 +174,23 @@ class SocialProfileData(BaseSchema):
         ...,
         description="Full name from provider",
     )
-    first_name: Optional[str] = Field(
+    first_name: Union[str, None] = Field(
         default=None,
         description="First name",
     )
-    last_name: Optional[str] = Field(
+    last_name: Union[str, None] = Field(
         default=None,
         description="Last name",
     )
-    profile_picture_url: Optional[HttpUrl] = Field(
+    profile_picture_url: Union[HttpUrl, None] = Field(
         default=None,
         description="Profile picture URL from provider",
     )
-    gender: Optional[Gender] = Field(
+    gender: Union[Gender, None] = Field(
         default=None,
         description="Gender (if provided by provider)",
     )
-    locale: Optional[str] = Field(
+    locale: Union[str, None] = Field(
         default=None,
         description="User locale/language preference",
         examples=["en_US", "hi_IN"],

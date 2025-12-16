@@ -6,9 +6,10 @@ Provides detailed reporting capabilities for audit logs including
 summaries, trends, user activity analysis, and entity change history.
 """
 
-from datetime import datetime, date as Date
+from datetime import date as Date, datetime
+
 from decimal import Decimal, ROUND_HALF_UP
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Union
 from enum import Enum
 
 from pydantic import Field, field_validator, computed_field, model_validator
@@ -54,7 +55,7 @@ class CategoryAnalytics(BaseSchema):
         ...,
         description="Action category"
     )
-    category_name: Optional[str] = Field(
+    category_name: Union[str, None] = Field(
         default=None,
         description="Human-readable category name"
     )
@@ -87,7 +88,7 @@ class CategoryAnalytics(BaseSchema):
         ge=0,
         description="Average events per day (2 decimal places)"
     )
-    peak_hour: Optional[int] = Field(
+    peak_hour: Union[int, None] = Field(
         default=None,
         ge=0,
         le=23,
@@ -102,19 +103,19 @@ class CategoryAnalytics(BaseSchema):
     )
     
     # Trend (Note: Decimal with 2 decimal places expected)
-    trend_direction: Optional[str] = Field(
+    trend_direction: Union[str, None] = Field(
         default=None,
         pattern="^(increasing|decreasing|stable)$",
         description="Trend direction over the period"
     )
-    trend_percentage: Optional[Decimal] = Field(
+    trend_percentage: Union[Decimal, None] = Field(
         default=None,
         description="Percentage change vs previous period (2 decimal places)"
     )
     
     @field_validator('avg_events_per_day', 'trend_percentage')
     @classmethod
-    def validate_decimal_precision(cls, v: Optional[Decimal]) -> Optional[Decimal]:
+    def validate_decimal_precision(cls, v: Union[Decimal, None]) -> Union[Decimal, None]:
         """Ensure decimal fields have max 2 decimal places."""
         if v is None:
             return v
@@ -148,18 +149,18 @@ class UserActivitySummary(BaseSchema):
     """
     
     user_id: UUID = Field(..., description="User identifier")
-    user_name: Optional[str] = Field(default=None, description="User display name")
-    user_email: Optional[str] = Field(default=None, description="User email")
-    user_role: Optional[UserRole] = Field(default=None, description="User role")
+    user_name: Union[str, None] = Field(default=None, description="User display name")
+    user_email: Union[str, None] = Field(default=None, description="User email")
+    user_role: Union[UserRole, None] = Field(default=None, description="User role")
     
     # Activity period
     period_start: datetime = Field(..., description="Period start")
     period_end: datetime = Field(..., description="Period end")
-    first_activity: Optional[datetime] = Field(
+    first_activity: Union[datetime, None] = Field(
         default=None,
         description="First activity timestamp in period"
     )
-    last_activity: Optional[datetime] = Field(
+    last_activity: Union[datetime, None] = Field(
         default=None,
         description="Last activity timestamp in period"
     )
@@ -220,13 +221,13 @@ class UserActivitySummary(BaseSchema):
     )
     
     # Activity patterns (Note: Decimal with 2 decimal places expected)
-    most_active_hour: Optional[int] = Field(
+    most_active_hour: Union[int, None] = Field(
         default=None,
         ge=0,
         le=23,
         description="Hour of day with most activity"
     )
-    most_active_day: Optional[str] = Field(
+    most_active_day: Union[str, None] = Field(
         default=None,
         description="Day of week with most activity"
     )
@@ -341,11 +342,11 @@ class AuditSummary(BaseSchema):
     )
     
     # Scope
-    hostel_id: Optional[UUID] = Field(
+    hostel_id: Union[UUID, None] = Field(
         default=None,
         description="Hostel scope (None = platform-wide)"
     )
-    hostel_name: Optional[str] = Field(
+    hostel_name: Union[str, None] = Field(
         default=None,
         description="Hostel name"
     )
@@ -494,7 +495,7 @@ class AuditSummary(BaseSchema):
     
     @computed_field
     @property
-    def most_active_category(self) -> Optional[str]:
+    def most_active_category(self) -> Union[str, None]:
         """Identify the most active audit category."""
         if not self.events_by_category:
             return None
@@ -526,7 +527,7 @@ class EntityChangeSummary(BaseSchema):
         max_length=50,
         description="Entity type name"
     )
-    entity_type_display: Optional[str] = Field(
+    entity_type_display: Union[str, None] = Field(
         default=None,
         description="Human-readable entity type name"
     )
@@ -550,11 +551,11 @@ class EntityChangeSummary(BaseSchema):
     restores: int = Field(default=0, ge=0, description="Restore operations")
     
     # Timing (Note: Decimal with 2 decimal places expected)
-    last_change_at: Optional[datetime] = Field(
+    last_change_at: Union[datetime, None] = Field(
         default=None,
         description="Timestamp of most recent change"
     )
-    first_change_at: Optional[datetime] = Field(
+    first_change_at: Union[datetime, None] = Field(
         default=None,
         description="Timestamp of first change in period"
     )
@@ -628,11 +629,11 @@ class EntityChangeRecord(BaseSchema):
     description: str = Field(..., description="Change description")
     
     # Change data
-    old_values: Optional[Dict[str, Any]] = Field(
+    old_values: Union[Dict[str, Any], None] = Field(
         default=None,
         description="Previous values"
     )
-    new_values: Optional[Dict[str, Any]] = Field(
+    new_values: Union[Dict[str, Any], None] = Field(
         default=None,
         description="New values"
     )
@@ -642,14 +643,14 @@ class EntityChangeRecord(BaseSchema):
     )
     
     # Actor
-    changed_by: Optional[UUID] = Field(default=None, description="User who made the change")
-    changed_by_name: Optional[str] = Field(default=None, description="User display name")
-    changed_by_role: Optional[UserRole] = Field(default=None, description="User role")
+    changed_by: Union[UUID, None] = Field(default=None, description="User who made the change")
+    changed_by_name: Union[str, None] = Field(default=None, description="User display name")
+    changed_by_role: Union[UserRole, None] = Field(default=None, description="User role")
     
     # Context
     changed_at: datetime = Field(..., description="Change timestamp")
-    ip_address: Optional[str] = Field(default=None, description="IP address")
-    request_id: Optional[str] = Field(default=None, description="Request ID")
+    ip_address: Union[str, None] = Field(default=None, description="IP address")
+    request_id: Union[str, None] = Field(default=None, description="Request ID")
     
     # Status
     status: str = Field(..., description="Change status")
@@ -689,16 +690,16 @@ class EntityChangeHistory(BaseSchema):
     
     entity_type: str = Field(..., description="Entity type")
     entity_id: UUID = Field(..., description="Entity ID")
-    entity_name: Optional[str] = Field(default=None, description="Entity display name")
+    entity_name: Union[str, None] = Field(default=None, description="Entity display name")
     
     # Lifecycle
-    created_at: Optional[datetime] = Field(default=None, description="Entity creation time")
-    created_by: Optional[UUID] = Field(default=None, description="Creator user ID")
-    last_modified_at: Optional[datetime] = Field(
+    created_at: Union[datetime, None] = Field(default=None, description="Entity creation time")
+    created_by: Union[UUID, None] = Field(default=None, description="Creator user ID")
+    last_modified_at: Union[datetime, None] = Field(
         default=None,
         description="Last modification time"
     )
-    last_modified_by: Optional[UUID] = Field(default=None, description="Last modifier user ID")
+    last_modified_by: Union[UUID, None] = Field(default=None, description="Last modifier user ID")
     
     # Change records
     total_changes: int = Field(..., ge=0, description="Total number of changes")
@@ -720,12 +721,12 @@ class EntityChangeHistory(BaseSchema):
     
     # Current state
     is_deleted: bool = Field(default=False, description="Whether entity is deleted")
-    deleted_at: Optional[datetime] = Field(default=None, description="Deletion timestamp")
-    deleted_by: Optional[UUID] = Field(default=None, description="User who deleted")
+    deleted_at: Union[datetime, None] = Field(default=None, description="Deletion timestamp")
+    deleted_by: Union[UUID, None] = Field(default=None, description="User who deleted")
     
     @computed_field
     @property
-    def entity_age_days(self) -> Optional[int]:
+    def entity_age_days(self) -> Union[int, None]:
         """Calculate entity age in days."""
         if not self.created_at:
             return None
@@ -733,7 +734,7 @@ class EntityChangeHistory(BaseSchema):
     
     @computed_field
     @property
-    def change_frequency(self) -> Optional[Decimal]:
+    def change_frequency(self) -> Union[Decimal, None]:
         """Calculate average changes per day (2 decimal places)."""
         if not self.created_at or self.total_changes == 0:
             return None
@@ -788,7 +789,7 @@ class ComplianceReport(BaseSchema):
     )
     
     # Scope
-    hostel_id: Optional[UUID] = None
+    hostel_id: Union[UUID, None] = None
     scope_description: str = Field(
         ...,
         description="Description of report scope"
@@ -1031,9 +1032,9 @@ class AuditTrendAnalysis(BaseSchema):
     
     # Peak/low points (Note: Decimals with 2 decimal places expected)
     peak_value: Decimal = Field(..., description="Highest value in period (2 decimal places)")
-    peak_date: Optional[Date] = Field(default=None, description="Date of peak value")
+    peak_date: Union[Date, None] = Field(default=None, description="Date of peak value")
     low_value: Decimal = Field(..., description="Lowest value in period (2 decimal places)")
-    low_date: Optional[Date] = Field(default=None, description="Date of lowest value")
+    low_date: Union[Date, None] = Field(default=None, description="Date of lowest value")
     
     @field_validator('trend_strength', 'percentage_change', 'average_value', 
                      'median_value', 'std_deviation', 'peak_value', 'low_value')
@@ -1074,13 +1075,13 @@ class AuditReport(BaseSchema):
         default_factory=datetime.utcnow,
         description="Report generation timestamp"
     )
-    generated_by: Optional[UUID] = Field(default=None, description="User who generated report")
+    generated_by: Union[UUID, None] = Field(default=None, description="User who generated report")
     
     period: DateRangeFilter = Field(..., description="Reporting period")
     
     # Scope
-    hostel_id: Optional[UUID] = None
-    hostel_name: Optional[str] = None
+    hostel_id: Union[UUID, None] = None
+    hostel_name: Union[str, None] = None
     scope_description: str = Field(
         default="Platform-wide audit report",
         description="Report scope description"
@@ -1099,11 +1100,11 @@ class AuditReport(BaseSchema):
     )
     
     # Specialized reports
-    compliance_report: Optional[ComplianceReport] = Field(
+    compliance_report: Union[ComplianceReport, None] = Field(
         default=None,
         description="Compliance report (if applicable)"
     )
-    security_report: Optional[SecurityAuditReport] = Field(
+    security_report: Union[SecurityAuditReport, None] = Field(
         default=None,
         description="Security audit report"
     )

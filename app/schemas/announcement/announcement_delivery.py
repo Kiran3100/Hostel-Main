@@ -6,12 +6,10 @@ This module defines schemas for managing announcement delivery
 across multiple channels (email, SMS, push, in-app).
 """
 
-from __future__ import annotations
-
 from datetime import datetime
 from decimal import Decimal
 from enum import Enum
-from typing import Annotated, Optional
+from typing import Annotated, Optional, Union
 from uuid import UUID
 
 from pydantic import Field, field_validator, model_validator, ConfigDict
@@ -155,13 +153,13 @@ class DeliveryConfig(BaseSchema):
     )
     
     # Batch settings (if batched)
-    batch_size: Optional[int] = Field(
+    batch_size: Union[int, None] = Field(
         None,
         ge=10,
         le=1000,
         description="Recipients per batch (10-1000)",
     )
-    batch_interval_minutes: Optional[int] = Field(
+    batch_interval_minutes: Union[int, None] = Field(
         None,
         ge=1,
         le=60,
@@ -169,7 +167,7 @@ class DeliveryConfig(BaseSchema):
     )
     
     # Rate limiting
-    max_per_minute: Optional[int] = Field(
+    max_per_minute: Union[int, None] = Field(
         None,
         ge=1,
         le=10000,
@@ -243,24 +241,23 @@ class ChannelDeliveryStats(BaseSchema):
         description="Number bounced (email)",
     )
     
-    # Rates - Using Annotated for Decimal constraints in Pydantic v2
-    # Pydantic v2: Decimal constraints work differently; ge/le constraints are preserved
+    # Rates
     delivery_rate: Annotated[Decimal, Field(ge=0, le=100)] = Field(
         ...,
         description="Delivery success rate percentage",
     )
     
-    # Timing - Using Decimal for precision, but ge constraint only (no decimal_places needed)
-    average_delivery_time_seconds: Optional[Annotated[Decimal, Field(ge=0)]] = Field(
+    # Timing
+    average_delivery_time_seconds: Union[Annotated[Decimal, Field(ge=0)], None] = Field(
         None,
         description="Average time to deliver in seconds",
     )
-    fastest_delivery_seconds: Optional[int] = Field(
+    fastest_delivery_seconds: Union[int, None] = Field(
         None,
         ge=0,
         description="Fastest delivery time",
     )
-    slowest_delivery_seconds: Optional[int] = Field(
+    slowest_delivery_seconds: Union[int, None] = Field(
         None,
         ge=0,
         description="Slowest delivery time",
@@ -376,15 +373,15 @@ class DeliveryStatus(BaseSchema):
     )
     
     # Timeline
-    delivery_started_at: Optional[datetime] = Field(
+    delivery_started_at: Union[datetime, None] = Field(
         None,
         description="When delivery started",
     )
-    delivery_completed_at: Optional[datetime] = Field(
+    delivery_completed_at: Union[datetime, None] = Field(
         None,
         description="When delivery completed",
     )
-    last_activity_at: Optional[datetime] = Field(
+    last_activity_at: Union[datetime, None] = Field(
         None,
         description="Last delivery activity timestamp",
     )
@@ -394,7 +391,7 @@ class DeliveryStatus(BaseSchema):
         Decimal("0"),
         description="Delivery progress percentage",
     )
-    estimated_completion: Optional[datetime] = Field(
+    estimated_completion: Union[datetime, None] = Field(
         None,
         description="Estimated completion time",
     )
@@ -441,7 +438,7 @@ class FailedDelivery(BaseSchema):
         ...,
         description="Reason for failure",
     )
-    failure_code: Optional[str] = Field(
+    failure_code: Union[str, None] = Field(
         None,
         description="Error code if available",
     )
@@ -460,15 +457,15 @@ class FailedDelivery(BaseSchema):
         False,
         description="Whether retry was attempted",
     )
-    retry_successful: Optional[bool] = Field(
+    retry_successful: Union[bool, None] = Field(
         None,
         description="Whether retry succeeded",
     )
-    last_retry_at: Optional[datetime] = Field(
+    last_retry_at: Union[datetime, None] = Field(
         None,
         description="Last retry timestamp",
     )
-    next_retry_at: Optional[datetime] = Field(
+    next_retry_at: Union[datetime, None] = Field(
         None,
         description="Next scheduled retry",
     )
@@ -478,7 +475,7 @@ class FailedDelivery(BaseSchema):
         False,
         description="Whether issue is resolved",
     )
-    resolution_notes: Optional[str] = Field(
+    resolution_notes: Union[str, None] = Field(
         None,
         description="Resolution notes",
     )
@@ -553,15 +550,15 @@ class DeliveryReport(BaseSchema):
     )
     
     # Timeline
-    delivery_started_at: Optional[datetime] = Field(
+    delivery_started_at: Union[datetime, None] = Field(
         None,
         description="Delivery start time",
     )
-    delivery_completed_at: Optional[datetime] = Field(
+    delivery_completed_at: Union[datetime, None] = Field(
         None,
         description="Delivery completion time",
     )
-    delivery_duration_minutes: Optional[int] = Field(
+    delivery_duration_minutes: Union[int, None] = Field(
         None,
         ge=0,
         description="Total delivery duration in minutes",
@@ -639,7 +636,7 @@ class BatchDelivery(BaseSchema):
         ...,
         description="Batch delivery start time",
     )
-    estimated_completion: Optional[datetime] = Field(
+    estimated_completion: Union[datetime, None] = Field(
         None,
         description="Estimated completion time",
     )
@@ -655,7 +652,7 @@ class BatchDelivery(BaseSchema):
         False,
         description="Whether batch delivery is paused",
     )
-    pause_reason: Optional[str] = Field(
+    pause_reason: Union[str, None] = Field(
         None,
         description="Reason for pause if paused",
     )
@@ -690,7 +687,7 @@ class RetryDelivery(BaseCreateSchema):
     )
     
     # Specific recipients
-    recipient_ids: Optional[list[UUID]] = Field(
+    recipient_ids: Union[list[UUID], None] = Field(
         None,
         description="Retry specific recipients only",
     )
@@ -718,8 +715,8 @@ class RetryDelivery(BaseCreateSchema):
     @field_validator("recipient_ids")
     @classmethod
     def validate_recipient_ids(
-        cls, v: Optional[list[UUID]]
-    ) -> Optional[list[UUID]]:
+        cls, v: Union[list[UUID], None]
+    ) -> Union[list[UUID], None]:
         """Ensure recipient IDs are unique."""
         if v:
             if len(v) != len(set(v)):
@@ -758,7 +755,7 @@ class DeliveryPause(BaseCreateSchema):
         False,
         description="Automatically resume after duration",
     )
-    resume_after_minutes: Optional[int] = Field(
+    resume_after_minutes: Union[int, None] = Field(
         None,
         ge=5,
         le=1440,

@@ -3,11 +3,9 @@
 Public hostel profile schemas for visitor-facing content.
 """
 
-from __future__ import annotations
-
 from datetime import time
 from decimal import Decimal
-from typing import Annotated, Dict, List, Optional
+from typing import Annotated, Dict, List, Union
 from uuid import UUID
 
 from pydantic import ConfigDict, Field
@@ -56,7 +54,7 @@ class PublicHostelCard(BaseSchema):
         ge=0,
         description="Available beds",
     )
-    cover_image_url: Optional[str] = Field(
+    cover_image_url: Union[str, None] = Field(
         default=None,
         description="Cover image URL",
     )
@@ -69,10 +67,10 @@ class PublicHostelCard(BaseSchema):
         max_length=5,
         description="Top 5 amenities for quick view",
     )
-    distance_km: Optional[Annotated[
+    distance_km: Union[Annotated[
         Decimal,
         Field(ge=0, description="Distance from search location (if applicable)")
-    ]] = None
+    ], None] = None
 
 
 class PublicRoomType(BaseSchema):
@@ -91,14 +89,14 @@ class PublicRoomType(BaseSchema):
         Decimal,
         Field(ge=0, description="Monthly price")
     ]
-    price_quarterly: Optional[Annotated[
+    price_quarterly: Union[Annotated[
         Decimal,
         Field(ge=0, description="Quarterly price (if available)")
-    ]] = None
-    price_yearly: Optional[Annotated[
+    ], None] = None
+    price_yearly: Union[Annotated[
         Decimal,
         Field(ge=0, description="Yearly price (if available)")
-    ]] = None
+    ], None] = None
     available_beds: int = Field(
         ...,
         ge=0,
@@ -118,7 +116,7 @@ class PublicRoomType(BaseSchema):
         max_length=10,
         description="Room images (max 10)",
     )
-    room_size_sqft: Optional[int] = Field(
+    room_size_sqft: Union[int, None] = Field(
         default=None,
         ge=0,
         description="Room size in square feet",
@@ -136,7 +134,7 @@ class PublicHostelProfile(BaseSchema):
     id: UUID = Field(..., description="Hostel ID")
     name: str = Field(..., description="Hostel name")
     slug: str = Field(..., description="URL slug")
-    description: Optional[str] = Field(
+    description: Union[str, None] = Field(
         default=None,
         description="Hostel description",
     )
@@ -144,29 +142,29 @@ class PublicHostelProfile(BaseSchema):
 
     # Contact (public)
     contact_phone: str = Field(..., description="Contact phone number")
-    contact_email: Optional[str] = Field(
+    contact_email: Union[str, None] = Field(
         default=None,
         description="Contact email",
     )
-    website_url: Optional[str] = Field(
+    website_url: Union[str, None] = Field(
         default=None,
         description="Official website URL",
     )
 
     # Address
     address_line1: str = Field(..., description="Address line 1")
-    address_line2: Optional[str] = Field(
+    address_line2: Union[str, None] = Field(
         default=None,
         description="Address line 2",
     )
     city: str = Field(..., description="City")
     state: str = Field(..., description="State")
     pincode: str = Field(..., description="Pincode")
-    latitude: Optional[Decimal] = Field(
+    latitude: Union[Decimal, None] = Field(
         default=None,
         description="Latitude for map display",
     )
-    longitude: Optional[Decimal] = Field(
+    longitude: Union[Decimal, None] = Field(
         default=None,
         description="Longitude for map display",
     )
@@ -220,19 +218,19 @@ class PublicHostelProfile(BaseSchema):
     )
 
     # Policies
-    rules: Optional[str] = Field(
+    rules: Union[str, None] = Field(
         default=None,
         description="Hostel rules and regulations",
     )
-    check_in_time: Optional[time] = Field(
+    check_in_time: Union[time, None] = Field(
         default=None,
         description="Standard check-in time",
     )
-    check_out_time: Optional[time] = Field(
+    check_out_time: Union[time, None] = Field(
         default=None,
         description="Standard check-out time",
     )
-    visitor_policy: Optional[str] = Field(
+    visitor_policy: Union[str, None] = Field(
         default=None,
         description="Visitor policy",
     )
@@ -242,13 +240,13 @@ class PublicHostelProfile(BaseSchema):
         default_factory=list,
         description="Nearby landmarks with details",
     )
-    connectivity_info: Optional[str] = Field(
+    connectivity_info: Union[str, None] = Field(
         default=None,
         description="Public transport connectivity",
     )
 
     # Media
-    cover_image_url: Optional[str] = Field(
+    cover_image_url: Union[str, None] = Field(
         default=None,
         description="Cover image URL",
     )
@@ -256,7 +254,7 @@ class PublicHostelProfile(BaseSchema):
         default_factory=list,
         description="Gallery images",
     )
-    virtual_tour_url: Optional[str] = Field(
+    virtual_tour_url: Union[str, None] = Field(
         default=None,
         description="360° virtual tour URL",
     )
@@ -268,7 +266,7 @@ class PublicHostelProfile(BaseSchema):
     )
 
     # Additional info
-    established_year: Optional[int] = Field(
+    established_year: Union[int, None] = Field(
         default=None,
         ge=1900,
         le=2100,

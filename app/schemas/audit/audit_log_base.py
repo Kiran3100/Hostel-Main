@@ -8,7 +8,7 @@ metadata and traceability.
 """
 
 from datetime import datetime
-from typing import Any, Dict, Optional, List
+from typing import Any, Dict, Union, List
 from ipaddress import IPv4Address, IPv6Address, ip_address
 import re
 
@@ -35,13 +35,13 @@ class AuditContext(BaseSchema):
     """
     
     # Request context
-    request_id: Optional[str] = Field(
+    request_id: Union[str, None] = Field(
         default=None,
         min_length=1,
         max_length=100,
         description="Unique request/trace ID for correlation"
     )
-    session_id: Optional[str] = Field(
+    session_id: Union[str, None] = Field(
         default=None,
         min_length=1,
         max_length=100,
@@ -49,58 +49,58 @@ class AuditContext(BaseSchema):
     )
     
     # Network context
-    ip_address: Optional[str] = Field(
+    ip_address: Union[str, None] = Field(
         default=None,
         max_length=45,
         description="IP address (IPv4 or IPv6)"
     )
-    user_agent: Optional[str] = Field(
+    user_agent: Union[str, None] = Field(
         default=None,
         max_length=500,
         description="User-Agent string from request"
     )
     
     # Geographic context
-    country_code: Optional[str] = Field(
+    country_code: Union[str, None] = Field(
         default=None,
         pattern=r"^[A-Z]{2}$",
         description="ISO 3166-1 alpha-2 country code"
     )
-    region: Optional[str] = Field(
+    region: Union[str, None] = Field(
         default=None,
         max_length=100,
         description="Geographic region/state"
     )
-    city: Optional[str] = Field(
+    city: Union[str, None] = Field(
         default=None,
         max_length=100,
         description="City name"
     )
     
     # Device context
-    device_type: Optional[str] = Field(
+    device_type: Union[str, None] = Field(
         default=None,
         pattern="^(desktop|mobile|tablet|api|system)$",
         description="Type of device used"
     )
-    platform: Optional[str] = Field(
+    platform: Union[str, None] = Field(
         default=None,
         max_length=50,
         description="Operating system/platform"
     )
     
     # API context
-    api_version: Optional[str] = Field(
+    api_version: Union[str, None] = Field(
         default=None,
         max_length=20,
         description="API version used"
     )
-    endpoint: Optional[str] = Field(
+    endpoint: Union[str, None] = Field(
         default=None,
         max_length=255,
         description="API endpoint accessed"
     )
-    http_method: Optional[str] = Field(
+    http_method: Union[str, None] = Field(
         default=None,
         pattern="^(GET|POST|PUT|PATCH|DELETE|OPTIONS|HEAD)$",
         description="HTTP method used"
@@ -114,7 +114,7 @@ class AuditContext(BaseSchema):
     
     @field_validator("ip_address")
     @classmethod
-    def validate_ip_address(cls, v: Optional[str]) -> Optional[str]:
+    def validate_ip_address(cls, v: Union[str, None]) -> Union[str, None]:
         """Validate IP address format."""
         if v is None:
             return v
@@ -128,7 +128,7 @@ class AuditContext(BaseSchema):
     
     @field_validator("user_agent")
     @classmethod
-    def validate_user_agent(cls, v: Optional[str]) -> Optional[str]:
+    def validate_user_agent(cls, v: Union[str, None]) -> Union[str, None]:
         """Sanitize and validate user agent string."""
         if v is None:
             return v
@@ -158,7 +158,7 @@ class AuditContext(BaseSchema):
     
     @computed_field
     @property
-    def browser_name(self) -> Optional[str]:
+    def browser_name(self) -> Union[str, None]:
         """Extract browser name from user agent."""
         if not self.user_agent:
             return None
@@ -192,16 +192,16 @@ class ChangeDetail(BaseSchema):
         max_length=100,
         description="Name of the field that changed"
     )
-    field_type: Optional[str] = Field(
+    field_type: Union[str, None] = Field(
         default=None,
         max_length=50,
         description="Data type of the field"
     )
-    old_value: Optional[Any] = Field(
+    old_value: Union[Any, None] = Field(
         default=None,
         description="Previous value before change"
     )
-    new_value: Optional[Any] = Field(
+    new_value: Union[Any, None] = Field(
         default=None,
         description="New value after change"
     )
@@ -249,20 +249,20 @@ class AuditLogBase(BaseSchema):
     """
     
     # Actor information
-    user_id: Optional[UUID] = Field(
+    user_id: Union[UUID, None] = Field(
         default=None,
         description="ID of user who performed the action"
     )
-    user_role: Optional[UserRole] = Field(
+    user_role: Union[UserRole, None] = Field(
         default=None,
         description="Role of the user at time of action"
     )
-    user_email: Optional[str] = Field(
+    user_email: Union[str, None] = Field(
         default=None,
         max_length=255,
         description="Email of the user (for reference)"
     )
-    impersonator_id: Optional[UUID] = Field(
+    impersonator_id: Union[UUID, None] = Field(
         default=None,
         description="ID of user impersonating (if applicable)"
     )
@@ -286,74 +286,74 @@ class AuditLogBase(BaseSchema):
     )
     
     # Entity information
-    entity_type: Optional[str] = Field(
+    entity_type: Union[str, None] = Field(
         default=None,
         min_length=1,
         max_length=50,
         description="Type of entity affected (e.g., 'Booking', 'Payment')"
     )
-    entity_id: Optional[UUID] = Field(
+    entity_id: Union[UUID, None] = Field(
         default=None,
         description="Primary key of the affected entity"
     )
-    entity_name: Optional[str] = Field(
+    entity_name: Union[str, None] = Field(
         default=None,
         max_length=255,
         description="Display name/identifier of the entity"
     )
     
     # Related entity (for relationships)
-    related_entity_type: Optional[str] = Field(
+    related_entity_type: Union[str, None] = Field(
         default=None,
         max_length=50,
         description="Type of related entity"
     )
-    related_entity_id: Optional[UUID] = Field(
+    related_entity_id: Union[UUID, None] = Field(
         default=None,
         description="ID of related entity"
     )
     
     # Organizational context
-    hostel_id: Optional[UUID] = Field(
+    hostel_id: Union[UUID, None] = Field(
         default=None,
         description="Hostel context (if applicable)"
     )
-    hostel_name: Optional[str] = Field(
+    hostel_name: Union[str, None] = Field(
         default=None,
         max_length=255,
         description="Hostel name for display"
     )
     
     # Change tracking
-    old_values: Optional[Dict[str, Any]] = Field(
+    old_values: Union[Dict[str, Any], None] = Field(
         default=None,
         description="Previous values (for update/delete actions)"
     )
-    new_values: Optional[Dict[str, Any]] = Field(
+    new_values: Union[Dict[str, Any], None] = Field(
         default=None,
         description="New values (for create/update actions)"
     )
-    change_details: Optional[List[ChangeDetail]] = Field(
+    change_details: Union[List[ChangeDetail], None] = Field(
         default=None,
         description="Detailed field-level changes"
     )
     
     # Request context
-    context: Optional[AuditContext] = Field(
+    context: Union[AuditContext, None] = Field(
         default=None,
         description="Contextual information about the action"
     )
     
     # Legacy fields for backward compatibility
-    ip_address: Optional[str] = Field(
+    ip_address: Union[str, None] = Field(
         default=None,
         description="IP address (deprecated: use context.ip_address)"
     )
-    user_agent: Optional[str] = Field(
+    user_agent: Union[str, None] = Field(
         default=None,
         description="User agent (deprecated: use context.user_agent)"
     )
-    request_id: Optional[str] = Field(
+    request_id: Union[str, None] = Field(
         default=None,
         max_length=100,
         description="Request ID (deprecated: use context.request_id)"
@@ -365,7 +365,7 @@ class AuditLogBase(BaseSchema):
         pattern="^(success|failure|partial|pending)$",
         description="Outcome status of the action"
     )
-    error_message: Optional[str] = Field(
+    error_message: Union[str, None] = Field(
         default=None,
         max_length=1000,
         description="Error message if status is failure"
@@ -382,7 +382,7 @@ class AuditLogBase(BaseSchema):
         default=False,
         description="Whether this log contains sensitive information"
     )
-    retention_days: Optional[int] = Field(
+    retention_days: Union[int, None] = Field(
         default=None,
         ge=1,
         description="Number of days to retain this log entry"
@@ -553,14 +553,14 @@ class AuditLogCreate(AuditLogBase, BaseCreateSchema):
         action_type: str,
         action_category: AuditActionCategory,
         description: str,
-        user_id: Optional[UUID] = None,
-        user_role: Optional[UserRole] = None,
-        entity_type: Optional[str] = None,
-        entity_id: Optional[UUID] = None,
-        hostel_id: Optional[UUID] = None,
-        old_values: Optional[Dict[str, Any]] = None,
-        new_values: Optional[Dict[str, Any]] = None,
-        request_context: Optional[Dict[str, Any]] = None,
+        user_id: Union[UUID, None] = None,
+        user_role: Union[UserRole, None] = None,
+        entity_type: Union[str, None] = None,
+        entity_id: Union[UUID, None] = None,
+        hostel_id: Union[UUID, None] = None,
+        old_values: Union[Dict[str, Any], None] = None,
+        new_values: Union[Dict[str, Any], None] = None,
+        request_context: Union[Dict[str, Any], None] = None,
         **kwargs
     ) -> "AuditLogCreate":
         """
@@ -608,8 +608,8 @@ class AuditLogCreate(AuditLogBase, BaseCreateSchema):
         user_id: UUID,
         action: str,
         success: bool,
-        ip_address: Optional[str] = None,
-        user_agent: Optional[str] = None,
+        ip_address: Union[str, None] = None,
+        user_agent: Union[str, None] = None,
         **kwargs
     ) -> "AuditLogCreate":
         """

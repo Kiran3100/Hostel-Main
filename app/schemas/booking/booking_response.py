@@ -1,4 +1,3 @@
-# --- File: app/schemas/booking/booking_response.py ---
 """
 Booking response schemas for API responses.
 
@@ -6,11 +5,9 @@ This module defines response schemas for booking data including
 basic responses, detailed information, list items, and confirmations.
 """
 
-from __future__ import annotations
-
 from datetime import date as Date, datetime
 from decimal import Decimal
-from typing import List, Optional
+from typing import List, Union
 from uuid import UUID
 
 from pydantic import Field, computed_field
@@ -122,7 +119,7 @@ class BookingResponse(BaseResponseSchema):
         ...,
         description="When booking was created",
     )
-    expires_at: Optional[datetime] = Field(
+    expires_at: Union[datetime, None] = Field(
         None,
         description="When booking expires if not confirmed",
     )
@@ -213,19 +210,19 @@ class BookingDetail(BaseResponseSchema):
     )
 
     # Room Assignment (if approved)
-    room_id: Optional[UUID] = Field(
+    room_id: Union[UUID, None] = Field(
         None,
         description="Assigned room ID (if approved)",
     )
-    room_number: Optional[str] = Field(
+    room_number: Union[str, None] = Field(
         None,
         description="Assigned room number",
     )
-    bed_id: Optional[UUID] = Field(
+    bed_id: Union[UUID, None] = Field(
         None,
         description="Assigned bed ID (if approved)",
     )
-    bed_number: Optional[str] = Field(
+    bed_number: Union[str, None] = Field(
         None,
         description="Assigned bed number",
     )
@@ -243,45 +240,45 @@ class BookingDetail(BaseResponseSchema):
         ...,
         description="Guest phone",
     )
-    guest_id_proof_type: Optional[str] = Field(
+    guest_id_proof_type: Union[str, None] = Field(
         None,
         description="ID proof type",
     )
-    guest_id_proof_number: Optional[str] = Field(
+    guest_id_proof_number: Union[str, None] = Field(
         None,
         description="ID proof number",
     )
 
     # Emergency Contact
-    emergency_contact_name: Optional[str] = Field(
+    emergency_contact_name: Union[str, None] = Field(
         None,
         description="Emergency contact name",
     )
-    emergency_contact_phone: Optional[str] = Field(
+    emergency_contact_phone: Union[str, None] = Field(
         None,
         description="Emergency contact phone",
     )
-    emergency_contact_relation: Optional[str] = Field(
+    emergency_contact_relation: Union[str, None] = Field(
         None,
         description="Relation to emergency contact",
     )
 
     # Institutional/Employment
-    institution_or_company: Optional[str] = Field(
+    institution_or_company: Union[str, None] = Field(
         None,
         description="Institution or company name",
     )
-    designation_or_course: Optional[str] = Field(
+    designation_or_course: Union[str, None] = Field(
         None,
         description="Designation or course",
     )
 
     # Special Requirements
-    special_requests: Optional[str] = Field(
+    special_requests: Union[str, None] = Field(
         None,
         description="Special requests",
     )
-    dietary_preferences: Optional[str] = Field(
+    dietary_preferences: Union[str, None] = Field(
         None,
         description="Dietary preferences",
     )
@@ -289,7 +286,7 @@ class BookingDetail(BaseResponseSchema):
         ...,
         description="Has vehicle",
     )
-    vehicle_details: Optional[str] = Field(
+    vehicle_details: Union[str, None] = Field(
         None,
         description="Vehicle details",
     )
@@ -319,7 +316,7 @@ class BookingDetail(BaseResponseSchema):
         ...,
         description="Advance payment status",
     )
-    advance_payment_id: Optional[UUID] = Field(
+    advance_payment_id: Union[UUID, None] = Field(
         None,
         description="Advance payment transaction ID",
     )
@@ -331,43 +328,43 @@ class BookingDetail(BaseResponseSchema):
     )
 
     # Approval Details
-    approved_by: Optional[UUID] = Field(
+    approved_by: Union[UUID, None] = Field(
         None,
         description="Admin who approved booking",
     )
-    approved_by_name: Optional[str] = Field(
+    approved_by_name: Union[str, None] = Field(
         None,
         description="Approver name",
     )
-    approved_at: Optional[datetime] = Field(
+    approved_at: Union[datetime, None] = Field(
         None,
         description="Approval timestamp",
     )
 
     # Rejection Details
-    rejected_by: Optional[UUID] = Field(
+    rejected_by: Union[UUID, None] = Field(
         None,
         description="Admin who rejected booking",
     )
-    rejected_at: Optional[datetime] = Field(
+    rejected_at: Union[datetime, None] = Field(
         None,
         description="Rejection timestamp",
     )
-    rejection_reason: Optional[str] = Field(
+    rejection_reason: Union[str, None] = Field(
         None,
         description="Reason for rejection",
     )
 
     # Cancellation Details
-    cancelled_by: Optional[UUID] = Field(
+    cancelled_by: Union[UUID, None] = Field(
         None,
         description="Who cancelled the booking",
     )
-    cancelled_at: Optional[datetime] = Field(
+    cancelled_at: Union[datetime, None] = Field(
         None,
         description="Cancellation timestamp",
     )
-    cancellation_reason: Optional[str] = Field(
+    cancellation_reason: Union[str, None] = Field(
         None,
         description="Reason for cancellation",
     )
@@ -377,11 +374,11 @@ class BookingDetail(BaseResponseSchema):
         ...,
         description="Whether booking was converted to student profile",
     )
-    student_profile_id: Optional[UUID] = Field(
+    student_profile_id: Union[UUID, None] = Field(
         None,
         description="Student profile ID if converted",
     )
-    conversion_date: Optional[Date] = Field(
+    conversion_date: Union[Date, None] = Field(
         None,
         description="Date of conversion to student",
     )
@@ -391,7 +388,7 @@ class BookingDetail(BaseResponseSchema):
         ...,
         description="Booking source",
     )
-    referral_code: Optional[str] = Field(
+    referral_code: Union[str, None] = Field(
         None,
         description="Referral code used",
     )
@@ -401,7 +398,7 @@ class BookingDetail(BaseResponseSchema):
         ...,
         description="Booking creation timestamp",
     )
-    expires_at: Optional[datetime] = Field(
+    expires_at: Union[datetime, None] = Field(
         None,
         description="Booking expiry timestamp",
     )
@@ -496,7 +493,7 @@ class BookingListItem(BaseSchema):
         ...,
         description="Whether booking is expiring soon or requires urgent attention",
     )
-    days_until_checkin: Optional[int] = Field(
+    days_until_checkin: Union[int, None] = Field(
         None,
         description="Days until check-in (if applicable)",
     )
@@ -578,7 +575,7 @@ class BookingConfirmation(BaseSchema):
         ...,
         description="Hostel contact phone",
     )
-    hostel_contact_email: Optional[str] = Field(
+    hostel_contact_email: Union[str, None] = Field(
         None,
         description="Hostel contact email",
     )

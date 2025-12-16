@@ -9,8 +9,6 @@ Example:
     from app.schemas.auth import LoginRequest, RegisterRequest, Token
 """
 
-from __future__ import annotations
-
 from app.schemas.auth.login import (
     LoginRequest,
     LoginResponse,

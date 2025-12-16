@@ -3,10 +3,8 @@
 Reusable schema mixins for address, contact info, media, audit, etc.
 """
 
-from __future__ import annotations
-
 from datetime import datetime
-from typing import List, Optional
+from typing import List, Union
 from uuid import UUID
 
 from pydantic import BaseModel, Field, HttpUrl
@@ -32,7 +30,7 @@ class AddressMixin(BaseModel):
         max_length=255,
         description="Address line 1",
     )
-    address_line2: Optional[str] = Field(
+    address_line2: Union[str, None] = Field(
         default=None,
         max_length=255,
         description="Address line 2",
@@ -70,12 +68,12 @@ class ContactMixin(BaseModel):
         pattern=r"^\+?[1-9]\d{9,14}$",
         description="Primary contact phone",
     )
-    alternate_phone: Optional[str] = Field(
+    alternate_phone: Union[str, None] = Field(
         default=None,
         pattern=r"^\+?[1-9]\d{9,14}$",
         description="Alternate phone",
     )
-    contact_email: Optional[str] = Field(
+    contact_email: Union[str, None] = Field(
         default=None,
         description="Contact email",
     )
@@ -84,13 +82,13 @@ class ContactMixin(BaseModel):
 class LocationMixin(BaseModel):
     """Geographic location mixin."""
 
-    latitude: Optional[float] = Field(
+    latitude: Union[float, None] = Field(
         default=None,
         ge=-90,
         le=90,
         description="Latitude",
     )
-    longitude: Optional[float] = Field(
+    longitude: Union[float, None] = Field(
         default=None,
         ge=-180,
         le=180,
@@ -118,16 +116,16 @@ class MediaMixin(BaseModel):
 class EmergencyContactMixin(BaseModel):
     """Emergency contact mixin."""
 
-    emergency_contact_name: Optional[str] = Field(
+    emergency_contact_name: Union[str, None] = Field(
         default=None,
         description="Emergency contact name",
     )
-    emergency_contact_phone: Optional[str] = Field(
+    emergency_contact_phone: Union[str, None] = Field(
         default=None,
         pattern=r"^\+?[1-9]\d{9,14}$",
         description="Emergency contact phone",
     )
-    emergency_contact_relation: Optional[str] = Field(
+    emergency_contact_relation: Union[str, None] = Field(
         default=None,
         description="Relation to person",
     )
@@ -136,11 +134,11 @@ class EmergencyContactMixin(BaseModel):
 class AuditMixin(BaseModel):
     """Audit trail mixin."""
 
-    created_by: Optional[UUID] = Field(
+    created_by: Union[UUID, None] = Field(
         default=None,
         description="User who created the record",
     )
-    updated_by: Optional[UUID] = Field(
+    updated_by: Union[UUID, None] = Field(
         default=None,
         description="User who last updated the record",
     )
@@ -149,15 +147,15 @@ class AuditMixin(BaseModel):
 class ApprovalMixin(BaseModel):
     """Approval workflow mixin."""
 
-    approved_by: Optional[UUID] = Field(
+    approved_by: Union[UUID, None] = Field(
         default=None,
         description="User who approved",
     )
-    approved_at: Optional[datetime] = Field(
+    approved_at: Union[datetime, None] = Field(
         default=None,
         description="Approval timestamp",
     )
-    rejection_reason: Optional[str] = Field(
+    rejection_reason: Union[str, None] = Field(
         default=None,
         description="Reason for rejection",
     )
@@ -166,17 +164,17 @@ class ApprovalMixin(BaseModel):
 class SEOMixin(BaseModel):
     """SEO fields mixin."""
 
-    meta_title: Optional[str] = Field(
+    meta_title: Union[str, None] = Field(
         default=None,
         max_length=255,
         description="SEO meta title",
     )
-    meta_description: Optional[str] = Field(
+    meta_description: Union[str, None] = Field(
         default=None,
         max_length=500,
         description="SEO meta description",
     )
-    meta_keywords: Optional[str] = Field(
+    meta_keywords: Union[str, None] = Field(
         default=None,
         max_length=500,
         description="SEO keywords",

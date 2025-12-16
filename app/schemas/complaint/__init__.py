@@ -8,8 +8,6 @@ Example:
     from app.schemas.complaint import ComplaintCreate, ComplaintDetail
 """
 
-from __future__ import annotations
-
 from app.schemas.complaint.complaint_analytics import (
     CategoryAnalysis,
     CategoryMetrics,

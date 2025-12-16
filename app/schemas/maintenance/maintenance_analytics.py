@@ -6,11 +6,9 @@ Provides comprehensive analytics with trends, performance metrics,
 and vendor analysis for data-driven decision making.
 """
 
-from __future__ import annotations
-
 from datetime import date as Date, datetime
 from decimal import Decimal
-from typing import Annotated, Dict, List, Optional
+from typing import Annotated, Dict, List, Optional, Union
 
 from pydantic import ConfigDict, Field, computed_field
 from uuid import UUID
@@ -77,7 +75,7 @@ class TrendPoint(BaseSchema):
         ge=0,
         description="Pending requests",
     )
-    average_completion_days: Optional[Annotated[Decimal, Field(ge=0, decimal_places=2)]] = Field(
+    average_completion_days: Union[Annotated[Decimal, Field(ge=0, decimal_places=2)], None] = Field(
         None,
         description="Average days to complete",
     )
@@ -141,11 +139,11 @@ class CostTrendPoint(BaseSchema):
         ...,
         description="Average cost per request",
     )
-    budget_allocated: Optional[Annotated[Decimal, Field(ge=0, decimal_places=2)]] = Field(
+    budget_allocated: Union[Annotated[Decimal, Field(ge=0, decimal_places=2)], None] = Field(
         None,
         description="Budget allocated for period",
     )
-    variance_from_budget: Optional[Annotated[Decimal, Field(decimal_places=2)]] = Field(
+    variance_from_budget: Union[Annotated[Decimal, Field(decimal_places=2)], None] = Field(
         None,
         description="Variance from budget",
     )
@@ -220,7 +218,7 @@ class CategoryBreakdown(BaseSchema):
         ...,
         description="Average cost per request",
     )
-    median_cost: Optional[Annotated[Decimal, Field(ge=0, decimal_places=2)]] = Field(
+    median_cost: Union[Annotated[Decimal, Field(ge=0, decimal_places=2)], None] = Field(
         None,
         description="Median cost",
     )
@@ -250,11 +248,11 @@ class CategoryBreakdown(BaseSchema):
     )
     
     # Quality metrics
-    quality_check_pass_rate: Optional[Annotated[Decimal, Field(ge=0, le=100, decimal_places=2)]] = Field(
+    quality_check_pass_rate: Union[Annotated[Decimal, Field(ge=0, le=100, decimal_places=2)], None] = Field(
         None,
         description="Quality check pass rate",
     )
-    average_quality_rating: Optional[Annotated[Decimal, Field(ge=0, le=5, decimal_places=2)]] = Field(
+    average_quality_rating: Union[Annotated[Decimal, Field(ge=0, le=5, decimal_places=2)], None] = Field(
         None,
         description="Average quality rating",
     )
@@ -344,7 +342,7 @@ class VendorPerformance(BaseSchema):
         ...,
         description="Percentage completed on time",
     )
-    average_delay_days: Optional[Annotated[Decimal, Field(ge=0, decimal_places=2)]] = Field(
+    average_delay_days: Union[Annotated[Decimal, Field(ge=0, decimal_places=2)], None] = Field(
         None,
         description="Average delay in days (for delayed jobs)",
     )
@@ -363,27 +361,27 @@ class VendorPerformance(BaseSchema):
         pattern=r"^(low|medium|high)$",
         description="Cost competitiveness rating",
     )
-    cost_variance_percentage: Optional[Annotated[Decimal, Field(decimal_places=2)]] = Field(
+    cost_variance_percentage: Union[Annotated[Decimal, Field(decimal_places=2)], None] = Field(
         None,
         description="Average cost variance from estimates",
     )
     
     # Quality metrics
-    quality_rating: Optional[Annotated[Decimal, Field(ge=0, le=5, decimal_places=2)]] = Field(
+    quality_rating: Union[Annotated[Decimal, Field(ge=0, le=5, decimal_places=2)], None] = Field(
         None,
         description="Average quality rating (1-5 stars)",
     )
-    quality_check_pass_rate: Optional[Annotated[Decimal, Field(ge=0, le=100, decimal_places=2)]] = Field(
+    quality_check_pass_rate: Union[Annotated[Decimal, Field(ge=0, le=100, decimal_places=2)], None] = Field(
         None,
         description="Quality check pass rate",
     )
-    rework_rate: Optional[Annotated[Decimal, Field(ge=0, le=100, decimal_places=2)]] = Field(
+    rework_rate: Union[Annotated[Decimal, Field(ge=0, le=100, decimal_places=2)], None] = Field(
         None,
         description="Percentage requiring rework",
     )
     
     # Customer satisfaction
-    customer_satisfaction_score: Optional[Annotated[Decimal, Field(ge=0, le=100, decimal_places=2)]] = Field(
+    customer_satisfaction_score: Union[Annotated[Decimal, Field(ge=0, le=100, decimal_places=2)], None] = Field(
         None,
         description="Customer satisfaction score",
     )
@@ -394,11 +392,11 @@ class VendorPerformance(BaseSchema):
     )
     
     # Reliability
-    response_time_hours: Optional[Annotated[Decimal, Field(ge=0, decimal_places=2)]] = Field(
+    response_time_hours: Union[Annotated[Decimal, Field(ge=0, decimal_places=2)], None] = Field(
         None,
         description="Average response time in hours",
     )
-    availability_score: Optional[Annotated[Decimal, Field(ge=0, le=100, decimal_places=2)]] = Field(
+    availability_score: Union[Annotated[Decimal, Field(ge=0, le=100, decimal_places=2)], None] = Field(
         None,
         description="Vendor availability score",
     )
@@ -526,7 +524,7 @@ class PerformanceMetrics(BaseSchema):
         ...,
         description="Average time to complete (days)",
     )
-    median_completion_time_days: Optional[Annotated[Decimal, Field(ge=0, decimal_places=2)]] = Field(
+    median_completion_time_days: Union[Annotated[Decimal, Field(ge=0, decimal_places=2)], None] = Field(
         None,
         description="Median completion time (days)",
     )
@@ -562,7 +560,7 @@ class PerformanceMetrics(BaseSchema):
         default=Decimal("0.00"),
         description="Quality check pass rate",
     )
-    average_quality_rating: Optional[Annotated[Decimal, Field(ge=0, le=5, decimal_places=2)]] = Field(
+    average_quality_rating: Union[Annotated[Decimal, Field(ge=0, le=5, decimal_places=2)], None] = Field(
         None,
         description="Average quality rating",
     )
@@ -572,11 +570,11 @@ class PerformanceMetrics(BaseSchema):
     )
     
     # Response metrics
-    average_response_time_hours: Optional[Annotated[Decimal, Field(ge=0, decimal_places=2)]] = Field(
+    average_response_time_hours: Union[Annotated[Decimal, Field(ge=0, decimal_places=2)], None] = Field(
         None,
         description="Average time to assign/respond (hours)",
     )
-    average_assignment_time_hours: Optional[Annotated[Decimal, Field(ge=0, decimal_places=2)]] = Field(
+    average_assignment_time_hours: Union[Annotated[Decimal, Field(ge=0, decimal_places=2)], None] = Field(
         None,
         description="Average time to assign (hours)",
     )
@@ -694,7 +692,7 @@ class ProductivityMetrics(BaseSchema):
         ...,
         description="On-time completion rate",
     )
-    quality_score: Optional[Annotated[Decimal, Field(ge=0, le=100, decimal_places=2)]] = Field(
+    quality_score: Union[Annotated[Decimal, Field(ge=0, le=100, decimal_places=2)], None] = Field(
         None,
         description="Average quality score",
     )
@@ -705,7 +703,7 @@ class ProductivityMetrics(BaseSchema):
         max_length=5,
         description="Top maintenance categories handled",
     )
-    specialization_score: Optional[Annotated[Decimal, Field(ge=0, le=100, decimal_places=2)]] = Field(
+    specialization_score: Union[Annotated[Decimal, Field(ge=0, le=100, decimal_places=2)], None] = Field(
         None,
         description="Specialization/expertise score",
     )
@@ -803,7 +801,7 @@ class MaintenanceAnalytics(BaseSchema):
         ...,
         description="Average cost per request",
     )
-    budget_utilization: Optional[Annotated[Decimal, Field(ge=0, le=100, decimal_places=2)]] = Field(
+    budget_utilization: Union[Annotated[Decimal, Field(ge=0, le=100, decimal_places=2)], None] = Field(
         None,
         description="Budget utilization percentage",
     )

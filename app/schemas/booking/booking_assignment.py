@@ -1,4 +1,3 @@
-# --- File: app/schemas/booking/booking_assignment.py ---
 """
 Booking room and bed assignment schemas.
 
@@ -6,10 +5,8 @@ This module defines schemas for assigning rooms and beds to bookings,
 including bulk operations and reassignment workflows.
 """
 
-from __future__ import annotations
-
 from datetime import date as Date, datetime
-from typing import List, Optional
+from typing import List, Union
 from uuid import UUID
 
 from pydantic import Field, field_validator
@@ -148,12 +145,12 @@ class AssignmentRequest(BaseCreateSchema):
     )
 
     # Optional Override
-    override_check_in_date: Optional[Date] = Field(
+    override_check_in_date: Union[Date, None] = Field(
         None,
         description="Override the preferred check-in Date if needed",
     )
 
-    notes: Optional[str] = Field(
+    notes: Union[str, None] = Field(
         None,
         max_length=500,
         description="Assignment notes for internal reference",
@@ -161,7 +158,7 @@ class AssignmentRequest(BaseCreateSchema):
 
     @field_validator("override_check_in_date")
     @classmethod
-    def validate_override_date(cls, v: Optional[Date]) -> Optional[Date]:
+    def validate_override_date(cls, v: Union[Date, None]) -> Union[Date, None]:
         """Validate override check-in Date."""
         if v is not None and v < Date.today():
             raise ValueError(
@@ -171,7 +168,7 @@ class AssignmentRequest(BaseCreateSchema):
 
     @field_validator("notes")
     @classmethod
-    def clean_notes(cls, v: Optional[str]) -> Optional[str]:
+    def clean_notes(cls, v: Union[str, None]) -> Union[str, None]:
         """Clean notes field."""
         if v is not None:
             v = v.strip()
@@ -258,11 +255,11 @@ class AssignmentResponse(BaseSchema):
         ...,
         description="Whether room was successfully assigned",
     )
-    room_number: Optional[str] = Field(
+    room_number: Union[str, None] = Field(
         None,
         description="Assigned room number if successful",
     )
-    bed_number: Optional[str] = Field(
+    bed_number: Union[str, None] = Field(
         None,
         description="Assigned bed number if successful",
     )

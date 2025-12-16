@@ -3,11 +3,9 @@
 Hostel admin view schemas with enhanced configuration options.
 """
 
-from __future__ import annotations
-
 from datetime import datetime
 from decimal import Decimal
-from typing import Annotated, Optional
+from typing import Annotated, Union
 
 from pydantic import ConfigDict, Field, field_validator
 
@@ -92,15 +90,15 @@ class HostelAdminView(BaseSchema):
     )
 
     # Subscription
-    subscription_plan: Optional[SubscriptionPlan] = Field(
+    subscription_plan: Union[SubscriptionPlan, None] = Field(
         default=None,
         description="Current subscription plan",
     )
-    subscription_status: Optional[SubscriptionStatus] = Field(
+    subscription_status: Union[SubscriptionStatus, None] = Field(
         default=None,
         description="Subscription status",
     )
-    subscription_expires_at: Optional[datetime] = Field(
+    subscription_expires_at: Union[datetime, None] = Field(
         default=None,
         description="Subscription expiration date",
     )
@@ -126,11 +124,11 @@ class HostelSettings(BaseUpdateSchema):
     model_config = ConfigDict(from_attributes=True)
 
     # Visibility
-    is_public: Optional[bool] = Field(
+    is_public: Union[bool, None] = Field(
         default=None,
         description="Make hostel visible in public listings",
     )
-    is_active: Optional[bool] = Field(
+    is_active: Union[bool, None] = Field(
         default=None,
         description="Hostel operational status",
     )
@@ -229,10 +227,10 @@ class HostelSettings(BaseUpdateSchema):
         default=False,
         description="Mess facility included in rent",
     )
-    mess_charges_monthly: Optional[Annotated[
+    mess_charges_monthly: Union[Annotated[
         Decimal,
         Field(ge=0, description="Monthly mess charges (if separate)")
-    ]] = None
+    ], None] = None
     mess_advance_booking_days: int = Field(
         default=1,
         ge=0,
@@ -241,17 +239,17 @@ class HostelSettings(BaseUpdateSchema):
     )
 
     # Security settings
-    visitor_entry_time_start: Optional[str] = Field(
+    visitor_entry_time_start: Union[str, None] = Field(
         default=None,
         pattern=r"^([01]?[0-9]|2[0-3]):[0-5][0-9]$",
         description="Visitor entry allowed from (HH:MM)",
     )
-    visitor_entry_time_end: Optional[str] = Field(
+    visitor_entry_time_end: Union[str, None] = Field(
         default=None,
         pattern=r"^([01]?[0-9]|2[0-3]):[0-5][0-9]$",
         description="Visitor entry allowed until (HH:MM)",
     )
-    late_entry_time: Optional[str] = Field(
+    late_entry_time: Union[str, None] = Field(
         default=None,
         pattern=r"^([01]?[0-9]|2[0-3]):[0-5][0-9]$",
         description="Late entry cutoff time (HH:MM)",
@@ -331,20 +329,20 @@ class HostelStatusUpdate(BaseUpdateSchema):
         ...,
         description="Active status",
     )
-    reason: Optional[str] = Field(
+    reason: Union[str, None] = Field(
         default=None,
         min_length=10,
         max_length=500,
         description="Reason for status change",
     )
-    effective_date: Optional[datetime] = Field(
+    effective_date: Union[datetime, None] = Field(
         default=None,
         description="Effective date of status change",
     )
 
     @field_validator("reason")
     @classmethod
-    def validate_reason_required(cls, v: Optional[str], info) -> Optional[str]:
+    def validate_reason_required(cls, v: Union[str, None], info) -> Union[str, None]:
         """Require reason for certain status changes."""
         status = info.data.get("status")
         is_active = info.data.get("is_active")

@@ -4,10 +4,8 @@ Password management schemas with robust validation.
 Pydantic v2 compliant.
 """
 
-from __future__ import annotations
-
 import re
-from typing import List
+from typing import List, Union
 from uuid import UUID
 
 from pydantic import Field, field_validator, model_validator
@@ -161,7 +159,7 @@ class PasswordResetConfirm(BaseCreateSchema):
         return v
 
     @model_validator(mode="after")
-    def validate_passwords_match(self) -> "PasswordResetConfirm":
+    def validate_passwords_match(self):
         """Ensure new_password and confirm_password match."""
         if self.new_password != self.confirm_password:
             raise ValueError("Passwords do not match")
@@ -200,7 +198,7 @@ class PasswordChangeRequest(BaseCreateSchema):
         return v
 
     @model_validator(mode="after")
-    def validate_password_requirements(self) -> "PasswordChangeRequest":
+    def validate_password_requirements(self):
         """
         Validate password change requirements.
         
@@ -292,7 +290,7 @@ class PasswordStrengthResponse(BaseSchema):
     )
 
     @classmethod
-    def from_password(cls, password: str) -> "PasswordStrengthResponse":
+    def from_password(cls, password: str):
         """
         Create response from password analysis.
         

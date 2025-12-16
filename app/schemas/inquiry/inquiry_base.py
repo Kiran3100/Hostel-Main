@@ -1,4 +1,3 @@
-# --- File: app/schemas/inquiry/inquiry_base.py ---
 """
 Base visitor inquiry schemas with comprehensive validation.
 
@@ -6,10 +5,8 @@ This module defines the core inquiry schemas for managing visitor
 inquiries about hostel availability and bookings.
 """
 
-from __future__ import annotations
-
 from datetime import date as Date
-from typing import Optional
+from typing import Union
 from uuid import UUID
 
 from pydantic import ConfigDict, EmailStr, Field, computed_field, field_validator
@@ -72,23 +69,23 @@ class InquiryBase(BaseSchema):
     )
 
     # Inquiry Preferences
-    preferred_check_in_date: Optional[Date] = Field(
+    preferred_check_in_date: Union[Date, None] = Field(
         default=None,
         description="Preferred or approximate check-in Date",
     )
-    stay_duration_months: Optional[int] = Field(
+    stay_duration_months: Union[int, None] = Field(
         default=None,
         ge=1,
         le=36,
         description="Intended stay duration in months (1-36)",
     )
-    room_type_preference: Optional[RoomType] = Field(
+    room_type_preference: Union[RoomType, None] = Field(
         default=None,
         description="Preferred room type if any",
     )
 
     # Inquiry Details
-    message: Optional[str] = Field(
+    message: Union[str, None] = Field(
         default=None,
         max_length=2000,
         description="Additional message or questions from visitor",
@@ -139,7 +136,7 @@ class InquiryBase(BaseSchema):
 
     @field_validator("preferred_check_in_date")
     @classmethod
-    def validate_check_in_date(cls, v: Optional[Date]) -> Optional[Date]:
+    def validate_check_in_date(cls, v: Union[Date, None]) -> Union[Date, None]:
         """Validate preferred check-in Date."""
         if v is not None:
             # Allow past dates for inquiries (they might be inquiring for future)
@@ -160,7 +157,7 @@ class InquiryBase(BaseSchema):
 
     @field_validator("message")
     @classmethod
-    def clean_message(cls, v: Optional[str]) -> Optional[str]:
+    def clean_message(cls, v: Union[str, None]) -> Union[str, None]:
         """Clean and validate message."""
         if v is not None:
             v = v.strip()
@@ -261,54 +258,54 @@ class InquiryUpdate(BaseUpdateSchema):
     )
 
     # Visitor Contact (rarely updated, but allowed)
-    visitor_name: Optional[str] = Field(
+    visitor_name: Union[str, None] = Field(
         default=None,
         min_length=2,
         max_length=255,
         description="Update visitor name",
     )
-    visitor_email: Optional[EmailStr] = Field(
+    visitor_email: Union[EmailStr, None] = Field(
         default=None,
         description="Update visitor email",
     )
-    visitor_phone: Optional[str] = Field(
+    visitor_phone: Union[str, None] = Field(
         default=None,
         pattern=r"^\+?[1-9]\d{9,14}$",
         description="Update visitor phone",
     )
 
     # Preferences (can be updated as inquiry is refined)
-    preferred_check_in_date: Optional[Date] = Field(
+    preferred_check_in_date: Union[Date, None] = Field(
         default=None,
         description="Update preferred check-in Date",
     )
-    stay_duration_months: Optional[int] = Field(
+    stay_duration_months: Union[int, None] = Field(
         default=None,
         ge=1,
         le=36,
         description="Update stay duration",
     )
-    room_type_preference: Optional[RoomType] = Field(
+    room_type_preference: Union[RoomType, None] = Field(
         default=None,
         description="Update room type preference",
     )
 
     # Message (can be appended or updated)
-    message: Optional[str] = Field(
+    message: Union[str, None] = Field(
         default=None,
         max_length=2000,
         description="Update inquiry message",
     )
 
     # Status (usually updated via separate status update endpoint)
-    status: Optional[InquiryStatus] = Field(
+    status: Union[InquiryStatus, None] = Field(
         default=None,
         description="Update inquiry status",
     )
 
     @field_validator("visitor_name")
     @classmethod
-    def validate_visitor_name(cls, v: Optional[str]) -> Optional[str]:
+    def validate_visitor_name(cls, v: Union[str, None]) -> Union[str, None]:
         """Validate visitor name if provided."""
         if v is not None:
             v = v.strip()
@@ -320,7 +317,7 @@ class InquiryUpdate(BaseUpdateSchema):
 
     @field_validator("visitor_phone")
     @classmethod
-    def validate_phone(cls, v: Optional[str]) -> Optional[str]:
+    def validate_phone(cls, v: Union[str, None]) -> Union[str, None]:
         """Normalize phone number if provided."""
         if v is not None:
             v = v.replace(" ", "").replace("-", "")
@@ -330,7 +327,7 @@ class InquiryUpdate(BaseUpdateSchema):
 
     @field_validator("message")
     @classmethod
-    def clean_message(cls, v: Optional[str]) -> Optional[str]:
+    def clean_message(cls, v: Union[str, None]) -> Union[str, None]:
         """Clean message if provided."""
         if v is not None:
             v = v.strip()
