@@ -1,0 +1,2206 @@
+### Combined Content from Folder: C:\Hostel-Main\app\repositories ###
+
+
+
+# ===== Folder: C:\Hostel-Main\app\repositories =====
+
+# --- File: C:\Hostel-Main\app\repositories\base.py ---
+# app/repositories/base.py
+from __future__ import annotations
+
+from typing import Any, Dict, Generic, Iterable, Optional, Sequence, Type, TypeVar
+from uuid import UUID
+
+from sqlalchemy import Select, delete, func, select, update
+from sqlalchemy.orm import Session
+
+from app.models.base import Base
+
+ModelType = TypeVar("ModelType", bound=Base)
+
+
+class BaseRepository(Generic[ModelType]):
+    """
+    Generic repository with common CRUD and query helpers.
+
+    - Does not commit/rollback; caller manages transactions.
+    - Automatically filters out soft-deleted rows if model has `is_deleted` column.
+    """
+
+    def __init__(self, session: Session, model: Type[ModelType]):
+        self.session = session
+        self.model = model
+
+    # ------------------------------------------------------------------ #
+    # Internal helpers
+    # ------------------------------------------------------------------ #
+    def _base_select(self) -> Select[tuple[ModelType]]:
+        stmt = select(self.model)
+        if hasattr(self.model, "is_deleted"):
+            stmt = stmt.where(getattr(self.model, "is_deleted").is_(False))
+        return stmt
+
+    def _apply_filters(
+        self,
+        stmt: Select[tuple[ModelType]],
+        filters: Optional[Dict[str, Any]] = None,
+    ) -> Select[tuple[ModelType]]:
+        if not filters:
+            return stmt
+
+        for key, value in filters.items():
+            if value is None:
+                continue
+            column = getattr(self.model, key, None)
+            if column is None:
+                continue
+
+            if isinstance(value, (list, tuple, set)):
+                stmt = stmt.where(column.in_(value))
+            else:
+                stmt = stmt.where(column == value)
+        return stmt
+
+    # ------------------------------------------------------------------ #
+    # Basic CRUD
+    # ------------------------------------------------------------------ #
+    def get(self, id_: UUID) -> Optional[ModelType]:
+        stmt = self._base_select().where(self.model.id == id_)
+        return self.session.execute(stmt).scalar_one_or_none()
+
+    def get_multi(
+        self,
+        *,
+        skip: int = 0,
+        limit: int = 100,
+        filters: Optional[Dict[str, Any]] = None,
+        order_by: Optional[Iterable[Any]] = None,
+    ) -> Sequence[ModelType]:
+        stmt = self._base_select()
+        stmt = self._apply_filters(stmt, filters)
+
+        if order_by:
+            stmt = stmt.order_by(*order_by)
+
+        if skip:
+            stmt = stmt.offset(skip)
+        if limit:
+            stmt = stmt.limit(limit)
+
+        return self.session.execute(stmt).scalars().all()
+
+    def count(self, filters: Optional[Dict[str, Any]] = None) -> int:
+        stmt = select(func.count(self.model.id))
+        if hasattr(self.model, "is_deleted"):
+            stmt = stmt.where(getattr(self.model, "is_deleted").is_(False))
+        if filters:
+            for key, value in filters.items():
+                if value is None:
+                    continue
+                column = getattr(self.model, key, None)
+                if column is None:
+                    continue
+                if isinstance(value, (list, tuple, set)):
+                    stmt = stmt.where(column.in_(value))
+                else:
+                    stmt = stmt.where(column == value)
+        return self.session.execute(stmt).scalar_one()
+
+    def create(self, obj_in: Dict[str, Any] | ModelType) -> ModelType:
+        if isinstance(obj_in, self.model):
+            db_obj = obj_in
+        else:
+            db_obj = self.model(**obj_in)  # type: ignore[arg-type]
+        self.session.add(db_obj)
+        # flush to populate PK
+        self.session.flush()
+        return db_obj
+
+    def update(
+        self,
+        db_obj: ModelType,
+        obj_in: Dict[str, Any] | ModelType,
+    ) -> ModelType:
+        if isinstance(obj_in, self.model):
+            data = {c.name: getattr(obj_in, c.name) for c in self.model.__table__.columns}
+        else:
+            data = obj_in
+
+        for field, value in data.items():
+            if hasattr(db_obj, field) and field != "id":
+                setattr(db_obj, field, value)
+
+        self.session.flush()
+        return db_obj
+
+    def delete(self, db_obj: ModelType, *, hard_delete: bool = False) -> None:
+        """
+        Delete an object.
+
+        - If model has `is_deleted` and `hard_delete=False`, marks as soft-deleted.
+        - Otherwise performs real DELETE.
+        """
+        if hasattr(self.model, "is_deleted") and not hard_delete:
+            setattr(db_obj, "is_deleted", True)
+            if hasattr(self.model, "deleted_at"):
+                from datetime import datetime, timezone
+
+                setattr(db_obj, "deleted_at", datetime.now(timezone.utc))
+            self.session.flush()
+        else:
+            self.session.delete(db_obj)
+            self.session.flush()
+
+    def delete_by_id(self, id_: UUID, *, hard_delete: bool = False) -> None:
+        obj = self.get(id_)
+        if obj:
+            self.delete(obj, hard_delete=hard_delete)
+
+    # ------------------------------------------------------------------ #
+    # Bulk helpers
+    # ------------------------------------------------------------------ #
+    def bulk_create(self, objs: Iterable[Dict[str, Any] | ModelType]) -> Sequence[ModelType]:
+        instances: list[ModelType] = []
+        for obj in objs:
+            if isinstance(obj, self.model):
+                instances.append(obj)
+            else:
+                instances.append(self.model(**obj))  # type: ignore[arg-type]
+        self.session.add_all(instances)
+        self.session.flush()
+        return instances
+
+    def bulk_update(
+        self,
+        filters: Dict[str, Any],
+        values: Dict[str, Any],
+    ) -> int:
+        stmt = update(self.model)
+        if hasattr(self.model, "is_deleted"):
+            stmt = stmt.where(getattr(self.model, "is_deleted").is_(False))
+        for key, value in filters.items():
+            column = getattr(self.model, key, None)
+            if column is not None:
+                stmt = stmt.where(column == value)
+        stmt = stmt.values(**values)
+        result = self.session.execute(stmt)
+        self.session.flush()
+        return result.rowcount or 0
+
+    def bulk_delete(
+        self,
+        filters: Dict[str, Any],
+        *,
+        hard_delete: bool = False,
+    ) -> int:
+        if hasattr(self.model, "is_deleted") and not hard_delete:
+            # Soft delete
+            values: Dict[str, Any] = {"is_deleted": True}
+            if hasattr(self.model, "deleted_at"):
+                from datetime import datetime, timezone
+
+                values["deleted_at"] = datetime.now(timezone.utc)
+            return self.bulk_update(filters, values)
+
+        # Hard delete
+        stmt = delete(self.model)
+        for key, value in filters.items():
+            column = getattr(self.model, key, None)
+            if column is not None:
+                stmt = stmt.where(column == value)
+        result = self.session.execute(stmt)
+        self.session.flush()
+        return result.rowcount or 0
+
+# --- File: C:\Hostel-Main\app\repositories\__init__.py ---
+# app/repositories/__init__.py
+from .base import BaseRepository
+
+__all__ = [
+    "BaseRepository",
+]
+
+
+# ===== Folder: C:\Hostel-Main\app\repositories\analytics =====
+
+# --- File: C:\Hostel-Main\app\repositories\analytics\analytics_data_repository.py ---
+# app/repositories/analytics/analytics_data_repository.py
+from __future__ import annotations
+
+from datetime import datetime
+from typing import Optional
+
+from sqlalchemy import and_, select
+from sqlalchemy.orm import Session
+
+from app.repositories.base import BaseRepository
+from app.models.analytics import AnalyticsData
+
+
+class AnalyticsDataRepository(BaseRepository[AnalyticsData]):
+    def __init__(self, session: Session):
+        super().__init__(session, AnalyticsData)
+
+    def get_for_period(
+        self,
+        *,
+        period_start: datetime,
+        period_end: datetime,
+    ) -> Optional[AnalyticsData]:
+        stmt = (
+            self._base_select()
+            .where(
+                and_(
+                    AnalyticsData.period_start == period_start,
+                    AnalyticsData.period_end == period_end,
+                )
+            )
+        )
+        return self.session.execute(stmt).scalar_one_or_none()
+
+    def get_latest(self) -> Optional[AnalyticsData]:
+        stmt = self._base_select().order_by(AnalyticsData.period_end.desc()).limit(1)
+        return self.session.execute(stmt).scalar_one_or_none()
+
+# --- File: C:\Hostel-Main\app\repositories\analytics\dashboard_metrics_repository.py ---
+# app/repositories/analytics/dashboard_metrics_repository.py
+from __future__ import annotations
+
+from datetime import date
+from typing import Optional
+from uuid import UUID
+
+from sqlalchemy import and_, select
+from sqlalchemy.orm import Session
+
+from app.repositories.base import BaseRepository
+from app.models.analytics import DashboardMetrics
+
+
+class DashboardMetricsRepository(BaseRepository[DashboardMetrics]):
+    def __init__(self, session: Session):
+        super().__init__(session, DashboardMetrics)
+
+    def get_for_scope_and_period(
+        self,
+        *,
+        scope_type: str,
+        scope_id: Optional[UUID],
+        period_start: date,
+        period_end: date,
+    ) -> Optional[DashboardMetrics]:
+        stmt = (
+            self._base_select()
+            .where(
+                and_(
+                    DashboardMetrics.scope_type == scope_type,
+                    DashboardMetrics.scope_id == scope_id,
+                    DashboardMetrics.period_start == period_start,
+                    DashboardMetrics.period_end == period_end,
+                )
+            )
+        )
+        return self.session.execute(stmt).scalar_one_or_none()
+
+    def get_latest_for_scope(
+        self,
+        *,
+        scope_type: str,
+        scope_id: Optional[UUID],
+    ) -> Optional[DashboardMetrics]:
+        stmt = (
+            self._base_select()
+            .where(
+                and_(
+                    DashboardMetrics.scope_type == scope_type,
+                    DashboardMetrics.scope_id == scope_id,
+                )
+            )
+            .order_by(DashboardMetrics.generated_at.desc())
+            .limit(1)
+        )
+        return self.session.execute(stmt).scalar_one_or_none()
+
+# --- File: C:\Hostel-Main\app\repositories\analytics\growth_metrics_repository.py ---
+
+
+# --- File: C:\Hostel-Main\app\repositories\analytics\platform_metrics_repository.py ---
+# app/repositories/analytics/platform_metrics_repository.py
+from __future__ import annotations
+
+from datetime import date
+from typing import Optional
+
+from sqlalchemy import and_, select
+from sqlalchemy.orm import Session
+
+from app.repositories.base import BaseRepository
+from app.models.analytics import PlatformMetrics, GrowthMetrics, PlatformUsageAnalytics
+
+
+class PlatformMetricsRepository(BaseRepository[PlatformMetrics]):
+    def __init__(self, session: Session):
+        super().__init__(session, PlatformMetrics)
+
+    def get_latest(self) -> Optional[PlatformMetrics]:
+        stmt = self._base_select().order_by(PlatformMetrics.generated_at.desc()).limit(1)
+        return self.session.execute(stmt).scalar_one_or_none()
+
+
+class GrowthMetricsRepository(BaseRepository[GrowthMetrics]):
+    def __init__(self, session: Session):
+        super().__init__(session, GrowthMetrics)
+
+    def get_for_period(self, *, period_start: date, period_end: date) -> Optional[GrowthMetrics]:
+        stmt = (
+            self._base_select()
+            .where(
+                and_(
+                    GrowthMetrics.period_start == period_start,
+                    GrowthMetrics.period_end == period_end,
+                )
+            )
+        )
+        return self.session.execute(stmt).scalar_one_or_none()
+
+
+class PlatformUsageAnalyticsRepository(BaseRepository[PlatformUsageAnalytics]):
+    def __init__(self, session: Session):
+        super().__init__(session, PlatformUsageAnalytics)
+
+    def get_latest(self) -> Optional[PlatformUsageAnalytics]:
+        stmt = self._base_select().order_by(PlatformUsageAnalytics.generated_at.desc()).limit(1)
+        return self.session.execute(stmt).scalar_one_or_none()
+
+# --- File: C:\Hostel-Main\app\repositories\analytics\platform_usage_analytics_repository.py ---
+
+
+# --- File: C:\Hostel-Main\app\repositories\analytics\supervisor_performance_metrics_repository.py ---
+# app/repositories/analytics/supervisor_performance_metrics_repository.py
+from __future__ import annotations
+
+from datetime import date
+from typing import Optional
+from uuid import UUID
+
+from sqlalchemy import and_, select
+from sqlalchemy.orm import Session
+
+from app.repositories.base import BaseRepository
+from app.models.analytics import SupervisorPerformanceMetrics
+
+
+class SupervisorPerformanceMetricsRepository(BaseRepository[SupervisorPerformanceMetrics]):
+    def __init__(self, session: Session):
+        super().__init__(session, SupervisorPerformanceMetrics)
+
+    def get_for_supervisor_period(
+        self,
+        *,
+        supervisor_id: UUID,
+        hostel_id: UUID,
+        period_start: date,
+        period_end: date,
+    ) -> Optional[SupervisorPerformanceMetrics]:
+        stmt = (
+            self._base_select()
+            .where(
+                and_(
+                    SupervisorPerformanceMetrics.supervisor_id == supervisor_id,
+                    SupervisorPerformanceMetrics.hostel_id == hostel_id,
+                    SupervisorPerformanceMetrics.period_start == period_start,
+                    SupervisorPerformanceMetrics.period_end == period_end,
+                )
+            )
+        )
+        return self.session.execute(stmt).scalar_one_or_none()
+
+# --- File: C:\Hostel-Main\app\repositories\analytics\visitor_behavior_analytics_repository.py ---
+# app/repositories/analytics/visitor_behavior_analytics_repository.py
+from __future__ import annotations
+
+from typing import Optional
+from uuid import UUID
+
+from sqlalchemy import select
+from sqlalchemy.orm import Session
+
+from app.repositories.base import BaseRepository
+from app.models.analytics import VisitorBehaviorAnalytics
+
+
+class VisitorBehaviorAnalyticsRepository(BaseRepository[VisitorBehaviorAnalytics]):
+    """
+    Analytics-focused visitor behavior repository.
+    """
+    def __init__(self, session: Session):
+        super().__init__(session, VisitorBehaviorAnalytics)
+
+    def get_by_visitor_id(self, visitor_id: UUID) -> Optional[VisitorBehaviorAnalytics]:
+        stmt = self._base_select().where(VisitorBehaviorAnalytics.visitor_id == visitor_id)
+        return self.session.execute(stmt).scalar_one_or_none()
+
+# --- File: C:\Hostel-Main\app\repositories\analytics\__init__.py ---
+# app/repositories/analytics/__init__.py
+from .analytics_data_repository import AnalyticsDataRepository
+from .dashboard_metrics_repository import DashboardMetricsRepository
+from .supervisor_performance_metrics_repository import SupervisorPerformanceMetricsRepository
+from .platform_metrics_repository import (
+    PlatformMetricsRepository,
+    GrowthMetricsRepository,
+    PlatformUsageAnalyticsRepository,
+)
+from .visitor_behavior_analytics_repository import VisitorBehaviorAnalyticsRepository
+
+__all__ = [
+    "AnalyticsDataRepository",
+    "DashboardMetricsRepository",
+    "SupervisorPerformanceMetricsRepository",
+    "PlatformMetricsRepository",
+    "GrowthMetricsRepository",
+    "PlatformUsageAnalyticsRepository",
+    "VisitorBehaviorAnalyticsRepository",
+]
+
+
+# ===== Folder: C:\Hostel-Main\app\repositories\associations =====
+
+# --- File: C:\Hostel-Main\app\repositories\associations\admin_hostel_repository.py ---
+# app/repositories/associations/admin_hostel_repository.py
+from __future__ import annotations
+
+from typing import List
+from uuid import UUID
+
+from sqlalchemy import select
+from sqlalchemy.orm import Session
+
+from app.repositories.base import BaseRepository
+from app.models.associations import AdminHostel
+from app.models.core import Hostel, Admin
+
+
+class AdminHostelRepository(BaseRepository[AdminHostel]):
+    def __init__(self, session: Session):
+        super().__init__(session, AdminHostel)
+
+    def get_hostels_for_admin(self, admin_id: UUID, *, only_active: bool = True) -> List[Hostel]:
+        stmt = (
+            select(Hostel)
+            .join(AdminHostel, AdminHostel.hostel_id == Hostel.id)
+            .where(AdminHostel.admin_id == admin_id)
+        )
+        if only_active:
+            stmt = stmt.where(
+                AdminHostel.is_active.is_(True),
+                Hostel.is_active.is_(True),
+            )
+        return self.session.execute(stmt).scalars().all()
+
+    def get_admins_for_hostel(self, hostel_id: UUID, *, only_active: bool = True) -> List[Admin]:
+        stmt = (
+            select(Admin)
+            .join(AdminHostel, AdminHostel.admin_id == Admin.id)
+            .where(AdminHostel.hostel_id == hostel_id)
+        )
+        if only_active:
+            stmt = stmt.where(AdminHostel.is_active.is_(True))
+        return self.session.execute(stmt).scalars().all()
+
+# --- File: C:\Hostel-Main\app\repositories\associations\student_room_assignment_repository.py ---
+# app/repositories/associations/student_room_assignment_repository.py
+from __future__ import annotations
+
+from datetime import date
+from typing import List, Optional
+from uuid import UUID
+
+from sqlalchemy import and_, select
+from sqlalchemy.orm import Session
+
+from app.repositories.base import BaseRepository
+from app.models.associations import StudentRoomAssignment
+
+
+class StudentRoomAssignmentRepository(BaseRepository[StudentRoomAssignment]):
+    def __init__(self, session: Session):
+        super().__init__(session, StudentRoomAssignment)
+
+    def get_history_for_student(self, student_id: UUID) -> List[StudentRoomAssignment]:
+        stmt = (
+            self._base_select()
+            .where(StudentRoomAssignment.student_id == student_id)
+            .order_by(StudentRoomAssignment.move_in_date.asc())
+        )
+        return self.session.execute(stmt).scalars().all()
+
+    def get_active_assignment(self, student_id: UUID) -> Optional[StudentRoomAssignment]:
+        stmt = (
+            self._base_select()
+            .where(
+                and_(
+                    StudentRoomAssignment.student_id == student_id,
+                    StudentRoomAssignment.move_out_date.is_(None),
+                )
+            )
+            .order_by(StudentRoomAssignment.move_in_date.desc())
+            .limit(1)
+        )
+        return self.session.execute(stmt).scalar_one_or_none()
+
+    def get_assignments_for_room(
+        self,
+        room_id: UUID,
+        *,
+        active_only: bool = True,
+    ) -> List[StudentRoomAssignment]:
+        stmt = self._base_select().where(StudentRoomAssignment.room_id == room_id)
+        if active_only:
+            stmt = stmt.where(StudentRoomAssignment.move_out_date.is_(None))
+        return self.session.execute(stmt).scalars().all()
+
+# --- File: C:\Hostel-Main\app\repositories\associations\supervisor_hostel_repository.py ---
+# app/repositories/associations/supervisor_hostel_repository.py
+from __future__ import annotations
+
+from typing import List
+from uuid import UUID
+
+from sqlalchemy import select
+from sqlalchemy.orm import Session
+
+from app.repositories.base import BaseRepository
+from app.models.associations import SupervisorHostel
+from app.models.core import Supervisor, Hostel
+
+
+class SupervisorHostelRepository(BaseRepository[SupervisorHostel]):
+    def __init__(self, session: Session):
+        super().__init__(session, SupervisorHostel)
+
+    def get_hostels_for_supervisor(self, supervisor_id: UUID) -> List[Hostel]:
+        stmt = (
+            select(Hostel)
+            .join(SupervisorHostel, SupervisorHostel.hostel_id == Hostel.id)
+            .where(
+                SupervisorHostel.supervisor_id == supervisor_id,
+                SupervisorHostel.is_active.is_(True),
+            )
+        )
+        return self.session.execute(stmt).scalars().all()
+
+    def get_supervisors_for_hostel(self, hostel_id: UUID) -> List[Supervisor]:
+        stmt = (
+            select(Supervisor)
+            .join(SupervisorHostel, SupervisorHostel.supervisor_id == Supervisor.id)
+            .where(
+                SupervisorHostel.hostel_id == hostel_id,
+                SupervisorHostel.is_active.is_(True),
+            )
+        )
+        return self.session.execute(stmt).scalars().all()
+
+# --- File: C:\Hostel-Main\app\repositories\associations\user_hostel_repository.py ---
+# app/repositories/associations/user_hostel_repository.py
+from __future__ import annotations
+
+from typing import List
+from uuid import UUID
+
+from sqlalchemy import select
+from sqlalchemy.orm import Session
+
+from app.repositories.base import BaseRepository
+from app.models.associations import UserHostel
+from app.models.core import Hostel
+
+
+class UserHostelRepository(BaseRepository[UserHostel]):
+    def __init__(self, session: Session):
+        super().__init__(session, UserHostel)
+
+    def get_recent_hostels_for_user(self, user_id: UUID, limit: int = 5) -> List[Hostel]:
+        stmt = (
+            select(Hostel)
+            .join(UserHostel, UserHostel.hostel_id == Hostel.id)
+            .where(
+                UserHostel.user_id == user_id,
+                UserHostel.association_type == "recent",
+            )
+            .order_by(UserHostel.created_date.desc())
+            .limit(limit)
+        )
+        return self.session.execute(stmt).scalars().all()
+
+    def get_favorite_hostels_for_user(self, user_id: UUID) -> List[Hostel]:
+        stmt = (
+            select(Hostel)
+            .join(UserHostel, UserHostel.hostel_id == Hostel.id)
+            .where(
+                UserHostel.user_id == user_id,
+                UserHostel.association_type == "favorite",
+            )
+        )
+        return self.session.execute(stmt).scalars().all()
+
+# --- File: C:\Hostel-Main\app\repositories\associations\__init__.py ---
+# app/repositories/associations/__init__.py
+from .admin_hostel_repository import AdminHostelRepository
+from .supervisor_hostel_repository import SupervisorHostelRepository
+from .student_room_assignment_repository import StudentRoomAssignmentRepository
+from .user_hostel_repository import UserHostelRepository
+
+__all__ = [
+    "AdminHostelRepository",
+    "SupervisorHostelRepository",
+    "StudentRoomAssignmentRepository",
+    "UserHostelRepository",
+]
+
+
+# ===== Folder: C:\Hostel-Main\app\repositories\audit =====
+
+# --- File: C:\Hostel-Main\app\repositories\audit\admin_override_repository.py ---
+# app/repositories/audit/admin_override_repository.py
+from __future__ import annotations
+
+from typing import List
+from uuid import UUID
+
+from sqlalchemy.orm import Session
+
+from app.repositories.base import BaseRepository
+from app.models.audit import AdminOverride
+
+
+class AdminOverrideRepository(BaseRepository[AdminOverride]):
+    def __init__(self, session: Session):
+        super().__init__(session, AdminOverride)
+
+    def list_for_entity(
+        self,
+        *,
+        entity_type: str,
+        entity_id: UUID,
+    ) -> List[AdminOverride]:
+        stmt = (
+            self._base_select()
+            .where(
+                (AdminOverride.entity_type == entity_type)
+                & (AdminOverride.entity_id == entity_id)
+            )
+            .order_by(AdminOverride.created_at.desc())
+        )
+        return self.session.execute(stmt).scalars().all()
+
+# --- File: C:\Hostel-Main\app\repositories\audit\audit_log_repository.py ---
+# app/repositories/audit/audit_log_repository.py
+from __future__ import annotations
+
+from datetime import datetime
+from typing import List, Optional
+from uuid import UUID
+
+from sqlalchemy import and_
+from sqlalchemy.orm import Session
+
+from app.repositories.base import BaseRepository
+from app.models.audit import AuditLog
+from app.schemas.common.enums import AuditActionCategory, UserRole
+
+
+class AuditLogRepository(BaseRepository[AuditLog]):
+    def __init__(self, session: Session):
+        super().__init__(session, AuditLog)
+
+    def list_for_entity(
+        self,
+        *,
+        entity_type: str,
+        entity_id: UUID,
+        limit: int = 100,
+    ) -> List[AuditLog]:
+        stmt = (
+            self._base_select()
+            .where(
+                and_(
+                    AuditLog.entity_type == entity_type,
+                    AuditLog.entity_id == entity_id,
+                )
+            )
+            .order_by(AuditLog.created_at.desc())
+            .limit(limit)
+        )
+        return self.session.execute(stmt).scalars().all()
+
+    def list_for_user(
+        self,
+        *,
+        user_id: UUID,
+        user_role: Optional[UserRole] = None,
+        limit: int = 100,
+    ) -> List[AuditLog]:
+        stmt = self._base_select().where(AuditLog.user_id == user_id)
+        if user_role is not None:
+            stmt = stmt.where(AuditLog.user_role == user_role)
+        stmt = stmt.order_by(AuditLog.created_at.desc()).limit(limit)
+        return self.session.execute(stmt).scalars().all()
+
+    def list_for_hostel(
+        self,
+        *,
+        hostel_id: UUID,
+        category: Optional[AuditActionCategory] = None,
+        limit: int = 200,
+    ) -> List[AuditLog]:
+        stmt = self._base_select().where(AuditLog.hostel_id == hostel_id)
+        if category is not None:
+            stmt = stmt.where(AuditLog.action_category == category)
+        stmt = stmt.order_by(AuditLog.created_at.desc()).limit(limit)
+        return self.session.execute(stmt).scalars().all()
+
+# --- File: C:\Hostel-Main\app\repositories\audit\supervisor_activity_repository.py ---
+# app/repositories/audit/supervisor_activity_repository.py
+from __future__ import annotations
+
+from typing import List
+from uuid import UUID
+
+from sqlalchemy import select
+from sqlalchemy.orm import Session
+
+from app.repositories.base import BaseRepository
+from app.models.audit import SupervisorActivity
+
+
+class SupervisorActivityRepository(BaseRepository[SupervisorActivity]):
+    def __init__(self, session: Session):
+        super().__init__(session, SupervisorActivity)
+
+    def list_for_supervisor(
+        self,
+        supervisor_id: UUID,
+        *,
+        limit: int = 100,
+    ) -> List[SupervisorActivity]:
+        stmt = (
+            self._base_select()
+            .where(SupervisorActivity.supervisor_id == supervisor_id)
+            .order_by(SupervisorActivity.created_at.desc())
+            .limit(limit)
+        )
+        return self.session.execute(stmt).scalars().all()
+
+# --- File: C:\Hostel-Main\app\repositories\audit\user_activity_repository.py ---
+# app/repositories/audit/user_activity_repository.py
+from __future__ import annotations
+
+from typing import List
+from uuid import UUID
+
+from sqlalchemy.orm import Session
+
+from app.repositories.base import BaseRepository
+from app.models.audit import UserActivity
+
+
+class UserActivityRepository(BaseRepository[UserActivity]):
+    def __init__(self, session: Session):
+        super().__init__(session, UserActivity)
+
+    def list_for_user(self, user_id: UUID, *, limit: int = 100) -> List[UserActivity]:
+        stmt = (
+            self._base_select()
+            .where(UserActivity.user_id == user_id)
+            .order_by(UserActivity.created_at.desc())
+            .limit(limit)
+        )
+        return self.session.execute(stmt).scalars().all()
+
+# --- File: C:\Hostel-Main\app\repositories\audit\__init__.py ---
+# app/repositories/audit/__init__.py
+from .audit_log_repository import AuditLogRepository
+from .supervisor_activity_repository import SupervisorActivityRepository
+from .admin_override_repository import AdminOverrideRepository
+from .user_activity_repository import UserActivityRepository
+
+__all__ = [
+    "AuditLogRepository",
+    "SupervisorActivityRepository",
+    "AdminOverrideRepository",
+    "UserActivityRepository",
+]
+
+
+# ===== Folder: C:\Hostel-Main\app\repositories\content =====
+
+# --- File: C:\Hostel-Main\app\repositories\content\announcement_repository.py ---
+# app/repositories/content/announcement_repository.py
+from __future__ import annotations
+
+from datetime import datetime
+from typing import List
+from uuid import UUID
+
+from sqlalchemy import and_
+from sqlalchemy.orm import Session
+
+from app.repositories.base import BaseRepository
+from app.models.content import Announcement
+from app.schemas.common.enums import TargetAudience
+
+
+class AnnouncementRepository(BaseRepository[Announcement]):
+    def __init__(self, session: Session):
+        super().__init__(session, Announcement)
+
+    def list_published_for_hostel(
+        self,
+        hostel_id: UUID,
+        *,
+        now: datetime,
+        audience: TargetAudience | None = None,
+    ) -> List[Announcement]:
+        stmt = (
+            self._base_select()
+            .where(
+                and_(
+                    Announcement.hostel_id == hostel_id,
+                    Announcement.is_published.is_(True),
+                    (Announcement.expires_at.is_(None) | (Announcement.expires_at > now)),
+                )
+            )
+        )
+        if audience is not None:
+            stmt = stmt.where(Announcement.target_audience == audience)
+        stmt = stmt.order_by(
+            Announcement.is_pinned.desc(),
+            Announcement.priority.desc(),
+            Announcement.created_at.desc(),
+        )
+        return self.session.execute(stmt).scalars().all()
+
+# --- File: C:\Hostel-Main\app\repositories\content\mess_menu_repository.py ---
+# app/repositories/content/mess_menu_repository.py
+from __future__ import annotations
+
+from datetime import date
+from typing import List
+from uuid import UUID
+
+from sqlalchemy import and_
+from sqlalchemy.orm import Session
+
+from app.repositories.base import BaseRepository
+from app.models.content import MessMenu
+
+
+class MessMenuRepository(BaseRepository[MessMenu]):
+    def __init__(self, session: Session):
+        super().__init__(session, MessMenu)
+
+    def get_for_date(self, hostel_id: UUID, menu_date: date) -> List[MessMenu]:
+        stmt = (
+            self._base_select()
+            .where(
+                and_(
+                    MessMenu.hostel_id == hostel_id,
+                    MessMenu.menu_date == menu_date,
+                )
+            )
+        )
+        return self.session.execute(stmt).scalars().all()
+
+    def get_range(
+        self,
+        hostel_id: UUID,
+        start_date: date,
+        end_date: date,
+    ) -> List[MessMenu]:
+        stmt = (
+            self._base_select()
+            .where(
+                and_(
+                    MessMenu.hostel_id == hostel_id,
+                    MessMenu.menu_date >= start_date,
+                    MessMenu.menu_date <= end_date,
+                )
+            )
+            .order_by(MessMenu.menu_date.asc())
+        )
+        return self.session.execute(stmt).scalars().all()
+
+# --- File: C:\Hostel-Main\app\repositories\content\notice_repository.py ---
+# app/repositories/content/notice_repository.py
+from __future__ import annotations
+
+from datetime import datetime
+from typing import List, Optional
+from uuid import UUID
+
+from sqlalchemy import and_
+from sqlalchemy.orm import Session
+
+from app.repositories.base import BaseRepository
+from app.models.content import Notice
+from app.schemas.common.enums import TargetAudience
+
+
+class NoticeRepository(BaseRepository[Notice]):
+    def __init__(self, session: Session):
+        super().__init__(session, Notice)
+
+    def list_active_notices(
+        self,
+        *,
+        hostel_id: Optional[UUID] = None,
+        audience: Optional[TargetAudience] = None,
+        now: datetime,
+    ) -> List[Notice]:
+        stmt = self._base_select().where(
+            (Notice.published_at.is_not(None))
+            & ((Notice.expires_at.is_(None)) | (Notice.expires_at > now))
+        )
+        if hostel_id is not None:
+            stmt = stmt.where(Notice.hostel_id == hostel_id)
+        if audience is not None:
+            stmt = stmt.where(Notice.target_audience == audience)
+        stmt = stmt.order_by(Notice.published_at.desc())
+        return self.session.execute(stmt).scalars().all()
+
+# --- File: C:\Hostel-Main\app\repositories\content\review_repository.py ---
+# app/repositories/content/review_repository.py
+from __future__ import annotations
+
+from typing import List, Optional
+from uuid import UUID
+
+from sqlalchemy import func, select
+from sqlalchemy.orm import Session
+
+from app.repositories.base import BaseRepository
+from app.models.content import Review
+
+
+class ReviewRepository(BaseRepository[Review]):
+    def __init__(self, session: Session):
+        super().__init__(session, Review)
+
+    def list_for_hostel(self, hostel_id: UUID, *, limit: int = 50) -> List[Review]:
+        stmt = (
+            self._base_select()
+            .where(Review.hostel_id == hostel_id)
+            .order_by(Review.created_at.desc())
+            .limit(limit)
+        )
+        return self.session.execute(stmt).scalars().all()
+
+    def get_aggregates_for_hostel(self, hostel_id: UUID) -> dict:
+        stmt = (
+            select(
+                func.count(Review.id),
+                func.coalesce(func.avg(Review.overall_rating), 0),
+            )
+            .where(Review.hostel_id == hostel_id)
+        )
+        count, avg_rating = self.session.execute(stmt).one()
+        return {"total_reviews": count, "average_rating": float(avg_rating)}
+
+# --- File: C:\Hostel-Main\app\repositories\content\__init__.py ---
+# app/repositories/content/__init__.py
+from .mess_menu_repository import MessMenuRepository
+from .announcement_repository import AnnouncementRepository
+from .review_repository import ReviewRepository
+from .notice_repository import NoticeRepository
+
+__all__ = [
+    "MessMenuRepository",
+    "AnnouncementRepository",
+    "ReviewRepository",
+    "NoticeRepository",
+]
+
+
+# ===== Folder: C:\Hostel-Main\app\repositories\core =====
+
+# --- File: C:\Hostel-Main\app\repositories\core\admin_repository.py ---
+# app/repositories/core/admin_repository.py
+from __future__ import annotations
+
+from typing import Optional
+from uuid import UUID
+
+from sqlalchemy.orm import Session
+
+from app.repositories.base import BaseRepository
+from app.models.core import Admin
+
+
+class AdminRepository(BaseRepository[Admin]):
+    def __init__(self, session: Session):
+        super().__init__(session, Admin)
+
+    def get_by_user_id(self, user_id: UUID) -> Optional[Admin]:
+        stmt = self._base_select().where(Admin.user_id == user_id)
+        return self.session.execute(stmt).scalar_one_or_none()
+
+# --- File: C:\Hostel-Main\app\repositories\core\bed_repository.py ---
+# app/repositories/core/bed_repository.py
+from __future__ import annotations
+
+from typing import List
+from uuid import UUID
+
+from sqlalchemy import and_, select
+from sqlalchemy.orm import Session
+
+from app.repositories.base import BaseRepository
+from app.models.core import Bed
+from app.schemas.common.enums import BedStatus
+
+
+class BedRepository(BaseRepository[Bed]):
+    def __init__(self, session: Session):
+        super().__init__(session, Bed)
+
+    def list_available_beds_for_room(self, room_id: UUID) -> List[Bed]:
+        stmt = (
+            self._base_select()
+            .where(
+                and_(
+                    Bed.room_id == room_id,
+                    Bed.status == BedStatus.AVAILABLE,
+                )
+            )
+        )
+        return self.session.execute(stmt).scalars().all()
+
+    def list_beds_for_student(self, student_id: UUID) -> List[Bed]:
+        stmt = self._base_select().where(Bed.current_student_id == student_id)
+        return self.session.execute(stmt).scalars().all()
+
+# --- File: C:\Hostel-Main\app\repositories\core\hostel_repository.py ---
+# app/repositories/core/hostel_repository.py
+from __future__ import annotations
+
+from typing import List, Optional
+
+from sqlalchemy import or_, select
+from sqlalchemy.orm import Session
+
+from app.repositories.base import BaseRepository
+from app.models.core import Hostel
+
+
+class HostelRepository(BaseRepository[Hostel]):
+    def __init__(self, session: Session):
+        super().__init__(session, Hostel)
+
+    def get_by_slug(self, slug: str) -> Optional[Hostel]:
+        stmt = self._base_select().where(Hostel.slug == slug)
+        return self.session.execute(stmt).scalar_one_or_none()
+
+    def list_public(
+        self,
+        *,
+        city: Optional[str] = None,
+        state: Optional[str] = None,
+        search: Optional[str] = None,
+        limit: int = 50,
+    ) -> List[Hostel]:
+        stmt = self._base_select().where(
+            Hostel.is_public.is_(True),
+            Hostel.is_active.is_(True),
+        )
+
+        if city:
+            stmt = stmt.where(Hostel.city == city)
+        if state:
+            stmt = stmt.where(Hostel.state == state)
+        if search:
+            ilike = f"%{search.lower()}%"
+            stmt = stmt.where(
+                or_(
+                    Hostel.name.ilike(ilike),
+                    Hostel.address_line1.ilike(ilike),
+                    Hostel.city.ilike(ilike),
+                )
+            )
+
+        stmt = stmt.order_by(Hostel.is_featured.desc(), Hostel.average_rating.desc())
+        stmt = stmt.limit(limit)
+        return self.session.execute(stmt).scalars().all()
+
+# --- File: C:\Hostel-Main\app\repositories\core\room_repository.py ---
+# app/repositories/core/room_repository.py
+from __future__ import annotations
+
+from typing import List
+from uuid import UUID
+
+from sqlalchemy import select
+from sqlalchemy.orm import Session
+
+from app.repositories.base import BaseRepository
+from app.models.core import Room
+from app.schemas.common.enums import RoomType, RoomStatus
+
+
+class RoomRepository(BaseRepository[Room]):
+    def __init__(self, session: Session):
+        super().__init__(session, Room)
+
+    def list_for_hostel(
+        self,
+        hostel_id: UUID,
+        *,
+        only_available: bool = False,
+        room_type: RoomType | None = None,
+    ) -> List[Room]:
+        stmt = self._base_select().where(Room.hostel_id == str(hostel_id))
+        if only_available:
+            stmt = stmt.where(
+                Room.is_available_for_booking.is_(True),
+                Room.status == RoomStatus.AVAILABLE,
+            )
+        if room_type is not None:
+            stmt = stmt.where(Room.room_type == room_type)
+        stmt = stmt.order_by(Room.floor_number.asc().nulls_last(), Room.room_number.asc())
+        return self.session.execute(stmt).scalars().all()
+
+# --- File: C:\Hostel-Main\app\repositories\core\student_repository.py ---
+# app/repositories/core/student_repository.py
+from __future__ import annotations
+
+from typing import List, Optional
+from uuid import UUID
+
+from sqlalchemy import select
+from sqlalchemy.orm import Session
+
+from app.repositories.base import BaseRepository
+from app.models.core import Student
+from app.schemas.common.enums import StudentStatus
+
+
+class StudentRepository(BaseRepository[Student]):
+    def __init__(self, session: Session):
+        super().__init__(session, Student)
+
+    def list_for_hostel(
+        self,
+        hostel_id: UUID,
+        *,
+        status: Optional[StudentStatus] = None,
+    ) -> List[Student]:
+        stmt = self._base_select().where(Student.hostel_id == hostel_id)
+        if status is not None:
+            stmt = stmt.where(Student.student_status == status)
+        stmt = stmt.order_by(Student.check_in_date.asc().nulls_last())
+        return self.session.execute(stmt).scalars().all()
+
+    def get_by_user_id(self, user_id: UUID) -> Optional[Student]:
+        stmt = self._base_select().where(Student.user_id == user_id)
+        return self.session.execute(stmt).scalar_one_or_none()
+
+# --- File: C:\Hostel-Main\app\repositories\core\supervisor_repository.py ---
+# app/repositories/core/supervisor_repository.py
+from __future__ import annotations
+
+from typing import List, Optional
+from uuid import UUID
+
+from sqlalchemy import select
+from sqlalchemy.orm import Session
+
+from app.repositories.base import BaseRepository
+from app.models.core import Supervisor
+from app.schemas.common.enums import SupervisorStatus
+
+
+class SupervisorRepository(BaseRepository[Supervisor]):
+    def __init__(self, session: Session):
+        super().__init__(session, Supervisor)
+
+    def list_for_hostel(
+        self,
+        hostel_id: UUID,
+        *,
+        status: Optional[SupervisorStatus] = None,
+    ) -> List[Supervisor]:
+        stmt = self._base_select().where(Supervisor.hostel_id == hostel_id)
+        if status is not None:
+            stmt = stmt.where(Supervisor.status == status)
+        return self.session.execute(stmt).scalars().all()
+
+# --- File: C:\Hostel-Main\app\repositories\core\user_repository.py ---
+# app/repositories/core/user_repository.py
+from __future__ import annotations
+
+from typing import List, Optional
+from uuid import UUID
+
+from sqlalchemy import select
+from sqlalchemy.orm import Session
+
+from app.repositories.base import BaseRepository
+from app.models.core import User
+from app.schemas.common.enums import UserRole
+
+
+class UserRepository(BaseRepository[User]):
+    def __init__(self, session: Session):
+        super().__init__(session, User)
+
+    def get_by_email(self, email: str) -> Optional[User]:
+        stmt = self._base_select().where(User.email == email)
+        return self.session.execute(stmt).scalar_one_or_none()
+
+    def get_by_phone(self, phone: str) -> Optional[User]:
+        stmt = self._base_select().where(User.phone == phone)
+        return self.session.execute(stmt).scalar_one_or_none()
+
+    def list_by_role(self, role: UserRole, *, limit: int = 100) -> List[User]:
+        stmt = (
+            self._base_select()
+            .where(User.user_role == role)
+            .order_by(User.created_at.desc())
+            .limit(limit)
+        )
+        return self.session.execute(stmt).scalars().all()
+
+# --- File: C:\Hostel-Main\app\repositories\core\__init__.py ---
+# app/repositories/core/__init__.py
+from .user_repository import UserRepository
+from .hostel_repository import HostelRepository
+from .room_repository import RoomRepository
+from .bed_repository import BedRepository
+from .student_repository import StudentRepository
+from .supervisor_repository import SupervisorRepository
+from .admin_repository import AdminRepository
+
+__all__ = [
+    "UserRepository",
+    "HostelRepository",
+    "RoomRepository",
+    "BedRepository",
+    "StudentRepository",
+    "SupervisorRepository",
+    "AdminRepository",
+]
+
+
+# ===== Folder: C:\Hostel-Main\app\repositories\services =====
+
+# --- File: C:\Hostel-Main\app\repositories\services\attendance_repository.py ---
+# app/repositories/services/attendance_repository.py
+from __future__ import annotations
+
+from datetime import date
+from typing import List
+from uuid import UUID
+
+from sqlalchemy import and_
+from sqlalchemy.orm import Session
+
+from app.repositories.base import BaseRepository
+from app.models.services import Attendance
+from app.schemas.common.enums import AttendanceStatus
+
+
+class AttendanceRepository(BaseRepository[Attendance]):
+    def __init__(self, session: Session):
+        super().__init__(session, Attendance)
+
+    def list_for_student_range(
+        self,
+        student_id: UUID,
+        start_date: date,
+        end_date: date,
+    ) -> List[Attendance]:
+        stmt = (
+            self._base_select()
+            .where(
+                and_(
+                    Attendance.student_id == student_id,
+                    Attendance.attendance_date >= start_date,
+                    Attendance.attendance_date <= end_date,
+                )
+            )
+            .order_by(Attendance.attendance_date.asc())
+        )
+        return self.session.execute(stmt).scalars().all()
+
+    def list_for_hostel_date(
+        self,
+        hostel_id: UUID,
+        day: date,
+    ) -> List[Attendance]:
+        stmt = (
+            self._base_select()
+            .where(
+                and_(
+                    Attendance.hostel_id == hostel_id,
+                    Attendance.attendance_date == day,
+                )
+            )
+        )
+        return self.session.execute(stmt).scalars().all()
+
+    def list_by_status_for_hostel(
+        self,
+        hostel_id: UUID,
+        day: date,
+        status: AttendanceStatus,
+    ) -> List[Attendance]:
+        stmt = (
+            self._base_select()
+            .where(
+                and_(
+                    Attendance.hostel_id == hostel_id,
+                    Attendance.attendance_date == day,
+                    Attendance.status == status,
+                )
+            )
+        )
+        return self.session.execute(stmt).scalars().all()
+
+# --- File: C:\Hostel-Main\app\repositories\services\complaint_repository.py ---
+# app/repositories/services/complaint_repository.py
+from __future__ import annotations
+
+from datetime import datetime
+from typing import List, Optional
+from uuid import UUID
+
+from sqlalchemy import and_, or_
+from sqlalchemy.orm import Session
+
+from app.repositories.base import BaseRepository
+from app.models.services import Complaint
+from app.schemas.common.enums import ComplaintStatus, ComplaintCategory, Priority
+
+
+class ComplaintRepository(BaseRepository[Complaint]):
+    def __init__(self, session: Session):
+        super().__init__(session, Complaint)
+
+    def list_open_for_hostel(
+        self,
+        hostel_id: UUID,
+        *,
+        category: Optional[ComplaintCategory] = None,
+        priority: Optional[Priority] = None,
+    ) -> List[Complaint]:
+        stmt = self._base_select().where(
+            Complaint.hostel_id == hostel_id,
+            Complaint.status.in_(
+                [ComplaintStatus.OPEN, ComplaintStatus.IN_PROGRESS]
+            ),
+        )
+        if category is not None:
+            stmt = stmt.where(Complaint.category == category)
+        if priority is not None:
+            stmt = stmt.where(Complaint.priority == priority)
+        stmt = stmt.order_by(Complaint.opened_at.asc())
+        return self.session.execute(stmt).scalars().all()
+
+    def list_for_student(self, student_id: UUID) -> List[Complaint]:
+        stmt = (
+            self._base_select()
+            .where(Complaint.student_id == student_id)
+            .order_by(Complaint.opened_at.desc())
+        )
+        return self.session.execute(stmt).scalars().all()
+
+    def list_for_supervisor(
+        self,
+        supervisor_id: UUID,
+        *,
+        include_closed: bool = False,
+    ) -> List[Complaint]:
+        stmt = self._base_select().where(Complaint.assigned_to_id == supervisor_id)
+        if not include_closed:
+            stmt = stmt.where(
+                Complaint.status.in_(
+                    [ComplaintStatus.OPEN, ComplaintStatus.IN_PROGRESS]
+                )
+            )
+        return self.session.execute(stmt).scalars().all()
+
+# --- File: C:\Hostel-Main\app\repositories\services\inquiry_repository.py ---
+# app/repositories/services/inquiry_repository.py
+from __future__ import annotations
+
+from typing import List
+from uuid import UUID
+
+from sqlalchemy.orm import Session
+
+from app.repositories.base import BaseRepository
+from app.models.services import Inquiry
+from app.schemas.common.enums import InquiryStatus
+
+
+class InquiryRepository(BaseRepository[Inquiry]):
+    def __init__(self, session: Session):
+        super().__init__(session, Inquiry)
+
+    def list_open_for_hostel(self, hostel_id: UUID) -> List[Inquiry]:
+        stmt = (
+            self._base_select()
+            .where(
+                Inquiry.hostel_id == hostel_id,
+                Inquiry.status == InquiryStatus.PENDING,
+            )
+            .order_by(Inquiry.created_at.asc())
+        )
+        return self.session.execute(stmt).scalars().all()
+
+# --- File: C:\Hostel-Main\app\repositories\services\leave_application_repository.py ---
+# app/repositories/services/leave_application_repository.py
+from __future__ import annotations
+
+from datetime import date
+from typing import List
+from uuid import UUID
+
+from sqlalchemy import and_
+from sqlalchemy.orm import Session
+
+from app.repositories.base import BaseRepository
+from app.models.services import LeaveApplication
+from app.schemas.common.enums import LeaveStatus
+
+
+class LeaveApplicationRepository(BaseRepository[LeaveApplication]):
+    def __init__(self, session: Session):
+        super().__init__(session, LeaveApplication)
+
+    def list_for_student(self, student_id: UUID) -> List[LeaveApplication]:
+        stmt = (
+            self._base_select()
+            .where(LeaveApplication.student_id == student_id)
+            .order_by(LeaveApplication.from_date.desc())
+        )
+        return self.session.execute(stmt).scalars().all()
+
+    def list_pending_for_hostel(self, hostel_id: UUID) -> List[LeaveApplication]:
+        stmt = (
+            self._base_select()
+            .where(
+                and_(
+                    LeaveApplication.hostel_id == hostel_id,
+                    LeaveApplication.status == LeaveStatus.PENDING,
+                )
+            )
+            .order_by(LeaveApplication.from_date.asc())
+        )
+        return self.session.execute(stmt).scalars().all()
+
+# --- File: C:\Hostel-Main\app\repositories\services\maintenance_repository.py ---
+# app/repositories/services/maintenance_repository.py
+from __future__ import annotations
+
+from datetime import date
+from typing import List, Optional
+from uuid import UUID
+
+from sqlalchemy import and_
+from sqlalchemy.orm import Session
+
+from app.repositories.base import BaseRepository
+from app.models.services import Maintenance
+from app.schemas.common.enums import MaintenanceStatus, MaintenanceCategory, Priority
+
+
+class MaintenanceRepository(BaseRepository[Maintenance]):
+    def __init__(self, session: Session):
+        super().__init__(session, Maintenance)
+
+    def list_open_for_hostel(
+        self,
+        hostel_id: UUID,
+        *,
+        category: Optional[MaintenanceCategory] = None,
+        priority: Optional[Priority] = None,
+    ) -> List[Maintenance]:
+        stmt = self._base_select().where(
+            Maintenance.hostel_id == hostel_id,
+            Maintenance.status.in_(
+                [
+                    MaintenanceStatus.OPEN,
+                    MaintenanceStatus.IN_PROGRESS,
+                    MaintenanceStatus.PENDING_APPROVAL,
+                ]
+            ),
+        )
+        if category is not None:
+            stmt = stmt.where(Maintenance.category == category)
+        if priority is not None:
+            stmt = stmt.where(Maintenance.priority == priority)
+        return self.session.execute(stmt).scalars().all()
+
+    def list_for_room(self, room_id: UUID) -> List[Maintenance]:
+        stmt = (
+            self._base_select()
+            .where(Maintenance.room_id == room_id)
+            .order_by(Maintenance.created_at.desc())
+        )
+        return self.session.execute(stmt).scalars().all()
+
+# --- File: C:\Hostel-Main\app\repositories\services\__init__.py ---
+# app/repositories/services/__init__.py
+from .attendance_repository import AttendanceRepository
+from .complaint_repository import ComplaintRepository
+from .leave_application_repository import LeaveApplicationRepository
+from .maintenance_repository import MaintenanceRepository
+from .inquiry_repository import InquiryRepository
+
+__all__ = [
+    "AttendanceRepository",
+    "ComplaintRepository",
+    "LeaveApplicationRepository",
+    "MaintenanceRepository",
+    "InquiryRepository",
+]
+
+
+# ===== Folder: C:\Hostel-Main\app\repositories\system =====
+
+# --- File: C:\Hostel-Main\app\repositories\system\feature_flag_repository.py ---
+# app/repositories/system/feature_flag_repository.py
+from __future__ import annotations
+
+from typing import List, Optional
+
+from sqlalchemy.orm import Session
+
+from app.repositories.base import BaseRepository
+from app.models.system import FeatureFlag
+
+
+class FeatureFlagRepository(BaseRepository[FeatureFlag]):
+    def __init__(self, session: Session):
+        super().__init__(session, FeatureFlag)
+
+    def get_by_name(self, name: str) -> Optional[FeatureFlag]:
+        stmt = self._base_select().where(FeatureFlag.name == name)
+        return self.session.execute(stmt).scalar_one_or_none()
+
+    def list_enabled(self) -> List[FeatureFlag]:
+        stmt = self._base_select().where(FeatureFlag.is_enabled.is_(True))
+        return self.session.execute(stmt).scalars().all()
+
+# --- File: C:\Hostel-Main\app\repositories\system\notification_config_repository.py ---
+# app/repositories/system/notification_config_repository.py
+from __future__ import annotations
+
+from typing import Optional
+
+from sqlalchemy.orm import Session
+
+from app.repositories.base import BaseRepository
+from app.models.system import NotificationConfig  # assuming this exists in app.models/system/notification.py
+
+
+class NotificationConfigRepository(BaseRepository[NotificationConfig]):
+    def __init__(self, session: Session):
+        super().__init__(session, NotificationConfig)
+
+    def get_singleton(self) -> Optional[NotificationConfig]:
+        stmt = self._base_select().limit(1)
+        return self.session.execute(stmt).scalar_one_or_none()
+
+# --- File: C:\Hostel-Main\app\repositories\system\platform_config_repository.py ---
+# app/repositories/system/platform_config_repository.py
+from __future__ import annotations
+
+from typing import Optional
+
+from sqlalchemy.orm import Session
+
+from app.repositories.base import BaseRepository
+from app.models.system import PlatformConfig
+
+
+class PlatformConfigRepository(BaseRepository[PlatformConfig]):
+    """
+    Typically there is a single row; we expose helpers to fetch or create it.
+    """
+    def __init__(self, session: Session):
+        super().__init__(session, PlatformConfig)
+
+    def get_singleton(self) -> Optional[PlatformConfig]:
+        stmt = self._base_select().limit(1)
+        return self.session.execute(stmt).scalar_one_or_none()
+
+# --- File: C:\Hostel-Main\app\repositories\system\system_settings_repository.py ---
+# app/repositories/system/system_settings_repository.py
+from __future__ import annotations
+
+from typing import Optional
+
+from sqlalchemy.orm import Session
+
+from app.repositories.base import BaseRepository
+from app.models.system import SystemSettings
+
+
+class SystemSettingsRepository(BaseRepository[SystemSettings]):
+    def __init__(self, session: Session):
+        super().__init__(session, SystemSettings)
+
+    def get_by_key(self, key: str) -> Optional[SystemSettings]:
+        stmt = self._base_select().where(SystemSettings.key == key)
+        return self.session.execute(stmt).scalar_one_or_none()
+
+# --- File: C:\Hostel-Main\app\repositories\system\__init__.py ---
+# app/repositories/system/__init__.py
+from .platform_config_repository import PlatformConfigRepository
+from .notification_config_repository import NotificationConfigRepository
+from .system_settings_repository import SystemSettingsRepository
+from .feature_flag_repository import FeatureFlagRepository
+
+__all__ = [
+    "PlatformConfigRepository",
+    "NotificationConfigRepository",
+    "SystemSettingsRepository",
+    "FeatureFlagRepository",
+]
+
+
+# ===== Folder: C:\Hostel-Main\app\repositories\transactions =====
+
+# --- File: C:\Hostel-Main\app\repositories\transactions\booking_repository.py ---
+# app/repositories/transactions/booking_repository.py
+from __future__ import annotations
+
+from datetime import datetime
+from typing import List
+from uuid import UUID
+
+from sqlalchemy import and_
+from sqlalchemy.orm import Session
+
+from app.repositories.base import BaseRepository
+from app.models.transactions import Booking
+from app.schemas.common.enums import BookingStatus
+
+
+class BookingRepository(BaseRepository[Booking]):
+    def __init__(self, session: Session):
+        super().__init__(session, Booking)
+
+    def list_pending_for_hostel(self, hostel_id: UUID) -> List[Booking]:
+        stmt = (
+            self._base_select()
+            .where(
+                and_(
+                    Booking.hostel_id == hostel_id,
+                    Booking.booking_status == BookingStatus.PENDING,
+                )
+            )
+            .order_by(Booking.booking_date.asc())
+        )
+        return self.session.execute(stmt).scalars().all()
+
+    def list_active_for_visitor(self, visitor_id: UUID) -> List[Booking]:
+        stmt = (
+            self._base_select()
+            .where(
+                and_(
+                    Booking.visitor_id == visitor_id,
+                    Booking.booking_status.in_(
+                        [
+                            BookingStatus.PENDING,
+                            BookingStatus.CONFIRMED,
+                            BookingStatus.CHECKED_IN,
+                        ]
+                    ),
+                )
+            )
+            .order_by(Booking.booking_date.desc())
+        )
+        return self.session.execute(stmt).scalars().all()
+
+# --- File: C:\Hostel-Main\app\repositories\transactions\fee_structure_repository.py ---
+# app/repositories/transactions/fee_structure_repository.py
+from __future__ import annotations
+
+from datetime import date
+from typing import List, Optional
+from uuid import UUID
+
+from sqlalchemy import and_
+from sqlalchemy.orm import Session
+
+from app.repositories.base import BaseRepository
+from app.models.transactions import FeeStructure
+from app.schemas.common.enums import RoomType, FeeType
+
+
+class FeeStructureRepository(BaseRepository[FeeStructure]):
+    def __init__(self, session: Session):
+        super().__init__(session, FeeStructure)
+
+    def get_effective_fee(
+        self,
+        hostel_id: UUID,
+        room_type: RoomType,
+        fee_type: FeeType,
+        as_of: date,
+    ) -> Optional[FeeStructure]:
+        stmt = (
+            self._base_select()
+            .where(
+                and_(
+                    FeeStructure.hostel_id == hostel_id,
+                    FeeStructure.room_type == room_type,
+                    FeeStructure.fee_type == fee_type,
+                    FeeStructure.is_active.is_(True),
+                    FeeStructure.effective_from <= as_of,
+                    (FeeStructure.effective_to.is_(None) | (FeeStructure.effective_to >= as_of)),
+                )
+            )
+            .order_by(FeeStructure.effective_from.desc())
+            .limit(1)
+        )
+        return self.session.execute(stmt).scalar_one_or_none()
+
+# --- File: C:\Hostel-Main\app\repositories\transactions\payment_repository.py ---
+# app/repositories/transactions/payment_repository.py
+from __future__ import annotations
+
+from datetime import date
+from typing import List, Optional
+from uuid import UUID
+
+from sqlalchemy import and_
+from sqlalchemy.orm import Session
+
+from app.repositories.base import BaseRepository
+from app.models.transactions import Payment
+from app.schemas.common.enums import PaymentStatus, PaymentType
+
+
+class PaymentRepository(BaseRepository[Payment]):
+    def __init__(self, session: Session):
+        super().__init__(session, Payment)
+
+    def list_for_student(
+        self,
+        student_id: UUID,
+        *,
+        status: Optional[PaymentStatus] = None,
+    ) -> List[Payment]:
+        stmt = self._base_select().where(Payment.student_id == student_id)
+        if status is not None:
+            stmt = stmt.where(Payment.payment_status == status)
+        stmt = stmt.order_by(Payment.due_date.asc().nulls_last())
+        return self.session.execute(stmt).scalars().all()
+
+    def list_due_for_hostel(
+        self,
+        hostel_id: UUID,
+        *,
+        on_or_before: Optional[date] = None,
+    ) -> List[Payment]:
+        stmt = self._base_select().where(
+            Payment.hostel_id == hostel_id,
+            Payment.payment_status == PaymentStatus.PENDING,
+        )
+        if on_or_before is not None:
+            stmt = stmt.where(Payment.due_date <= on_or_before)
+        stmt = stmt.order_by(Payment.due_date.asc())
+        return self.session.execute(stmt).scalars().all()
+
+    def list_for_booking(self, booking_id: UUID) -> List[Payment]:
+        stmt = self._base_select().where(Payment.booking_id == booking_id)
+        return self.session.execute(stmt).scalars().all()
+
+# --- File: C:\Hostel-Main\app\repositories\transactions\referral_program_repository.py ---
+# app/repositories/transactions/referral_program_repository.py
+from __future__ import annotations
+
+from datetime import date
+from typing import List, Optional
+
+from sqlalchemy import and_
+from sqlalchemy.orm import Session
+
+from app.repositories.base import BaseRepository
+from app.models.transactions import ReferralProgram
+
+
+class ReferralProgramRepository(BaseRepository[ReferralProgram]):
+    def __init__(self, session: Session):
+        super().__init__(session, ReferralProgram)
+
+    def list_active(self, as_of: Optional[date] = None) -> List[ReferralProgram]:
+        stmt = self._base_select().where(ReferralProgram.is_active.is_(True))
+        if as_of is not None:
+            stmt = stmt.where(
+                (ReferralProgram.valid_from.is_(None) | (ReferralProgram.valid_from <= as_of)),
+                (ReferralProgram.valid_to.is_(None) | (ReferralProgram.valid_to >= as_of)),
+            )
+        return self.session.execute(stmt).scalars().all()
+
+# --- File: C:\Hostel-Main\app\repositories\transactions\referral_repository.py ---
+# app/repositories/transactions/referral_repository.py
+from __future__ import annotations
+
+from typing import List
+from uuid import UUID
+
+from sqlalchemy.orm import Session
+
+from app.repositories.base import BaseRepository
+from app.models.transactions import Referral
+from app.schemas.common.enums import ReferralStatus
+
+
+class ReferralRepository(BaseRepository[Referral]):
+    def __init__(self, session: Session):
+        super().__init__(session, Referral)
+
+    def list_for_referrer(self, referrer_id: UUID) -> List[Referral]:
+        stmt = (
+            self._base_select()
+            .where(Referral.referrer_id == referrer_id)
+            .order_by(Referral.created_at.desc())
+        )
+        return self.session.execute(stmt).scalars().all()
+
+    def list_completed(self, referrer_id: UUID) -> List[Referral]:
+        stmt = self._base_select().where(
+            Referral.referrer_id == referrer_id,
+            Referral.status == ReferralStatus.COMPLETED,
+        )
+        return self.session.execute(stmt).scalars().all()
+
+# --- File: C:\Hostel-Main\app\repositories\transactions\subscription_plan_repository.py ---
+# app/repositories/transactions/subscription_plan_repository.py
+from __future__ import annotations
+
+from typing import List, Optional
+
+from sqlalchemy.orm import Session
+
+from app.repositories.base import BaseRepository
+from app.models.transactions import SubscriptionPlan as SubscriptionPlanModel
+from app.schemas.common.enums import SubscriptionPlan as SubscriptionPlanEnum
+
+
+class SubscriptionPlanRepository(BaseRepository[SubscriptionPlanModel]):
+    def __init__(self, session: Session):
+        super().__init__(session, SubscriptionPlanModel)
+
+    def list_public(self) -> List[SubscriptionPlanModel]:
+        stmt = self._base_select().where(SubscriptionPlanModel.is_public.is_(True))
+        stmt = stmt.order_by(SubscriptionPlanModel.sort_order.asc())
+        return self.session.execute(stmt).scalars().all()
+
+    def get_by_plan_type(self, plan_type: SubscriptionPlanEnum) -> Optional[SubscriptionPlanModel]:
+        stmt = self._base_select().where(SubscriptionPlanModel.plan_type == plan_type)
+        return self.session.execute(stmt).scalar_one_or_none()
+
+# --- File: C:\Hostel-Main\app\repositories\transactions\subscription_repository.py ---
+# app/repositories/transactions/subscription_repository.py
+from __future__ import annotations
+
+from datetime import date
+from typing import List, Optional
+from uuid import UUID
+
+from sqlalchemy import and_
+from sqlalchemy.orm import Session
+
+from app.repositories.base import BaseRepository
+from app.models.transactions import Subscription
+from app.schemas.common.enums import SubscriptionStatus
+
+
+class SubscriptionRepository(BaseRepository[Subscription]):
+    def __init__(self, session: Session):
+        super().__init__(session, Subscription)
+
+    def get_active_for_hostel(self, hostel_id: UUID, as_of: Optional[date] = None) -> Optional[Subscription]:
+        stmt = self._base_select().where(
+            Subscription.hostel_id == hostel_id,
+            Subscription.status == SubscriptionStatus.ACTIVE,
+        )
+        if as_of is not None:
+            stmt = stmt.where(
+                Subscription.start_date <= as_of,
+                Subscription.end_date >= as_of,
+            )
+        stmt = stmt.order_by(Subscription.start_date.desc()).limit(1)
+        return self.session.execute(stmt).scalar_one_or_none()
+
+# --- File: C:\Hostel-Main\app\repositories\transactions\__init__.py ---
+# app/repositories/transactions/__init__.py
+from .payment_repository import PaymentRepository
+from .booking_repository import BookingRepository
+from .fee_structure_repository import FeeStructureRepository
+from .subscription_plan_repository import SubscriptionPlanRepository
+from .subscription_repository import SubscriptionRepository
+from .referral_program_repository import ReferralProgramRepository
+from .referral_repository import ReferralRepository
+
+__all__ = [
+    "PaymentRepository",
+    "BookingRepository",
+    "FeeStructureRepository",
+    "SubscriptionPlanRepository",
+    "SubscriptionRepository",
+    "ReferralProgramRepository",
+    "ReferralRepository",
+]
+
+
+# ===== Folder: C:\Hostel-Main\app\repositories\visitor =====
+
+# --- File: C:\Hostel-Main\app\repositories\visitor\hostel_booking_repository.py ---
+# app/repositories/visitor/hostel_booking_repository.py
+from __future__ import annotations
+
+from typing import List
+from uuid import UUID
+
+from sqlalchemy.orm import Session
+
+from app.repositories.base import BaseRepository
+from app.models.visitor import HostelBooking
+
+
+class HostelBookingRepository(BaseRepository[HostelBooking]):
+    def __init__(self, session: Session):
+        super().__init__(session, HostelBooking)
+
+    def list_for_visitor(self, visitor_id: UUID) -> List[HostelBooking]:
+        stmt = (
+            self._base_select()
+            .where(HostelBooking.visitor_id == visitor_id)
+            .order_by(HostelBooking.check_in_date.desc())
+        )
+        return self.session.execute(stmt).scalars().all()
+
+# --- File: C:\Hostel-Main\app\repositories\visitor\hostel_review_repository.py ---
+# app/repositories/visitor/hostel_review_repository.py
+from __future__ import annotations
+
+from typing import List
+from uuid import UUID
+
+from sqlalchemy.orm import Session
+
+from app.repositories.base import BaseRepository
+from app.models.visitor import HostelReview
+
+
+class HostelReviewRepository(BaseRepository[HostelReview]):
+    def __init__(self, session: Session):
+        super().__init__(session, HostelReview)
+
+    def list_for_hostel(self, hostel_id: UUID, *, limit: int = 50) -> List[HostelReview]:
+        stmt = (
+            self._base_select()
+            .where(HostelReview.hostel_id == hostel_id)
+            .order_by(HostelReview.created_at.desc())
+            .limit(limit)
+        )
+        return self.session.execute(stmt).scalars().all()
+
+# --- File: C:\Hostel-Main\app\repositories\visitor\visitor_hostel_repository.py ---
+# app/repositories/visitor/visitor_hostel_repository.py
+from __future__ import annotations
+
+from typing import List, Optional
+
+from sqlalchemy import and_, or_
+from sqlalchemy.orm import Session
+
+from app.repositories.base import BaseRepository
+from app.models.visitor import VisitorHostel
+
+
+class VisitorHostelRepository(BaseRepository[VisitorHostel]):
+    def __init__(self, session: Session):
+        super().__init__(session, VisitorHostel)
+
+    def search(
+        self,
+        *,
+        city: Optional[str] = None,
+        area: Optional[str] = None,
+        min_price: Optional[float] = None,
+        max_price: Optional[float] = None,
+        gender_type: Optional[str] = None,
+        search: Optional[str] = None,
+        limit: int = 50,
+    ) -> List[VisitorHostel]:
+        stmt = self._base_select()
+
+        if city:
+            stmt = stmt.where(VisitorHostel.city == city)
+        if area:
+            stmt = stmt.where(VisitorHostel.area == area)
+        if gender_type:
+            stmt = stmt.where(VisitorHostel.gender_type == gender_type)
+        if min_price is not None:
+            stmt = stmt.where(VisitorHostel.min_price >= min_price)
+        if max_price is not None:
+            stmt = stmt.where(VisitorHostel.max_price <= max_price)
+        if search:
+            ilike = f"%{search.lower()}%"
+            stmt = stmt.where(
+                or_(
+                    VisitorHostel.hostel_name.ilike(ilike),
+                    VisitorHostel.location.ilike(ilike),
+                    VisitorHostel.city.ilike(ilike),
+                )
+            )
+
+        stmt = stmt.order_by(VisitorHostel.rating.desc(), VisitorHostel.min_price.asc().nulls_last())
+        stmt = stmt.limit(limit)
+        return self.session.execute(stmt).scalars().all()
+
+# --- File: C:\Hostel-Main\app\repositories\visitor\visitor_repository.py ---
+# app/repositories/visitor/visitor_repository.py
+from __future__ import annotations
+
+from typing import Optional
+from uuid import UUID
+
+from sqlalchemy.orm import Session
+
+from app.repositories.base import BaseRepository
+from app.models.visitor import Visitor
+
+
+class VisitorRepository(BaseRepository[Visitor]):
+    def __init__(self, session: Session):
+        super().__init__(session, Visitor)
+
+    def get_by_user_id(self, user_id: UUID) -> Optional[Visitor]:
+        stmt = self._base_select().where(Visitor.user_id == user_id)
+        return self.session.execute(stmt).scalar_one_or_none()
+
+# --- File: C:\Hostel-Main\app\repositories\visitor\__init__.py ---
+# app/repositories/visitor/__init__.py
+from .visitor_repository import VisitorRepository
+from .visitor_hostel_repository import VisitorHostelRepository
+from .hostel_booking_repository import HostelBookingRepository
+from .hostel_review_repository import HostelReviewRepository
+
+__all__ = [
+    "VisitorRepository",
+    "VisitorHostelRepository",
+    "HostelBookingRepository",
+    "HostelReviewRepository",
+]
+
+
+# ===== Folder: C:\Hostel-Main\app\repositories\workflows =====
+
+# --- File: C:\Hostel-Main\app\repositories\workflows\approval_workflow_repository.py ---
+# app/repositories/workflows/approval_workflow_repository.py
+from __future__ import annotations
+
+from typing import List, Optional
+from uuid import UUID
+
+from sqlalchemy.orm import Session
+
+from app.repositories.base import BaseRepository
+from app.models.workflows import ApprovalWorkflow
+
+
+class ApprovalWorkflowRepository(BaseRepository[ApprovalWorkflow]):
+    def __init__(self, session: Session):
+        super().__init__(session, ApprovalWorkflow)
+
+    def get_for_entity(self, entity_type: str, entity_id: UUID) -> Optional[ApprovalWorkflow]:
+        stmt = self._base_select().where(
+            ApprovalWorkflow.entity_type == entity_type,
+            ApprovalWorkflow.entity_id == entity_id,
+        )
+        return self.session.execute(stmt).scalar_one_or_none()
+
+# --- File: C:\Hostel-Main\app\repositories\workflows\booking_workflow_repository.py ---
+# app/repositories/workflows/booking_workflow_repository.py
+from __future__ import annotations
+
+from typing import Optional
+from uuid import UUID
+
+from sqlalchemy.orm import Session
+
+from app.repositories.base import BaseRepository
+from app.models.workflows import BookingWorkflow
+
+
+class BookingWorkflowRepository(BaseRepository[BookingWorkflow]):
+    def __init__(self, session: Session):
+        super().__init__(session, BookingWorkflow)
+
+    def get_by_booking_id(self, booking_id: UUID) -> Optional[BookingWorkflow]:
+        stmt = self._base_select().where(BookingWorkflow.booking_id == booking_id)
+        return self.session.execute(stmt).scalar_one_or_none()
+
+# --- File: C:\Hostel-Main\app\repositories\workflows\complaint_workflow_repository.py ---
+# app/repositories/workflows/complaint_workflow_repository.py
+from __future__ import annotations
+
+from typing import Optional
+from uuid import UUID
+
+from sqlalchemy.orm import Session
+
+from app.repositories.base import BaseRepository
+from app.models.workflows import ComplaintWorkflow
+
+
+class ComplaintWorkflowRepository(BaseRepository[ComplaintWorkflow]):
+    def __init__(self, session: Session):
+        super().__init__(session, ComplaintWorkflow)
+
+    def get_by_complaint_id(self, complaint_id: UUID) -> Optional[ComplaintWorkflow]:
+        stmt = self._base_select().where(ComplaintWorkflow.complaint_id == complaint_id)
+        return self.session.execute(stmt).scalar_one_or_none()
+
+# --- File: C:\Hostel-Main\app\repositories\workflows\maintenance_workflow_repository.py ---
+# app/repositories/workflows/maintenance_workflow_repository.py
+from __future__ import annotations
+
+from typing import Optional
+from uuid import UUID
+
+from sqlalchemy.orm import Session
+
+from app.repositories.base import BaseRepository
+from app.models.workflows import MaintenanceWorkflow
+
+
+class MaintenanceWorkflowRepository(BaseRepository[MaintenanceWorkflow]):
+    def __init__(self, session: Session):
+        super().__init__(session, MaintenanceWorkflow)
+
+    def get_by_maintenance_id(self, maintenance_id: UUID) -> Optional[MaintenanceWorkflow]:
+        stmt = self._base_select().where(MaintenanceWorkflow.maintenance_id == maintenance_id)
+        return self.session.execute(stmt).scalar_one_or_none()
+
+# --- File: C:\Hostel-Main\app\repositories\workflows\__init__.py ---
+# app/repositories/workflows/__init__.py
+from .approval_workflow_repository import ApprovalWorkflowRepository
+from .booking_workflow_repository import BookingWorkflowRepository
+from .complaint_workflow_repository import ComplaintWorkflowRepository
+from .maintenance_workflow_repository import MaintenanceWorkflowRepository
+
+__all__ = [
+    "ApprovalWorkflowRepository",
+    "BookingWorkflowRepository",
+    "ComplaintWorkflowRepository",
+    "MaintenanceWorkflowRepository",
+]

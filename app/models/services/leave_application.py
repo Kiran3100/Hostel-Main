@@ -1,8 +1,6 @@
 # app.models/services/leave_application.py
-from __future__ import annotations
-
 from datetime import date
-from typing import Optional
+from typing import Union, TYPE_CHECKING
 from uuid import UUID
 
 from sqlalchemy import Date, Enum as SAEnum, ForeignKey, Integer, String
@@ -10,6 +8,9 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.schemas.common.enums import LeaveType, LeaveStatus
 from app.models.base import BaseEntity
+
+if TYPE_CHECKING:
+    from app.models.core.student import Student
 
 
 class LeaveApplication(BaseEntity):
@@ -26,18 +27,18 @@ class LeaveApplication(BaseEntity):
 
     reason: Mapped[str] = mapped_column(String(1000))
 
-    contact_during_leave: Mapped[Optional[str]] = mapped_column(String(20))
-    emergency_contact: Mapped[Optional[str]] = mapped_column(String(20))
+    contact_during_leave: Mapped[Union[str, None]] = mapped_column(String(20))
+    emergency_contact: Mapped[Union[str, None]] = mapped_column(String(20))
 
-    supporting_document_url: Mapped[Optional[str]] = mapped_column(String(500))
+    supporting_document_url: Mapped[Union[str, None]] = mapped_column(String(500))
 
     status: Mapped[LeaveStatus] = mapped_column(SAEnum(LeaveStatus, name="leave_status"))
 
-    approved_by_id: Mapped[Optional[UUID]] = mapped_column(ForeignKey("core_supervisor.id"))
-    rejected_by_id: Mapped[Optional[UUID]] = mapped_column(ForeignKey("core_supervisor.id"))
+    approved_by_id: Mapped[Union[UUID, None]] = mapped_column(ForeignKey("core_supervisor.id"))
+    rejected_by_id: Mapped[Union[UUID, None]] = mapped_column(ForeignKey("core_supervisor.id"))
 
-    rejection_reason: Mapped[Optional[str]] = mapped_column(String(500))
-    cancellation_reason: Mapped[Optional[str]] = mapped_column(String(500))
+    rejection_reason: Mapped[Union[str, None]] = mapped_column(String(500))
+    cancellation_reason: Mapped[Union[str, None]] = mapped_column(String(500))
 
     # Relationships
     student: Mapped["Student"] = relationship()

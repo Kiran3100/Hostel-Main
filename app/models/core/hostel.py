@@ -1,9 +1,7 @@
 # models/core/hostel.py
-from __future__ import annotations
-
 from datetime import time
 from decimal import Decimal
-from typing import List, Optional
+from typing import List, Union, TYPE_CHECKING
 from uuid import UUID
 
 from sqlalchemy import Boolean, Float, Integer, JSON, Numeric, String, Time, Enum as SAEnum
@@ -11,6 +9,12 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.schemas.common.enums import HostelType, HostelStatus
 from app.models.base import BaseEntity
+
+if TYPE_CHECKING:
+    from app.models.core.room import Room
+    from app.models.core.bed import Bed
+    from app.models.core.student import Student
+    from app.models.core.supervisor import Supervisor
 
 
 class Hostel(BaseEntity):
@@ -21,29 +25,29 @@ class Hostel(BaseEntity):
     name: Mapped[str] = mapped_column(String(255), index=True)
     slug: Mapped[str] = mapped_column(String(255), unique=True, index=True)
 
-    description: Mapped[Optional[str]] = mapped_column(String(2000))
+    description: Mapped[Union[str, None]] = mapped_column(String(2000))
     hostel_type: Mapped[HostelType] = mapped_column(SAEnum(HostelType, name="hostel_type"))
 
     # Contact
-    contact_email: Mapped[Optional[str]] = mapped_column(String(255))
+    contact_email: Mapped[Union[str, None]] = mapped_column(String(255))
     contact_phone: Mapped[str] = mapped_column(String(20))
 
     # Address
     address_line1: Mapped[str] = mapped_column(String(255))
-    address_line2: Mapped[Optional[str]] = mapped_column(String(255))
+    address_line2: Mapped[Union[str, None]] = mapped_column(String(255))
     city: Mapped[str] = mapped_column(String(100), index=True)
     state: Mapped[str] = mapped_column(String(100), index=True)
     pincode: Mapped[str] = mapped_column(String(6))
     country: Mapped[str] = mapped_column(String(100), default="India")
 
     # Web / media
-    website_url: Mapped[Optional[str]] = mapped_column(String(500))
-    cover_image_url: Mapped[Optional[str]] = mapped_column(String(500))
+    website_url: Mapped[Union[str, None]] = mapped_column(String(500))
+    cover_image_url: Mapped[Union[str, None]] = mapped_column(String(500))
     gallery_images: Mapped[List[str]] = mapped_column(JSON, default=list)
-    virtual_tour_url: Mapped[Optional[str]] = mapped_column(String(500))
+    virtual_tour_url: Mapped[Union[str, None]] = mapped_column(String(500))
 
     # Pricing
-    starting_price_monthly: Mapped[Optional[Decimal]] = mapped_column(Numeric(10, 2))
+    starting_price_monthly: Mapped[Union[Decimal, None]] = mapped_column(Numeric(10, 2))
     currency: Mapped[str] = mapped_column(String(3), default="INR")
 
     # Features
@@ -52,15 +56,15 @@ class Hostel(BaseEntity):
     security_features: Mapped[List[str]] = mapped_column(JSON, default=list)
 
     # Policies
-    rules: Mapped[Optional[str]] = mapped_column(String(5000))
-    check_in_time: Mapped[Optional[time]] = mapped_column(Time)
-    check_out_time: Mapped[Optional[time]] = mapped_column(Time)
-    visitor_policy: Mapped[Optional[str]] = mapped_column(String(1000))
-    late_entry_policy: Mapped[Optional[str]] = mapped_column(String(1000))
+    rules: Mapped[Union[str, None]] = mapped_column(String(5000))
+    check_in_time: Mapped[Union[time, None]] = mapped_column(Time)
+    check_out_time: Mapped[Union[time, None]] = mapped_column(Time)
+    visitor_policy: Mapped[Union[str, None]] = mapped_column(String(1000))
+    late_entry_policy: Mapped[Union[str, None]] = mapped_column(String(1000))
 
     # Location metadata
     nearby_landmarks: Mapped[List[dict]] = mapped_column(JSON, default=list)
-    connectivity_info: Mapped[Optional[str]] = mapped_column(String(1000))
+    connectivity_info: Mapped[Union[str, None]] = mapped_column(String(1000))
 
     # Capacity and status
     total_rooms: Mapped[int] = mapped_column(Integer, default=0)

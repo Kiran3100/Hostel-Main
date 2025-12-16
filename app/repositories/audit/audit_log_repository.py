@@ -1,8 +1,6 @@
 # app/repositories/audit/audit_log_repository.py
-from __future__ import annotations
-
 from datetime import datetime
-from typing import List, Optional
+from typing import List, Union
 from uuid import UUID
 
 from sqlalchemy import and_
@@ -41,7 +39,7 @@ class AuditLogRepository(BaseRepository[AuditLog]):
         self,
         *,
         user_id: UUID,
-        user_role: Optional[UserRole] = None,
+        user_role: Union[UserRole, None] = None,
         limit: int = 100,
     ) -> List[AuditLog]:
         stmt = self._base_select().where(AuditLog.user_id == user_id)
@@ -54,7 +52,7 @@ class AuditLogRepository(BaseRepository[AuditLog]):
         self,
         *,
         hostel_id: UUID,
-        category: Optional[AuditActionCategory] = None,
+        category: Union[AuditActionCategory, None] = None,
         limit: int = 200,
     ) -> List[AuditLog]:
         stmt = self._base_select().where(AuditLog.hostel_id == hostel_id)

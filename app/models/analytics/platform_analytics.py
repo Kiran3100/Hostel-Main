@@ -1,9 +1,7 @@
 # app.models/analytics/platform_analytics.py
-from __future__ import annotations
-
 from datetime import datetime, date
 from decimal import Decimal
-from typing import Optional
+from typing import Union
 from uuid import UUID
 
 from sqlalchemy import Date, DateTime, Integer, Numeric, String

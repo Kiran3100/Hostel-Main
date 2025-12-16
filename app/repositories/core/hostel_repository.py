@@ -1,7 +1,5 @@
 # app/repositories/core/hostel_repository.py
-from __future__ import annotations
-
-from typing import List, Optional
+from typing import List, Union
 
 from sqlalchemy import or_, select
 from sqlalchemy.orm import Session
@@ -14,16 +12,16 @@ class HostelRepository(BaseRepository[Hostel]):
     def __init__(self, session: Session):
         super().__init__(session, Hostel)
 
-    def get_by_slug(self, slug: str) -> Optional[Hostel]:
+    def get_by_slug(self, slug: str) -> Union[Hostel, None]:
         stmt = self._base_select().where(Hostel.slug == slug)
         return self.session.execute(stmt).scalar_one_or_none()
 
     def list_public(
         self,
         *,
-        city: Optional[str] = None,
-        state: Optional[str] = None,
-        search: Optional[str] = None,
+        city: Union[str, None] = None,
+        state: Union[str, None] = None,
+        search: Union[str, None] = None,
         limit: int = 50,
     ) -> List[Hostel]:
         stmt = self._base_select().where(

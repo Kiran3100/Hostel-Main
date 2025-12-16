@@ -1,7 +1,5 @@
 # app/repositories/visitor/visitor_hostel_repository.py
-from __future__ import annotations
-
-from typing import List, Optional
+from typing import List, Union
 
 from sqlalchemy import and_, or_
 from sqlalchemy.orm import Session
@@ -17,12 +15,12 @@ class VisitorHostelRepository(BaseRepository[VisitorHostel]):
     def search(
         self,
         *,
-        city: Optional[str] = None,
-        area: Optional[str] = None,
-        min_price: Optional[float] = None,
-        max_price: Optional[float] = None,
-        gender_type: Optional[str] = None,
-        search: Optional[str] = None,
+        city: Union[str, None] = None,
+        area: Union[str, None] = None,
+        min_price: Union[float, None] = None,
+        max_price: Union[float, None] = None,
+        gender_type: Union[str, None] = None,
+        search: Union[str, None] = None,
         limit: int = 50,
     ) -> List[VisitorHostel]:
         stmt = self._base_select()

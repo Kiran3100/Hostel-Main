@@ -1,9 +1,7 @@
 # app.models/services/maintenance.py
-from __future__ import annotations
-
 from datetime import date, datetime
 from decimal import Decimal
-from typing import Optional
+from typing import Union
 from uuid import UUID
 
 from sqlalchemy import Date, DateTime, Enum as SAEnum, ForeignKey, JSON, Numeric, String, Boolean
@@ -24,7 +22,7 @@ class Maintenance(BaseEntity):
 
     hostel_id: Mapped[UUID] = mapped_column(ForeignKey("core_hostel.id"), index=True)
     requested_by_id: Mapped[UUID] = mapped_column(ForeignKey("core_user.id"))
-    room_id: Mapped[Optional[UUID]] = mapped_column(ForeignKey("core_room.id"), nullable=True)
+    room_id: Mapped[Union[UUID, None]] = mapped_column(ForeignKey("core_room.id"), nullable=True)
 
     title: Mapped[str] = mapped_column(String(255))
     description: Mapped[str] = mapped_column(String(2000))
@@ -35,23 +33,23 @@ class Maintenance(BaseEntity):
         SAEnum(MaintenanceIssueType, name="maintenance_issue_type")
     )
 
-    location: Mapped[Optional[str]] = mapped_column(String(500))
-    floor: Mapped[Optional[int]] = mapped_column()
-    specific_area: Mapped[Optional[str]] = mapped_column(String(255))
+    location: Mapped[Union[str, None]] = mapped_column(String(500))
+    floor: Mapped[Union[int, None]] = mapped_column()
+    specific_area: Mapped[Union[str, None]] = mapped_column(String(255))
 
     issue_photos: Mapped[list[str]] = mapped_column(JSON, default=list)
 
     status: Mapped[MaintenanceStatus] = mapped_column(SAEnum(MaintenanceStatus, name="maintenance_status"))
-    assigned_to_id: Mapped[Optional[UUID]] = mapped_column(ForeignKey("core_supervisor.id"), nullable=True)
+    assigned_to_id: Mapped[Union[UUID, None]] = mapped_column(ForeignKey("core_supervisor.id"), nullable=True)
 
-    estimated_cost: Mapped[Optional[Decimal]] = mapped_column(Numeric(10, 2))
-    actual_cost: Mapped[Optional[Decimal]] = mapped_column(Numeric(10, 2))
+    estimated_cost: Mapped[Union[Decimal, None]] = mapped_column(Numeric(10, 2))
+    actual_cost: Mapped[Union[Decimal, None]] = mapped_column(Numeric(10, 2))
 
-    estimated_completion_date: Mapped[Optional[date]] = mapped_column(Date)
-    actual_completion_date: Mapped[Optional[date]] = mapped_column(Date)
+    estimated_completion_date: Mapped[Union[date, None]] = mapped_column(Date)
+    actual_completion_date: Mapped[Union[date, None]] = mapped_column(Date)
 
     cost_approved: Mapped[bool] = mapped_column(Boolean, default=False)
     approval_threshold_exceeded: Mapped[bool] = mapped_column(Boolean, default=False)
 
-    started_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
-    completed_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
+    started_at: Mapped[Union[datetime, None]] = mapped_column(DateTime(timezone=True))
+    completed_at: Mapped[Union[datetime, None]] = mapped_column(DateTime(timezone=True))

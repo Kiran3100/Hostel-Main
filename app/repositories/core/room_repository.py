@@ -1,7 +1,5 @@
 # app/repositories/core/room_repository.py
-from __future__ import annotations
-
-from typing import List
+from typing import List, Union
 from uuid import UUID
 
 from sqlalchemy import select
@@ -21,7 +19,7 @@ class RoomRepository(BaseRepository[Room]):
         hostel_id: UUID,
         *,
         only_available: bool = False,
-        room_type: RoomType | None = None,
+        room_type: Union[RoomType, None] = None,
     ) -> List[Room]:
         stmt = self._base_select().where(Room.hostel_id == str(hostel_id))
         if only_available:

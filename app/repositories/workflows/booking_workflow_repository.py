@@ -1,7 +1,5 @@
 # app/repositories/workflows/booking_workflow_repository.py
-from __future__ import annotations
-
-from typing import Optional
+from typing import Union
 from uuid import UUID
 
 from sqlalchemy.orm import Session
@@ -14,6 +12,6 @@ class BookingWorkflowRepository(BaseRepository[BookingWorkflow]):
     def __init__(self, session: Session):
         super().__init__(session, BookingWorkflow)
 
-    def get_by_booking_id(self, booking_id: UUID) -> Optional[BookingWorkflow]:
+    def get_by_booking_id(self, booking_id: UUID) -> Union[BookingWorkflow, None]:
         stmt = self._base_select().where(BookingWorkflow.booking_id == booking_id)
         return self.session.execute(stmt).scalar_one_or_none()

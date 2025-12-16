@@ -1,6 +1,4 @@
 # app.models/workflows/booking_workflow.py
-from __future__ import annotations
-
 from datetime import datetime
 from uuid import UUID
 
@@ -18,5 +16,3 @@ class BookingWorkflow(BaseItem):
 
     current_status: Mapped[str] = mapped_column(String(50))  # pending, approved, rejected, checked_in, checked_out
     last_updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=datetime.utcnow)
-
-    # optionally store JSON state history externally

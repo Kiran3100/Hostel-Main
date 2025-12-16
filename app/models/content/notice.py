@@ -1,8 +1,6 @@
 # app.models/content/notice.py
-from __future__ import annotations
-
 from datetime import datetime
-from typing import Optional
+from typing import Union, TYPE_CHECKING
 from uuid import UUID
 
 from sqlalchemy import Boolean, DateTime, Enum as SAEnum, ForeignKey, String
@@ -11,6 +9,9 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.schemas.common.enums import AnnouncementCategory, TargetAudience, Priority
 from app.models.base import BaseEntity
 
+if TYPE_CHECKING:
+    from app.models.core.hostel import Hostel
+
 
 class Notice(BaseEntity):
     """
@@ -18,7 +19,7 @@ class Notice(BaseEntity):
     """
     __tablename__ = "content_notice"
 
-    hostel_id: Mapped[Optional[UUID]] = mapped_column(ForeignKey("core_hostel.id"), nullable=True, index=True)
+    hostel_id: Mapped[Union[UUID, None]] = mapped_column(ForeignKey("core_hostel.id"), nullable=True, index=True)
 
     notice_title: Mapped[str] = mapped_column(String(255))
     notice_content: Mapped[str] = mapped_column(String(5000))
@@ -33,7 +34,7 @@ class Notice(BaseEntity):
 
     is_urgent: Mapped[bool] = mapped_column(Boolean, default=False)
 
-    published_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
-    expires_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
+    published_at: Mapped[Union[datetime, None]] = mapped_column(DateTime(timezone=True))
+    expires_at: Mapped[Union[datetime, None]] = mapped_column(DateTime(timezone=True))
 
-    hostel: Mapped[Optional["Hostel"]] = relationship()
+    hostel: Mapped[Union["Hostel", None]] = relationship()

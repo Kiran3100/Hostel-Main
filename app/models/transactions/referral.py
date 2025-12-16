@@ -1,9 +1,7 @@
 # app.models/transactions/referral.py
-from __future__ import annotations
-
 from datetime import datetime, date
 from decimal import Decimal
-from typing import Optional
+from typing import Union
 from uuid import UUID
 
 from sqlalchemy import Date, DateTime, Enum as SAEnum, ForeignKey, Numeric, String
@@ -21,18 +19,18 @@ class ReferralProgram(BaseItem):
     program_type: Mapped[str] = mapped_column(String(50))  # student_referral, visitor_referral, etc.
 
     reward_type: Mapped[str] = mapped_column(String(50))   # cash, discount, etc.
-    referrer_reward_amount: Mapped[Optional[Decimal]] = mapped_column(Numeric(10, 2))
-    referee_reward_amount: Mapped[Optional[Decimal]] = mapped_column(Numeric(10, 2))
+    referrer_reward_amount: Mapped[Union[Decimal, None]] = mapped_column(Numeric(10, 2))
+    referee_reward_amount: Mapped[Union[Decimal, None]] = mapped_column(Numeric(10, 2))
     currency: Mapped[str] = mapped_column(String(3), default="INR")
 
-    min_booking_amount: Mapped[Optional[Decimal]] = mapped_column(Numeric(10, 2))
-    min_stay_months: Mapped[Optional[int]] = mapped_column()
+    min_booking_amount: Mapped[Union[Decimal, None]] = mapped_column(Numeric(10, 2))
+    min_stay_months: Mapped[Union[int, None]] = mapped_column()
 
-    terms_and_conditions: Mapped[Optional[str]] = mapped_column(String(5000))
+    terms_and_conditions: Mapped[Union[str, None]] = mapped_column(String(5000))
 
     is_active: Mapped[bool] = mapped_column(default=True)
-    valid_from: Mapped[Optional[date]] = mapped_column(Date)
-    valid_to: Mapped[Optional[date]] = mapped_column(Date)
+    valid_from: Mapped[Union[date, None]] = mapped_column(Date)
+    valid_to: Mapped[Union[date, None]] = mapped_column(Date)
 
 
 class Referral(BaseItem):
@@ -42,18 +40,18 @@ class Referral(BaseItem):
     program_id: Mapped[UUID] = mapped_column(ForeignKey("ref_program.id"), index=True)
     referrer_id: Mapped[UUID] = mapped_column(ForeignKey("core_user.id"), index=True)
 
-    referee_email: Mapped[Optional[str]] = mapped_column(String(255))
-    referee_phone: Mapped[Optional[str]] = mapped_column(String(20))
-    referee_user_id: Mapped[Optional[UUID]] = mapped_column(ForeignKey("core_user.id"))
+    referee_email: Mapped[Union[str, None]] = mapped_column(String(255))
+    referee_phone: Mapped[Union[str, None]] = mapped_column(String(20))
+    referee_user_id: Mapped[Union[UUID, None]] = mapped_column(ForeignKey("core_user.id"))
 
     referral_code: Mapped[str] = mapped_column(String(50), index=True)
     status: Mapped[ReferralStatus] = mapped_column(SAEnum(ReferralStatus, name="referral_status"))
 
-    booking_id: Mapped[Optional[UUID]] = mapped_column(ForeignKey("txn_booking.id"))
-    completed_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
+    booking_id: Mapped[Union[UUID, None]] = mapped_column(ForeignKey("txn_booking.id"))
+    completed_at: Mapped[Union[datetime, None]] = mapped_column(DateTime(timezone=True))
 
-    referrer_reward_amount: Mapped[Optional[Decimal]] = mapped_column(Numeric(10, 2))
-    referee_reward_amount: Mapped[Optional[Decimal]] = mapped_column(Numeric(10, 2))
+    referrer_reward_amount: Mapped[Union[Decimal, None]] = mapped_column(Numeric(10, 2))
+    referee_reward_amount: Mapped[Union[Decimal, None]] = mapped_column(Numeric(10, 2))
     currency: Mapped[str] = mapped_column(String(3), default="INR")
 
     referrer_reward_status: Mapped[RewardStatus] = mapped_column(SAEnum(RewardStatus, name="reward_status"))

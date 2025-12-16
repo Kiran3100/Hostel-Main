@@ -1,8 +1,6 @@
 # app/repositories/content/announcement_repository.py
-from __future__ import annotations
-
 from datetime import datetime
-from typing import List
+from typing import List, Union
 from uuid import UUID
 
 from sqlalchemy import and_
@@ -22,7 +20,7 @@ class AnnouncementRepository(BaseRepository[Announcement]):
         hostel_id: UUID,
         *,
         now: datetime,
-        audience: TargetAudience | None = None,
+        audience: Union[TargetAudience, None] = None,
     ) -> List[Announcement]:
         stmt = (
             self._base_select()

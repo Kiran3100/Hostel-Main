@@ -1,14 +1,15 @@
 # app.models/content/mess_menu.py
-from __future__ import annotations
-
 from datetime import date, time
-from typing import List, Optional
+from typing import List, Union, TYPE_CHECKING
 from uuid import UUID
 
 from sqlalchemy import Boolean, Date, Time, ForeignKey, JSON, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import BaseEntity
+
+if TYPE_CHECKING:
+    from app.models.core.hostel import Hostel
 
 
 class MessMenu(BaseEntity):
@@ -24,13 +25,13 @@ class MessMenu(BaseEntity):
     snacks_items: Mapped[List[str]] = mapped_column(JSON, default=list)
     dinner_items: Mapped[List[str]] = mapped_column(JSON, default=list)
 
-    breakfast_time: Mapped[Optional[time]] = mapped_column(Time)
-    lunch_time: Mapped[Optional[time]] = mapped_column(Time)
-    snacks_time: Mapped[Optional[time]] = mapped_column(Time)
-    dinner_time: Mapped[Optional[time]] = mapped_column(Time)
+    breakfast_time: Mapped[Union[time, None]] = mapped_column(Time)
+    lunch_time: Mapped[Union[time, None]] = mapped_column(Time)
+    snacks_time: Mapped[Union[time, None]] = mapped_column(Time)
+    dinner_time: Mapped[Union[time, None]] = mapped_column(Time)
 
     is_special_menu: Mapped[bool] = mapped_column(Boolean, default=False)
-    special_occasion: Mapped[Optional[str]] = mapped_column(String(255))
+    special_occasion: Mapped[Union[str, None]] = mapped_column(String(255))
 
     vegetarian_available: Mapped[bool] = mapped_column(Boolean, default=True)
     non_vegetarian_available: Mapped[bool] = mapped_column(Boolean, default=False)

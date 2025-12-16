@@ -1,8 +1,6 @@
 # app/repositories/transactions/referral_program_repository.py
-from __future__ import annotations
-
 from datetime import date
-from typing import List, Optional
+from typing import List, Union
 
 from sqlalchemy import and_
 from sqlalchemy.orm import Session
@@ -15,7 +13,7 @@ class ReferralProgramRepository(BaseRepository[ReferralProgram]):
     def __init__(self, session: Session):
         super().__init__(session, ReferralProgram)
 
-    def list_active(self, as_of: Optional[date] = None) -> List[ReferralProgram]:
+    def list_active(self, as_of: Union[date, None] = None) -> List[ReferralProgram]:
         stmt = self._base_select().where(ReferralProgram.is_active.is_(True))
         if as_of is not None:
             stmt = stmt.where(

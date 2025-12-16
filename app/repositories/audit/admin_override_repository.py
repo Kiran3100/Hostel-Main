@@ -1,6 +1,4 @@
 # app/repositories/audit/admin_override_repository.py
-from __future__ import annotations
-
 from typing import List
 from uuid import UUID
 
