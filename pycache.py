@@ -31,28 +31,27 @@ def format_size(size_bytes: int) -> str:
             return f"{size_bytes:.2f} {unit}"
         size_bytes /= 1024.0
     return f"{size_bytes:.2f} TB"
- 
+
 def delete_all_pycache(
     root_path: Path,
     dry_run: bool = False,
     verbose: bool = True
 ) -> ScanStats:
     """
-    Recursively traverse root_path and delete __pycache__ directories
-    that contain files with specified extensions.
+    Recursively traverse root_path and delete all __pycache__ directories.
     
     Args:
         root_path: Root directory to scan
         dry_run: If True, only simulate deletion
         verbose: If True, print detailed information
-        extensions: Set of file extensions to look for (default: {'.txt'})
+<<<<<<<<< Temporary merge branch 1
     
     Returns:
         ScanStats object with operation statistics
     """
     stats = ScanStats()
     pycache_dirs = []
-   
+    
     # First pass: find all __pycache__ directories
     if verbose:
         print(f"\n{'=' * 70}")
@@ -71,11 +70,11 @@ def delete_all_pycache(
                 pycache_path = Path(current_root) / dirname
                 stats.total_pycache += 1
                 pycache_dirs.append(pycache_path)
-               
+                
                 if verbose:
                     size = get_directory_size(pycache_path)
                     print(f"Found: {pycache_path} ({format_size(size)})")
-   
+    
     # Report findings
     if verbose:
         print(f"\n{'=' * 70}")
@@ -111,7 +110,7 @@ def delete_all_pycache(
         print(f"{'=' * 70}")
         print("DELETING DIRECTORIES")
         print(f"{'=' * 70}\n")
-   
+    
     for pycache_path in pycache_dirs:
         try:
             size = get_directory_size(pycache_path)
@@ -141,8 +140,8 @@ def delete_all_pycache(
 def main() -> None:
     """Main execution function with user interaction."""
     # 🔧 CONFIGURATION
-    root_directory = Path(r"C:\Hostel-Main\app").resolve()  # Change this to your target directory
-   
+    root_directory = Path(r"D:\Last Github Push\Last\Hostel-Main\app").resolve()  # Change this to your target directory
+    
     print("=" * 70)
     print("__pycache__ DIRECTORY CLEANER")
     print("=" * 70)
@@ -164,11 +163,10 @@ def main() -> None:
         root_directory,
         dry_run=True,
         verbose=True
-        verbose=True
     )
     
-    if stats.pycache_with_txt == 0:
-        print("\n✓ No action needed. Exiting.")
+    if stats.total_pycache == 0:
+        print("\n✓ No __pycache__ directories found. Exiting.")
         return
    
     # Ask for confirmation
