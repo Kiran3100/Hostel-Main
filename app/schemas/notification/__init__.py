@@ -6,8 +6,6 @@ Provides comprehensive schemas for notification management including
 email, SMS, push notifications, templates, preferences, routing, and queues.
 """
 
-from __future__ import annotations
-
 # Base notification schemas
 from app.schemas.notification.notification_base import (
     BulkMarkAsRead,

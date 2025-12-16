@@ -9,14 +9,12 @@ Pydantic v2 Migration Notes:
 - All validators properly handle Optional types
 """
 
-from __future__ import annotations
-
 from datetime import date as Date
 from decimal import Decimal
-from typing import Annotated, List, Optional
+from typing import Annotated, List, Union
+from uuid import UUID
 
 from pydantic import Field, field_validator, model_validator
-from uuid import UUID
 
 from app.schemas.common.base import BaseFilterSchema
 
@@ -36,18 +34,18 @@ class ReviewFilterParams(BaseFilterSchema):
     """
     
     # Hostel filters
-    hostel_id: Optional[UUID] = Field(
+    hostel_id: Union[UUID, None] = Field(
         default=None,
         description="Filter by specific hostel",
     )
-    hostel_ids: Optional[List[UUID]] = Field(
+    hostel_ids: Union[List[UUID], None] = Field(
         default=None,
         max_length=50,
         description="Filter by multiple hostels (max 50)",
     )
     
     # Rating filters with proper Decimal constraints
-    min_rating: Optional[
+    min_rating: Union[
         Annotated[
             Decimal,
             Field(
@@ -57,9 +55,10 @@ class ReviewFilterParams(BaseFilterSchema):
                 decimal_places=1,
                 description="Minimum overall rating",
             ),
-        ]
+        ],
+        None,
     ] = None
-    max_rating: Optional[
+    max_rating: Union[
         Annotated[
             Decimal,
             Field(
@@ -69,9 +68,10 @@ class ReviewFilterParams(BaseFilterSchema):
                 decimal_places=1,
                 description="Maximum overall rating",
             ),
-        ]
+        ],
+        None,
     ] = None
-    rating: Optional[int] = Field(
+    rating: Union[int, None] = Field(
         default=None,
         ge=1,
         le=5,
@@ -79,19 +79,19 @@ class ReviewFilterParams(BaseFilterSchema):
     )
     
     # Verification filters
-    verified_only: Optional[bool] = Field(
+    verified_only: Union[bool, None] = Field(
         default=None,
         description="Show only verified stay reviews",
     )
     
     # Date filters
-    posted_date_from: Optional[Date] = Field(
+    posted_date_from: Union[Date, None] = Field(
         default=None,
-        description="Reviews posted on or after this date",
+        description="Reviews posted on or after this Date",
     )
-    posted_date_to: Optional[Date] = Field(
+    posted_date_to: Union[Date, None] = Field(
         default=None,
-        description="Reviews posted on or before this date",
+        description="Reviews posted on or before this Date",
     )
     
     # Status filters
@@ -99,33 +99,33 @@ class ReviewFilterParams(BaseFilterSchema):
         default=True,
         description="Show only approved/published reviews",
     )
-    flagged_only: Optional[bool] = Field(
+    flagged_only: Union[bool, None] = Field(
         default=None,
         description="Show only flagged reviews",
     )
     
     # Response filter
-    with_hostel_response: Optional[bool] = Field(
+    with_hostel_response: Union[bool, None] = Field(
         default=None,
         description="Filter by presence of hostel response",
     )
     
     # Engagement filters
-    min_helpful_count: Optional[int] = Field(
+    min_helpful_count: Union[int, None] = Field(
         default=None,
         ge=0,
         description="Minimum helpful vote count",
     )
     
     # Media filter
-    with_photos_only: Optional[bool] = Field(
+    with_photos_only: Union[bool, None] = Field(
         default=None,
         description="Show only reviews with photos",
     )
     
     @field_validator("hostel_ids")
     @classmethod
-    def validate_hostel_ids(cls, v: Optional[List[UUID]]) -> Optional[List[UUID]]:
+    def validate_hostel_ids(cls, v: Union[List[UUID], None]) -> Union[List[UUID], None]:
         """Validate hostel IDs list."""
         if v is not None and len(v) > 50:
             raise ValueError("Maximum 50 hostel IDs allowed")
@@ -172,7 +172,7 @@ class ReviewSearchRequest(BaseFilterSchema):
         description="Search query",
         examples=["clean rooms", "friendly staff"],
     )
-    hostel_id: Optional[UUID] = Field(
+    hostel_id: Union[UUID, None] = Field(
         default=None,
         description="Limit search to specific hostel",
     )
@@ -188,7 +188,7 @@ class ReviewSearchRequest(BaseFilterSchema):
     )
     
     # Additional filters with proper Decimal constraints
-    min_rating: Optional[
+    min_rating: Union[
         Annotated[
             Decimal,
             Field(
@@ -198,9 +198,10 @@ class ReviewSearchRequest(BaseFilterSchema):
                 decimal_places=1,
                 description="Filter by minimum rating",
             ),
-        ]
+        ],
+        None,
     ] = None
-    verified_only: Optional[bool] = Field(
+    verified_only: Union[bool, None] = Field(
         default=None,
         description="Show only verified reviews",
     )
@@ -287,7 +288,7 @@ class ReviewExportRequest(BaseFilterSchema):
         ...,
         description="Hostel to export reviews for",
     )
-    filters: Optional[ReviewFilterParams] = Field(
+    filters: Union[ReviewFilterParams, None] = Field(
         default=None,
         description="Additional filters to apply",
     )
@@ -318,13 +319,13 @@ class ReviewExportRequest(BaseFilterSchema):
     )
     
     # Date range for export
-    date_from: Optional[Date] = Field(
+    date_from: Union[Date, None] = Field(
         default=None,
-        description="Export reviews from this date onwards",
+        description="Export reviews from this Date onwards",
     )
-    date_to: Optional[Date] = Field(
+    date_to: Union[Date, None] = Field(
         default=None,
-        description="Export reviews up to this date",
+        description="Export reviews up to this Date",
     )
     
     @field_validator("format")
@@ -336,7 +337,7 @@ class ReviewExportRequest(BaseFilterSchema):
     @model_validator(mode="after")
     def validate_date_range(self) -> "ReviewExportRequest":
         """
-        Validate export date range.
+        Validate export Date range.
         
         Pydantic v2: mode="after" validators receive the model instance.
         """

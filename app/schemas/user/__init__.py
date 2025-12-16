@@ -8,8 +8,6 @@ Example:
     from app.schemas.user import UserCreate, UserResponse, ProfileUpdate
 """
 
-from __future__ import annotations
-
 from app.schemas.user.user_base import (
     UserAddressUpdate,
     UserBase,

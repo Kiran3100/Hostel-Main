@@ -3,7 +3,7 @@ import shutil
 from pathlib import Path
 from dataclasses import dataclass
 from datetime import datetime
-
+ 
 @dataclass
 class ScanStats:
     """Statistics for the scanning operation."""
@@ -12,7 +12,7 @@ class ScanStats:
     failed: int = 0
     skipped: int = 0
     total_size_freed: int = 0
-
+ 
 def get_directory_size(path: Path) -> int:
     """Calculate total size of a directory in bytes."""
     total = 0
@@ -23,7 +23,7 @@ def get_directory_size(path: Path) -> int:
     except (PermissionError, OSError):
         pass
     return total
-
+ 
 def format_size(size_bytes: int) -> str:
     """Convert bytes to human-readable format."""
     for unit in ['B', 'KB', 'MB', 'GB']:
@@ -58,12 +58,12 @@ def delete_all_pycache(
         print(f"{'=' * 70}")
         print(f"Root: {root_path}")
         print(f"{'=' * 70}\n")
-    
+   
     for current_root, dirnames, _ in os.walk(root_path):
         # Skip hidden directories and common exclusions
-        dirnames[:] = [d for d in dirnames if not d.startswith('.') 
+        dirnames[:] = [d for d in dirnames if not d.startswith('.')
                        and d not in {'node_modules', 'venv', '.venv', '.git'}]
-        
+       
         for dirname in list(dirnames):
             if dirname == "__pycache__":
                 pycache_path = Path(current_root) / dirname
@@ -82,12 +82,12 @@ def delete_all_pycache(
         print(f"Total __pycache__ directories found: {stats.total_pycache}")
         print(f"Skipped (permissions/errors): {stats.skipped}")
         print(f"{'=' * 70}\n")
-    
+   
     if not pycache_dirs:
         if verbose:
             print("✓ No __pycache__ directories found.")
         return stats
-    
+   
     # Second pass: delete directories
     if dry_run:
         if verbose:
@@ -99,7 +99,7 @@ def delete_all_pycache(
         if verbose:
             print(f"\nTotal space that would be freed: {format_size(stats.total_size_freed)}")
         return stats
-    
+   
     if verbose:
         print(f"{'=' * 70}")
         print("DELETING DIRECTORIES")
@@ -111,10 +111,10 @@ def delete_all_pycache(
             shutil.rmtree(pycache_path)
             stats.deleted += 1
             stats.total_size_freed += size
-            
+           
             if verbose:
                 print(f"✓ Deleted: {pycache_path} ({format_size(size)})")
-                
+               
         except PermissionError:
             stats.failed += 1
             if verbose:
@@ -128,9 +128,9 @@ def delete_all_pycache(
             stats.failed += 1
             if verbose:
                 print(f"✗ Error deleting {pycache_path}: {exc}")
-    
+   
     return stats
-
+ 
 def main() -> None:
     """Main execution function with user interaction."""
     # 🔧 CONFIGURATION
@@ -141,16 +141,16 @@ def main() -> None:
     print("=" * 70)
     print(f"Started at: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     print("=" * 70)
-    
+   
     # Validate root directory
     if not root_directory.exists():
         print(f"\n✗ Error: Root path does not exist: {root_directory}")
         return
-    
+   
     if not root_directory.is_dir():
         print(f"\n✗ Error: Path is not a directory: {root_directory}")
         return
-    
+   
     # Dry run first
     print("\nPerforming dry run to identify targets...\n")
     stats = delete_all_pycache(
@@ -162,14 +162,14 @@ def main() -> None:
     if stats.total_pycache == 0:
         print("\n✓ No __pycache__ directories found. Exiting.")
         return
-    
+   
     # Ask for confirmation
     print("\n" + "=" * 70)
     response = input(
         f"\nProceed with deleting {stats.total_pycache} __pycache__ "
         f"director{'y' if stats.total_pycache == 1 else 'ies'}? (yes/no): "
     ).strip().lower()
-    
+   
     if response in ['yes', 'y']:
         print("\nProceeding with deletion...\n")
         stats = delete_all_pycache(
@@ -177,7 +177,7 @@ def main() -> None:
             dry_run=False,
             verbose=True
         )
-        
+       
         # Final summary
         print("\n" + "=" * 70)
         print("OPERATION SUMMARY")
@@ -192,6 +192,7 @@ def main() -> None:
         print("=" * 70)
     else:
         print("\n✓ Operation cancelled by user.")
-
+ 
 if __name__ == "__main__":
     main()
+ 

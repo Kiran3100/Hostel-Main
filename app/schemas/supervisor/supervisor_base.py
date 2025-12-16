@@ -6,11 +6,9 @@ Provides core supervisor management schemas including creation, updates,
 status management, and hostel reassignment with comprehensive validation.
 """
 
-from __future__ import annotations
-
 from datetime import date as Date, timedelta
 from decimal import Decimal
-from typing import Dict, Optional
+from typing import Dict, Union
 
 from pydantic import Field, field_validator, model_validator
 
@@ -68,7 +66,7 @@ class SupervisorBase(BaseSchema):
     )
 
     # Employment details
-    employee_id: Optional[str] = Field(
+    employee_id: Union[str, None] = Field(
         default=None,
         max_length=SupervisorValidationConstants.MAX_EMPLOYEE_ID_LENGTH,
         description="Employee/Staff ID number",
@@ -82,19 +80,19 @@ class SupervisorBase(BaseSchema):
         default=EmploymentType.FULL_TIME,
         description="Employment type/contract",
     )
-    shift_timing: Optional[str] = Field(
+    shift_timing: Union[str, None] = Field(
         default=None,
         max_length=SupervisorValidationConstants.MAX_SHIFT_TIMING_LENGTH,
         description="Shift timing or working hours",
         examples=["9 AM - 6 PM", "Morning Shift", "24x7 Rotating"],
     )
-    designation: Optional[str] = Field(
+    designation: Union[str, None] = Field(
         default=None,
         max_length=SupervisorValidationConstants.MAX_DESIGNATION_LENGTH,
         description="Job designation/title",
         examples=["Hostel Supervisor", "Senior Supervisor", "Floor Supervisor"],
     )
-    salary: Optional[Decimal] = Field(
+    salary: Union[Decimal, None] = Field(
         default=None,
         ge=SupervisorValidationConstants.MIN_SALARY,
         max_digits=10,
@@ -104,7 +102,7 @@ class SupervisorBase(BaseSchema):
 
     @field_validator("employee_id", "shift_timing", "designation")
     @classmethod
-    def normalize_text_fields(cls, v: Optional[str]) -> Optional[str]:
+    def normalize_text_fields(cls, v: Union[str, None]) -> Union[str, None]:
         """
         Normalize text fields by trimming and cleaning whitespace.
         
@@ -201,13 +199,13 @@ class SupervisorCreate(SupervisorBase, BaseCreateSchema):
     )
 
     # Initial permissions (optional, defaults will be applied)
-    permissions: Optional[Dict[str, bool | int | Decimal]] = Field(
+    permissions: Union[Dict[str, Union[bool, int, Decimal]], None] = Field(
         default=None,
         description="Initial permission settings (uses defaults if not provided)",
     )
     
     # Assignment metadata
-    assignment_notes: Optional[str] = Field(
+    assignment_notes: Union[str, None] = Field(
         default=None,
         max_length=SupervisorValidationConstants.MAX_NOTES_LENGTH,
         description="Notes about the assignment",
@@ -217,8 +215,8 @@ class SupervisorCreate(SupervisorBase, BaseCreateSchema):
     @classmethod
     def validate_permissions_structure(
         cls, 
-        v: Optional[Dict[str, bool | int | Decimal]]
-    ) -> Optional[Dict[str, bool | int | Decimal]]:
+        v: Union[Dict[str, Union[bool, int, Decimal]], None]
+    ) -> Union[Dict[str, Union[bool, int, Decimal]], None]:
         """
         Validate permissions dictionary structure.
         
@@ -251,26 +249,26 @@ class SupervisorUpdate(BaseUpdateSchema):
     """
 
     # Employment details
-    employee_id: Optional[str] = Field(
+    employee_id: Union[str, None] = Field(
         default=None,
         max_length=SupervisorValidationConstants.MAX_EMPLOYEE_ID_LENGTH,
         description="Employee ID",
     )
-    employment_type: Optional[EmploymentType] = Field(
+    employment_type: Union[EmploymentType, None] = Field(
         default=None,
         description="Employment type",
     )
-    shift_timing: Optional[str] = Field(
+    shift_timing: Union[str, None] = Field(
         default=None,
         max_length=SupervisorValidationConstants.MAX_SHIFT_TIMING_LENGTH,
         description="Shift timing",
     )
-    designation: Optional[str] = Field(
+    designation: Union[str, None] = Field(
         default=None,
         max_length=SupervisorValidationConstants.MAX_DESIGNATION_LENGTH,
         description="Designation",
     )
-    salary: Optional[Decimal] = Field(
+    salary: Union[Decimal, None] = Field(
         default=None,
         ge=SupervisorValidationConstants.MIN_SALARY,
         max_digits=10,
@@ -279,23 +277,23 @@ class SupervisorUpdate(BaseUpdateSchema):
     )
 
     # Status
-    status: Optional[SupervisorStatus] = Field(
+    status: Union[SupervisorStatus, None] = Field(
         default=None,
         description="Supervisor status",
     )
-    is_active: Optional[bool] = Field(
+    is_active: Union[bool, None] = Field(
         default=None,
         description="Active status",
     )
 
     # Permissions
-    permissions: Optional[Dict[str, bool | int | Decimal]] = Field(
+    permissions: Union[Dict[str, Union[bool, int, Decimal]], None] = Field(
         default=None,
         description="Updated permission settings",
     )
 
     # Notes
-    notes: Optional[str] = Field(
+    notes: Union[str, None] = Field(
         default=None,
         max_length=SupervisorValidationConstants.MAX_NOTES_LENGTH,
         description="Additional notes",
@@ -303,7 +301,7 @@ class SupervisorUpdate(BaseUpdateSchema):
 
     @field_validator("employee_id", "shift_timing", "designation")
     @classmethod
-    def normalize_text_fields(cls, v: Optional[str]) -> Optional[str]:
+    def normalize_text_fields(cls, v: Union[str, None]) -> Union[str, None]:
         """Normalize text fields."""
         if v is None:
             return None
@@ -360,56 +358,56 @@ class SupervisorStatusUpdate(BaseUpdateSchema):
     )
 
     # Termination-specific fields
-    termination_date: Optional[Date] = Field(
+    termination_date: Union[Date, None] = Field(
         default=None,
         description="Termination Date (required if status is TERMINATED)",
     )
-    termination_reason: Optional[str] = Field(
+    termination_reason: Union[str, None] = Field(
         default=None,
         max_length=SupervisorValidationConstants.MAX_REASON_LENGTH,
         description="Detailed termination reason",
     )
-    eligible_for_rehire: Optional[bool] = Field(
+    eligible_for_rehire: Union[bool, None] = Field(
         default=None,
         description="Eligible for rehire in future",
     )
 
     # Suspension-specific fields
-    suspension_start_date: Optional[Date] = Field(
+    suspension_start_date: Union[Date, None] = Field(
         default=None,
         description="Suspension start Date (required if SUSPENDED)",
     )
-    suspension_end_date: Optional[Date] = Field(
+    suspension_end_date: Union[Date, None] = Field(
         default=None,
         description="Expected suspension end Date (required if SUSPENDED)",
     )
-    suspension_reason: Optional[str] = Field(
+    suspension_reason: Union[str, None] = Field(
         default=None,
         max_length=SupervisorValidationConstants.MAX_REASON_LENGTH,
         description="Detailed suspension reason",
     )
 
     # Leave-specific fields
-    leave_start_date: Optional[Date] = Field(
+    leave_start_date: Union[Date, None] = Field(
         default=None,
         description="Leave start Date (required if ON_LEAVE)",
     )
-    leave_end_date: Optional[Date] = Field(
+    leave_end_date: Union[Date, None] = Field(
         default=None,
         description="Expected return Date from leave (required if ON_LEAVE)",
     )
-    leave_type: Optional[str] = Field(
+    leave_type: Union[str, None] = Field(
         default=None,
         max_length=50,
         description="Type of leave (sick, vacation, etc.)",
     )
 
     # Handover details
-    handover_to: Optional[str] = Field(
+    handover_to: Union[str, None] = Field(
         default=None,
         description="Supervisor ID for responsibility handover",
     )
-    handover_notes: Optional[str] = Field(
+    handover_notes: Union[str, None] = Field(
         default=None,
         max_length=SupervisorValidationConstants.MAX_NOTES_LENGTH,
         description="Handover instructions",
@@ -542,19 +540,19 @@ class SupervisorReassignment(BaseCreateSchema):
         default=True,
         description="Retain same permission set at new hostel",
     )
-    new_permissions: Optional[Dict[str, bool | int | Decimal]] = Field(
+    new_permissions: Union[Dict[str, Union[bool, int, Decimal]], None] = Field(
         default=None,
         description="New permission set (required if not retaining)",
     )
 
     # Salary adjustment
-    salary_adjustment: Optional[Decimal] = Field(
+    salary_adjustment: Union[Decimal, None] = Field(
         default=None,
         max_digits=10,
         decimal_places=2,
         description="Salary adjustment amount (positive or negative)",
     )
-    salary_adjustment_reason: Optional[str] = Field(
+    salary_adjustment_reason: Union[str, None] = Field(
         default=None,
         max_length=200,
         description="Reason for salary adjustment",
@@ -567,7 +565,7 @@ class SupervisorReassignment(BaseCreateSchema):
         le=SupervisorValidationConstants.MAX_HANDOVER_PERIOD_DAYS,
         description="Handover period in days",
     )
-    handover_to: Optional[str] = Field(
+    handover_to: Union[str, None] = Field(
         default=None,
         description="Supervisor ID for handover at current hostel",
     )
@@ -654,7 +652,7 @@ class SupervisorTermination(BaseCreateSchema):
         ...,
         description="Whether notice period was served",
     )
-    notice_period_days: Optional[int] = Field(
+    notice_period_days: Union[int, None] = Field(
         default=None,
         ge=0,
         le=90,
@@ -680,7 +678,7 @@ class SupervisorTermination(BaseCreateSchema):
         default=False,
         description="All hostel assets returned",
     )
-    asset_list: Optional[str] = Field(
+    asset_list: Union[str, None] = Field(
         default=None,
         max_length=500,
         description="List of assets returned",
@@ -691,7 +689,7 @@ class SupervisorTermination(BaseCreateSchema):
         default=False,
         description="Exit interview completed",
     )
-    exit_interview_notes: Optional[str] = Field(
+    exit_interview_notes: Union[str, None] = Field(
         default=None,
         max_length=2000,
         description="Exit interview notes",
@@ -702,27 +700,27 @@ class SupervisorTermination(BaseCreateSchema):
         ...,
         description="Eligible for future rehire",
     )
-    rehire_notes: Optional[str] = Field(
+    rehire_notes: Union[str, None] = Field(
         default=None,
         max_length=500,
         description="Notes on rehire eligibility",
     )
 
     # Final settlement
-    final_settlement_amount: Optional[Decimal] = Field(
+    final_settlement_amount: Union[Decimal, None] = Field(
         default=None,
         ge=0,
         max_digits=10,
         decimal_places=2,
         description="Final settlement amount",
     )
-    settlement_date: Optional[Date] = Field(
+    settlement_date: Union[Date, None] = Field(
         default=None,
         description="Settlement payment Date",
     )
 
     # Handover
-    responsibilities_handover_to: Optional[str] = Field(
+    responsibilities_handover_to: Union[str, None] = Field(
         default=None,
         description="Supervisor ID for handover",
     )
@@ -730,7 +728,7 @@ class SupervisorTermination(BaseCreateSchema):
         default=False,
         description="Handover completion status",
     )
-    handover_notes: Optional[str] = Field(
+    handover_notes: Union[str, None] = Field(
         default=None,
         max_length=SupervisorValidationConstants.MAX_NOTES_LENGTH,
         description="Handover notes",

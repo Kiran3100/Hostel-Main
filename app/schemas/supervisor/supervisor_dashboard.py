@@ -6,11 +6,9 @@ Provides comprehensive dashboard data with performance indicators,
 task management, and actionable insights.
 """
 
-from __future__ import annotations
-
 from datetime import datetime, time, date as Date
 from decimal import Decimal
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Union
 
 from pydantic import Field, computed_field
 
@@ -250,7 +248,7 @@ class RecentComplaintItem(BaseSchema):
     # Timing
     created_at: datetime = Field(..., description="Complaint creation time")
     age_hours: int = Field(..., ge=0, description="Hours since creation")
-    sla_deadline: Optional[datetime] = Field(
+    sla_deadline: Union[datetime, None] = Field(
         default=None,
         description="SLA deadline for resolution",
     )
@@ -288,26 +286,26 @@ class RecentMaintenanceItem(BaseSchema):
     status: str = Field(..., description="Current status")
     
     # Location
-    room_number: Optional[str] = Field(default=None, description="Room number")
-    location_description: Optional[str] = Field(
+    room_number: Union[str, None] = Field(default=None, description="Room number")
+    location_description: Union[str, None] = Field(
         default=None,
         description="Location description",
     )
     
     # Cost and timing
-    estimated_cost: Optional[Decimal] = Field(
+    estimated_cost: Union[Decimal, None] = Field(
         default=None,
         ge=0,
         description="Estimated cost",
     )
     created_at: datetime = Field(..., description="Request creation time")
-    scheduled_date: Optional[Date] = Field(
+    scheduled_date: Union[Date, None] = Field(
         default=None,
         description="Scheduled completion Date",
     )
     
     # Assignment
-    assigned_to: Optional[str] = Field(
+    assigned_to: Union[str, None] = Field(
         default=None,
         description="Assigned staff/vendor",
     )
@@ -343,7 +341,7 @@ class PendingLeaveItem(BaseSchema):
     
     # Application details
     applied_at: datetime = Field(..., description="Application timestamp")
-    emergency_contact: Optional[str] = Field(
+    emergency_contact: Union[str, None] = Field(
         default=None,
         description="Emergency contact during leave",
     )
@@ -372,13 +370,13 @@ class ScheduledMaintenanceItem(BaseSchema):
     maintenance_id: str = Field(..., description="Maintenance ID")
     title: str = Field(..., description="Maintenance title")
     scheduled_time: time = Field(..., description="Scheduled time")
-    estimated_duration_hours: Optional[int] = Field(
+    estimated_duration_hours: Union[int, None] = Field(
         default=None,
         ge=1,
         description="Estimated duration in hours",
     )
-    room_number: Optional[str] = Field(default=None, description="Room number")
-    assigned_staff: Optional[str] = Field(default=None, description="Assigned staff")
+    room_number: Union[str, None] = Field(default=None, description="Room number")
+    assigned_staff: Union[str, None] = Field(default=None, description="Assigned staff")
     priority: str = Field(..., description="Priority level")
 
 
@@ -401,7 +399,7 @@ class ScheduledMeeting(BaseSchema):
 class TodaySchedule(BaseSchema):
     """Today's schedule and planned activities."""
     
-    date: Date = Field(..., description="Schedule Date")
+    Date: Date = Field(..., description="Schedule Date")
     
     # Routine tasks
     attendance_marking_time: time = Field(
@@ -474,20 +472,20 @@ class DashboardAlert(BaseSchema):
     
     # Action support
     action_required: bool = Field(..., description="Whether action is required")
-    action_url: Optional[str] = Field(default=None, description="Action URL")
-    action_label: Optional[str] = Field(default=None, description="Action button label")
+    action_url: Union[str, None] = Field(default=None, description="Action URL")
+    action_label: Union[str, None] = Field(default=None, description="Action button label")
     
     # Metadata
     created_at: datetime = Field(..., description="Alert creation time")
-    expires_at: Optional[datetime] = Field(default=None, description="Alert expiration")
+    expires_at: Union[datetime, None] = Field(default=None, description="Alert expiration")
     is_dismissible: bool = Field(default=True, description="Can be dismissed by user")
     
     # Context
-    related_entity_type: Optional[str] = Field(
+    related_entity_type: Union[str, None] = Field(
         default=None,
         description="Related entity type",
     )
-    related_entity_id: Optional[str] = Field(
+    related_entity_id: Union[str, None] = Field(
         default=None,
         description="Related entity ID",
     )
@@ -516,19 +514,19 @@ class QuickAction(BaseSchema):
     url: str = Field(..., description="Action URL")
     
     # Badge support
-    badge_count: Optional[int] = Field(
+    badge_count: Union[int, None] = Field(
         default=None,
         ge=0,
         description="Number indicator (e.g., pending items)",
     )
-    badge_type: Optional[str] = Field(
+    badge_type: Union[str, None] = Field(
         default=None,
         pattern=r"^(info|warning|danger|success)$",
         description="Badge color type",
     )
     
     # Permissions
-    requires_permission: Optional[str] = Field(
+    requires_permission: Union[str, None] = Field(
         default=None,
         description="Required permission to show action",
     )
@@ -584,7 +582,7 @@ class PerformanceIndicators(BaseSchema):
     )
     
     # Quality metrics
-    student_satisfaction_score: Optional[Decimal] = Field(
+    student_satisfaction_score: Union[Decimal, None] = Field(
         default=None,
         ge=0,
         le=5,
@@ -619,12 +617,12 @@ class PerformanceIndicators(BaseSchema):
     )
     
     # Benchmarking
-    rank_among_peers: Optional[int] = Field(
+    rank_among_peers: Union[int, None] = Field(
         default=None,
         ge=1,
         description="Rank among peer supervisors",
     )
-    total_peers: Optional[int] = Field(
+    total_peers: Union[int, None] = Field(
         default=None,
         ge=1,
         description="Total number of peer supervisors",
@@ -726,7 +724,7 @@ class SupervisorDashboard(BaseSchema):
     )
     
     # Activity tracking
-    last_login: Optional[datetime] = Field(
+    last_login: Union[datetime, None] = Field(
         default=None,
         description="Last login timestamp",
     )

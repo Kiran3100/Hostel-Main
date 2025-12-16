@@ -6,14 +6,12 @@ Provides comprehensive feedback collection, rating analysis,
 and quality metrics for menu improvement.
 """
 
-from __future__ import annotations
-
 from datetime import date as Date, datetime
 from decimal import Decimal
-from typing import Dict, List, Optional
+from typing import Dict, List, Union
+from uuid import UUID
 
 from pydantic import Field, field_validator, model_validator, computed_field
-from uuid import UUID
 
 from app.schemas.common.base import BaseCreateSchema, BaseResponseSchema, BaseSchema
 from app.schemas.common.enums import MealType
@@ -60,44 +58,44 @@ class FeedbackRequest(BaseCreateSchema):
     )
     
     # Detailed feedback
-    comments: Optional[str] = Field(
+    comments: Union[str, None] = Field(
         None,
         max_length=1000,
         description="Detailed comments and feedback",
     )
     
     # Aspect-specific ratings
-    taste_rating: Optional[int] = Field(
+    taste_rating: Union[int, None] = Field(
         None,
         ge=1,
         le=5,
         description="Taste rating (1-5)",
     )
-    quantity_rating: Optional[int] = Field(
+    quantity_rating: Union[int, None] = Field(
         None,
         ge=1,
         le=5,
         description="Portion size rating (1-5)",
     )
-    quality_rating: Optional[int] = Field(
+    quality_rating: Union[int, None] = Field(
         None,
         ge=1,
         le=5,
         description="Food quality rating (1-5)",
     )
-    hygiene_rating: Optional[int] = Field(
+    hygiene_rating: Union[int, None] = Field(
         None,
         ge=1,
         le=5,
         description="Hygiene and cleanliness rating (1-5)",
     )
-    presentation_rating: Optional[int] = Field(
+    presentation_rating: Union[int, None] = Field(
         None,
         ge=1,
         le=5,
         description="Food presentation rating (1-5)",
     )
-    service_rating: Optional[int] = Field(
+    service_rating: Union[int, None] = Field(
         None,
         ge=1,
         le=5,
@@ -117,21 +115,21 @@ class FeedbackRequest(BaseCreateSchema):
     )
     
     # Suggestions
-    improvement_suggestions: Optional[str] = Field(
+    improvement_suggestions: Union[str, None] = Field(
         None,
         max_length=500,
         description="Suggestions for improvement",
     )
     
     # Would recommend
-    would_recommend: Optional[bool] = Field(
+    would_recommend: Union[bool, None] = Field(
         None,
         description="Would recommend this menu to others",
     )
 
     @field_validator("comments", "improvement_suggestions", mode="before")
     @classmethod
-    def validate_text_fields(cls, v: Optional[str]) -> Optional[str]:
+    def validate_text_fields(cls, v: Union[str, None]) -> Union[str, None]:
         """Validate and normalize text fields."""
         if v is not None:
             v = v.strip()
@@ -214,7 +212,7 @@ class FeedbackResponse(BaseResponseSchema):
         le=5,
         description="Overall rating",
     )
-    comments: Optional[str] = Field(
+    comments: Union[str, None] = Field(
         None,
         description="Feedback comments",
     )
@@ -250,7 +248,7 @@ class ItemRating(BaseSchema):
         ...,
         description="Menu item name",
     )
-    item_category: Optional[str] = Field(
+    item_category: Union[str, None] = Field(
         None,
         description="Item category",
     )
@@ -281,7 +279,7 @@ class ItemRating(BaseSchema):
         le=100,
         description="Popularity score (0-100)",
     )
-    last_served: Optional[Date] = Field(
+    last_served: Union[Date, None] = Field(
         None,
         description="Last Date item was served",
     )
@@ -355,7 +353,7 @@ class RatingsSummary(BaseSchema):
         le=5,
         description="Overall average rating",
     )
-    median_rating: Optional[Decimal] = Field(
+    median_rating: Union[Decimal, None] = Field(
         None,
         ge=0,
         le=5,
@@ -363,7 +361,7 @@ class RatingsSummary(BaseSchema):
     )
     
     # Meal-specific ratings
-    breakfast_rating: Optional[Decimal] = Field(
+    breakfast_rating: Union[Decimal, None] = Field(
         None,
         ge=0,
         le=5,
@@ -375,7 +373,7 @@ class RatingsSummary(BaseSchema):
         description="Breakfast feedback count",
     )
     
-    lunch_rating: Optional[Decimal] = Field(
+    lunch_rating: Union[Decimal, None] = Field(
         None,
         ge=0,
         le=5,
@@ -387,7 +385,7 @@ class RatingsSummary(BaseSchema):
         description="Lunch feedback count",
     )
     
-    snacks_rating: Optional[Decimal] = Field(
+    snacks_rating: Union[Decimal, None] = Field(
         None,
         ge=0,
         le=5,
@@ -399,7 +397,7 @@ class RatingsSummary(BaseSchema):
         description="Snacks feedback count",
     )
     
-    dinner_rating: Optional[Decimal] = Field(
+    dinner_rating: Union[Decimal, None] = Field(
         None,
         ge=0,
         le=5,
@@ -493,7 +491,7 @@ class RatingsSummary(BaseSchema):
         mode="after"
     )
     @classmethod
-    def round_decimals(cls, v: Optional[Decimal]) -> Optional[Decimal]:
+    def round_decimals(cls, v: Union[Decimal, None]) -> Union[Decimal, None]:
         """Round decimal values to 2 decimal places."""
         if v is not None:
             return v.quantize(Decimal("0.01"))
@@ -643,7 +641,7 @@ class QualityMetrics(BaseSchema):
         pattern=r"^(improving|declining|stable)$",
         description="Rating trend direction",
     )
-    trend_percentage: Optional[Decimal] = Field(
+    trend_percentage: Union[Decimal, None] = Field(
         None,
         description="Trend change percentage",
     )
@@ -670,21 +668,21 @@ class QualityMetrics(BaseSchema):
         default_factory=dict,
         description="Average rating by day of week",
     )
-    best_day: Optional[str] = Field(
+    best_day: Union[str, None] = Field(
         None,
         description="Day with highest average rating",
     )
-    worst_day: Optional[str] = Field(
+    worst_day: Union[str, None] = Field(
         None,
         description="Day with lowest average rating",
     )
     
     # Meal analysis
-    best_meal_type: Optional[str] = Field(
+    best_meal_type: Union[str, None] = Field(
         None,
         description="Meal type with highest rating",
     )
-    worst_meal_type: Optional[str] = Field(
+    worst_meal_type: Union[str, None] = Field(
         None,
         description="Meal type with lowest rating",
     )
@@ -709,7 +707,7 @@ class QualityMetrics(BaseSchema):
         mode="after"
     )
     @classmethod
-    def round_decimals(cls, v: Optional[Decimal]) -> Optional[Decimal]:
+    def round_decimals(cls, v: Union[Decimal, None]) -> Union[Decimal, None]:
         """Round decimal values to 2 decimal places."""
         if v is not None:
             return v.quantize(Decimal("0.01"))

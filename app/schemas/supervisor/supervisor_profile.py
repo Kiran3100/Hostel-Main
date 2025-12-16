@@ -6,11 +6,9 @@ Provides comprehensive profile management with employment history,
 performance summaries, and personal preferences.
 """
 
-from __future__ import annotations
-
 from datetime import date as Date, datetime
 from decimal import Decimal
-from typing import List, Optional
+from typing import List, Union
 
 from pydantic import Field, field_validator, computed_field
 
@@ -30,17 +28,17 @@ __all__ = [
 class SupervisorEmployment(BaseSchema):
     """Detailed supervisor employment information."""
     
-    employee_id: Optional[str] = Field(
+    employee_id: Union[str, None] = Field(
         default=None,
         description="Employee/Staff ID",
     )
     join_date: Date = Field(..., description="Joining Date")
     employment_type: EmploymentType = Field(..., description="Employment type")
-    shift_timing: Optional[str] = Field(
+    shift_timing: Union[str, None] = Field(
         default=None,
         description="Shift timing or working hours",
     )
-    designation: Optional[str] = Field(
+    designation: Union[str, None] = Field(
         default=None,
         description="Job designation/title",
     )
@@ -50,25 +48,25 @@ class SupervisorEmployment(BaseSchema):
     is_active: bool = Field(..., description="Active employment status")
     
     # Contract details
-    contract_start_date: Optional[Date] = Field(
+    contract_start_date: Union[Date, None] = Field(
         default=None,
         description="Contract start Date (for contract employees)",
     )
-    contract_end_date: Optional[Date] = Field(
+    contract_end_date: Union[Date, None] = Field(
         default=None,
         description="Contract end Date (for contract employees)",
     )
     
     # Termination details (if applicable)
-    termination_date: Optional[Date] = Field(
+    termination_date: Union[Date, None] = Field(
         default=None,
         description="Termination Date",
     )
-    termination_reason: Optional[str] = Field(
+    termination_reason: Union[str, None] = Field(
         default=None,
         description="Termination reason",
     )
-    eligible_for_rehire: Optional[bool] = Field(
+    eligible_for_rehire: Union[bool, None] = Field(
         default=None,
         description="Eligible for rehire",
     )
@@ -79,12 +77,12 @@ class SupervisorEmployment(BaseSchema):
     assigned_date: Date = Field(..., description="Assignment Date")
     
     # Compensation (admin view only)
-    salary: Optional[Decimal] = Field(
+    salary: Union[Decimal, None] = Field(
         default=None,
         ge=0,
         description="Monthly salary",
     )
-    last_salary_revision: Optional[Date] = Field(
+    last_salary_revision: Union[Date, None] = Field(
         default=None,
         description="Last salary revision Date",
     )
@@ -125,7 +123,7 @@ class SupervisorEmployment(BaseSchema):
 
     @computed_field
     @property
-    def contract_status(self) -> Optional[str]:
+    def contract_status(self) -> Union[str, None]:
         """Get contract status for contract employees."""
         if not self.is_contract_employee or not self.contract_end_date:
             return None
@@ -208,19 +206,19 @@ class PerformanceSummary(BaseSchema):
     )
     
     # Overall ratings
-    performance_rating: Optional[Decimal] = Field(
+    performance_rating: Union[Decimal, None] = Field(
         default=None,
         ge=0,
         le=5,
         description="Latest performance rating (1-5 scale)",
     )
-    last_performance_review: Optional[Date] = Field(
+    last_performance_review: Union[Date, None] = Field(
         default=None,
         description="Last performance review Date",
     )
     
     # Student feedback
-    student_satisfaction_score: Optional[Decimal] = Field(
+    student_satisfaction_score: Union[Decimal, None] = Field(
         default=None,
         ge=0,
         le=5,
@@ -273,11 +271,11 @@ class EmploymentHistory(BaseSchema):
     hostel_id: str = Field(..., description="Hostel ID")
     hostel_name: str = Field(..., description="Hostel name")
     start_date: Date = Field(..., description="Assignment start Date")
-    end_date: Optional[Date] = Field(
+    end_date: Union[Date, None] = Field(
         default=None,
         description="Assignment end Date (null if current)",
     )
-    designation: Optional[str] = Field(
+    designation: Union[str, None] = Field(
         default=None,
         description="Designation during this period",
     )
@@ -285,11 +283,11 @@ class EmploymentHistory(BaseSchema):
         ...,
         description="Employment type during this period",
     )
-    reason_for_change: Optional[str] = Field(
+    reason_for_change: Union[str, None] = Field(
         default=None,
         description="Reason for assignment change/end",
     )
-    performance_rating: Optional[Decimal] = Field(
+    performance_rating: Union[Decimal, None] = Field(
         default=None,
         ge=0,
         le=5,
@@ -370,12 +368,12 @@ class SupervisorPreferences(BaseSchema):
     )
     
     # Working hours
-    work_start_time: Optional[str] = Field(
+    work_start_time: Union[str, None] = Field(
         default=None,
         pattern=r"^([01]?[0-9]|2[0-3]):[0-5][0-9]$",
         description="Work start time (HH:MM)",
     )
-    work_end_time: Optional[str] = Field(
+    work_end_time: Union[str, None] = Field(
         default=None,
         pattern=r"^([01]?[0-9]|2[0-3]):[0-5][0-9]$",
         description="Work end time (HH:MM)",
@@ -392,7 +390,7 @@ class SupervisorProfile(BaseSchema):
     full_name: str = Field(..., description="Full name")
     email: str = Field(..., description="Email address")
     phone: str = Field(..., description="Phone number")
-    profile_image_url: Optional[str] = Field(
+    profile_image_url: Union[str, None] = Field(
         default=None,
         description="Profile image URL",
     )
@@ -432,7 +430,7 @@ class SupervisorProfile(BaseSchema):
     )
     
     # Activity tracking
-    last_login: Optional[datetime] = Field(
+    last_login: Union[datetime, None] = Field(
         default=None,
         description="Last login timestamp",
     )
@@ -441,7 +439,7 @@ class SupervisorProfile(BaseSchema):
         ge=0,
         description="Total login count",
     )
-    last_activity: Optional[datetime] = Field(
+    last_activity: Union[datetime, None] = Field(
         default=None,
         description="Last activity timestamp",
     )
@@ -493,37 +491,37 @@ class SupervisorProfileUpdate(BaseUpdateSchema):
     """Update supervisor profile (supervisor can update own profile)."""
     
     # Contact updates (may require admin approval)
-    phone: Optional[str] = Field(
+    phone: Union[str, None] = Field(
         default=None,
         pattern=r"^\+?[1-9]\d{9,14}$",
         description="Phone number",
     )
     
     # Preferences updates
-    preferences: Optional[SupervisorPreferences] = Field(
+    preferences: Union[SupervisorPreferences, None] = Field(
         default=None,
         description="Updated preferences",
     )
     
     # Emergency contact
-    emergency_contact_name: Optional[str] = Field(
+    emergency_contact_name: Union[str, None] = Field(
         default=None,
         max_length=255,
         description="Emergency contact name",
     )
-    emergency_contact_phone: Optional[str] = Field(
+    emergency_contact_phone: Union[str, None] = Field(
         default=None,
         pattern=r"^\+?[1-9]\d{9,14}$",
         description="Emergency contact phone",
     )
-    emergency_contact_relation: Optional[str] = Field(
+    emergency_contact_relation: Union[str, None] = Field(
         default=None,
         max_length=100,
         description="Emergency contact relation",
     )
     
     # Personal notes
-    notes: Optional[str] = Field(
+    notes: Union[str, None] = Field(
         default=None,
         max_length=1000,
         description="Personal notes",
@@ -531,7 +529,7 @@ class SupervisorProfileUpdate(BaseUpdateSchema):
 
     @field_validator("phone", "emergency_contact_phone")
     @classmethod
-    def normalize_phone(cls, v: Optional[str]) -> Optional[str]:
+    def normalize_phone(cls, v: Union[str, None]) -> Union[str, None]:
         """Normalize phone numbers."""
         if v is not None:
             return v.replace(" ", "").replace("-", "").strip()

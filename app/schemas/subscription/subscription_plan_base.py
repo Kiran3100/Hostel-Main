@@ -5,10 +5,8 @@ Defines the structure for subscription plans including pricing,
 features, limits, and configuration options.
 """
 
-from __future__ import annotations
-
 from decimal import Decimal
-from typing import Any, Dict, List, Optional, Annotated
+from typing import Any, Dict, List, Union, Annotated
 
 from pydantic import Field, field_validator, model_validator, computed_field, ConfigDict
 
@@ -40,7 +38,7 @@ class PlanFeatureConfig(BaseSchema):
     label: str = Field(..., description="Human-readable feature label")
     value: Any = Field(..., description="Feature value")
     enabled: bool = Field(default=True, description="Feature enabled status")
-    description: Optional[str] = Field(
+    description: Union[str, None] = Field(
         None, description="Feature description"
     )
 
@@ -71,12 +69,12 @@ class SubscriptionPlanBase(BaseSchema):
         ..., description="Plan tier/type"
     )
 
-    description: Optional[str] = Field(
+    description: Union[str, None] = Field(
         None,
         max_length=1000,
         description="Plan description",
     )
-    short_description: Optional[str] = Field(
+    short_description: Union[str, None] = Field(
         None,
         max_length=200,
         description="Short description for cards/listings",
@@ -108,22 +106,22 @@ class SubscriptionPlanBase(BaseSchema):
     )
 
     # Usage limits
-    max_hostels: Optional[int] = Field(
+    max_hostels: Union[int, None] = Field(
         None,
         ge=1,
         description="Maximum number of hostels (None = unlimited)",
     )
-    max_rooms_per_hostel: Optional[int] = Field(
+    max_rooms_per_hostel: Union[int, None] = Field(
         None,
         ge=1,
         description="Maximum rooms per hostel (None = unlimited)",
     )
-    max_students: Optional[int] = Field(
+    max_students: Union[int, None] = Field(
         None,
         ge=1,
         description="Maximum total students (None = unlimited)",
     )
-    max_admins: Optional[int] = Field(
+    max_admins: Union[int, None] = Field(
         None,
         ge=1,
         description="Maximum admin users (None = unlimited)",
@@ -168,13 +166,15 @@ class SubscriptionPlanBase(BaseSchema):
         """Normalize plan name to lowercase."""
         return v.lower().strip()
 
-    @computed_field
+    @computed_field  # type: ignore[misc]
+    @property
     def yearly_savings(self) -> Decimal:
         """Calculate yearly savings compared to monthly billing."""
         monthly_yearly = self.price_monthly * 12
         return (monthly_yearly - self.price_yearly).quantize(Decimal("0.01"))
 
-    @computed_field
+    @computed_field  # type: ignore[misc]
+    @property
     def yearly_discount_percent(self) -> Decimal:
         """Calculate yearly discount percentage."""
         if self.price_monthly == Decimal("0"):
@@ -197,7 +197,7 @@ class PlanCreate(SubscriptionPlanBase, BaseCreateSchema):
     model_config = ConfigDict(populate_by_name=True)
 
     # Additional creation-specific fields
-    created_by: Optional[str] = Field(
+    created_by: Union[str, None] = Field(
         None, description="Admin user who created the plan"
     )
 
@@ -218,35 +218,35 @@ class PlanUpdate(BaseUpdateSchema):
     """
     model_config = ConfigDict(populate_by_name=True)
 
-    display_name: Optional[str] = Field(
+    display_name: Union[str, None] = Field(
         None,
         min_length=3,
         max_length=100,
         description="Updated display name",
     )
-    description: Optional[str] = Field(
+    description: Union[str, None] = Field(
         None,
         max_length=1000,
         description="Updated description",
     )
-    short_description: Optional[str] = Field(
+    short_description: Union[str, None] = Field(
         None,
         max_length=200,
         description="Updated short description",
     )
 
     # Pricing updates
-    price_monthly: Optional[Annotated[Decimal, Field(
+    price_monthly: Union[Annotated[Decimal, Field(
         None,
         ge=Decimal("0"),
         description="Updated monthly price",
-    )]]
-    price_yearly: Optional[Annotated[Decimal, Field(
+    )], None]
+    price_yearly: Union[Annotated[Decimal, Field(
         None,
         ge=Decimal("0"),
         description="Updated yearly price",
-    )]]
-    currency: Optional[str] = Field(
+    )], None]
+    currency: Union[str, None] = Field(
         None,
         min_length=3,
         max_length=3,
@@ -255,24 +255,24 @@ class PlanUpdate(BaseUpdateSchema):
     )
 
     # Feature updates
-    features: Optional[Dict[str, Any]] = Field(
+    features: Union[Dict[str, Any], None] = Field(
         None, description="Updated features"
     )
 
     # Limit updates
-    max_hostels: Optional[int] = Field(None, ge=1)
-    max_rooms_per_hostel: Optional[int] = Field(None, ge=1)
-    max_students: Optional[int] = Field(None, ge=1)
-    max_admins: Optional[int] = Field(None, ge=1)
+    max_hostels: Union[int, None] = Field(None, ge=1)
+    max_rooms_per_hostel: Union[int, None] = Field(None, ge=1)
+    max_students: Union[int, None] = Field(None, ge=1)
+    max_admins: Union[int, None] = Field(None, ge=1)
 
     # Status updates
-    is_active: Optional[bool] = Field(None)
-    is_public: Optional[bool] = Field(None)
-    is_featured: Optional[bool] = Field(None)
-    sort_order: Optional[int] = Field(None)
+    is_active: Union[bool, None] = Field(None)
+    is_public: Union[bool, None] = Field(None)
+    is_featured: Union[bool, None] = Field(None)
+    sort_order: Union[int, None] = Field(None)
 
     # Trial updates
-    trial_days: Optional[int] = Field(None, ge=0, le=90)
+    trial_days: Union[int, None] = Field(None, ge=0, le=90)
 
     @model_validator(mode="after")
     def validate_pricing_update(self) -> "PlanUpdate":

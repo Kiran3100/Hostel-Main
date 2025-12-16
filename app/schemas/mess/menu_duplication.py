@@ -6,14 +6,12 @@ Provides efficient menu replication capabilities for
 recurring patterns and multi-hostel deployment.
 """
 
-from __future__ import annotations
-
 from datetime import date as Date, timedelta
 from decimal import Decimal
-from typing import Dict, List, Optional
+from typing import Dict, List, Union
+from uuid import UUID
 
 from pydantic import Field, field_validator, model_validator, computed_field
-from uuid import UUID
 
 from app.schemas.common.base import BaseCreateSchema, BaseSchema
 
@@ -70,7 +68,7 @@ class DuplicateMenuRequest(BaseCreateSchema):
         False,
         description="Allow item modifications during duplication",
     )
-    modifications: Optional[Dict[str, List[str]]] = Field(
+    modifications: Union[Dict[str, List[str]], None] = Field(
         None,
         description="Meal-wise item modifications {meal_type: [items]}",
     )
@@ -153,29 +151,29 @@ class BulkMenuCreate(BaseCreateSchema):
     )
     
     # Template-based
-    template_id: Optional[UUID] = Field(
+    template_id: Union[UUID, None] = Field(
         None,
         description="Template ID (if source_type is 'template')",
     )
     
     # Existing menu-based
-    source_menu_id: Optional[UUID] = Field(
+    source_menu_id: Union[UUID, None] = Field(
         None,
         description="Source menu ID (if source_type is 'existing_menu')",
     )
     
     # Weekly pattern-based
-    weekly_pattern: Optional[Dict[str, Dict[str, List[str]]]] = Field(
+    weekly_pattern: Union[Dict[str, Dict[str, List[str]]], None] = Field(
         None,
         description="Day of week -> meal_type -> items mapping",
     )
     
     # Daily rotation
-    rotation_items: Optional[List[Dict[str, List[str]]]] = Field(
+    rotation_items: Union[List[Dict[str, List[str]]], None] = Field(
         None,
         description="List of daily menus to rotate through",
     )
-    rotation_interval_days: Optional[int] = Field(
+    rotation_interval_days: Union[int, None] = Field(
         None,
         ge=1,
         le=30,
@@ -383,7 +381,7 @@ class CrossHostelDuplication(BaseCreateSchema):
         default=True,
         description="Allow substituting unavailable items",
     )
-    substitution_rules: Optional[Dict[str, str]] = Field(
+    substitution_rules: Union[Dict[str, str], None] = Field(
         None,
         description="Item substitution mapping {original: substitute}",
     )
@@ -451,7 +449,7 @@ class MenuCloneConfig(BaseSchema):
         default=False,
         description="Remove high-cost items",
     )
-    cost_threshold: Optional[Decimal] = Field(
+    cost_threshold: Union[Decimal, None] = Field(
         None,
         ge=0,
         description="Cost threshold for expensive items",
@@ -462,7 +460,7 @@ class MenuCloneConfig(BaseSchema):
         default=False,
         description="Automatically adjust portion sizes",
     )
-    target_cost_per_person: Optional[Decimal] = Field(
+    target_cost_per_person: Union[Decimal, None] = Field(
         None,
         ge=0,
         description="Target cost per person for adjustments",
@@ -473,7 +471,7 @@ class MenuCloneConfig(BaseSchema):
         default=False,
         description="Add '(Copy)' suffix to cloned menu names",
     )
-    custom_suffix: Optional[str] = Field(
+    custom_suffix: Union[str, None] = Field(
         None,
         max_length=50,
         description="Custom suffix for cloned menus",
@@ -481,7 +479,7 @@ class MenuCloneConfig(BaseSchema):
 
     @field_validator("cost_threshold", "target_cost_per_person", mode="after")
     @classmethod
-    def round_decimals(cls, v: Optional[Decimal]) -> Optional[Decimal]:
+    def round_decimals(cls, v: Union[Decimal, None]) -> Union[Decimal, None]:
         """Round decimal values to 2 decimal places."""
         if v is not None:
             return v.quantize(Decimal("0.01"))

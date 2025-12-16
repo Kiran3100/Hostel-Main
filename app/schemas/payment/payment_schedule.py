@@ -6,11 +6,9 @@ This module defines schemas for managing payment schedules including
 creation, updates, generation, and suspension of scheduled payments.
 """
 
-from __future__ import annotations
-
 from datetime import date as Date, timedelta
 from decimal import Decimal
-from typing import List, Optional
+from typing import List, Union
 from uuid import UUID
 
 from pydantic import Field, field_validator, model_validator, computed_field
@@ -74,7 +72,7 @@ class PaymentSchedule(BaseResponseSchema):
         ...,
         description="Schedule start Date",
     )
-    end_date: Optional[Date] = Field(
+    end_date: Union[Date, None] = Field(
         None,
         description="Schedule end Date (null for indefinite)",
     )
@@ -144,7 +142,7 @@ class ScheduleCreate(BaseCreateSchema):
         ...,
         description="When schedule should start",
     )
-    end_date: Optional[Date] = Field(
+    end_date: Union[Date, None] = Field(
         None,
         description="When schedule should end (null for indefinite)",
     )
@@ -237,31 +235,31 @@ class ScheduleUpdate(BaseUpdateSchema):
     Allows modification of schedule parameters.
     """
 
-    amount: Optional[Decimal] = Field(
+    amount: Union[Decimal, None] = Field(
         None,
         ge=0,
         description="Update amount per period",
     )
-    next_due_date: Optional[Date] = Field(
+    next_due_date: Union[Date, None] = Field(
         None,
         description="Update next due Date",
     )
-    end_date: Optional[Date] = Field(
+    end_date: Union[Date, None] = Field(
         None,
         description="Update end Date",
     )
-    auto_generate_invoice: Optional[bool] = Field(
+    auto_generate_invoice: Union[bool, None] = Field(
         None,
         description="Update auto-generation setting",
     )
-    is_active: Optional[bool] = Field(
+    is_active: Union[bool, None] = Field(
         None,
         description="Activate or deactivate schedule",
     )
 
     @field_validator("amount")
     @classmethod
-    def validate_amount(cls, v: Optional[Decimal]) -> Optional[Decimal]:
+    def validate_amount(cls, v: Union[Decimal, None]) -> Union[Decimal, None]:
         """Validate amount if provided."""
         if v is not None:
             if v <= 0:

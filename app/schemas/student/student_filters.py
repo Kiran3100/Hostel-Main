@@ -5,10 +5,8 @@ Provides comprehensive filtering, searching, sorting, and bulk operation
 schemas for student management.
 """
 
-from __future__ import annotations
-
 from datetime import date as Date
-from typing import List, Optional, Annotated
+from typing import List, Union
 
 from pydantic import Field, field_validator, model_validator, ConfigDict
 
@@ -38,7 +36,7 @@ class StudentFilterParams(BaseFilterSchema):
     )
 
     # Text search
-    search: Optional[str] = Field(
+    search: Union[str, None] = Field(
         default=None,
         min_length=1,
         max_length=255,
@@ -46,11 +44,11 @@ class StudentFilterParams(BaseFilterSchema):
     )
 
     # Hostel filter
-    hostel_id: Optional[str] = Field(
+    hostel_id: Union[str, None] = Field(
         default=None,
         description="Filter by single hostel ID",
     )
-    hostel_ids: Optional[List[str]] = Field(
+    hostel_ids: Union[List[str], None] = Field(
         default=None,
         min_length=1,
         max_length=10,
@@ -58,104 +56,104 @@ class StudentFilterParams(BaseFilterSchema):
     )
 
     # Room filter
-    room_id: Optional[str] = Field(
+    room_id: Union[str, None] = Field(
         default=None,
         description="Filter by specific room",
     )
-    room_number: Optional[str] = Field(
+    room_number: Union[str, None] = Field(
         default=None,
         description="Filter by room number",
     )
-    room_type: Optional[str] = Field(
+    room_type: Union[str, None] = Field(
         default=None,
         description="Filter by room type",
     )
-    floor_number: Optional[int] = Field(
+    floor_number: Union[int, None] = Field(
         default=None,
         ge=0,
         le=50,
         description="Filter by floor number",
     )
-    wing: Optional[str] = Field(
+    wing: Union[str, None] = Field(
         default=None,
         description="Filter by wing/block",
     )
 
     # Status filter
-    status: Optional[StudentStatus] = Field(
+    status: Union[StudentStatus, None] = Field(
         default=None,
         description="Filter by single status",
     )
-    statuses: Optional[List[StudentStatus]] = Field(
+    statuses: Union[List[StudentStatus], None] = Field(
         default=None,
         min_length=1,
         description="Filter by multiple statuses",
     )
-    is_active: Optional[bool] = Field(
+    is_active: Union[bool, None] = Field(
         default=None,
         description="Filter by active status",
     )
-    is_checked_in: Optional[bool] = Field(
+    is_checked_in: Union[bool, None] = Field(
         default=None,
         description="Filter by check-in status",
     )
 
     # Date filters
-    checked_in_after: Optional[Date] = Field(
+    checked_in_after: Union[Date, None] = Field(
         default=None,
         description="Checked in after this Date",
     )
-    checked_in_before: Optional[Date] = Field(
+    checked_in_before: Union[Date, None] = Field(
         default=None,
         description="Checked in before this Date",
     )
-    expected_checkout_after: Optional[Date] = Field(
+    expected_checkout_after: Union[Date, None] = Field(
         default=None,
         description="Expected checkout after this Date",
     )
-    expected_checkout_before: Optional[Date] = Field(
+    expected_checkout_before: Union[Date, None] = Field(
         default=None,
         description="Expected checkout before this Date",
     )
 
     # Financial filters
-    has_overdue_payments: Optional[bool] = Field(
+    has_overdue_payments: Union[bool, None] = Field(
         default=None,
         description="Has overdue payments",
     )
-    has_advance_balance: Optional[bool] = Field(
+    has_advance_balance: Union[bool, None] = Field(
         default=None,
         description="Has advance payment balance",
     )
-    security_deposit_paid: Optional[bool] = Field(
+    security_deposit_paid: Union[bool, None] = Field(
         default=None,
         description="Security deposit paid status",
     )
 
     # Meal filter
-    mess_subscribed: Optional[bool] = Field(
+    mess_subscribed: Union[bool, None] = Field(
         default=None,
         description="Subscribed to mess facility",
     )
 
     # Institutional filters
-    institution_name: Optional[str] = Field(
+    institution_name: Union[str, None] = Field(
         default=None,
         description="Filter by institution name (partial match)",
     )
-    course: Optional[str] = Field(
+    course: Union[str, None] = Field(
         default=None,
         description="Filter by course (partial match)",
     )
 
     # Company filter
-    company_name: Optional[str] = Field(
+    company_name: Union[str, None] = Field(
         default=None,
         description="Filter by company name (partial match)",
     )
 
     # Gender filter
-    gender: Optional[str] = Field(
+    gender: Union[str, None] = Field(
         default=None,
         pattern=r"^(male|female|other)$",
         description="Filter by gender",
@@ -163,7 +161,7 @@ class StudentFilterParams(BaseFilterSchema):
 
     @field_validator("hostel_ids")
     @classmethod
-    def validate_unique_hostel_ids(cls, v: Optional[List[str]]) -> Optional[List[str]]:
+    def validate_unique_hostel_ids(cls, v: Union[List[str], None]) -> Union[List[str], None]:
         """Ensure hostel IDs are unique."""
         if v is not None and len(v) != len(set(v)):
             raise ValueError("Hostel IDs must be unique")
@@ -172,8 +170,8 @@ class StudentFilterParams(BaseFilterSchema):
     @field_validator("statuses")
     @classmethod
     def validate_unique_statuses(
-        cls, v: Optional[List[StudentStatus]]
-    ) -> Optional[List[StudentStatus]]:
+        cls, v: Union[List[StudentStatus], None]
+    ) -> Union[List[StudentStatus], None]:
         """Ensure statuses are unique."""
         if v is not None and len(v) != len(set(v)):
             raise ValueError("Statuses must be unique")
@@ -198,7 +196,7 @@ class StudentSearchRequest(BaseFilterSchema):
         max_length=255,
         description="Search query",
     )
-    hostel_id: Optional[str] = Field(
+    hostel_id: Union[str, None] = Field(
         default=None,
         description="Limit search to specific hostel",
     )
@@ -234,7 +232,7 @@ class StudentSearchRequest(BaseFilterSchema):
     )
 
     # Additional filters
-    status: Optional[StudentStatus] = Field(
+    status: Union[StudentStatus, None] = Field(
         default=None,
         description="Filter by status",
     )
@@ -295,54 +293,54 @@ class AdvancedStudentFilters(BaseFilterSchema):
     )
 
     # Attendance filters
-    min_attendance_percentage: Optional[float] = Field(
+    min_attendance_percentage: Union[float, None] = Field(
         default=None,
         ge=0,
         le=100,
         description="Minimum attendance percentage",
     )
-    max_attendance_percentage: Optional[float] = Field(
+    max_attendance_percentage: Union[float, None] = Field(
         default=None,
         ge=0,
         le=100,
         description="Maximum attendance percentage",
     )
-    attendance_below_required: Optional[bool] = Field(
+    attendance_below_required: Union[bool, None] = Field(
         default=None,
         description="Attendance below minimum requirement",
     )
 
     # Payment behavior
-    payment_history: Optional[str] = Field(
+    payment_history: Union[str, None] = Field(
         default=None,
         pattern=r"^(good|irregular|poor)$",
         description="Payment history pattern",
     )
-    has_pending_complaints: Optional[bool] = Field(
+    has_pending_complaints: Union[bool, None] = Field(
         default=None,
         description="Has open complaints",
     )
 
     # Duration filters
-    min_stay_days: Optional[int] = Field(
+    min_stay_days: Union[int, None] = Field(
         default=None,
         ge=0,
         description="Minimum stay duration in days",
     )
-    max_stay_days: Optional[int] = Field(
+    max_stay_days: Union[int, None] = Field(
         default=None,
         ge=0,
         description="Maximum stay duration in days",
     )
 
     # Age filters
-    min_age: Optional[int] = Field(
+    min_age: Union[int, None] = Field(
         default=None,
         ge=16,
         le=100,
         description="Minimum age",
     )
-    max_age: Optional[int] = Field(
+    max_age: Union[int, None] = Field(
         default=None,
         ge=16,
         le=100,
@@ -350,14 +348,14 @@ class AdvancedStudentFilters(BaseFilterSchema):
     )
 
     # Document verification
-    documents_verified: Optional[bool] = Field(
+    documents_verified: Union[bool, None] = Field(
         default=None,
         description="All documents verified",
     )
 
     @field_validator("max_attendance_percentage")
     @classmethod
-    def validate_attendance_range(cls, v: Optional[float], info) -> Optional[float]:
+    def validate_attendance_range(cls, v: Union[float, None], info) -> Union[float, None]:
         """Validate attendance percentage range."""
         if v is not None:
             min_att = info.data.get("min_attendance_percentage")
@@ -380,11 +378,11 @@ class StudentExportRequest(BaseFilterSchema):
         validate_assignment=True,
     )
 
-    hostel_id: Optional[str] = Field(
+    hostel_id: Union[str, None] = Field(
         default=None,
         description="Export students from specific hostel",
     )
-    filters: Optional[StudentFilterParams] = Field(
+    filters: Union[StudentFilterParams, None] = Field(
         default=None,
         description="Apply filters to export",
     )
@@ -464,26 +462,26 @@ class StudentBulkActionRequest(BaseCreateSchema):
     )
 
     # Action-specific parameters
-    new_status: Optional[StudentStatus] = Field(
+    new_status: Union[StudentStatus, None] = Field(
         default=None,
         description="New status (for change_status action)",
     )
-    notification_message: Optional[str] = Field(
+    notification_message: Union[str, None] = Field(
         default=None,
         max_length=1000,
         description="Notification message (for send_notification)",
     )
-    notification_title: Optional[str] = Field(
+    notification_title: Union[str, None] = Field(
         default=None,
         max_length=255,
         description="Notification title",
     )
-    new_rent_amount: Optional[float] = Field(
+    new_rent_amount: Union[float, None] = Field(
         default=None,
         ge=0,
         description="New rent amount (for update_rent)",
     )
-    effective_date: Optional[Date] = Field(
+    effective_date: Union[Date, None] = Field(
         default=None,
         description="Effective Date for changes",
     )

@@ -7,12 +7,9 @@ room preferences, budget, location, amenities, dietary preferences,
 and saved search criteria.
 """
 
-from __future__ import annotations
-
-from datetime import datetime
-from datetime import date as Date
+from datetime import datetime, date as Date
 from decimal import Decimal
-from typing import Annotated, Dict, List, Optional
+from typing import Annotated, Dict, List, Union
 from uuid import UUID
 
 from pydantic import BaseModel, Field, field_validator, model_validator
@@ -42,21 +39,21 @@ class VisitorPreferences(BaseSchema):
     """
 
     # Room Preferences
-    preferred_room_type: Optional[RoomType] = Field(
+    preferred_room_type: Union[RoomType, None] = Field(
         default=None,
         description="Preferred room type (single, double, dormitory, etc.)",
     )
-    preferred_hostel_type: Optional[HostelType] = Field(
+    preferred_hostel_type: Union[HostelType, None] = Field(
         default=None,
         description="Preferred hostel type (boys, girls, co-ed)",
     )
 
     # Budget Constraints - Updated for Pydantic v2
-    budget_min: Optional[Annotated[Decimal, Field(ge=0, decimal_places=2)]] = Field(
+    budget_min: Union[Annotated[Decimal, Field(ge=0, decimal_places=2)], None] = Field(
         default=None,
         description="Minimum monthly budget in local currency",
     )
-    budget_max: Optional[Annotated[Decimal, Field(ge=0, decimal_places=2)]] = Field(
+    budget_max: Union[Annotated[Decimal, Field(ge=0, decimal_places=2)], None] = Field(
         default=None,
         description="Maximum monthly budget in local currency",
     )
@@ -72,7 +69,7 @@ class VisitorPreferences(BaseSchema):
         max_length=30,
         description="Preferred areas/localities within cities",
     )
-    max_distance_from_work_km: Optional[Annotated[Decimal, Field(ge=0, le=50)]] = Field(
+    max_distance_from_work_km: Union[Annotated[Decimal, Field(ge=0, le=50)], None] = Field(
         default=None,
         description="Maximum acceptable distance from workplace in km",
     )
@@ -108,17 +105,17 @@ class VisitorPreferences(BaseSchema):
     )
 
     # Dietary Preferences
-    dietary_preference: Optional[DietaryPreference] = Field(
+    dietary_preference: Union[DietaryPreference, None] = Field(
         default=None,
         description="Dietary preference (vegetarian, non-vegetarian, vegan, jain)",
     )
 
     # Move-in Details
-    earliest_move_in_date: Optional[Date] = Field(
+    earliest_move_in_date: Union[Date, None] = Field(
         default=None,
-        description="Earliest date willing to move in",
+        description="Earliest Date willing to move in",
     )
-    preferred_lease_duration_months: Optional[int] = Field(
+    preferred_lease_duration_months: Union[int, None] = Field(
         default=None,
         ge=1,
         le=24,
@@ -155,7 +152,7 @@ class VisitorPreferences(BaseSchema):
 
     @field_validator("budget_min", "budget_max")
     @classmethod
-    def validate_budget_positive(cls, v: Optional[Decimal]) -> Optional[Decimal]:
+    def validate_budget_positive(cls, v: Union[Decimal, None]) -> Union[Decimal, None]:
         """Ensure budget values are positive."""
         if v is not None and v < 0:
             raise ValueError("Budget must be a positive value")
@@ -177,10 +174,10 @@ class VisitorPreferences(BaseSchema):
 
     @field_validator("earliest_move_in_date")
     @classmethod
-    def validate_move_in_date(cls, v: Optional[Date]) -> Optional[Date]:
-        """Validate move-in date is not in the past."""
+    def validate_move_in_date(cls, v: Union[Date, None]) -> Union[Date, None]:
+        """Validate move-in Date is not in the past."""
         if v is not None and v < Date.today():
-            raise ValueError("Move-in date cannot be in the past")
+            raise ValueError("Move-in Date cannot be in the past")
         return v
 
     @field_validator("preferred_cities", "preferred_areas")
@@ -249,80 +246,80 @@ class PreferenceUpdate(BaseUpdateSchema):
     """
 
     # Room Preferences
-    preferred_room_type: Optional[RoomType] = Field(
+    preferred_room_type: Union[RoomType, None] = Field(
         default=None,
         description="Update preferred room type",
     )
-    preferred_hostel_type: Optional[HostelType] = Field(
+    preferred_hostel_type: Union[HostelType, None] = Field(
         default=None,
         description="Update preferred hostel type",
     )
 
     # Budget - Updated for Pydantic v2
-    budget_min: Optional[Annotated[Decimal, Field(ge=0, decimal_places=2)]] = Field(
+    budget_min: Union[Annotated[Decimal, Field(ge=0, decimal_places=2)], None] = Field(
         default=None,
         description="Update minimum budget",
     )
-    budget_max: Optional[Annotated[Decimal, Field(ge=0, decimal_places=2)]] = Field(
+    budget_max: Union[Annotated[Decimal, Field(ge=0, decimal_places=2)], None] = Field(
         default=None,
         description="Update maximum budget",
     )
 
     # Location
-    preferred_cities: Optional[List[str]] = Field(
+    preferred_cities: Union[List[str], None] = Field(
         default=None,
         description="Update preferred cities",
     )
-    preferred_areas: Optional[List[str]] = Field(
+    preferred_areas: Union[List[str], None] = Field(
         default=None,
         description="Update preferred areas",
     )
 
     # Amenities
-    required_amenities: Optional[List[str]] = Field(
+    required_amenities: Union[List[str], None] = Field(
         default=None,
         description="Update required amenities",
     )
-    preferred_amenities: Optional[List[str]] = Field(
+    preferred_amenities: Union[List[str], None] = Field(
         default=None,
         description="Update preferred amenities",
     )
 
     # Dietary
-    dietary_preference: Optional[DietaryPreference] = Field(
+    dietary_preference: Union[DietaryPreference, None] = Field(
         default=None,
         description="Update dietary preference",
     )
 
     # Notification Toggles
-    email_notifications: Optional[bool] = Field(
+    email_notifications: Union[bool, None] = Field(
         default=None,
         description="Update email notification setting",
     )
-    sms_notifications: Optional[bool] = Field(
+    sms_notifications: Union[bool, None] = Field(
         default=None,
         description="Update SMS notification setting",
     )
-    push_notifications: Optional[bool] = Field(
+    push_notifications: Union[bool, None] = Field(
         default=None,
         description="Update push notification setting",
     )
-    notify_on_price_drop: Optional[bool] = Field(
+    notify_on_price_drop: Union[bool, None] = Field(
         default=None,
         description="Update price drop alert setting",
     )
-    notify_on_availability: Optional[bool] = Field(
+    notify_on_availability: Union[bool, None] = Field(
         default=None,
         description="Update availability alert setting",
     )
-    notify_on_new_listings: Optional[bool] = Field(
+    notify_on_new_listings: Union[bool, None] = Field(
         default=None,
         description="Update new listings alert setting",
     )
 
     @field_validator("budget_min", "budget_max")
     @classmethod
-    def validate_budget_positive(cls, v: Optional[Decimal]) -> Optional[Decimal]:
+    def validate_budget_positive(cls, v: Union[Decimal, None]) -> Union[Decimal, None]:
         """Ensure budget values are positive if provided."""
         if v is not None and v < 0:
             raise ValueError("Budget must be a positive value")
@@ -369,11 +366,11 @@ class SearchPreferences(BaseSchema):
         max_length=5,
         description="Room types to include",
     )
-    min_price: Optional[Annotated[Decimal, Field(ge=0)]] = Field(
+    min_price: Union[Annotated[Decimal, Field(ge=0)], None] = Field(
         default=None,
         description="Minimum price filter",
     )
-    max_price: Optional[Annotated[Decimal, Field(ge=0)]] = Field(
+    max_price: Union[Annotated[Decimal, Field(ge=0)], None] = Field(
         default=None,
         description="Maximum price filter",
     )
@@ -492,7 +489,7 @@ class SavedSearch(BaseSchema):
         ...,
         description="When this search was saved",
     )
-    last_checked: Optional[datetime] = Field(
+    last_checked: Union[datetime, None] = Field(
         default=None,
         description="When this search was last executed",
     )

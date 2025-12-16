@@ -21,8 +21,6 @@ Example:
     )
 """
 
-from __future__ import annotations
-
 # Base schemas
 from app.schemas.review.review_base import (
     ReviewBase,

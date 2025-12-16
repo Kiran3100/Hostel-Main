@@ -6,12 +6,9 @@ This module defines schemas for visitor dashboard including saved hostels,
 booking history, recent activity, recommendations, and alerts.
 """
 
-from __future__ import annotations
-
-from datetime import datetime
-from datetime import date as Date
+from datetime import datetime, date as Date
 from decimal import Decimal
-from typing import Annotated, Dict, List, Optional
+from typing import Annotated, Dict, List, Union
 from uuid import UUID
 
 from pydantic import BaseModel, Field, computed_field, field_validator
@@ -68,7 +65,7 @@ class SavedHostelItem(BaseSchema):
         ge=0,
         description="Number of available beds",
     )
-    cover_image_url: Optional[str] = Field(
+    cover_image_url: Union[str, None] = Field(
         default=None,
         description="URL to cover image",
     )
@@ -78,7 +75,7 @@ class SavedHostelItem(BaseSchema):
         ...,
         description="When hostel was saved to favorites",
     )
-    notes: Optional[str] = Field(
+    notes: Union[str, None] = Field(
         default=None,
         max_length=500,
         description="Personal notes about this hostel",
@@ -97,20 +94,20 @@ class SavedHostelItem(BaseSchema):
         ...,
         description="Whether price has changed since saving",
     )
-    price_change_percentage: Optional[Decimal] = Field(
+    price_change_percentage: Union[Decimal, None] = Field(
         default=None,
         description="Percentage change in price (negative = drop, positive = increase)",
     )
 
-    @computed_field
+    @computed_field  # type: ignore[misc]
     @property
     def has_availability(self) -> bool:
         """Check if hostel has available beds."""
         return self.available_beds > 0
 
-    @computed_field
+    @computed_field  # type: ignore[misc]
     @property
-    def price_drop_amount(self) -> Optional[Decimal]:
+    def price_drop_amount(self) -> Union[Decimal, None]:
         """Calculate absolute price drop amount if applicable."""
         if self.price_changed and self.current_price < self.price_when_saved:
             return (self.price_when_saved - self.current_price).quantize(
@@ -118,7 +115,7 @@ class SavedHostelItem(BaseSchema):
             )
         return None
 
-    @computed_field
+    @computed_field  # type: ignore[misc]
     @property
     def is_good_deal(self) -> bool:
         """Determine if this is a good deal (price dropped or high rating with availability)."""
@@ -144,7 +141,7 @@ class SavedHostels(BaseSchema):
         description="List of saved hostel items",
     )
 
-    @computed_field
+    @computed_field  # type: ignore[misc]
     @property
     def hostels_with_price_drops(self) -> int:
         """Count hostels with price drops."""
@@ -154,7 +151,7 @@ class SavedHostels(BaseSchema):
             if h.price_changed and h.current_price < h.price_when_saved
         )
 
-    @computed_field
+    @computed_field  # type: ignore[misc]
     @property
     def hostels_with_availability(self) -> int:
         """Count hostels with available beds."""
@@ -230,7 +227,7 @@ class BookingHistoryItem(BaseSchema):
         description="Whether hostel can be reviewed",
     )
 
-    @computed_field
+    @computed_field  # type: ignore[misc]
     @property
     def check_out_date(self) -> Date:
         """Calculate check-out Date based on duration."""
@@ -238,13 +235,13 @@ class BookingHistoryItem(BaseSchema):
 
         return self.check_in_date + relativedelta(months=self.duration_months)
 
-    @computed_field
+    @computed_field  # type: ignore[misc]
     @property
     def days_until_checkin(self) -> int:
         """Calculate days until check-in."""
         return (self.check_in_date - Date.today()).days
 
-    @computed_field
+    @computed_field  # type: ignore[misc]
     @property
     def is_upcoming(self) -> bool:
         """Check if booking is upcoming."""
@@ -282,7 +279,7 @@ class BookingHistory(BaseSchema):
         description="List of booking items",
     )
 
-    @computed_field
+    @computed_field  # type: ignore[misc]
     @property
     def cancellation_rate(self) -> Decimal:
         """Calculate cancellation rate as percentage."""
@@ -292,7 +289,7 @@ class BookingHistory(BaseSchema):
             (self.cancelled_bookings / self.total_bookings) * 100
         ).quantize(Decimal("0.01"))
 
-    @computed_field
+    @computed_field  # type: ignore[misc]
     @property
     def completion_rate(self) -> Decimal:
         """Calculate completion rate as percentage."""
@@ -312,7 +309,7 @@ class RecentSearch(BaseSchema):
         ...,
         description="Unique search identifier",
     )
-    search_query: Optional[str] = Field(
+    search_query: Union[str, None] = Field(
         default=None,
         max_length=255,
         description="Search query text",
@@ -331,7 +328,7 @@ class RecentSearch(BaseSchema):
         description="When search was performed",
     )
 
-    @computed_field
+    @computed_field  # type: ignore[misc]
     @property
     def filters_count(self) -> int:
         """Count number of filters applied."""
@@ -363,7 +360,7 @@ class RecentlyViewedHostel(BaseSchema):
         ...,
         description="Average rating",
     )
-    cover_image_url: Optional[str] = Field(
+    cover_image_url: Union[str, None] = Field(
         default=None,
         description="Cover image URL",
     )
@@ -378,7 +375,7 @@ class RecentlyViewedHostel(BaseSchema):
         description="Number of times this hostel was viewed",
     )
 
-    @computed_field
+    @computed_field  # type: ignore[misc]
     @property
     def is_highly_viewed(self) -> bool:
         """Check if hostel has been viewed multiple times (interest indicator)."""
@@ -415,7 +412,7 @@ class RecommendedHostel(BaseSchema):
         ge=0,
         description="Available beds",
     )
-    cover_image_url: Optional[str] = Field(
+    cover_image_url: Union[str, None] = Field(
         default=None,
         description="Cover image URL",
     )
@@ -438,7 +435,7 @@ class RecommendedHostel(BaseSchema):
             raise ValueError("At least one match reason must be provided")
         return v
 
-    @computed_field
+    @computed_field  # type: ignore[misc]
     @property
     def is_excellent_match(self) -> bool:
         """Check if this is an excellent match (score >= 80)."""
@@ -485,7 +482,7 @@ class PriceDropAlert(BaseSchema):
         description="Whether alert has been read",
     )
 
-    @computed_field
+    @computed_field  # type: ignore[misc]
     @property
     def savings_amount(self) -> Decimal:
         """Calculate absolute savings amount."""
@@ -609,7 +606,7 @@ class VisitorDashboard(BaseSchema):
         description="Total bookings made",
     )
 
-    @computed_field
+    @computed_field  # type: ignore[misc]
     @property
     def unread_alerts_count(self) -> int:
         """Count total unread alerts."""
@@ -619,7 +616,7 @@ class VisitorDashboard(BaseSchema):
         )
         return price_alerts + availability_alerts
 
-    @computed_field
+    @computed_field  # type: ignore[misc]
     @property
     def has_activity(self) -> bool:
         """Check if visitor has any activity."""

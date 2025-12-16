@@ -6,11 +6,9 @@ This module defines response schemas for visitor data returned by API endpoints,
 including profile information, statistics, and detailed visitor information.
 """
 
-from __future__ import annotations
-
 from datetime import datetime
 from decimal import Decimal
-from typing import Annotated, List, Optional
+from typing import Annotated, List, Union
 from uuid import UUID
 
 from pydantic import BaseModel, Field, computed_field
@@ -55,15 +53,15 @@ class VisitorResponse(BaseResponseSchema):
     )
 
     # Preferences - Updated for Pydantic v2
-    preferred_room_type: Optional[RoomType] = Field(
+    preferred_room_type: Union[RoomType, None] = Field(
         default=None,
         description="Preferred room type",
     )
-    budget_min: Optional[Annotated[Decimal, Field(ge=0)]] = Field(
+    budget_min: Union[Annotated[Decimal, Field(ge=0)], None] = Field(
         default=None,
         description="Minimum budget per month",
     )
-    budget_max: Optional[Annotated[Decimal, Field(ge=0)]] = Field(
+    budget_max: Union[Annotated[Decimal, Field(ge=0)], None] = Field(
         default=None,
         description="Maximum budget per month",
     )
@@ -98,7 +96,7 @@ class VisitorResponse(BaseResponseSchema):
         description="Push notifications enabled",
     )
 
-    @computed_field
+    @computed_field  # type: ignore[misc]
     @property
     def has_active_notifications(self) -> bool:
         """Check if visitor has any notification channel enabled."""
@@ -108,9 +106,9 @@ class VisitorResponse(BaseResponseSchema):
             or self.push_notifications
         )
 
-    @computed_field
+    @computed_field  # type: ignore[misc]
     @property
-    def budget_range_display(self) -> Optional[str]:
+    def budget_range_display(self) -> Union[str, None]:
         """Get formatted budget range for display."""
         if self.budget_min is not None and self.budget_max is not None:
             return f"₹{self.budget_min:,.0f} - ₹{self.budget_max:,.0f}"
@@ -143,7 +141,7 @@ class VisitorProfile(BaseSchema):
         max_length=255,
         description="Full name of the visitor",
     )
-    profile_image_url: Optional[str] = Field(
+    profile_image_url: Union[str, None] = Field(
         default=None,
         description="URL to profile image",
     )
@@ -152,13 +150,13 @@ class VisitorProfile(BaseSchema):
         description="Date when visitor joined the platform",
     )
 
-    @computed_field
+    @computed_field  # type: ignore[misc]
     @property
     def display_name(self) -> str:
         """Get display name (first name only for privacy)."""
         return self.full_name.split()[0] if self.full_name else "Guest"
 
-    @computed_field
+    @computed_field  # type: ignore[misc]
     @property
     def membership_days(self) -> int:
         """Calculate number of days since joining."""
@@ -193,21 +191,21 @@ class VisitorDetail(BaseResponseSchema):
         pattern=r"^\+?[1-9]\d{9,14}$",
         description="Phone number",
     )
-    profile_image_url: Optional[str] = Field(
+    profile_image_url: Union[str, None] = Field(
         default=None,
         description="Profile image URL",
     )
 
     # Preferences - Updated for Pydantic v2
-    preferred_room_type: Optional[RoomType] = Field(
+    preferred_room_type: Union[RoomType, None] = Field(
         default=None,
         description="Preferred room type",
     )
-    budget_min: Optional[Annotated[Decimal, Field(ge=0)]] = Field(
+    budget_min: Union[Annotated[Decimal, Field(ge=0)], None] = Field(
         default=None,
         description="Minimum budget",
     )
-    budget_max: Optional[Annotated[Decimal, Field(ge=0)]] = Field(
+    budget_max: Union[Annotated[Decimal, Field(ge=0)], None] = Field(
         default=None,
         description="Maximum budget",
     )
@@ -259,7 +257,7 @@ class VisitorDetail(BaseResponseSchema):
         ge=0,
         description="Number of reviews written",
     )
-    average_rating_given: Optional[Annotated[Decimal, Field(ge=0, le=5)]] = Field(
+    average_rating_given: Union[Annotated[Decimal, Field(ge=0, le=5)], None] = Field(
         default=None,
         description="Average rating given in reviews",
     )
@@ -283,18 +281,18 @@ class VisitorDetail(BaseResponseSchema):
         ...,
         description="Account creation timestamp",
     )
-    last_login: Optional[datetime] = Field(
+    last_login: Union[datetime, None] = Field(
         default=None,
         description="Last login timestamp",
     )
 
-    @computed_field
+    @computed_field  # type: ignore[misc]
     @property
     def active_bookings(self) -> int:
         """Calculate number of active bookings."""
         return self.total_bookings - self.completed_bookings - self.cancelled_bookings
 
-    @computed_field
+    @computed_field  # type: ignore[misc]
     @property
     def booking_completion_rate(self) -> Decimal:
         """Calculate booking completion rate as percentage."""
@@ -304,7 +302,7 @@ class VisitorDetail(BaseResponseSchema):
             (self.completed_bookings / self.total_bookings) * 100
         ).quantize(Decimal("0.01"))
 
-    @computed_field
+    @computed_field  # type: ignore[misc]
     @property
     def is_active_user(self) -> bool:
         """Determine if user is active (logged in within last 30 days)."""
@@ -313,7 +311,7 @@ class VisitorDetail(BaseResponseSchema):
         days_since_login = (datetime.utcnow() - self.last_login).days
         return days_since_login <= 30
 
-    @computed_field
+    @computed_field  # type: ignore[misc]
     @property
     def engagement_score(self) -> Decimal:
         """
@@ -392,20 +390,20 @@ class VisitorStats(BaseSchema):
     )
 
     # Preference Insights
-    most_searched_city: Optional[str] = Field(
+    most_searched_city: Union[str, None] = Field(
         default=None,
         description="City searched most frequently",
     )
-    most_viewed_room_type: Optional[RoomType] = Field(
+    most_viewed_room_type: Union[RoomType, None] = Field(
         default=None,
         description="Most frequently viewed room type",
     )
-    average_budget: Optional[Annotated[Decimal, Field(ge=0)]] = Field(
+    average_budget: Union[Annotated[Decimal, Field(ge=0)], None] = Field(
         default=None,
         description="Average budget range from searches",
     )
 
-    @computed_field
+    @computed_field  # type: ignore[misc]
     @property
     def inquiry_conversion_rate(self) -> Decimal:
         """Calculate inquiry to booking conversion rate."""
@@ -415,7 +413,7 @@ class VisitorStats(BaseSchema):
             (self.total_bookings / self.total_inquiries) * 100
         ).quantize(Decimal("0.01"))
 
-    @computed_field
+    @computed_field  # type: ignore[misc]
     @property
     def average_views_per_search(self) -> Decimal:
         """Calculate average hostel views per search."""
@@ -425,7 +423,7 @@ class VisitorStats(BaseSchema):
             Decimal("0.01")
         )
 
-    @computed_field
+    @computed_field  # type: ignore[misc]
     @property
     def engagement_level(self) -> str:
         """

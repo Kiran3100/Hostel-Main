@@ -6,11 +6,9 @@ This module provides schemas for email-specific notifications including
 sending, tracking, templates, and bulk operations.
 """
 
-from __future__ import annotations
-
 from datetime import date as Date, datetime
 from decimal import Decimal
-from typing import Annotated, Any, Dict, List, Optional
+from typing import Annotated, Any, Dict, List, Union
 from uuid import UUID
 
 from pydantic import EmailStr, Field, HttpUrl, field_validator, model_validator
@@ -42,12 +40,12 @@ class EmailAttachment(BaseSchema):
         ...,
         description="URL to attachment file",
     )
-    mime_type: Optional[str] = Field(
+    mime_type: Union[str, None] = Field(
         default=None,
         max_length=100,
         description="MIME type of attachment",
     )
-    size_bytes: Optional[int] = Field(
+    size_bytes: Union[int, None] = Field(
         default=None,
         ge=0,
         le=26214400,  # 25MB max
@@ -92,7 +90,7 @@ class EmailRequest(BaseCreateSchema):
         max_length=102400,  # 100KB max
         description="HTML email body",
     )
-    body_text: Optional[str] = Field(
+    body_text: Union[str, None] = Field(
         default=None,
         max_length=102400,
         description="Plain text fallback body",
@@ -106,23 +104,23 @@ class EmailRequest(BaseCreateSchema):
     )
 
     # Template support
-    template_code: Optional[str] = Field(
+    template_code: Union[str, None] = Field(
         default=None,
         min_length=3,
         max_length=100,
         description="Template code (overrides direct content)",
     )
-    template_variables: Optional[Dict[str, str]] = Field(
+    template_variables: Union[Dict[str, str], None] = Field(
         default=None,
         description="Variables for template rendering",
     )
 
     # Sender customization
-    reply_to: Optional[EmailStr] = Field(
+    reply_to: Union[EmailStr, None] = Field(
         default=None,
         description="Reply-to email address",
     )
-    from_name: Optional[str] = Field(
+    from_name: Union[str, None] = Field(
         default=None,
         min_length=1,
         max_length=100,
@@ -147,7 +145,7 @@ class EmailRequest(BaseCreateSchema):
     )
 
     # Scheduling
-    send_at: Optional[datetime] = Field(
+    send_at: Union[datetime, None] = Field(
         default=None,
         description="Schedule email for future delivery",
     )
@@ -173,7 +171,7 @@ class EmailRequest(BaseCreateSchema):
 
     @field_validator("send_at")
     @classmethod
-    def validate_send_time(cls, v: Optional[datetime]) -> Optional[datetime]:
+    def validate_send_time(cls, v: Union[datetime, None]) -> Union[datetime, None]:
         """Validate scheduled send time is in the future."""
         if v is not None and v <= datetime.utcnow():
             raise ValueError("Scheduled send time must be in the future")
@@ -223,18 +221,18 @@ class EmailConfig(BaseSchema):
     )
 
     # SMTP configuration (for SMTP provider)
-    smtp_host: Optional[str] = Field(
+    smtp_host: Union[str, None] = Field(
         default=None,
         max_length=255,
         description="SMTP server hostname",
     )
-    smtp_port: Optional[int] = Field(
+    smtp_port: Union[int, None] = Field(
         default=None,
         ge=1,
         le=65535,
         description="SMTP server port",
     )
-    smtp_username: Optional[str] = Field(
+    smtp_username: Union[str, None] = Field(
         default=None,
         max_length=255,
         description="SMTP authentication username",
@@ -245,7 +243,7 @@ class EmailConfig(BaseSchema):
     )
 
     # API configuration (for API-based providers)
-    api_key: Optional[str] = Field(
+    api_key: Union[str, None] = Field(
         default=None,
         max_length=500,
         description="API key for email service",
@@ -262,7 +260,7 @@ class EmailConfig(BaseSchema):
         max_length=100,
         description="Default sender name",
     )
-    reply_to_email: Optional[EmailStr] = Field(
+    reply_to_email: Union[EmailStr, None] = Field(
         default=None,
         description="Default reply-to address",
     )
@@ -292,7 +290,7 @@ class EmailConfig(BaseSchema):
     )
 
     # Bounce handling
-    bounce_webhook_url: Optional[HttpUrl] = Field(
+    bounce_webhook_url: Union[HttpUrl, None] = Field(
         default=None,
         description="Webhook URL for bounce notifications",
     )
@@ -339,11 +337,11 @@ class EmailTracking(BaseSchema):
         ...,
         description="When email was sent",
     )
-    delivered_at: Optional[datetime] = Field(
+    delivered_at: Union[datetime, None] = Field(
         default=None,
         description="When email was delivered",
     )
-    bounced_at: Optional[datetime] = Field(
+    bounced_at: Union[datetime, None] = Field(
         default=None,
         description="When email bounced",
     )
@@ -359,11 +357,11 @@ class EmailTracking(BaseSchema):
         default=False,
         description="Whether email was opened",
     )
-    first_opened_at: Optional[datetime] = Field(
+    first_opened_at: Union[datetime, None] = Field(
         default=None,
         description="When email was first opened",
     )
-    last_opened_at: Optional[datetime] = Field(
+    last_opened_at: Union[datetime, None] = Field(
         default=None,
         description="When email was last opened",
     )
@@ -377,11 +375,11 @@ class EmailTracking(BaseSchema):
         default=False,
         description="Whether any link was clicked",
     )
-    first_clicked_at: Optional[datetime] = Field(
+    first_clicked_at: Union[datetime, None] = Field(
         default=None,
         description="When first link was clicked",
     )
-    last_clicked_at: Optional[datetime] = Field(
+    last_clicked_at: Union[datetime, None] = Field(
         default=None,
         description="When last link was clicked",
     )
@@ -398,19 +396,19 @@ class EmailTracking(BaseSchema):
     )
 
     # Error information
-    bounce_type: Optional[str] = Field(
+    bounce_type: Union[str, None] = Field(
         default=None,
         pattern="^(hard|soft|complaint)$",
         description="Type of bounce if bounced",
     )
-    error_message: Optional[str] = Field(
+    error_message: Union[str, None] = Field(
         default=None,
         max_length=1000,
         description="Error or bounce reason",
     )
 
     # Provider information
-    provider_message_id: Optional[str] = Field(
+    provider_message_id: Union[str, None] = Field(
         default=None,
         max_length=255,
         description="Provider's message ID",
@@ -421,7 +419,7 @@ class EmailTracking(BaseSchema):
         default=False,
         description="Whether recipient marked as spam",
     )
-    spam_reported_at: Optional[datetime] = Field(
+    spam_reported_at: Union[datetime, None] = Field(
         default=None,
         description="When marked as spam",
     )
@@ -455,23 +453,23 @@ class EmailTemplate(BaseSchema):
         max_length=102400,
         description="HTML body template",
     )
-    text_body: Optional[str] = Field(
+    text_body: Union[str, None] = Field(
         default=None,
         max_length=102400,
         description="Plain text body template",
     )
 
     # Styling and branding
-    header_image_url: Optional[HttpUrl] = Field(
+    header_image_url: Union[HttpUrl, None] = Field(
         default=None,
         description="Header/logo image URL",
     )
-    footer_text: Optional[str] = Field(
+    footer_text: Union[str, None] = Field(
         default=None,
         max_length=1000,
         description="Footer text (company info, unsubscribe link, etc.)",
     )
-    primary_color: Optional[str] = Field(
+    primary_color: Union[str, None] = Field(
         default=None,
         pattern="^#[0-9A-Fa-f]{6}$",
         description="Primary brand color (hex code)",
@@ -488,7 +486,7 @@ class EmailTemplate(BaseSchema):
     )
 
     # Preheader
-    preheader_text: Optional[str] = Field(
+    preheader_text: Union[str, None] = Field(
         default=None,
         max_length=150,
         description="Email preheader/preview text",
@@ -524,13 +522,13 @@ class BulkEmailRequest(BaseCreateSchema):
     )
 
     # Template support
-    template_code: Optional[str] = Field(
+    template_code: Union[str, None] = Field(
         default=None,
         description="Template code for all emails",
     )
 
     # Per-recipient customization
-    recipient_variables: Optional[Dict[EmailStr, Dict[str, str]]] = Field(
+    recipient_variables: Union[Dict[EmailStr, Dict[str, str]], None] = Field(
         default=None,
         description="Per-recipient variable mapping (email -> variables)",
     )
@@ -726,12 +724,12 @@ class EmailSchedule(BaseCreateSchema):
         default=False,
         description="Whether this is a recurring email",
     )
-    recurrence_pattern: Optional[str] = Field(
+    recurrence_pattern: Union[str, None] = Field(
         default=None,
         pattern="^(daily|weekly|monthly|yearly)$",
         description="Recurrence pattern if recurring",
     )
-    recurrence_end_date: Optional[Date] = Field(
+    recurrence_end_date: Union[Date, None] = Field(
         default=None,
         description="When to stop recurring",
     )

@@ -5,12 +5,10 @@ Handles commission configuration, calculation, and tracking for
 platform revenue from hostel bookings.
 """
 
-from __future__ import annotations
-
 from datetime import date as Date
 from decimal import Decimal
 from enum import Enum
-from typing import Dict, Optional, Annotated
+from typing import Dict, Union, Annotated
 from uuid import UUID
 
 from pydantic import Field, field_validator, model_validator, computed_field, ConfigDict
@@ -154,13 +152,13 @@ class BookingCommissionResponse(BaseResponseSchema):
         default=CommissionStatus.PENDING,
         description="Commission payment status",
     )
-    due_date: Optional[Date] = Field(
+    due_date: Union[Date, None] = Field(
         None, description="Commission payment due Date"
     )
-    paid_date: Optional[Date] = Field(
+    paid_date: Union[Date, None] = Field(
         None, description="Actual payment Date"
     )
-    payment_reference: Optional[str] = Field(
+    payment_reference: Union[str, None] = Field(
         None,
         max_length=100,
         description="Payment transaction reference",
@@ -190,7 +188,7 @@ class CommissionSummary(BaseSchema):
         pattern=r"^(platform|hostel)$",
         description="Summary scope: 'platform' or 'hostel'",
     )
-    hostel_id: Optional[UUID] = Field(
+    hostel_id: Union[UUID, None] = Field(
         None,
         description="Hostel ID (required when scope_type is 'hostel')",
     )
@@ -230,12 +228,12 @@ class CommissionSummary(BaseSchema):
         description="Outstanding commission amount",
     )]
 
-    average_commission_rate: Optional[Annotated[Decimal, Field(
+    average_commission_rate: Union[Annotated[Decimal, Field(
         None,
         ge=Decimal("0"),
         le=Decimal("100"),
         description="Average commission rate applied",
-    )]]
+    )], None]
 
     @model_validator(mode="after")
     def validate_scope_and_dates(self) -> "CommissionSummary":
@@ -250,7 +248,8 @@ class CommissionSummary(BaseSchema):
             )
         return self
 
-    @computed_field
+    @computed_field  # type: ignore[misc]
+    @property
     def commission_collection_rate(self) -> Decimal:
         """Calculate commission collection rate as percentage."""
         if self.total_commission_due == Decimal("0"):

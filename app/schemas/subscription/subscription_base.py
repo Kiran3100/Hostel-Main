@@ -5,11 +5,9 @@ Defines the core subscription data structures for creating,
 updating, and managing hostel subscriptions.
 """
 
-from __future__ import annotations
-
 from datetime import date as Date
 from decimal import Decimal
-from typing import Optional, Annotated
+from typing import Union, Annotated
 from uuid import UUID
 
 from pydantic import Field, field_validator, model_validator, ConfigDict
@@ -70,7 +68,7 @@ class SubscriptionBase(BaseSchema):
     auto_renew: bool = Field(
         default=True, description="Auto-renew subscription on expiry"
     )
-    next_billing_date: Optional[Date] = Field(
+    next_billing_date: Union[Date, None] = Field(
         None, description="Next scheduled billing Date"
     )
 
@@ -145,11 +143,11 @@ class SubscriptionCreate(BaseCreateSchema):
     end_date: Date = Field(..., description="Subscription end Date")
 
     auto_renew: bool = Field(default=True)
-    next_billing_date: Optional[Date] = Field(None)
+    next_billing_date: Union[Date, None] = Field(None)
 
     status: SubscriptionStatus = Field(default=SubscriptionStatus.ACTIVE)
 
-    trial_end_date: Optional[Date] = Field(
+    trial_end_date: Union[Date, None] = Field(
         None,
         description="Trial period end Date (if applicable)",
     )
@@ -187,26 +185,26 @@ class SubscriptionUpdate(BaseUpdateSchema):
     """
     model_config = ConfigDict(populate_by_name=True)
 
-    status: Optional[SubscriptionStatus] = Field(
+    status: Union[SubscriptionStatus, None] = Field(
         None, description="New subscription status"
     )
-    end_date: Optional[Date] = Field(
+    end_date: Union[Date, None] = Field(
         None, description="New subscription end Date"
     )
-    auto_renew: Optional[bool] = Field(
+    auto_renew: Union[bool, None] = Field(
         None, description="Update auto-renewal setting"
     )
-    next_billing_date: Optional[Date] = Field(
+    next_billing_date: Union[Date, None] = Field(
         None, description="Update next billing Date"
     )
 
     # Additional updatable fields
-    amount: Optional[Annotated[Decimal, Field(
+    amount: Union[Annotated[Decimal, Field(
         None,
         ge=Decimal("0"),
         description="Updated billing amount",
-    )]]
-    billing_cycle: Optional[BillingCycle] = Field(
+    )], None]
+    billing_cycle: Union[BillingCycle, None] = Field(
         None, description="Updated billing cycle"
     )
 

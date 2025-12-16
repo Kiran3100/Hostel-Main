@@ -10,15 +10,13 @@ Provides schemas for:
 
 Pydantic v2 Migration Notes:
 - Uses Annotated pattern for Decimal fields with max_digits/decimal_places constraints
-- Optional[Decimal] fields use Annotated to ensure constraints apply correctly
+- Union[X, None] instead of Optional[X] for compatibility
 - @computed_field with @property decorator for computed properties
 - All field validators use v2 syntax (none present in this schema)
 """
 
-from __future__ import annotations
-
 from decimal import Decimal
-from typing import Annotated, Any, Dict, List, Optional
+from typing import Annotated, Any, Dict, List, Union
 from uuid import UUID
 
 from pydantic import Field, computed_field
@@ -78,8 +76,8 @@ class SearchResultItem(BaseSchema):
     ]
 
     # Ratings and reviews
-    # Pydantic v2: For Optional[Decimal] with constraints, use Annotated pattern
-    average_rating: Optional[
+    # Pydantic v2: For Union[Decimal, None] with constraints, use Annotated pattern
+    average_rating: Union[
         Annotated[
             Decimal,
             Field(
@@ -89,7 +87,8 @@ class SearchResultItem(BaseSchema):
                 decimal_places=2,
                 description="Average rating (0-5)",
             ),
-        ]
+        ],
+        None,
     ] = None
     total_reviews: int = Field(
         default=0,
@@ -110,7 +109,7 @@ class SearchResultItem(BaseSchema):
     )
 
     # Media
-    thumbnail_url: Optional[str] = Field(
+    thumbnail_url: Union[str, None] = Field(
         default=None,
         description="Primary image URL",
     )
@@ -146,7 +145,7 @@ class SearchResultItem(BaseSchema):
             description="Relevance score from search engine (higher = more relevant)",
         ),
     ]
-    distance_km: Optional[
+    distance_km: Union[
         Annotated[
             Decimal,
             Field(
@@ -155,7 +154,8 @@ class SearchResultItem(BaseSchema):
                 decimal_places=2,
                 description="Distance from search location (if proximity search)",
             ),
-        ]
+        ],
+        None,
     ] = None
 
     # Highlighting (search term matches)
@@ -165,7 +165,7 @@ class SearchResultItem(BaseSchema):
         examples=[{"name": ["Best <em>Hostel</em> in Mumbai"]}],
     )
 
-    @computed_field  # type: ignore[misc]
+    @computed_field  # type: ignore[prop-decorator]
     @property
     def occupancy_rate(self) -> Decimal:
         """Calculate current occupancy rate as percentage."""
@@ -174,7 +174,7 @@ class SearchResultItem(BaseSchema):
         occupied = self.total_beds - self.available_beds
         return Decimal(occupied / self.total_beds * 100).quantize(Decimal("0.01"))
 
-    @computed_field  # type: ignore[misc]
+    @computed_field  # type: ignore[prop-decorator]
     @property
     def has_availability(self) -> bool:
         """Check if hostel has any available beds."""
@@ -223,7 +223,7 @@ class SearchMetadata(BaseSchema):
         ge=0,
         description="Search execution time in milliseconds",
     )
-    fetch_time_ms: Optional[int] = Field(
+    fetch_time_ms: Union[int, None] = Field(
         default=None,
         ge=0,
         description="Data fetch time in milliseconds",
@@ -240,8 +240,8 @@ class SearchMetadata(BaseSchema):
     )
 
     # Result quality indicators
-    # Pydantic v2: Optional[Decimal] with constraints uses Annotated pattern
-    max_score: Optional[
+    # Pydantic v2: Union[Decimal, None] with constraints uses Annotated pattern
+    max_score: Union[
         Annotated[
             Decimal,
             Field(
@@ -250,9 +250,10 @@ class SearchMetadata(BaseSchema):
                 decimal_places=4,
                 description="Highest relevance score in results",
             ),
-        ]
+        ],
+        None,
     ] = None
-    min_score: Optional[
+    min_score: Union[
         Annotated[
             Decimal,
             Field(
@@ -261,22 +262,23 @@ class SearchMetadata(BaseSchema):
                 decimal_places=4,
                 description="Lowest relevance score in results",
             ),
-        ]
+        ],
+        None,
     ] = None
 
     # Debug information (optional, for development)
-    debug_info: Optional[Dict[str, Any]] = Field(
+    debug_info: Union[Dict[str, Any], None] = Field(
         default=None,
         description="Debug information (available in development mode)",
     )
 
-    @computed_field  # type: ignore[misc]
+    @computed_field  # type: ignore[prop-decorator]
     @property
     def has_next_page(self) -> bool:
         """Check if there are more pages available."""
         return self.page < self.total_pages
 
-    @computed_field  # type: ignore[misc]
+    @computed_field  # type: ignore[prop-decorator]
     @property
     def has_previous_page(self) -> bool:
         """Check if there are previous pages."""
@@ -309,7 +311,7 @@ class FacetBucket(BaseSchema):
     )
 
     # Additional metadata
-    metadata: Optional[Dict[str, Any]] = Field(
+    metadata: Union[Dict[str, Any], None] = Field(
         default=None,
         description="Additional facet-specific metadata",
     )
@@ -331,7 +333,7 @@ class SearchSuggestion(BaseSchema):
         ...,
         description="Suggested search text",
     )
-    reason: Optional[str] = Field(
+    reason: Union[str, None] = Field(
         default=None,
         description="Why this suggestion is offered",
         examples=[
@@ -340,7 +342,7 @@ class SearchSuggestion(BaseSchema):
             "Related to your search",
         ],
     )
-    expected_results: Optional[int] = Field(
+    expected_results: Union[int, None] = Field(
         default=None,
         ge=0,
         description="Estimated number of results for this suggestion",
@@ -390,13 +392,13 @@ class FacetedSearchResponse(BaseSchema):
         description="Suggested query refinements",
     )
 
-    @computed_field  # type: ignore[misc]
+    @computed_field  # type: ignore[prop-decorator]
     @property
     def is_empty(self) -> bool:
         """Check if search returned no results."""
         return len(self.results) == 0
 
-    @computed_field  # type: ignore[misc]
+    @computed_field  # type: ignore[prop-decorator]
     @property
     def facet_names(self) -> List[str]:
         """Get list of available facet names."""

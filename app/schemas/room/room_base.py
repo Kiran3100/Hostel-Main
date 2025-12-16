@@ -12,11 +12,9 @@ Pydantic v2 Migration Notes:
 - Validators properly handle Optional types in update schemas
 """
 
-from __future__ import annotations
-
 from datetime import date as Date
 from decimal import Decimal
-from typing import Annotated, List, Optional
+from typing import Annotated, List, Union
 
 from pydantic import Field, field_validator, model_validator
 
@@ -57,13 +55,13 @@ class RoomBase(BaseSchema):
         description="Room number/identifier (e.g., '101', 'A-201')",
         examples=["101", "A-201", "Block-B-301"],
     )
-    floor_number: Optional[int] = Field(
+    floor_number: Union[int, None] = Field(
         default=None,
         ge=0,
         le=50,
         description="Floor number (0 for ground floor)",
     )
-    wing: Optional[str] = Field(
+    wing: Union[str, None] = Field(
         default=None,
         max_length=50,
         description="Wing/Block designation (A, B, North Wing, etc.)",
@@ -92,7 +90,7 @@ class RoomBase(BaseSchema):
             description="Monthly rent amount",
         ),
     ]
-    price_quarterly: Optional[
+    price_quarterly: Union[
         Annotated[
             Decimal,
             Field(
@@ -101,9 +99,10 @@ class RoomBase(BaseSchema):
                 decimal_places=2,
                 description="Quarterly rent (3 months, often discounted)",
             ),
-        ]
+        ],
+        None,
     ] = None
-    price_half_yearly: Optional[
+    price_half_yearly: Union[
         Annotated[
             Decimal,
             Field(
@@ -112,9 +111,10 @@ class RoomBase(BaseSchema):
                 decimal_places=2,
                 description="Half-yearly rent (6 months, often discounted)",
             ),
-        ]
+        ],
+        None,
     ] = None
-    price_yearly: Optional[
+    price_yearly: Union[
         Annotated[
             Decimal,
             Field(
@@ -123,11 +123,12 @@ class RoomBase(BaseSchema):
                 decimal_places=2,
                 description="Yearly rent (12 months, often discounted)",
             ),
-        ]
+        ],
+        None,
     ] = None
 
     # Physical specifications
-    room_size_sqft: Optional[int] = Field(
+    room_size_sqft: Union[int, None] = Field(
         default=None,
         ge=50,
         le=1000,
@@ -196,7 +197,7 @@ class RoomBase(BaseSchema):
 
     @field_validator("wing")
     @classmethod
-    def validate_wing(cls, v: Optional[str]) -> Optional[str]:
+    def validate_wing(cls, v: Union[str, None]) -> Union[str, None]:
         """Validate and normalize wing/block designation."""
         if v is not None:
             v = v.strip()
@@ -365,28 +366,28 @@ class RoomUpdate(BaseUpdateSchema):
     All fields are optional for partial updates.
     """
 
-    room_number: Optional[str] = Field(
+    room_number: Union[str, None] = Field(
         default=None,
         min_length=1,
         max_length=50,
         description="Room number",
     )
-    floor_number: Optional[int] = Field(
+    floor_number: Union[int, None] = Field(
         default=None,
         ge=0,
         le=50,
         description="Floor number",
     )
-    wing: Optional[str] = Field(
+    wing: Union[str, None] = Field(
         default=None,
         max_length=50,
         description="Wing/Block",
     )
-    room_type: Optional[RoomType] = Field(
+    room_type: Union[RoomType, None] = Field(
         default=None,
         description="Room type",
     )
-    total_beds: Optional[int] = Field(
+    total_beds: Union[int, None] = Field(
         default=None,
         ge=1,
         le=20,
@@ -394,7 +395,7 @@ class RoomUpdate(BaseUpdateSchema):
     )
 
     # Pricing updates with proper Decimal constraints
-    price_monthly: Optional[
+    price_monthly: Union[
         Annotated[
             Decimal,
             Field(
@@ -403,9 +404,10 @@ class RoomUpdate(BaseUpdateSchema):
                 decimal_places=2,
                 description="Monthly rent",
             ),
-        ]
+        ],
+        None,
     ] = None
-    price_quarterly: Optional[
+    price_quarterly: Union[
         Annotated[
             Decimal,
             Field(
@@ -414,9 +416,10 @@ class RoomUpdate(BaseUpdateSchema):
                 decimal_places=2,
                 description="Quarterly rent",
             ),
-        ]
+        ],
+        None,
     ] = None
-    price_half_yearly: Optional[
+    price_half_yearly: Union[
         Annotated[
             Decimal,
             Field(
@@ -425,9 +428,10 @@ class RoomUpdate(BaseUpdateSchema):
                 decimal_places=2,
                 description="Half-yearly rent",
             ),
-        ]
+        ],
+        None,
     ] = None
-    price_yearly: Optional[
+    price_yearly: Union[
         Annotated[
             Decimal,
             Field(
@@ -436,61 +440,62 @@ class RoomUpdate(BaseUpdateSchema):
                 decimal_places=2,
                 description="Yearly rent",
             ),
-        ]
+        ],
+        None,
     ] = None
 
     # Physical specifications
-    room_size_sqft: Optional[int] = Field(
+    room_size_sqft: Union[int, None] = Field(
         default=None,
         ge=50,
         le=1000,
         description="Room size in sq ft",
     )
-    is_ac: Optional[bool] = Field(
+    is_ac: Union[bool, None] = Field(
         default=None,
         description="Air conditioning",
     )
-    has_attached_bathroom: Optional[bool] = Field(
+    has_attached_bathroom: Union[bool, None] = Field(
         default=None,
         description="Attached bathroom",
     )
-    has_balcony: Optional[bool] = Field(
+    has_balcony: Union[bool, None] = Field(
         default=None,
         description="Balcony",
     )
-    has_wifi: Optional[bool] = Field(
+    has_wifi: Union[bool, None] = Field(
         default=None,
         description="WiFi",
     )
 
     # Amenities
-    amenities: Optional[List[str]] = Field(
+    amenities: Union[List[str], None] = Field(
         default=None,
         description="Room amenities",
     )
-    furnishing: Optional[List[str]] = Field(
+    furnishing: Union[List[str], None] = Field(
         default=None,
         description="Furniture items",
     )
 
     # Availability
-    is_available_for_booking: Optional[bool] = Field(
+    is_available_for_booking: Union[bool, None] = Field(
         default=None,
         description="Booking availability",
     )
-    is_under_maintenance: Optional[bool] = Field(
+    is_under_maintenance: Union[bool, None] = Field(
         default=None,
         description="Maintenance status",
     )
 
     # Status
-    status: Optional[RoomStatus] = Field(
+    status: Union[RoomStatus, None] = Field(
         default=None,
         description="Room operational status",
     )
 
     # Media
-    room_images: Optional[List[str]] = Field(
+    room_images: Union[List[str], None] = Field(
         default=None,
         max_length=15,
         description="Room image URLs",
@@ -498,7 +503,7 @@ class RoomUpdate(BaseUpdateSchema):
 
     @field_validator("room_number")
     @classmethod
-    def validate_room_number(cls, v: Optional[str]) -> Optional[str]:
+    def validate_room_number(cls, v: Union[str, None]) -> Union[str, None]:
         """Validate room number format."""
         if v is not None:
             v = v.strip().upper()
@@ -509,7 +514,7 @@ class RoomUpdate(BaseUpdateSchema):
 
     @field_validator("wing")
     @classmethod
-    def validate_wing(cls, v: Optional[str]) -> Optional[str]:
+    def validate_wing(cls, v: Union[str, None]) -> Union[str, None]:
         """Validate and normalize wing/block designation."""
         if v is not None:
             v = v.strip()
@@ -520,7 +525,7 @@ class RoomUpdate(BaseUpdateSchema):
 
     @field_validator("amenities", "furnishing")
     @classmethod
-    def validate_and_clean_lists(cls, v: Optional[List[str]]) -> Optional[List[str]]:
+    def validate_and_clean_lists(cls, v: Union[List[str], None]) -> Union[List[str], None]:
         """Validate and clean list fields."""
         if v is not None:
             if not v:
@@ -538,7 +543,7 @@ class RoomUpdate(BaseUpdateSchema):
 
     @field_validator("room_images")
     @classmethod
-    def validate_room_images(cls, v: Optional[List[str]]) -> Optional[List[str]]:
+    def validate_room_images(cls, v: Union[List[str], None]) -> Union[List[str], None]:
         """Validate room image URLs."""
         if v is not None:
             if not v:
@@ -625,7 +630,7 @@ class RoomPricingUpdate(BaseUpdateSchema):
             description="Monthly rent (required)",
         ),
     ]
-    price_quarterly: Optional[
+    price_quarterly: Union[
         Annotated[
             Decimal,
             Field(
@@ -634,9 +639,10 @@ class RoomPricingUpdate(BaseUpdateSchema):
                 decimal_places=2,
                 description="Quarterly rent (optional discount)",
             ),
-        ]
+        ],
+        None,
     ] = None
-    price_half_yearly: Optional[
+    price_half_yearly: Union[
         Annotated[
             Decimal,
             Field(
@@ -645,9 +651,10 @@ class RoomPricingUpdate(BaseUpdateSchema):
                 decimal_places=2,
                 description="Half-yearly rent (optional discount)",
             ),
-        ]
+        ],
+        None,
     ] = None
-    price_yearly: Optional[
+    price_yearly: Union[
         Annotated[
             Decimal,
             Field(
@@ -656,11 +663,12 @@ class RoomPricingUpdate(BaseUpdateSchema):
                 decimal_places=2,
                 description="Yearly rent (optional discount)",
             ),
-        ]
+        ],
+        None,
     ] = None
-    effective_from: Optional[Date] = Field(
+    effective_from: Union[Date, None] = Field(
         default=None,
-        description="Effective date for new pricing (optional)",
+        description="Effective Date for new pricing (optional)",
     )
 
     @model_validator(mode="after")
@@ -694,11 +702,11 @@ class RoomPricingUpdate(BaseUpdateSchema):
 
     @field_validator("effective_from")
     @classmethod
-    def validate_effective_date(cls, v: Optional[Date]) -> Optional[Date]:
-        """Validate effective date is not in the past."""
+    def validate_effective_date(cls, v: Union[Date, None]) -> Union[Date, None]:
+        """Validate effective Date is not in the past."""
         if v is not None:
             if v < Date.today():
-                raise ValueError("Effective date cannot be in the past")
+                raise ValueError("Effective Date cannot be in the past")
         return v
 
 
@@ -721,18 +729,18 @@ class RoomStatusUpdate(BaseUpdateSchema):
         default=False,
         description="Currently under maintenance",
     )
-    maintenance_notes: Optional[str] = Field(
+    maintenance_notes: Union[str, None] = Field(
         default=None,
         max_length=1000,
         description="Maintenance details and notes",
     )
-    maintenance_start_date: Optional[Date] = Field(
+    maintenance_start_date: Union[Date, None] = Field(
         default=None,
-        description="Maintenance start date",
+        description="Maintenance start Date",
     )
-    maintenance_end_date: Optional[Date] = Field(
+    maintenance_end_date: Union[Date, None] = Field(
         default=None,
-        description="Expected maintenance completion date",
+        description="Expected maintenance completion Date",
     )
 
     @model_validator(mode="after")
@@ -749,10 +757,10 @@ class RoomStatusUpdate(BaseUpdateSchema):
                 raise ValueError(
                     "Maintenance notes are required when room is under maintenance"
                 )
-            # Require maintenance start date
+            # Require maintenance start Date
             if not self.maintenance_start_date:
                 raise ValueError(
-                    "Maintenance start date is required when room is under maintenance"
+                    "Maintenance start Date is required when room is under maintenance"
                 )
             # Set room as unavailable for booking
             if self.is_available_for_booking:
@@ -765,14 +773,14 @@ class RoomStatusUpdate(BaseUpdateSchema):
     @model_validator(mode="after")
     def validate_maintenance_dates(self) -> "RoomStatusUpdate":
         """
-        Validate maintenance date range.
+        Validate maintenance Date range.
         
         Pydantic v2: mode="after" validators receive the model instance.
         """
         if self.maintenance_start_date and self.maintenance_end_date:
             if self.maintenance_end_date < self.maintenance_start_date:
                 raise ValueError(
-                    "Maintenance end date must be after or equal to start date"
+                    "Maintenance end Date must be after or equal to start Date"
                 )
         return self
 
@@ -789,11 +797,11 @@ class RoomMediaUpdate(BaseUpdateSchema):
         max_length=15,
         description="Room image URLs (max 15)",
     )
-    primary_image: Optional[str] = Field(
+    primary_image: Union[str, None] = Field(
         default=None,
         description="Primary/cover image URL (must be in room_images)",
     )
-    virtual_tour_url: Optional[str] = Field(
+    virtual_tour_url: Union[str, None] = Field(
         default=None,
         description="360° virtual tour URL",
     )
@@ -837,7 +845,7 @@ class RoomMediaUpdate(BaseUpdateSchema):
 
     @field_validator("virtual_tour_url")
     @classmethod
-    def validate_virtual_tour_url(cls, v: Optional[str]) -> Optional[str]:
+    def validate_virtual_tour_url(cls, v: Union[str, None]) -> Union[str, None]:
         """Validate virtual tour URL format."""
         if v is not None:
             v = v.strip()

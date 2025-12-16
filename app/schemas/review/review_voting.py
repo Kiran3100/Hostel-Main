@@ -13,15 +13,13 @@ Pydantic v2 Migration Notes:
 - Average fields use appropriate precision for statistical calculations
 """
 
-from __future__ import annotations
-
 from datetime import datetime
 from decimal import Decimal
 from math import sqrt
-from typing import Annotated, List, Optional
+from typing import Annotated, List, Union
+from uuid import UUID
 
 from pydantic import Field, computed_field
-from uuid import UUID
 
 from app.schemas.common.base import BaseSchema, BaseCreateSchema, BaseResponseSchema
 from app.schemas.common.enums import VoteType
@@ -53,7 +51,7 @@ class VoteRequest(BaseCreateSchema):
     )
     
     # Optional feedback
-    feedback: Optional[str] = Field(
+    feedback: Union[str, None] = Field(
         default=None,
         max_length=500,
         description="Optional feedback about why vote was cast",
@@ -75,7 +73,7 @@ class VoteResponse(BaseSchema):
     not_helpful_count: int = Field(..., ge=0, description="Updated not helpful count")
     
     # User's current vote status
-    user_vote: Optional[VoteType] = Field(
+    user_vote: Union[VoteType, None] = Field(
         default=None,
         description="User's current vote (may differ if changed)",
     )
@@ -140,7 +138,7 @@ class HelpfulnessScore(BaseSchema):
     ]
     
     # Rank among hostel's reviews
-    rank: Optional[int] = Field(
+    rank: Union[int, None] = Field(
         default=None,
         ge=1,
         description="Rank among reviews for this hostel",
@@ -284,7 +282,7 @@ class RemoveVote(BaseCreateSchema):
     review_id: UUID = Field(..., description="Review to remove vote from")
     voter_id: UUID = Field(..., description="User removing their vote")
     
-    reason: Optional[str] = Field(
+    reason: Union[str, None] = Field(
         default=None,
         max_length=255,
         description="Optional reason for removing vote",
@@ -331,11 +329,11 @@ class VotingStats(BaseSchema):
     ]
     
     # Top reviews
-    most_helpful_review_id: Optional[UUID] = Field(
+    most_helpful_review_id: Union[UUID, None] = Field(
         default=None,
         description="Review with highest helpfulness score",
     )
-    most_voted_review_id: Optional[UUID] = Field(
+    most_voted_review_id: Union[UUID, None] = Field(
         default=None,
         description="Review with most total votes",
     )

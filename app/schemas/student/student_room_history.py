@@ -5,11 +5,9 @@ Provides schemas for tracking room assignments, transfers, and
 movement history for students.
 """
 
-from __future__ import annotations
-
 from datetime import date as Date, datetime
 from decimal import Decimal
-from typing import List, Optional, Annotated
+from typing import List, Union, Annotated
 
 from pydantic import Field, field_validator, model_validator, computed_field, ConfigDict
 
@@ -51,49 +49,49 @@ class RoomHistoryItem(BaseResponseSchema):
     room_id: str = Field(..., description="Room ID")
     room_number: str = Field(..., description="Room number")
     room_type: str = Field(..., description="Room type")
-    floor_number: Optional[int] = Field(default=None, description="Floor number")
-    wing: Optional[str] = Field(default=None, description="Wing/Block")
-    bed_id: Optional[str] = Field(default=None, description="Bed ID")
-    bed_number: Optional[str] = Field(default=None, description="Bed number")
+    floor_number: Union[int, None] = Field(default=None, description="Floor number")
+    wing: Union[str, None] = Field(default=None, description="Wing/Block")
+    bed_id: Union[str, None] = Field(default=None, description="Bed ID")
+    bed_number: Union[str, None] = Field(default=None, description="Bed number")
 
     # Duration
     move_in_date: Date = Field(..., description="Move-in Date")
-    move_out_date: Optional[Date] = Field(
+    move_out_date: Union[Date, None] = Field(
         default=None,
         description="Move-out Date (null if current)",
     )
-    duration_days: Optional[int] = Field(
+    duration_days: Union[int, None] = Field(
         default=None,
         ge=0,
         description="Total duration in days",
     )
 
     # Financial
-    rent_amount: Optional[MoneyAmount] = Field(
+    rent_amount: Union[MoneyAmount, None] = Field(
         default=None,
         description="Monthly rent for this assignment",
     )
-    total_rent_paid: Optional[MoneyAmount] = Field(
+    total_rent_paid: Union[MoneyAmount, None] = Field(
         default=None,
         description="Total rent paid during this period",
     )
 
     # Transfer details
-    reason: Optional[str] = Field(
+    reason: Union[str, None] = Field(
         default=None,
         description="Reason for assignment/transfer",
     )
-    transfer_type: Optional[str] = Field(
+    transfer_type: Union[str, None] = Field(
         default=None,
         description="Transfer type (initial, request, admin)",
     )
 
     # Audit
-    requested_by: Optional[str] = Field(
+    requested_by: Union[str, None] = Field(
         default=None,
         description="User who requested transfer",
     )
-    approved_by: Optional[str] = Field(
+    approved_by: Union[str, None] = Field(
         default=None,
         description="Admin who approved assignment",
     )
@@ -110,7 +108,7 @@ class RoomHistoryItem(BaseResponseSchema):
 
     @computed_field
     @property
-    def duration_months(self) -> Optional[Decimal]:
+    def duration_months(self) -> Union[Decimal, None]:
         """Calculate duration in months."""
         if self.duration_days is None:
             return None
@@ -130,11 +128,11 @@ class RoomHistoryResponse(BaseSchema):
     hostel_name: str = Field(..., description="Current hostel name")
 
     # Current assignment
-    current_room: Optional[str] = Field(
+    current_room: Union[str, None] = Field(
         default=None,
         description="Current room number",
     )
-    current_bed: Optional[str] = Field(
+    current_bed: Union[str, None] = Field(
         default=None,
         description="Current bed number",
     )
@@ -188,7 +186,7 @@ class RoomTransferRequest(BaseCreateSchema):
         ...,
         description="Desired room ID",
     )
-    requested_bed_id: Optional[str] = Field(
+    requested_bed_id: Union[str, None] = Field(
         default=None,
         description="Desired bed ID (if specific bed requested)",
     )
@@ -285,21 +283,21 @@ class RoomTransferApproval(BaseCreateSchema):
     )
 
     # If approved
-    new_room_id: Optional[str] = Field(
+    new_room_id: Union[str, None] = Field(
         default=None,
         description="Approved room (may differ from requested)",
     )
-    new_bed_id: Optional[str] = Field(
+    new_bed_id: Union[str, None] = Field(
         default=None,
         description="Assigned bed in new room",
     )
-    transfer_date: Optional[Date] = Field(
+    transfer_date: Union[Date, None] = Field(
         default=None,
         description="Approved transfer Date (may differ from requested)",
     )
 
     # If rejected
-    rejection_reason: Optional[str] = Field(
+    rejection_reason: Union[str, None] = Field(
         default=None,
         max_length=500,
         description="Detailed rejection reason",
@@ -311,11 +309,11 @@ class RoomTransferApproval(BaseCreateSchema):
     )
 
     # Financial implications - Fixed for Pydantic v2
-    rent_adjustment: Optional[Decimal] = Field(
+    rent_adjustment: Union[Decimal, None] = Field(
         default=None,
         description="Monthly rent adjustment (positive=increase, negative=decrease)",
     )
-    additional_charges: Optional[MoneyAmount] = Field(
+    additional_charges: Union[MoneyAmount, None] = Field(
         default=None,
         description="One-time transfer charges",
     )
@@ -325,7 +323,7 @@ class RoomTransferApproval(BaseCreateSchema):
     )
 
     # Notes
-    admin_notes: Optional[str] = Field(
+    admin_notes: Union[str, None] = Field(
         default=None,
         max_length=1000,
         description="Administrative notes",
@@ -359,7 +357,7 @@ class RoomTransferApproval(BaseCreateSchema):
 
     @field_validator("transfer_date")
     @classmethod
-    def validate_transfer_date(cls, v: Optional[Date]) -> Optional[Date]:
+    def validate_transfer_date(cls, v: Union[Date, None]) -> Union[Date, None]:
         """Validate transfer Date."""
         if v is not None:
             from datetime import timedelta
@@ -387,14 +385,14 @@ class RoomTransferStatus(BaseSchema):
 
     # Room details
     current_room: str = Field(..., description="Current room number")
-    current_bed: Optional[str] = Field(default=None, description="Current bed")
+    current_bed: Union[str, None] = Field(default=None, description="Current bed")
     requested_room: str = Field(..., description="Requested room number")
-    requested_bed: Optional[str] = Field(default=None, description="Requested bed")
-    approved_room: Optional[str] = Field(
+    requested_bed: Union[str, None] = Field(default=None, description="Requested bed")
+    approved_room: Union[str, None] = Field(
         default=None,
         description="Approved room (if different)",
     )
-    approved_bed: Optional[str] = Field(
+    approved_bed: Union[str, None] = Field(
         default=None,
         description="Approved bed",
     )
@@ -402,7 +400,7 @@ class RoomTransferStatus(BaseSchema):
     # Dates
     transfer_date: Date = Field(..., description="Transfer Date")
     requested_at: datetime = Field(..., description="Request timestamp")
-    processed_at: Optional[datetime] = Field(
+    processed_at: Union[datetime, None] = Field(
         default=None,
         description="Processing timestamp",
     )
@@ -417,25 +415,25 @@ class RoomTransferStatus(BaseSchema):
 
     # Details
     reason: str = Field(..., description="Transfer reason")
-    approval_notes: Optional[str] = Field(
+    approval_notes: Union[str, None] = Field(
         default=None,
         description="Approval/rejection notes",
     )
-    processed_by: Optional[str] = Field(
+    processed_by: Union[str, None] = Field(
         default=None,
         description="Admin who processed",
     )
-    processed_by_name: Optional[str] = Field(
+    processed_by_name: Union[str, None] = Field(
         default=None,
         description="Admin name",
     )
 
     # Financial - Fixed for Pydantic v2
-    rent_adjustment: Optional[Decimal] = Field(
+    rent_adjustment: Union[Decimal, None] = Field(
         default=None,
         description="Rent adjustment",
     )
-    additional_charges: Optional[MoneyAmount] = Field(
+    additional_charges: Union[MoneyAmount, None] = Field(
         default=None,
         description="Transfer charges",
     )
@@ -448,7 +446,7 @@ class RoomTransferStatus(BaseSchema):
 
     @computed_field
     @property
-    def days_pending(self) -> Optional[int]:
+    def days_pending(self) -> Union[int, None]:
         """Calculate days request has been pending."""
         if self.status != "pending":
             return None
@@ -464,11 +462,11 @@ class SingleTransfer(BaseSchema):
 
     student_id: str = Field(..., description="Student ID to transfer")
     new_room_id: str = Field(..., description="New room ID")
-    new_bed_id: Optional[str] = Field(
+    new_bed_id: Union[str, None] = Field(
         default=None,
         description="New bed ID (optional, auto-assign if not specified)",
     )
-    reason: Optional[str] = Field(
+    reason: Union[str, None] = Field(
         default=None,
         max_length=200,
         description="Transfer reason (optional, uses bulk reason if not specified)",

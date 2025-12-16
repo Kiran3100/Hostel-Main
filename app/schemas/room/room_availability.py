@@ -1,6 +1,6 @@
 # --- File: app/schemas/room/room_availability.py ---
 """
-Room availability schemas with enhanced date validation.
+Room availability schemas with enhanced Date validation.
 
 Provides schemas for checking room availability, calendar views,
 and booking-related information.
@@ -12,12 +12,9 @@ Pydantic v2 Migration Notes:
 - All Decimal fields now have explicit max_digits/decimal_places constraints
 """
 
-from __future__ import annotations
-
-from datetime import timedelta
-from datetime import date as Date
+from datetime import date as Date, timedelta
 from decimal import Decimal
-from typing import Annotated, Dict, List, Optional, Any
+from typing import Annotated, Any, Dict, List, Union
 
 from pydantic import Field, field_validator, model_validator, computed_field
 
@@ -48,7 +45,7 @@ class RoomAvailabilityRequest(BaseCreateSchema):
     )
     check_in_date: Date = Field(
         ...,
-        description="Desired check-in date",
+        description="Desired check-in Date",
     )
     duration_months: int = Field(
         ...,
@@ -56,7 +53,7 @@ class RoomAvailabilityRequest(BaseCreateSchema):
         le=24,
         description="Stay duration in months (1-24)",
     )
-    room_type: Optional[RoomType] = Field(
+    room_type: Union[RoomType, None] = Field(
         default=None,
         description="Preferred room type (optional filter)",
     )
@@ -68,15 +65,15 @@ class RoomAvailabilityRequest(BaseCreateSchema):
     )
     
     # Preferences (optional filters)
-    is_ac_required: Optional[bool] = Field(
+    is_ac_required: Union[bool, None] = Field(
         default=None,
         description="AC required",
     )
-    attached_bathroom_required: Optional[bool] = Field(
+    attached_bathroom_required: Union[bool, None] = Field(
         default=None,
         description="Attached bathroom required",
     )
-    max_price_monthly: Optional[
+    max_price_monthly: Union[
         Annotated[
             Decimal,
             Field(
@@ -85,16 +82,17 @@ class RoomAvailabilityRequest(BaseCreateSchema):
                 decimal_places=2,
                 description="Maximum acceptable monthly rent",
             ),
-        ]
+        ],
+        None,
     ] = None
 
     @field_validator("check_in_date")
     @classmethod
     def validate_check_in_date(cls, v: Date) -> Date:
         """
-        Validate check-in date.
+        Validate check-in Date.
         
-        Ensures date is not too far in the past.
+        Ensures Date is not too far in the past.
         """
         today = Date.today()
         # Allow up to 7 days in the past for flexibility
@@ -102,22 +100,22 @@ class RoomAvailabilityRequest(BaseCreateSchema):
         
         if v < min_date:
             raise ValueError(
-                "Check-in date cannot be more than 7 days in the past"
+                "Check-in Date cannot be more than 7 days in the past"
             )
         
         # Warn if too far in future (1 year)
         max_date = today + timedelta(days=365)
         if v > max_date:
             raise ValueError(
-                "Check-in date cannot be more than 1 year in the future"
+                "Check-in Date cannot be more than 1 year in the future"
             )
         
         return v
 
-    @computed_field  # type: ignore[misc]
+    @computed_field  # type: ignore[prop-decorator]
     @property
     def check_out_date(self) -> Date:
-        """Calculate checkout date based on duration."""
+        """Calculate checkout Date based on duration."""
         # Approximate: 1 month = 30 days
         return self.check_in_date + timedelta(days=self.duration_months * 30)
 
@@ -132,8 +130,8 @@ class AvailableRoom(BaseSchema):
     room_id: str = Field(..., description="Room ID")
     room_number: str = Field(..., description="Room number")
     room_type: RoomType = Field(..., description="Room type")
-    floor_number: Optional[int] = Field(default=None, description="Floor")
-    wing: Optional[str] = Field(default=None, description="Wing/Block")
+    floor_number: Union[int, None] = Field(default=None, description="Floor")
+    wing: Union[str, None] = Field(default=None, description="Wing/Block")
     
     # Availability
     available_beds: int = Field(..., ge=0, description="Available beds")
@@ -149,7 +147,7 @@ class AvailableRoom(BaseSchema):
             description="Monthly rent per bed",
         ),
     ]
-    price_quarterly: Optional[
+    price_quarterly: Union[
         Annotated[
             Decimal,
             Field(
@@ -158,9 +156,10 @@ class AvailableRoom(BaseSchema):
                 decimal_places=2,
                 description="Quarterly rate",
             ),
-        ]
+        ],
+        None,
     ] = None
-    price_half_yearly: Optional[
+    price_half_yearly: Union[
         Annotated[
             Decimal,
             Field(
@@ -169,9 +168,10 @@ class AvailableRoom(BaseSchema):
                 decimal_places=2,
                 description="Half-yearly rate",
             ),
-        ]
+        ],
+        None,
     ] = None
-    price_yearly: Optional[
+    price_yearly: Union[
         Annotated[
             Decimal,
             Field(
@@ -180,7 +180,8 @@ class AvailableRoom(BaseSchema):
                 decimal_places=2,
                 description="Yearly rate",
             ),
-        ]
+        ],
+        None,
     ] = None
     
     # Features
@@ -188,7 +189,7 @@ class AvailableRoom(BaseSchema):
     has_attached_bathroom: bool = Field(..., description="Attached bathroom")
     has_balcony: bool = Field(default=False, description="Has balcony")
     has_wifi: bool = Field(default=True, description="WiFi available")
-    room_size_sqft: Optional[int] = Field(
+    room_size_sqft: Union[int, None] = Field(
         default=None,
         description="Room size",
     )
@@ -208,12 +209,12 @@ class AvailableRoom(BaseSchema):
         default_factory=list,
         description="Room images",
     )
-    primary_image: Optional[str] = Field(
+    primary_image: Union[str, None] = Field(
         default=None,
         description="Primary image URL",
     )
 
-    @computed_field  # type: ignore[misc]
+    @computed_field  # type: ignore[prop-decorator]
     @property
     def occupancy_rate(self) -> Decimal:
         """Calculate current occupancy rate."""
@@ -233,8 +234,8 @@ class AvailabilityResponse(BaseSchema):
     """
 
     hostel_id: str = Field(..., description="Hostel ID")
-    check_in_date: Date = Field(..., description="Requested check-in date")
-    check_out_date: Date = Field(..., description="Calculated checkout date")
+    check_in_date: Date = Field(..., description="Requested check-in Date")
+    check_out_date: Date = Field(..., description="Calculated checkout Date")
     duration_months: int = Field(..., ge=1, description="Stay duration")
     
     # Results
@@ -258,15 +259,15 @@ class AvailabilityResponse(BaseSchema):
         description="Summary of applied filters",
     )
 
-    @computed_field  # type: ignore[misc]
+    @computed_field  # type: ignore[prop-decorator]
     @property
     def total_rooms_available(self) -> int:
         """Count of rooms with availability."""
         return len(self.available_rooms)
 
-    @computed_field  # type: ignore[misc]
+    @computed_field  # type: ignore[prop-decorator]
     @property
-    def price_range(self) -> Optional[Dict[str, Decimal]]:
+    def price_range(self) -> Union[Dict[str, Decimal], None]:
         """Calculate price range across available rooms."""
         if not self.available_rooms:
             return None
@@ -291,9 +292,9 @@ class BookingInfo(BaseSchema):
     booking_id: str = Field(..., description="Booking ID")
     student_name: str = Field(..., description="Student name")
     student_id: str = Field(..., description="Student ID")
-    check_in_date: Date = Field(..., description="Check-in date")
-    check_out_date: Date = Field(..., description="Check-out date")
-    bed_number: Optional[str] = Field(
+    check_in_date: Date = Field(..., description="Check-in Date")
+    check_out_date: Date = Field(..., description="Check-out Date")
+    bed_number: Union[str, None] = Field(
         default=None,
         description="Assigned bed number",
     )
@@ -307,7 +308,7 @@ class DayAvailability(BaseSchema):
     Day-level availability with booking details.
     """
 
-    date: Date = Field(..., description="Date")
+    Date: Date = Field(..., description="Date")
     available_beds: int = Field(..., ge=0, description="Available beds")
     total_beds: int = Field(..., ge=1, description="Total beds")
     is_available: bool = Field(..., description="Has availability")
@@ -315,12 +316,12 @@ class DayAvailability(BaseSchema):
         default_factory=list,
         description="Active bookings for this day",
     )
-    notes: Optional[str] = Field(
+    notes: Union[str, None] = Field(
         default=None,
         description="Special notes (holidays, maintenance, etc.)",
     )
 
-    @computed_field  # type: ignore[misc]
+    @computed_field  # type: ignore[prop-decorator]
     @property
     def occupancy_percentage(self) -> Decimal:
         """Calculate occupancy percentage for the day."""
@@ -351,7 +352,7 @@ class AvailabilityCalendar(BaseSchema):
     # Day-by-day availability
     availability: Dict[str, DayAvailability] = Field(
         ...,
-        description="Availability by date (ISO date string as key)",
+        description="Availability by Date (ISO Date string as key)",
     )
 
     @field_validator("month")
@@ -368,7 +369,7 @@ class AvailabilityCalendar(BaseSchema):
             raise ValueError(f"Invalid month format: {e}")
         return v
 
-    @computed_field  # type: ignore[misc]
+    @computed_field  # type: ignore[prop-decorator]
     @property
     def average_occupancy(self) -> Decimal:
         """Calculate average occupancy for the month."""
@@ -382,7 +383,7 @@ class AvailabilityCalendar(BaseSchema):
             Decimal("0.01")
         )
 
-    @computed_field  # type: ignore[misc]
+    @computed_field  # type: ignore[prop-decorator]
     @property
     def fully_booked_days(self) -> int:
         """Count days with no availability."""
@@ -407,7 +408,7 @@ class BulkAvailabilityRequest(BaseCreateSchema):
     )
     check_in_date: Date = Field(
         ...,
-        description="Check-in date",
+        description="Check-in Date",
     )
     duration_months: int = Field(
         ...,
@@ -415,7 +416,7 @@ class BulkAvailabilityRequest(BaseCreateSchema):
         le=24,
         description="Stay duration",
     )
-    room_type: Optional[RoomType] = Field(
+    room_type: Union[RoomType, None] = Field(
         default=None,
         description="Room type filter",
     )
@@ -436,10 +437,10 @@ class BulkAvailabilityRequest(BaseCreateSchema):
     @field_validator("check_in_date")
     @classmethod
     def validate_check_in_date(cls, v: Date) -> Date:
-        """Validate check-in date is not in the past."""
+        """Validate check-in Date is not in the past."""
         today = Date.today()
         if v < today - timedelta(days=7):
             raise ValueError(
-                "Check-in date cannot be more than 7 days in the past"
+                "Check-in Date cannot be more than 7 days in the past"
             )
         return v

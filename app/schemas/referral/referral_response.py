@@ -6,11 +6,9 @@ This module provides response schemas for referral queries including
 detailed information, statistics, and analytics.
 """
 
-from __future__ import annotations
-
 from datetime import datetime
 from decimal import Decimal
-from typing import Dict, List, Optional, Any
+from typing import Any, Dict, List, Union
 from uuid import UUID
 
 from pydantic import Field, computed_field
@@ -42,30 +40,30 @@ class ReferralResponse(BaseResponseSchema):
     # Referrer information
     referrer_id: UUID = Field(..., description="Referrer user ID")
     referrer_name: str = Field(..., description="Referrer name")
-    referrer_email: Optional[str] = Field(None, description="Referrer email")
+    referrer_email: Union[str, None] = Field(None, description="Referrer email")
 
     # Referee information
-    referee_email: Optional[str] = Field(None, description="Referee email")
-    referee_phone: Optional[str] = Field(None, description="Referee phone")
-    referee_user_id: Optional[UUID] = Field(None, description="Referee user ID")
-    referee_name: Optional[str] = Field(None, description="Referee name")
+    referee_email: Union[str, None] = Field(None, description="Referee email")
+    referee_phone: Union[str, None] = Field(None, description="Referee phone")
+    referee_user_id: Union[UUID, None] = Field(None, description="Referee user ID")
+    referee_name: Union[str, None] = Field(None, description="Referee name")
 
     # Referral details
     referral_code: str = Field(..., description="Referral code used")
     status: ReferralStatus = Field(..., description="Referral status")
-    referral_source: Optional[str] = Field(None, description="Referral source")
+    referral_source: Union[str, None] = Field(None, description="Referral source")
 
     # Conversion information
-    booking_id: Optional[UUID] = Field(None, description="Associated booking ID")
-    conversion_date: Optional[datetime] = Field(None, description="Conversion Date")
-    booking_amount: Optional[Decimal] = Field(None, description="Booking amount")
+    booking_id: Union[UUID, None] = Field(None, description="Associated booking ID")
+    conversion_date: Union[datetime, None] = Field(None, description="Conversion Date")
+    booking_amount: Union[Decimal, None] = Field(None, description="Booking amount")
 
     # Reward information
-    referrer_reward_amount: Optional[Decimal] = Field(
+    referrer_reward_amount: Union[Decimal, None] = Field(
         None,
         description="Referrer reward amount",
     )
-    referee_reward_amount: Optional[Decimal] = Field(
+    referee_reward_amount: Union[Decimal, None] = Field(
         None,
         description="Referee reward amount",
     )
@@ -85,13 +83,13 @@ class ReferralResponse(BaseResponseSchema):
     created_at: datetime = Field(..., description="Referral creation time")
     updated_at: datetime = Field(..., description="Last update time")
 
-    @computed_field
+    @computed_field  # type: ignore[prop-decorator]
     @property
     def is_converted(self) -> bool:
         """Check if referral has converted to booking."""
         return self.status == ReferralStatus.COMPLETED and self.booking_id is not None
 
-    @computed_field
+    @computed_field  # type: ignore[prop-decorator]
     @property
     def total_reward_amount(self) -> Decimal:
         """Calculate total reward amount (referrer + referee)."""
@@ -99,7 +97,7 @@ class ReferralResponse(BaseResponseSchema):
         referee = self.referee_reward_amount or Decimal("0")
         return referrer + referee
 
-    @computed_field
+    @computed_field  # type: ignore[prop-decorator]
     @property
     def days_since_referral(self) -> int:
         """Calculate days since referral was created."""
@@ -117,13 +115,13 @@ class ReferralDetail(BaseResponseSchema):
     program_id: UUID = Field(..., description="Program ID")
     program_name: str = Field(..., description="Program name")
     program_type: str = Field(..., description="Program type")
-    program_description: Optional[str] = Field(None, description="Program description")
+    program_description: Union[str, None] = Field(None, description="Program description")
 
     # Referrer information
     referrer_id: UUID = Field(..., description="Referrer ID")
     referrer_name: str = Field(..., description="Referrer name")
-    referrer_email: Optional[str] = Field(None, description="Referrer email")
-    referrer_phone: Optional[str] = Field(None, description="Referrer phone")
+    referrer_email: Union[str, None] = Field(None, description="Referrer email")
+    referrer_phone: Union[str, None] = Field(None, description="Referrer phone")
     referrer_total_referrals: int = Field(
         default=0,
         ge=0,
@@ -131,11 +129,11 @@ class ReferralDetail(BaseResponseSchema):
     )
 
     # Referee information
-    referee_email: Optional[str] = Field(None, description="Referee email")
-    referee_phone: Optional[str] = Field(None, description="Referee phone")
-    referee_user_id: Optional[UUID] = Field(None, description="Referee user ID")
-    referee_name: Optional[str] = Field(None, description="Referee name")
-    referee_registration_date: Optional[datetime] = Field(
+    referee_email: Union[str, None] = Field(None, description="Referee email")
+    referee_phone: Union[str, None] = Field(None, description="Referee phone")
+    referee_user_id: Union[UUID, None] = Field(None, description="Referee user ID")
+    referee_name: Union[str, None] = Field(None, description="Referee name")
+    referee_registration_date: Union[datetime, None] = Field(
         None,
         description="When referee registered",
     )
@@ -143,24 +141,24 @@ class ReferralDetail(BaseResponseSchema):
     # Referral details
     referral_code: str = Field(..., description="Referral code")
     status: ReferralStatus = Field(..., description="Current status")
-    referral_source: Optional[str] = Field(None, description="Referral source")
-    campaign_id: Optional[UUID] = Field(None, description="Campaign ID")
+    referral_source: Union[str, None] = Field(None, description="Referral source")
+    campaign_id: Union[UUID, None] = Field(None, description="Campaign ID")
 
     # Conversion tracking
-    booking_id: Optional[UUID] = Field(None, description="Booking ID")
-    booking_amount: Optional[Decimal] = Field(None, description="Booking amount")
-    booking_date: Optional[datetime] = Field(None, description="Booking Date")
-    conversion_date: Optional[datetime] = Field(None, description="Conversion Date")
-    stay_duration_months: Optional[int] = Field(None, description="Stay duration")
-    hostel_id: Optional[UUID] = Field(None, description="Hostel ID")
-    hostel_name: Optional[str] = Field(None, description="Hostel name")
+    booking_id: Union[UUID, None] = Field(None, description="Booking ID")
+    booking_amount: Union[Decimal, None] = Field(None, description="Booking amount")
+    booking_date: Union[datetime, None] = Field(None, description="Booking Date")
+    conversion_date: Union[datetime, None] = Field(None, description="Conversion Date")
+    stay_duration_months: Union[int, None] = Field(None, description="Stay duration")
+    hostel_id: Union[UUID, None] = Field(None, description="Hostel ID")
+    hostel_name: Union[str, None] = Field(None, description="Hostel name")
 
     # Reward information
-    referrer_reward_amount: Optional[Decimal] = Field(
+    referrer_reward_amount: Union[Decimal, None] = Field(
         None,
         description="Referrer reward",
     )
-    referee_reward_amount: Optional[Decimal] = Field(
+    referee_reward_amount: Union[Decimal, None] = Field(
         None,
         description="Referee reward",
     )
@@ -169,11 +167,11 @@ class ReferralDetail(BaseResponseSchema):
     # Reward status and payment
     referrer_reward_status: RewardStatus = Field(..., description="Referrer reward status")
     referee_reward_status: RewardStatus = Field(..., description="Referee reward status")
-    referrer_reward_paid_at: Optional[datetime] = Field(
+    referrer_reward_paid_at: Union[datetime, None] = Field(
         None,
         description="When referrer reward was paid",
     )
-    referee_reward_paid_at: Optional[datetime] = Field(
+    referee_reward_paid_at: Union[datetime, None] = Field(
         None,
         description="When referee reward was paid",
     )
@@ -185,23 +183,23 @@ class ReferralDetail(BaseResponseSchema):
     )
 
     # Notes and metadata
-    notes: Optional[str] = Field(None, description="Additional notes")
-    admin_notes: Optional[str] = Field(None, description="Admin-only notes")
+    notes: Union[str, None] = Field(None, description="Additional notes")
+    admin_notes: Union[str, None] = Field(None, description="Admin-only notes")
 
     # Timestamps
     created_at: datetime = Field(..., description="Creation time")
     updated_at: datetime = Field(..., description="Last update time")
-    completed_at: Optional[datetime] = Field(None, description="Completion time")
+    completed_at: Union[datetime, None] = Field(None, description="Completion time")
 
-    @computed_field
+    @computed_field  # type: ignore[prop-decorator]
     @property
-    def conversion_time_days(self) -> Optional[int]:
+    def conversion_time_days(self) -> Union[int, None]:
         """Calculate days from referral to conversion."""
         if self.conversion_date:
             return (self.conversion_date - self.created_at).days
         return None
 
-    @computed_field
+    @computed_field  # type: ignore[prop-decorator]
     @property
     def total_reward_value(self) -> Decimal:
         """Calculate total reward value."""
@@ -209,7 +207,7 @@ class ReferralDetail(BaseResponseSchema):
         referee = self.referee_reward_amount or Decimal("0")
         return referrer + referee
 
-    @computed_field
+    @computed_field  # type: ignore[prop-decorator]
     @property
     def is_reward_fully_paid(self) -> bool:
         """Check if both rewards have been paid."""
@@ -310,28 +308,28 @@ class ReferralStats(BaseSchema):
     )
 
     # Ranking
-    user_rank: Optional[int] = Field(
+    user_rank: Union[int, None] = Field(
         None,
         ge=1,
         description="User's rank among all referrers",
     )
-    total_referrers: Optional[int] = Field(
+    total_referrers: Union[int, None] = Field(
         None,
         ge=1,
         description="Total number of active referrers",
     )
 
     # Activity
-    last_referral_date: Optional[datetime] = Field(
+    last_referral_date: Union[datetime, None] = Field(
         None,
         description="Date of last referral",
     )
-    most_active_program: Optional[str] = Field(
+    most_active_program: Union[str, None] = Field(
         None,
         description="Program with most referrals",
     )
 
-    @computed_field
+    @computed_field  # type: ignore[prop-decorator]
     @property
     def success_rate(self) -> Decimal:
         """Calculate success rate percentage."""
@@ -341,13 +339,13 @@ class ReferralStats(BaseSchema):
             (self.successful_referrals / self.total_referrals * 100)
         ).quantize(Decimal("0.01"))
 
-    @computed_field
+    @computed_field  # type: ignore[prop-decorator]
     @property
     def pending_payout_amount(self) -> Decimal:
         """Calculate amount pending for payout."""
         return self.total_pending_rewards
 
-    @computed_field
+    @computed_field  # type: ignore[prop-decorator]
     @property
     def average_reward_per_referral(self) -> Decimal:
         """Calculate average reward per successful referral."""
@@ -392,7 +390,7 @@ class LeaderboardEntry(BaseSchema):
     rank: int = Field(..., ge=1, description="User's rank")
     user_id: UUID = Field(..., description="User ID")
     user_name: str = Field(..., description="User name")
-    user_avatar: Optional[str] = Field(None, description="User avatar URL")
+    user_avatar: Union[str, None] = Field(None, description="User avatar URL")
 
     total_referrals: int = Field(..., ge=0, description="Total referrals")
     successful_referrals: int = Field(..., ge=0, description="Successful referrals")
@@ -406,7 +404,7 @@ class LeaderboardEntry(BaseSchema):
     )
 
     # Badge/achievement
-    badge: Optional[str] = Field(
+    badge: Union[str, None] = Field(
         None,
         description="Achievement badge (e.g., 'Top Referrer', 'Rising Star')",
     )
@@ -435,14 +433,14 @@ class TimelineEvent(BaseSchema):
         description="Event type",
     )
     event_title: str = Field(..., description="Event title")
-    event_description: Optional[str] = Field(None, description="Event description")
+    event_description: Union[str, None] = Field(None, description="Event description")
     event_date: datetime = Field(..., description="Event timestamp")
     event_data: Dict[str, Any] = Field(
         default_factory=dict,
         description="Additional event data",
     )
-    actor_id: Optional[UUID] = Field(None, description="User who triggered event")
-    actor_name: Optional[str] = Field(None, description="Actor name")
+    actor_id: Union[UUID, None] = Field(None, description="User who triggered event")
+    actor_name: Union[str, None] = Field(None, description="Actor name")
 
 
 class ReferralAnalytics(BaseSchema):
@@ -452,7 +450,7 @@ class ReferralAnalytics(BaseSchema):
     Provides insights and trends for referral programs.
     """
 
-    program_id: Optional[UUID] = Field(None, description="Program ID (null for all)")
+    program_id: Union[UUID, None] = Field(None, description="Program ID (null for all)")
     
     # Time period
     period_start: datetime = Field(..., description="Analysis start Date")
@@ -529,7 +527,7 @@ class ReferralAnalytics(BaseSchema):
         description="Referrals by status",
     )
 
-    @computed_field
+    @computed_field  # type: ignore[prop-decorator]
     @property
     def effective_conversion_rate(self) -> Decimal:
         """Calculate effective conversion rate."""

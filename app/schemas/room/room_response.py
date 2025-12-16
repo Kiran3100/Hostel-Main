@@ -12,12 +12,9 @@ Pydantic v2 Migration Notes:
 - Financial fields use appropriate precision for currency calculations
 """
 
-from __future__ import annotations
-
-from datetime import datetime
-from datetime import date as Date
+from datetime import date as Date, datetime
 from decimal import Decimal
-from typing import Annotated, List, Optional
+from typing import Annotated, List, Union
 
 from pydantic import Field, computed_field
 
@@ -43,8 +40,8 @@ class RoomResponse(BaseResponseSchema):
 
     hostel_id: str = Field(..., description="Hostel ID")
     room_number: str = Field(..., description="Room number")
-    floor_number: Optional[int] = Field(default=None, description="Floor number")
-    wing: Optional[str] = Field(default=None, description="Wing/Block")
+    floor_number: Union[int, None] = Field(default=None, description="Floor number")
+    wing: Union[str, None] = Field(default=None, description="Wing/Block")
     
     # Type and capacity
     room_type: RoomType = Field(..., description="Room type")
@@ -74,7 +71,7 @@ class RoomResponse(BaseResponseSchema):
         description="Available for booking",
     )
     
-    @computed_field  # type: ignore[misc]
+    @computed_field  # type: ignore[prop-decorator]
     @property
     def occupancy_percentage(self) -> Decimal:
         """Calculate occupancy percentage."""
@@ -98,29 +95,29 @@ class BedDetail(BaseSchema):
     status: BedStatus = Field(..., description="Bed status")
     
     # Current occupant
-    current_student_id: Optional[str] = Field(
+    current_student_id: Union[str, None] = Field(
         default=None,
         description="Current student ID (if occupied)",
     )
-    current_student_name: Optional[str] = Field(
+    current_student_name: Union[str, None] = Field(
         default=None,
         description="Current student name (if occupied)",
     )
-    occupied_from: Optional[Date] = Field(
+    occupied_from: Union[Date, None] = Field(
         default=None,
-        description="Occupancy start date",
+        description="Occupancy start Date",
     )
-    expected_vacate_date: Optional[Date] = Field(
+    expected_vacate_date: Union[Date, None] = Field(
         default=None,
-        description="Expected checkout date",
+        description="Expected checkout Date",
     )
     
     # Additional info
-    last_maintenance_date: Optional[Date] = Field(
+    last_maintenance_date: Union[Date, None] = Field(
         default=None,
-        description="Last maintenance date",
+        description="Last maintenance Date",
     )
-    notes: Optional[str] = Field(
+    notes: Union[str, None] = Field(
         default=None,
         description="Bed notes",
     )
@@ -138,8 +135,8 @@ class RoomDetail(BaseResponseSchema):
     hostel_id: str = Field(..., description="Hostel ID")
     hostel_name: str = Field(..., description="Hostel name")
     room_number: str = Field(..., description="Room number")
-    floor_number: Optional[int] = Field(default=None, description="Floor number")
-    wing: Optional[str] = Field(default=None, description="Wing/Block")
+    floor_number: Union[int, None] = Field(default=None, description="Floor number")
+    wing: Union[str, None] = Field(default=None, description="Wing/Block")
 
     # Type and capacity
     room_type: RoomType = Field(..., description="Room type")
@@ -157,7 +154,7 @@ class RoomDetail(BaseResponseSchema):
             description="Monthly rent",
         ),
     ]
-    price_quarterly: Optional[
+    price_quarterly: Union[
         Annotated[
             Decimal,
             Field(
@@ -166,9 +163,10 @@ class RoomDetail(BaseResponseSchema):
                 decimal_places=2,
                 description="Quarterly rent",
             ),
-        ]
+        ],
+        None,
     ] = None
-    price_half_yearly: Optional[
+    price_half_yearly: Union[
         Annotated[
             Decimal,
             Field(
@@ -177,9 +175,10 @@ class RoomDetail(BaseResponseSchema):
                 decimal_places=2,
                 description="Half-yearly rent",
             ),
-        ]
+        ],
+        None,
     ] = None
-    price_yearly: Optional[
+    price_yearly: Union[
         Annotated[
             Decimal,
             Field(
@@ -188,11 +187,12 @@ class RoomDetail(BaseResponseSchema):
                 decimal_places=2,
                 description="Yearly rent",
             ),
-        ]
+        ],
+        None,
     ] = None
 
     # Specifications
-    room_size_sqft: Optional[int] = Field(
+    room_size_sqft: Union[int, None] = Field(
         default=None,
         description="Room size in sq ft",
     )
@@ -221,15 +221,15 @@ class RoomDetail(BaseResponseSchema):
         ...,
         description="Under maintenance",
     )
-    maintenance_start_date: Optional[Date] = Field(
+    maintenance_start_date: Union[Date, None] = Field(
         default=None,
-        description="Maintenance start date",
+        description="Maintenance start Date",
     )
-    maintenance_end_date: Optional[Date] = Field(
+    maintenance_end_date: Union[Date, None] = Field(
         default=None,
-        description="Expected maintenance end date",
+        description="Expected maintenance end Date",
     )
-    maintenance_notes: Optional[str] = Field(
+    maintenance_notes: Union[str, None] = Field(
         default=None,
         description="Maintenance notes",
     )
@@ -239,11 +239,11 @@ class RoomDetail(BaseResponseSchema):
         default_factory=list,
         description="Room image URLs",
     )
-    primary_image: Optional[str] = Field(
+    primary_image: Union[str, None] = Field(
         default=None,
         description="Primary/cover image",
     )
-    virtual_tour_url: Optional[str] = Field(
+    virtual_tour_url: Union[str, None] = Field(
         default=None,
         description="Virtual tour URL",
     )
@@ -254,7 +254,7 @@ class RoomDetail(BaseResponseSchema):
         description="Detailed bed information",
     )
 
-    @computed_field  # type: ignore[misc]
+    @computed_field  # type: ignore[prop-decorator]
     @property
     def occupancy_percentage(self) -> Decimal:
         """Calculate current occupancy percentage."""
@@ -264,15 +264,15 @@ class RoomDetail(BaseResponseSchema):
             (self.occupied_beds / self.total_beds * 100)
         ).quantize(Decimal("0.01"))
 
-    @computed_field  # type: ignore[misc]
+    @computed_field  # type: ignore[prop-decorator]
     @property
     def is_fully_occupied(self) -> bool:
         """Check if room is fully occupied."""
         return self.occupied_beds >= self.total_beds
 
-    @computed_field  # type: ignore[misc]
+    @computed_field  # type: ignore[prop-decorator]
     @property
-    def discount_percentage_quarterly(self) -> Optional[Decimal]:
+    def discount_percentage_quarterly(self) -> Union[Decimal, None]:
         """Calculate quarterly discount percentage."""
         if not self.price_quarterly:
             return None
@@ -284,9 +284,9 @@ class RoomDetail(BaseResponseSchema):
         )
         return Decimal(discount).quantize(Decimal("0.01"))
 
-    @computed_field  # type: ignore[misc]
+    @computed_field  # type: ignore[prop-decorator]
     @property
-    def discount_percentage_yearly(self) -> Optional[Decimal]:
+    def discount_percentage_yearly(self) -> Union[Decimal, None]:
         """Calculate yearly discount percentage."""
         if not self.price_yearly:
             return None
@@ -308,8 +308,8 @@ class RoomListItem(BaseSchema):
 
     id: str = Field(..., description="Room ID")
     room_number: str = Field(..., description="Room number")
-    floor_number: Optional[int] = Field(default=None, description="Floor")
-    wing: Optional[str] = Field(default=None, description="Wing")
+    floor_number: Union[int, None] = Field(default=None, description="Floor")
+    wing: Union[str, None] = Field(default=None, description="Wing")
     room_type: RoomType = Field(..., description="Room type")
     total_beds: int = Field(..., ge=0, description="Total beds")
     available_beds: int = Field(..., ge=0, description="Available beds")
@@ -325,9 +325,9 @@ class RoomListItem(BaseSchema):
     is_ac: bool = Field(..., description="AC available")
     status: RoomStatus = Field(..., description="Status")
     is_available_for_booking: bool = Field(..., description="Bookable")
-    primary_image: Optional[str] = Field(default=None, description="Cover image")
+    primary_image: Union[str, None] = Field(default=None, description="Cover image")
 
-    @computed_field  # type: ignore[misc]
+    @computed_field  # type: ignore[prop-decorator]
     @property
     def occupancy_percentage(self) -> Decimal:
         """Calculate occupancy percentage."""
@@ -350,13 +350,13 @@ class BedInfo(BaseSchema):
     bed_number: str = Field(..., description="Bed number")
     is_occupied: bool = Field(..., description="Occupied status")
     status: BedStatus = Field(..., description="Bed status")
-    student_name: Optional[str] = Field(
+    student_name: Union[str, None] = Field(
         default=None,
         description="Occupant name (if applicable)",
     )
-    occupied_from: Optional[Date] = Field(
+    occupied_from: Union[Date, None] = Field(
         default=None,
-        description="Occupancy start date",
+        description="Occupancy start Date",
     )
 
 
@@ -387,7 +387,7 @@ class RoomWithBeds(BaseResponseSchema):
         description="Bed details",
     )
 
-    @computed_field  # type: ignore[misc]
+    @computed_field  # type: ignore[prop-decorator]
     @property
     def occupancy_rate(self) -> Decimal:
         """Calculate occupancy rate."""
@@ -453,12 +453,12 @@ class RoomOccupancyStats(BaseSchema):
     is_available_for_booking: bool = Field(..., description="Booking availability")
     
     # Timestamps
-    last_occupancy_change: Optional[datetime] = Field(
+    last_occupancy_change: Union[datetime, None] = Field(
         default=None,
         description="Last occupancy change timestamp",
     )
 
-    @computed_field  # type: ignore[misc]
+    @computed_field  # type: ignore[prop-decorator]
     @property
     def occupancy_percentage(self) -> Decimal:
         """Calculate occupancy percentage."""
@@ -468,7 +468,7 @@ class RoomOccupancyStats(BaseSchema):
             (self.occupied_beds / self.total_beds * 100)
         ).quantize(Decimal("0.01"))
 
-    @computed_field  # type: ignore[misc]
+    @computed_field  # type: ignore[prop-decorator]
     @property
     def revenue_percentage(self) -> Decimal:
         """Calculate revenue realization percentage."""
@@ -478,7 +478,7 @@ class RoomOccupancyStats(BaseSchema):
             (self.current_revenue / self.potential_revenue * 100)
         ).quantize(Decimal("0.01"))
 
-    @computed_field  # type: ignore[misc]
+    @computed_field  # type: ignore[prop-decorator]
     @property
     def lost_revenue(self) -> Decimal:
         """Calculate lost revenue due to vacancy."""
@@ -544,7 +544,7 @@ class RoomFinancialSummary(BaseSchema):
             ge=0,
             max_digits=15,
             decimal_places=2,
-            description="Year-to-date total revenue",
+            description="Year-to-Date total revenue",
         ),
     ]
     total_collected_ytd: Annotated[
@@ -553,7 +553,7 @@ class RoomFinancialSummary(BaseSchema):
             ge=0,
             max_digits=15,
             decimal_places=2,
-            description="Year-to-date collected amount",
+            description="Year-to-Date collected amount",
         ),
     ]
     average_occupancy_ytd: Annotated[
@@ -563,7 +563,7 @@ class RoomFinancialSummary(BaseSchema):
             le=100,
             max_digits=5,
             decimal_places=2,
-            description="Year-to-date average occupancy %",
+            description="Year-to-Date average occupancy %",
         ),
     ]
     
@@ -587,7 +587,7 @@ class RoomFinancialSummary(BaseSchema):
         ),
     ]
 
-    @computed_field  # type: ignore[misc]
+    @computed_field  # type: ignore[prop-decorator]
     @property
     def collection_rate(self) -> Decimal:
         """Calculate collection rate for current month."""
@@ -597,7 +597,7 @@ class RoomFinancialSummary(BaseSchema):
             (self.current_month_collected / self.current_month_revenue * 100)
         ).quantize(Decimal("0.01"))
 
-    @computed_field  # type: ignore[misc]
+    @computed_field  # type: ignore[prop-decorator]
     @property
     def occupancy_rate(self) -> Decimal:
         """Calculate current occupancy rate."""

@@ -13,14 +13,12 @@ Pydantic v2 Migration Notes:
 - Confidence scores use max_digits=4, decimal_places=3 for 0.000-1.000 range
 """
 
-from __future__ import annotations
-
 from datetime import date as Date, datetime
 from decimal import Decimal
-from typing import Annotated, Dict, List, Optional
+from typing import Annotated, Dict, List, Union
+from uuid import UUID
 
 from pydantic import Field, HttpUrl, field_validator, model_validator, computed_field
-from uuid import UUID
 
 from app.schemas.common.base import BaseCreateSchema, BaseSchema
 
@@ -47,7 +45,7 @@ class DetailedRatingsInput(BaseSchema):
         le=5,
         description="Cleanliness and hygiene rating",
     )
-    food_quality: Optional[int] = Field(
+    food_quality: Union[int, None] = Field(
         default=None,
         ge=1,
         le=5,
@@ -77,19 +75,19 @@ class DetailedRatingsInput(BaseSchema):
         le=5,
         description="Facilities and amenities quality rating",
     )
-    location: Optional[int] = Field(
+    location: Union[int, None] = Field(
         default=None,
         ge=1,
         le=5,
         description="Location convenience rating",
     )
-    wifi_quality: Optional[int] = Field(
+    wifi_quality: Union[int, None] = Field(
         default=None,
         ge=1,
         le=5,
         description="Internet/WiFi quality rating",
     )
-    maintenance: Optional[int] = Field(
+    maintenance: Union[int, None] = Field(
         default=None,
         ge=1,
         le=5,
@@ -130,11 +128,11 @@ class ReviewSubmissionRequest(BaseCreateSchema):
     hostel_id: UUID = Field(..., description="Hostel to review")
     
     # Verification references (optional but help verify stay)
-    booking_id: Optional[UUID] = Field(
+    booking_id: Union[UUID, None] = Field(
         default=None,
         description="Related booking ID for stay verification",
     )
-    student_id: Optional[UUID] = Field(
+    student_id: Union[UUID, None] = Field(
         default=None,
         description="Student profile ID for stay verification",
     )
@@ -185,19 +183,19 @@ class ReviewSubmissionRequest(BaseCreateSchema):
     )
     
     # Stay details (helps with verification)
-    stay_duration_months: Optional[int] = Field(
+    stay_duration_months: Union[int, None] = Field(
         default=None,
         ge=1,
         le=24,
         description="Duration of stay in months",
     )
-    check_in_date: Optional[Date] = Field(
+    check_in_date: Union[Date, None] = Field(
         default=None,
-        description="Approximate check-in date",
+        description="Approximate check-in Date",
     )
-    check_out_date: Optional[Date] = Field(
+    check_out_date: Union[Date, None] = Field(
         default=None,
-        description="Approximate check-out date (if moved out)",
+        description="Approximate check-out Date (if moved out)",
     )
     
     # Specific feedback (optional)
@@ -288,11 +286,11 @@ class ReviewSubmissionRequest(BaseCreateSchema):
         if self.check_in_date and self.check_out_date:
             if self.check_out_date <= self.check_in_date:
                 raise ValueError(
-                    "Check-out date must be after check-in date"
+                    "Check-out Date must be after check-in Date"
                 )
         
         if self.check_in_date and self.check_in_date > Date.today():
-            raise ValueError("Check-in date cannot be in the future")
+            raise ValueError("Check-in Date cannot be in the future")
         
         return self
     
@@ -332,14 +330,14 @@ class VerifiedReview(BaseSchema):
         description="Method used for verification",
     )
     
-    verified_by: Optional[UUID] = Field(
+    verified_by: Union[UUID, None] = Field(
         default=None,
         description="Admin who verified (for manual verification)",
     )
     verified_at: datetime = Field(..., description="Verification timestamp")
     
     # Verification details
-    verification_details: Optional[Dict[str, str]] = Field(
+    verification_details: Union[Dict[str, str], None] = Field(
         default=None,
         description="Additional verification information",
         examples=[
@@ -352,7 +350,7 @@ class VerifiedReview(BaseSchema):
     )
     
     # Confidence score for auto-verification with proper constraints
-    verification_confidence: Optional[
+    verification_confidence: Union[
         Annotated[
             Decimal,
             Field(
@@ -362,7 +360,8 @@ class VerifiedReview(BaseSchema):
                 decimal_places=3,
                 description="Confidence score for auto-verification (0-1)",
             ),
-        ]
+        ],
+        None,
     ] = None
     
     @field_validator("verification_method")
@@ -475,7 +474,7 @@ class ReviewEligibility(BaseSchema):
         ...,
         description="Whether user already has a review for this hostel",
     )
-    existing_review_id: Optional[UUID] = Field(
+    existing_review_id: Union[UUID, None] = Field(
         default=None,
         description="ID of existing review (if any)",
     )
@@ -483,17 +482,17 @@ class ReviewEligibility(BaseSchema):
         default=False,
         description="Whether user can edit their existing review",
     )
-    edit_deadline: Optional[datetime] = Field(
+    edit_deadline: Union[datetime, None] = Field(
         default=None,
         description="Deadline for editing existing review",
     )
     
     # Additional info
-    last_stay_date: Optional[Date] = Field(
+    last_stay_date: Union[Date, None] = Field(
         default=None,
         description="Date of last stay (if applicable)",
     )
-    stay_duration_days: Optional[int] = Field(
+    stay_duration_days: Union[int, None] = Field(
         default=None,
         ge=1,
         description="Duration of stay in days",
@@ -512,7 +511,7 @@ class ReviewDraft(BaseSchema):
     hostel_id: UUID = Field(..., description="Target hostel")
     
     # Partial content with proper rating constraints
-    overall_rating: Optional[
+    overall_rating: Union[
         Annotated[
             Decimal,
             Field(
@@ -522,21 +521,22 @@ class ReviewDraft(BaseSchema):
                 decimal_places=1,
                 description="Overall rating (if set)",
             ),
-        ]
+        ],
+        None,
     ] = None
-    title: Optional[str] = Field(
+    title: Union[str, None] = Field(
         default=None,
         max_length=255,
         description="Review title (if set)",
     )
-    review_text: Optional[str] = Field(
+    review_text: Union[str, None] = Field(
         default=None,
         max_length=5000,
         description="Review text (if set)",
     )
     
     # Detailed ratings
-    detailed_ratings: Optional[Dict[str, int]] = Field(
+    detailed_ratings: Union[Dict[str, int], None] = Field(
         default=None,
         description="Detailed ratings (if any set)",
     )

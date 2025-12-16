@@ -6,12 +6,10 @@ This module defines schemas for filtering, searching, sorting,
 and exporting payment data.
 """
 
-from __future__ import annotations
-
 from datetime import date as Date, datetime
 from decimal import Decimal
 from enum import Enum
-from typing import List, Optional
+from typing import Dict, List, Union
 from uuid import UUID
 
 from pydantic import Field, field_validator, model_validator
@@ -65,85 +63,85 @@ class PaymentFilterParams(BaseSchema):
     """
 
     # Entity Filters
-    hostel_id: Optional[UUID] = Field(
+    hostel_id: Union[UUID, None] = Field(
         None,
         description="Filter by hostel",
     )
-    student_id: Optional[UUID] = Field(
+    student_id: Union[UUID, None] = Field(
         None,
         description="Filter by student",
     )
-    payer_id: Optional[UUID] = Field(
+    payer_id: Union[UUID, None] = Field(
         None,
         description="Filter by payer",
     )
-    booking_id: Optional[UUID] = Field(
+    booking_id: Union[UUID, None] = Field(
         None,
         description="Filter by booking",
     )
 
     # Payment Attributes
-    payment_type: Optional[PaymentType] = Field(
+    payment_type: Union[PaymentType, None] = Field(
         None,
         description="Filter by payment type",
     )
-    payment_status: Optional[List[PaymentStatus]] = Field(
+    payment_status: Union[List[PaymentStatus], None] = Field(
         None,
         description="Filter by payment status (multiple allowed)",
     )
-    payment_method: Optional[PaymentMethod] = Field(
+    payment_method: Union[PaymentMethod, None] = Field(
         None,
         description="Filter by payment method",
     )
 
     # Amount Range
-    min_amount: Optional[Decimal] = Field(
+    min_amount: Union[Decimal, None] = Field(
         None,
         ge=0,
         description="Minimum amount",
     )
-    max_amount: Optional[Decimal] = Field(
+    max_amount: Union[Decimal, None] = Field(
         None,
         ge=0,
         description="Maximum amount",
     )
 
     # Date Ranges
-    created_after: Optional[datetime] = Field(
+    created_after: Union[datetime, None] = Field(
         None,
         description="Created after this timestamp",
     )
-    created_before: Optional[datetime] = Field(
+    created_before: Union[datetime, None] = Field(
         None,
         description="Created before this timestamp",
     )
-    paid_after: Optional[datetime] = Field(
+    paid_after: Union[datetime, None] = Field(
         None,
         description="Paid after this timestamp",
     )
-    paid_before: Optional[datetime] = Field(
+    paid_before: Union[datetime, None] = Field(
         None,
         description="Paid before this timestamp",
     )
-    due_date_from: Optional[Date] = Field(
+    due_date_from: Union[Date, None] = Field(
         None,
-        description="Due date from",
+        description="Due Date from",
     )
-    due_date_to: Optional[Date] = Field(
+    due_date_to: Union[Date, None] = Field(
         None,
-        description="Due date to",
+        description="Due Date to",
     )
 
     # Boolean Filters
-    is_overdue: Optional[bool] = Field(
+    is_overdue: Union[bool, None] = Field(
         None,
         description="Filter overdue payments",
     )
-    has_receipt: Optional[bool] = Field(
+    has_receipt: Union[bool, None] = Field(
         None,
         description="Filter payments with receipts",
     )
-    is_refunded: Optional[bool] = Field(
+    is_refunded: Union[bool, None] = Field(
         None,
         description="Filter refunded payments",
     )
@@ -174,18 +172,18 @@ class PaymentFilterParams(BaseSchema):
 
     @model_validator(mode="after")
     def validate_date_ranges(self) -> "PaymentFilterParams":
-        """Validate date ranges."""
-        # Created date range
+        """Validate Date ranges."""
+        # Created Date range
         if self.created_after and self.created_before:
             if self.created_after > self.created_before:
                 raise ValueError("created_after cannot be after created_before")
         
-        # Paid date range
+        # Paid Date range
         if self.paid_after and self.paid_before:
             if self.paid_after > self.paid_before:
                 raise ValueError("paid_after cannot be after paid_before")
         
-        # Due date range
+        # Due Date range
         if self.due_date_from and self.due_date_to:
             if self.due_date_from > self.due_date_to:
                 raise ValueError("due_date_from cannot be after due_date_to")
@@ -216,7 +214,7 @@ class PaymentSearchRequest(BaseSchema):
         ],
         description="Fields to search in",
     )
-    filters: Optional[PaymentFilterParams] = Field(
+    filters: Union[PaymentFilterParams, None] = Field(
         None,
         description="Additional filters to apply",
     )
@@ -274,11 +272,11 @@ class PaymentSortOptions(BaseSchema):
     )
 
     # Secondary sort (optional)
-    secondary_sort_by: Optional[PaymentSortField] = Field(
+    secondary_sort_by: Union[PaymentSortField, None] = Field(
         None,
         description="Secondary sort field",
     )
-    secondary_sort_order: Optional[SortOrder] = Field(
+    secondary_sort_order: Union[SortOrder, None] = Field(
         None,
         description="Secondary sort order",
     )
@@ -309,23 +307,23 @@ class PaymentReportRequest(BaseSchema):
     # Report Period
     period_start: Date = Field(
         ...,
-        description="Report period start date",
+        description="Report period start Date",
     )
     period_end: Date = Field(
         ...,
-        description="Report period end date",
+        description="Report period end Date",
     )
 
     # Filters
-    hostel_id: Optional[UUID] = Field(
+    hostel_id: Union[UUID, None] = Field(
         None,
         description="Generate report for specific hostel",
     )
-    payment_type: Optional[PaymentType] = Field(
+    payment_type: Union[PaymentType, None] = Field(
         None,
         description="Filter by payment type",
     )
-    payment_status: Optional[List[PaymentStatus]] = Field(
+    payment_status: Union[List[PaymentStatus], None] = Field(
         None,
         description="Filter by payment status",
     )
@@ -343,7 +341,7 @@ class PaymentReportRequest(BaseSchema):
         False,
         description="Include chart data",
     )
-    group_by: Optional[str] = Field(
+    group_by: Union[str, None] = Field(
         None,
         pattern=r"^(day|week|month|payment_type|payment_method|hostel)$",
         description="Group results by this field",
@@ -388,7 +386,7 @@ class PaymentExportRequest(BaseSchema):
     )
 
     # Sorting
-    sort_options: Optional[PaymentSortOptions] = Field(
+    sort_options: Union[PaymentSortOptions, None] = Field(
         None,
         description="Sorting options",
     )
@@ -402,7 +400,7 @@ class PaymentExportRequest(BaseSchema):
         False,
         description="Include summary sheet (Excel) or section (PDF)",
     )
-    fields: Optional[List[str]] = Field(
+    fields: Union[List[str], None] = Field(
         None,
         description="Specific fields to include (null = all fields)",
     )
@@ -417,7 +415,7 @@ class PaymentExportRequest(BaseSchema):
 
     @field_validator("fields")
     @classmethod
-    def validate_fields(cls, v: Optional[List[str]]) -> Optional[List[str]]:
+    def validate_fields(cls, v: Union[List[str], None]) -> Union[List[str], None]:
         """Validate export fields."""
         if v is None:
             return v
@@ -471,11 +469,11 @@ class PaymentAnalyticsRequest(BaseSchema):
     )
 
     # Filters
-    hostel_id: Optional[UUID] = Field(
+    hostel_id: Union[UUID, None] = Field(
         None,
         description="Analyze specific hostel",
     )
-    payment_types: Optional[List[PaymentType]] = Field(
+    payment_types: Union[List[PaymentType], None] = Field(
         None,
         description="Filter by payment types",
     )

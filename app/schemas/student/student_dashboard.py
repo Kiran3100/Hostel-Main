@@ -5,12 +5,10 @@ Provides schemas for student dashboard, statistics, summaries,
 and quick-view information.
 """
 
-from __future__ import annotations
-
 from datetime import datetime
 from datetime import date as Date
 from decimal import Decimal
-from typing import List, Optional, Annotated
+from typing import List, Union, Annotated
 
 from pydantic import Field, computed_field, ConfigDict
 
@@ -69,11 +67,11 @@ class StudentFinancialSummary(BaseSchema):
         pattern=r"^(current|due_soon|overdue)$",
         description="Overall payment status",
     )
-    days_until_due: Optional[int] = Field(
+    days_until_due: Union[int, None] = Field(
         default=None,
         description="Days until next payment due",
     )
-    days_overdue: Optional[int] = Field(
+    days_overdue: Union[int, None] = Field(
         default=None,
         ge=0,
         description="Days payment is overdue",
@@ -221,9 +219,9 @@ class StudentStats(BaseSchema):
         ...,
         description="Total amount paid",
     )
-    last_payment_date: Optional[Date] = Field(
+    last_payment_date: Union[Date, None] = Field(
         default=None,
-        description="Last payment date",
+        description="Last payment Date",
     )
 
     # Complaints
@@ -279,11 +277,11 @@ class RecentPayment(BaseSchema):
     payment_type: str = Field(..., description="Payment type")
     payment_date: Date = Field(..., description="Payment date")
     status: str = Field(..., description="Payment status")
-    receipt_url: Optional[str] = Field(
+    receipt_url: Union[str, None] = Field(
         default=None,
         description="Receipt download URL",
     )
-    payment_method: Optional[str] = Field(
+    payment_method: Union[str, None] = Field(
         default=None,
         description="Payment method used",
     )
@@ -303,7 +301,7 @@ class RecentComplaint(BaseSchema):
     priority: str = Field(..., description="Priority level")
     created_at: datetime = Field(..., description="Creation timestamp")
     updated_at: datetime = Field(..., description="Last update timestamp")
-    assigned_to: Optional[str] = Field(
+    assigned_to: Union[str, None] = Field(
         default=None,
         description="Assigned staff name",
     )
@@ -327,7 +325,7 @@ class PendingLeave(BaseSchema):
     from_date: Date = Field(..., description="Leave start date")
     to_date: Date = Field(..., description="Leave end date")
     total_days: int = Field(..., ge=1, description="Total leave days")
-    reason: Optional[str] = Field(default=None, description="Leave reason")
+    reason: Union[str, None] = Field(default=None, description="Leave reason")
     status: str = Field(..., description="Application status")
     applied_at: datetime = Field(..., description="Application timestamp")
 
@@ -347,7 +345,7 @@ class RecentAnnouncement(BaseSchema):
 
     announcement_id: str = Field(..., description="Announcement ID")
     title: str = Field(..., description="Announcement title")
-    content: Optional[str] = Field(default=None, description="Announcement content")
+    content: Union[str, None] = Field(default=None, description="Announcement content")
     category: str = Field(..., description="Category")
     priority: str = Field(..., description="Priority level")
     published_at: datetime = Field(..., description="Published timestamp")
@@ -391,7 +389,7 @@ class TodayMessMenu(BaseSchema):
         default=False,
         description="Special menu (festival, etc.)",
     )
-    special_occasion: Optional[str] = Field(
+    special_occasion: Union[str, None] = Field(
         default=None,
         description="Special occasion name",
     )
@@ -406,10 +404,10 @@ class UpcomingEvent(BaseSchema):
 
     event_id: str = Field(..., description="Event ID")
     title: str = Field(..., description="Event title")
-    description: Optional[str] = Field(default=None, description="Event description")
+    description: Union[str, None] = Field(default=None, description="Event description")
     event_date: Date = Field(..., description="Event date")
-    event_time: Optional[str] = Field(default=None, description="Event time")
-    location: Optional[str] = Field(default=None, description="Event location")
+    event_time: Union[str, None] = Field(default=None, description="Event time")
+    location: Union[str, None] = Field(default=None, description="Event location")
     category: str = Field(..., description="Event category")
     is_registered: bool = Field(
         default=False,
@@ -441,7 +439,7 @@ class StudentDashboard(BaseSchema):
 
     student_id: str = Field(..., description="Student ID")
     student_name: str = Field(..., description="Student name")
-    profile_image_url: Optional[str] = Field(
+    profile_image_url: Union[str, None] = Field(
         default=None,
         description="Profile image",
     )
@@ -450,7 +448,7 @@ class StudentDashboard(BaseSchema):
     hostel_name: str = Field(..., description="Current hostel")
     room_number: str = Field(..., description="Room number")
     bed_number: str = Field(..., description="Bed number")
-    floor_number: Optional[int] = Field(default=None, description="Floor number")
+    floor_number: Union[int, None] = Field(default=None, description="Floor number")
 
     # Summaries
     financial_summary: StudentFinancialSummary = Field(
@@ -500,7 +498,7 @@ class StudentDashboard(BaseSchema):
     )
 
     # Mess menu
-    today_mess_menu: Optional[TodayMessMenu] = Field(
+    today_mess_menu: Union[TodayMessMenu, None] = Field(
         default=None,
         description="Today's mess menu",
     )

@@ -6,11 +6,9 @@ This module defines response schemas for payment data including
 basic responses, detailed information, receipts, and summaries.
 """
 
-from __future__ import annotations
-
 from datetime import date as Date, datetime
 from decimal import Decimal
-from typing import Dict, List, Optional
+from typing import Dict, List, Union
 from uuid import UUID
 
 from pydantic import Field, computed_field
@@ -39,7 +37,7 @@ class PaymentResponse(BaseResponseSchema):
         ...,
         description="Unique payment reference number",
     )
-    transaction_id: Optional[str] = Field(
+    transaction_id: Union[str, None] = Field(
         None,
         description="External transaction ID",
     )
@@ -90,11 +88,11 @@ class PaymentResponse(BaseResponseSchema):
     )
 
     # Timestamps
-    paid_at: Optional[datetime] = Field(
+    paid_at: Union[datetime, None] = Field(
         None,
         description="When payment was completed",
     )
-    due_date: Optional[Date] = Field(
+    due_date: Union[Date, None] = Field(
         None,
         description="Payment due Date",
     )
@@ -104,11 +102,11 @@ class PaymentResponse(BaseResponseSchema):
     )
 
     # Receipt
-    receipt_number: Optional[str] = Field(
+    receipt_number: Union[str, None] = Field(
         None,
         description="Receipt number if generated",
     )
-    receipt_url: Optional[str] = Field(
+    receipt_url: Union[str, None] = Field(
         None,
         description="URL to download receipt",
     )
@@ -146,7 +144,7 @@ class PaymentDetail(BaseResponseSchema):
         ...,
         description="Payment reference",
     )
-    transaction_id: Optional[str] = Field(
+    transaction_id: Union[str, None] = Field(
         None,
         description="Transaction ID",
     )
@@ -162,10 +160,10 @@ class PaymentDetail(BaseResponseSchema):
     hostel_name: str = Field(..., description="Hostel name")
 
     # Related Entities
-    student_id: Optional[UUID] = Field(None, description="Student ID")
-    student_name: Optional[str] = Field(None, description="Student name")
-    booking_id: Optional[UUID] = Field(None, description="Booking ID")
-    booking_reference: Optional[str] = Field(None, description="Booking reference")
+    student_id: Union[UUID, None] = Field(None, description="Student ID")
+    student_name: Union[str, None] = Field(None, description="Student name")
+    booking_id: Union[UUID, None] = Field(None, description="Booking ID")
+    booking_reference: Union[str, None] = Field(None, description="Booking reference")
 
     # Payment Details
     payment_type: PaymentType = Field(..., description="Payment type")
@@ -173,29 +171,29 @@ class PaymentDetail(BaseResponseSchema):
     currency: str = Field(..., description="Currency")
 
     # Payment Period
-    payment_period_start: Optional[Date] = Field(None, description="Period start")
-    payment_period_end: Optional[Date] = Field(None, description="Period end")
+    payment_period_start: Union[Date, None] = Field(None, description="Period start")
+    payment_period_end: Union[Date, None] = Field(None, description="Period end")
 
     # Payment Method
     payment_method: PaymentMethod = Field(..., description="Payment method")
-    payment_gateway: Optional[str] = Field(None, description="Gateway used")
+    payment_gateway: Union[str, None] = Field(None, description="Gateway used")
 
     # Status
     payment_status: PaymentStatus = Field(..., description="Payment status")
-    paid_at: Optional[datetime] = Field(None, description="Payment completion time")
-    failed_at: Optional[datetime] = Field(None, description="Payment failure time")
-    failure_reason: Optional[str] = Field(None, description="Failure reason")
+    paid_at: Union[datetime, None] = Field(None, description="Payment completion time")
+    failed_at: Union[datetime, None] = Field(None, description="Payment failure time")
+    failure_reason: Union[str, None] = Field(None, description="Failure reason")
 
     # Gateway Response
-    gateway_response: Optional[Dict] = Field(
+    gateway_response: Union[Dict, None] = Field(
         None,
         description="Raw gateway response data",
     )
 
     # Receipt
-    receipt_number: Optional[str] = Field(None, description="Receipt number")
-    receipt_url: Optional[str] = Field(None, description="Receipt download URL")
-    receipt_generated_at: Optional[datetime] = Field(None, description="Receipt generation time")
+    receipt_number: Union[str, None] = Field(None, description="Receipt number")
+    receipt_url: Union[str, None] = Field(None, description="Receipt download URL")
+    receipt_generated_at: Union[datetime, None] = Field(None, description="Receipt generation time")
 
     # Refund Information
     refund_amount: Decimal = Field(
@@ -207,17 +205,17 @@ class PaymentDetail(BaseResponseSchema):
         "none",
         description="Refund status",
     )
-    refunded_at: Optional[datetime] = Field(None, description="Refund completion time")
-    refund_transaction_id: Optional[str] = Field(None, description="Refund transaction ID")
-    refund_reason: Optional[str] = Field(None, description="Refund reason")
+    refunded_at: Union[datetime, None] = Field(None, description="Refund completion time")
+    refund_transaction_id: Union[str, None] = Field(None, description="Refund transaction ID")
+    refund_reason: Union[str, None] = Field(None, description="Refund reason")
 
     # Collection Information (for offline payments)
-    collected_by: Optional[UUID] = Field(None, description="Staff who collected")
-    collected_by_name: Optional[str] = Field(None, description="Collector name")
-    collected_at: Optional[datetime] = Field(None, description="Collection timestamp")
+    collected_by: Union[UUID, None] = Field(None, description="Staff who collected")
+    collected_by_name: Union[str, None] = Field(None, description="Collector name")
+    collected_at: Union[datetime, None] = Field(None, description="Collection timestamp")
 
     # Due Date
-    due_date: Optional[Date] = Field(None, description="Due Date")
+    due_date: Union[Date, None] = Field(None, description="Due Date")
     is_overdue: bool = Field(..., description="Overdue status")
 
     # Reminders
@@ -226,13 +224,13 @@ class PaymentDetail(BaseResponseSchema):
         ge=0,
         description="Number of reminders sent",
     )
-    last_reminder_sent_at: Optional[datetime] = Field(
+    last_reminder_sent_at: Union[datetime, None] = Field(
         None,
         description="Last reminder timestamp",
     )
 
     # Notes
-    notes: Optional[str] = Field(None, description="Additional notes")
+    notes: Union[str, None] = Field(None, description="Additional notes")
 
     @computed_field  # type: ignore[prop-decorator]
     @property
@@ -262,7 +260,7 @@ class PaymentDetail(BaseResponseSchema):
 
     @computed_field  # type: ignore[prop-decorator]
     @property
-    def payment_period_display(self) -> Optional[str]:
+    def payment_period_display(self) -> Union[str, None]:
         """Get formatted payment period."""
         if self.payment_period_start and self.payment_period_end:
             return (
@@ -297,8 +295,8 @@ class PaymentReceipt(BaseSchema):
     hostel_name: str = Field(..., description="Hostel name")
     hostel_address: str = Field(..., description="Hostel full address")
     hostel_phone: str = Field(..., description="Hostel contact phone")
-    hostel_email: Optional[str] = Field(None, description="Hostel email")
-    hostel_gstin: Optional[str] = Field(None, description="Hostel GST number")
+    hostel_email: Union[str, None] = Field(None, description="Hostel email")
+    hostel_gstin: Union[str, None] = Field(None, description="Hostel GST number")
 
     # Payment Details
     payment_type: str = Field(..., description="Payment type")
@@ -307,30 +305,30 @@ class PaymentReceipt(BaseSchema):
     currency: str = Field(..., description="Currency")
 
     payment_method: str = Field(..., description="Payment method")
-    transaction_id: Optional[str] = Field(None, description="Transaction ID")
+    transaction_id: Union[str, None] = Field(None, description="Transaction ID")
 
     # Payment Period
-    payment_for_period: Optional[str] = Field(
+    payment_for_period: Union[str, None] = Field(
         None,
         description="Period description (e.g., 'January 2024')",
     )
 
     # Dates
     payment_date: datetime = Field(..., description="Payment Date")
-    due_date: Optional[Date] = Field(None, description="Due Date")
+    due_date: Union[Date, None] = Field(None, description="Due Date")
 
     # Receipt Metadata
     receipt_generated_at: datetime = Field(..., description="Receipt generation time")
     receipt_url: str = Field(..., description="Receipt download URL")
 
     # Tax/GST Details
-    tax_details: Optional[Dict] = Field(
+    tax_details: Union[Dict, None] = Field(
         None,
         description="Tax breakdown if applicable",
     )
 
     # Additional Information
-    remarks: Optional[str] = Field(None, description="Additional remarks")
+    remarks: Union[str, None] = Field(None, description="Additional remarks")
 
     @computed_field  # type: ignore[prop-decorator]
     @property
@@ -357,8 +355,8 @@ class PaymentListItem(BaseSchema):
     payment_method: str = Field(..., description="Payment method")
     payment_status: PaymentStatus = Field(..., description="Status")
 
-    paid_at: Optional[datetime] = Field(None, description="Payment time")
-    due_date: Optional[Date] = Field(None, description="Due Date")
+    paid_at: Union[datetime, None] = Field(None, description="Payment time")
+    due_date: Union[Date, None] = Field(None, description="Due Date")
     is_overdue: bool = Field(..., description="Overdue status")
 
     created_at: datetime = Field(..., description="Creation time")
@@ -413,22 +411,22 @@ class PaymentSummary(BaseSchema):
     )
 
     # Last Payment
-    last_payment_date: Optional[Date] = Field(
+    last_payment_date: Union[Date, None] = Field(
         None,
         description="Date of last payment",
     )
-    last_payment_amount: Optional[Decimal] = Field(
+    last_payment_amount: Union[Decimal, None] = Field(
         None,
         ge=0,
         description="Amount of last payment",
     )
 
     # Next Payment
-    next_payment_due_date: Optional[Date] = Field(
+    next_payment_due_date: Union[Date, None] = Field(
         None,
         description="Next payment due Date",
     )
-    next_payment_amount: Optional[Decimal] = Field(
+    next_payment_amount: Union[Decimal, None] = Field(
         None,
         ge=0,
         description="Next payment amount",

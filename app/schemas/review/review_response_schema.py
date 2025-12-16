@@ -12,14 +12,12 @@ Pydantic v2 Migration Notes:
 - Time fields use appropriate precision for hour calculations
 """
 
-from __future__ import annotations
-
 from datetime import datetime
 from decimal import Decimal
-from typing import Annotated, List, Optional
+from typing import Annotated, List, Union
+from uuid import UUID
 
 from pydantic import Field, field_validator, computed_field
-from uuid import UUID
 
 from app.schemas.common.base import (
     BaseSchema,
@@ -68,7 +66,7 @@ class HostelResponseCreate(BaseCreateSchema):
     )
     
     # Optional template reference
-    template_id: Optional[UUID] = Field(
+    template_id: Union[UUID, None] = Field(
         default=None,
         description="Response template used (if any)",
     )
@@ -121,7 +119,7 @@ class HostelResponseUpdate(BaseUpdateSchema):
         description="Updated response text",
     )
     
-    edit_reason: Optional[str] = Field(
+    edit_reason: Union[str, None] = Field(
         default=None,
         max_length=255,
         description="Reason for editing the response",
@@ -163,7 +161,7 @@ class OwnerResponse(BaseResponseSchema):
         description="Responder role in hostel",
         examples=["hostel_admin", "owner", "manager"],
     )
-    responded_by_image: Optional[str] = Field(
+    responded_by_image: Union[str, None] = Field(
         default=None,
         description="Responder profile image URL",
     )
@@ -172,7 +170,7 @@ class OwnerResponse(BaseResponseSchema):
     
     # Edit tracking
     is_edited: bool = Field(default=False, description="Whether edited")
-    edited_at: Optional[datetime] = Field(default=None, description="Last edit time")
+    edited_at: Union[datetime, None] = Field(default=None, description="Last edit time")
     edit_count: int = Field(default=0, ge=0, description="Number of edits")
     
     @computed_field  # type: ignore[misc]
@@ -268,7 +266,7 @@ class ResponseStats(BaseSchema):
             description="Average time to respond in hours",
         ),
     ]
-    median_response_time_hours: Optional[
+    median_response_time_hours: Union[
         Annotated[
             Decimal,
             Field(
@@ -277,7 +275,8 @@ class ResponseStats(BaseSchema):
                 decimal_places=2,
                 description="Median time to respond",
             ),
-        ]
+        ],
+        None,
     ] = None
     
     # Response by rating with percentage constraints
@@ -345,7 +344,7 @@ class ResponseStats(BaseSchema):
         ge=0,
         description="Reviews awaiting response",
     )
-    oldest_unanswered_days: Optional[int] = Field(
+    oldest_unanswered_days: Union[int, None] = Field(
         default=None,
         ge=0,
         description="Age of oldest unanswered review in days",

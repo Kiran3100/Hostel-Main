@@ -5,12 +5,10 @@ Handles plan change requests, previews, and confirmations
 for subscription modifications.
 """
 
-from __future__ import annotations
-
 from datetime import date as Date, datetime
 from decimal import Decimal
 from enum import Enum
-from typing import List, Optional, Annotated
+from typing import List, Union, Annotated
 from uuid import UUID
 
 from pydantic import Field, model_validator, computed_field, ConfigDict
@@ -72,7 +70,7 @@ class PlanChangeRequest(BaseCreateSchema):
     )
 
     # Reason tracking
-    change_reason: Optional[str] = Field(
+    change_reason: Union[str, None] = Field(
         None,
         max_length=500,
         description="Reason for plan change",
@@ -186,24 +184,28 @@ class PlanChangePreview(BaseSchema):
         description="Benefits of the new plan",
     )
 
-    @computed_field
+    @computed_field  # type: ignore[misc]
+    @property
     def is_upgrade(self) -> bool:
         """Check if this is an upgrade."""
         return self.change_type == PlanChangeType.UPGRADE
 
-    @computed_field
+    @computed_field  # type: ignore[misc]
+    @property
     def is_downgrade(self) -> bool:
         """Check if this is a downgrade."""
         return self.change_type == PlanChangeType.DOWNGRADE
 
-    @computed_field
+    @computed_field  # type: ignore[misc]
+    @property
     def monthly_difference(self) -> Decimal:
         """Calculate monthly price difference."""
         return (self.new_amount - self.current_amount).quantize(
             Decimal("0.01")
         )
 
-    @computed_field
+    @computed_field  # type: ignore[misc]
+    @property
     def savings_or_increase(self) -> str:
         """Format savings or increase message."""
         diff = self.monthly_difference

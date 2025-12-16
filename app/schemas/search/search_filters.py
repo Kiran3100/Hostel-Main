@@ -5,11 +5,9 @@ Reusable search filter schemas.
 Provides modular, composable filter schemas for advanced search functionality.
 """
 
-from __future__ import annotations
-
 from datetime import date as Date
 from decimal import Decimal
-from typing import List, Optional, Annotated
+from typing import Annotated, Dict, List, Union
 
 from pydantic import Field, field_validator, model_validator, computed_field, ConfigDict
 
@@ -38,12 +36,12 @@ class PriceFilter(BaseFilterSchema):
         validate_assignment=True,
     )
 
-    min_price: Optional[Annotated[Decimal, Field(ge=0)]] = Field(
+    min_price: Union[Annotated[Decimal, Field(ge=0)], None] = Field(
         default=None,
         description="Minimum price in INR",
         examples=[5000, 10000],
     )
-    max_price: Optional[Annotated[Decimal, Field(ge=0)]] = Field(
+    max_price: Union[Annotated[Decimal, Field(ge=0)], None] = Field(
         default=None,
         description="Maximum price in INR",
         examples=[20000, 30000],
@@ -63,7 +61,7 @@ class PriceFilter(BaseFilterSchema):
             )
         return self
 
-    @computed_field
+    @computed_field  # type: ignore[prop-decorator]
     @property
     def is_active(self) -> bool:
         """Check if price filter is active."""
@@ -82,12 +80,12 @@ class RatingFilter(BaseFilterSchema):
         validate_assignment=True,
     )
 
-    min_rating: Optional[Annotated[Decimal, Field(ge=0, le=5)]] = Field(
+    min_rating: Union[Annotated[Decimal, Field(ge=0, le=5)], None] = Field(
         default=None,
         description="Minimum average rating (0-5 scale)",
         examples=[3.5, 4.0, 4.5],
     )
-    max_rating: Optional[Annotated[Decimal, Field(ge=0, le=5)]] = Field(
+    max_rating: Union[Annotated[Decimal, Field(ge=0, le=5)], None] = Field(
         default=None,
         description="Maximum average rating (0-5 scale)",
         examples=[5.0],
@@ -107,7 +105,7 @@ class RatingFilter(BaseFilterSchema):
             )
         return self
 
-    @computed_field
+    @computed_field  # type: ignore[prop-decorator]
     @property
     def is_active(self) -> bool:
         """Check if rating filter is active."""
@@ -127,17 +125,17 @@ class AmenityFilter(BaseFilterSchema):
         validate_assignment=True,
     )
 
-    required_amenities: Optional[List[str]] = Field(
+    required_amenities: Union[List[str], None] = Field(
         default=None,
         description="All of these amenities must be present (AND logic)",
         examples=[["wifi", "ac", "parking"]],
     )
-    optional_amenities: Optional[List[str]] = Field(
+    optional_amenities: Union[List[str], None] = Field(
         default=None,
         description="Any of these amenities can be present (OR logic)",
         examples=[["gym", "swimming_pool", "laundry"]],
     )
-    excluded_amenities: Optional[List[str]] = Field(
+    excluded_amenities: Union[List[str], None] = Field(
         default=None,
         description="None of these amenities should be present",
         examples=[["smoking_allowed"]],
@@ -145,7 +143,7 @@ class AmenityFilter(BaseFilterSchema):
 
     @field_validator("required_amenities", "optional_amenities", "excluded_amenities")
     @classmethod
-    def normalize_amenities(cls, v: Optional[List[str]]) -> Optional[List[str]]:
+    def normalize_amenities(cls, v: Union[List[str], None]) -> Union[List[str], None]:
         """
         Normalize amenity list.
 
@@ -165,7 +163,7 @@ class AmenityFilter(BaseFilterSchema):
             return normalized if normalized else None
         return v
 
-    @computed_field
+    @computed_field  # type: ignore[prop-decorator]
     @property
     def is_active(self) -> bool:
         """Check if amenity filter is active."""
@@ -191,21 +189,21 @@ class LocationFilter(BaseFilterSchema):
     )
 
     # Text-based location
-    city: Optional[str] = Field(
+    city: Union[str, None] = Field(
         default=None,
         min_length=2,
         max_length=100,
         description="City name",
         examples=["Mumbai", "Bangalore"],
     )
-    state: Optional[str] = Field(
+    state: Union[str, None] = Field(
         default=None,
         min_length=2,
         max_length=100,
         description="State name",
         examples=["Maharashtra", "Karnataka"],
     )
-    pincode: Optional[str] = Field(
+    pincode: Union[str, None] = Field(
         default=None,
         pattern=r"^\d{6}$",
         description="6-digit pincode",
@@ -213,15 +211,15 @@ class LocationFilter(BaseFilterSchema):
     )
 
     # Proximity-based location
-    latitude: Optional[Annotated[Decimal, Field(ge=-90, le=90)]] = Field(
+    latitude: Union[Annotated[Decimal, Field(ge=-90, le=90)], None] = Field(
         default=None,
         description="Latitude for proximity search",
     )
-    longitude: Optional[Annotated[Decimal, Field(ge=-180, le=180)]] = Field(
+    longitude: Union[Annotated[Decimal, Field(ge=-180, le=180)], None] = Field(
         default=None,
         description="Longitude for proximity search",
     )
-    radius_km: Optional[Annotated[Decimal, Field(ge=0.1, le=100)]] = Field(
+    radius_km: Union[Annotated[Decimal, Field(ge=0.1, le=100)], None] = Field(
         default=None,
         description="Search radius in kilometers",
         examples=[5, 10, 25],
@@ -229,7 +227,7 @@ class LocationFilter(BaseFilterSchema):
 
     @field_validator("city", "state")
     @classmethod
-    def normalize_location(cls, v: Optional[str]) -> Optional[str]:
+    def normalize_location(cls, v: Union[str, None]) -> Union[str, None]:
         """Normalize location strings to title case."""
         if v is not None:
             return v.strip().title()
@@ -245,19 +243,19 @@ class LocationFilter(BaseFilterSchema):
                 )
         return self
 
-    @computed_field
+    @computed_field  # type: ignore[prop-decorator]
     @property
     def is_text_location(self) -> bool:
         """Check if text-based location filter is active."""
         return any([self.city, self.state, self.pincode])
 
-    @computed_field
+    @computed_field  # type: ignore[prop-decorator]
     @property
     def is_proximity_location(self) -> bool:
         """Check if proximity-based location filter is active."""
         return self.latitude is not None and self.longitude is not None
 
-    @computed_field
+    @computed_field  # type: ignore[prop-decorator]
     @property
     def is_active(self) -> bool:
         """Check if any location filter is active."""
@@ -280,7 +278,7 @@ class AvailabilityFilter(BaseFilterSchema):
         default=False,
         description="Show only hostels with available beds",
     )
-    min_available_beds: Optional[int] = Field(
+    min_available_beds: Union[int, None] = Field(
         default=None,
         ge=1,
         description="Minimum number of available beds required",
@@ -288,11 +286,11 @@ class AvailabilityFilter(BaseFilterSchema):
     )
 
     # Date-based availability
-    check_in_date: Optional[Date] = Field(
+    check_in_date: Union[Date, None] = Field(
         default=None,
         description="Desired check-in Date",
     )
-    check_out_date: Optional[Date] = Field(
+    check_out_date: Union[Date, None] = Field(
         default=None,
         description="Desired check-out Date",
     )
@@ -323,7 +321,7 @@ class AvailabilityFilter(BaseFilterSchema):
 
         return self
 
-    @computed_field
+    @computed_field  # type: ignore[prop-decorator]
     @property
     def is_active(self) -> bool:
         """Check if any availability filter is active."""
@@ -349,40 +347,40 @@ class SearchFilterSet(BaseFilterSchema):
     )
 
     # Core filters
-    price: Optional[PriceFilter] = Field(
+    price: Union[PriceFilter, None] = Field(
         default=None,
         description="Price range filter",
     )
-    rating: Optional[RatingFilter] = Field(
+    rating: Union[RatingFilter, None] = Field(
         default=None,
         description="Rating range filter",
     )
-    amenities: Optional[AmenityFilter] = Field(
+    amenities: Union[AmenityFilter, None] = Field(
         default=None,
         description="Amenity filters",
     )
-    location: Optional[LocationFilter] = Field(
+    location: Union[LocationFilter, None] = Field(
         default=None,
         description="Location filters",
     )
-    availability: Optional[AvailabilityFilter] = Field(
+    availability: Union[AvailabilityFilter, None] = Field(
         default=None,
         description="Availability filters",
     )
 
     # Type filters
-    hostel_types: Optional[List[HostelType]] = Field(
+    hostel_types: Union[List[HostelType], None] = Field(
         default=None,
         description="Filter by hostel types",
         examples=[["boys", "girls"]],
     )
-    room_types: Optional[List[RoomType]] = Field(
+    room_types: Union[List[RoomType], None] = Field(
         default=None,
         description="Filter by room types",
         examples=[["single", "double"]],
     )
 
-    @computed_field
+    @computed_field  # type: ignore[prop-decorator]
     @property
     def active_filters(self) -> List[str]:
         """Get list of active filter names."""
@@ -403,13 +401,13 @@ class SearchFilterSet(BaseFilterSchema):
             active.append("room_types")
         return active
 
-    @computed_field
+    @computed_field  # type: ignore[prop-decorator]
     @property
     def filter_count(self) -> int:
         """Get count of active filters."""
         return len(self.active_filters)
 
-    @computed_field
+    @computed_field  # type: ignore[prop-decorator]
     @property
     def has_filters(self) -> bool:
         """Check if any filter is active."""

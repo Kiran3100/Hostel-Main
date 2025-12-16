@@ -6,13 +6,11 @@ This module provides foundational schemas for mess/cafeteria menu management
 including creation, updates, and core validation logic.
 """
 
-from __future__ import annotations
-
 from datetime import date as Date, time
-from typing import List, Optional
+from typing import List, Union
+from uuid import UUID
 
 from pydantic import Field, field_validator, model_validator
-from uuid import UUID
 
 from app.schemas.common.base import BaseCreateSchema, BaseSchema, BaseUpdateSchema
 
@@ -72,19 +70,19 @@ class MessMenuBase(BaseSchema):
     )
 
     # Meal timings
-    breakfast_time: Optional[time] = Field(
+    breakfast_time: Union[time, None] = Field(
         None,
         description="Breakfast serving time",
     )
-    lunch_time: Optional[time] = Field(
+    lunch_time: Union[time, None] = Field(
         None,
         description="Lunch serving time",
     )
-    snacks_time: Optional[time] = Field(
+    snacks_time: Union[time, None] = Field(
         None,
         description="Snacks serving time",
     )
-    dinner_time: Optional[time] = Field(
+    dinner_time: Union[time, None] = Field(
         None,
         description="Dinner serving time",
     )
@@ -94,12 +92,12 @@ class MessMenuBase(BaseSchema):
         False,
         description="Whether this is a special occasion menu",
     )
-    special_occasion: Optional[str] = Field(
+    special_occasion: Union[str, None] = Field(
         None,
         max_length=255,
         description="Special occasion name (festival, celebration, etc.)",
     )
-    special_notes: Optional[str] = Field(
+    special_notes: Union[str, None] = Field(
         None,
         max_length=500,
         description="Additional notes about the special menu",
@@ -213,7 +211,7 @@ class MessMenuBase(BaseSchema):
 
     @field_validator("special_occasion", "special_notes", mode="before")
     @classmethod
-    def normalize_text_fields(cls, v: Optional[str]) -> Optional[str]:
+    def normalize_text_fields(cls, v: Union[str, None]) -> Union[str, None]:
         """Normalize text fields by stripping whitespace."""
         if v is not None:
             v = v.strip()
@@ -350,63 +348,63 @@ class MessMenuUpdate(BaseUpdateSchema):
     to modify draft menus before publication.
     """
 
-    breakfast_items: Optional[List[str]] = Field(
+    breakfast_items: Union[List[str], None] = Field(
         None,
         max_length=20,
         description="Updated breakfast items",
     )
-    lunch_items: Optional[List[str]] = Field(
+    lunch_items: Union[List[str], None] = Field(
         None,
         max_length=30,
         description="Updated lunch items",
     )
-    snacks_items: Optional[List[str]] = Field(
+    snacks_items: Union[List[str], None] = Field(
         None,
         max_length=15,
         description="Updated snacks items",
     )
-    dinner_items: Optional[List[str]] = Field(
+    dinner_items: Union[List[str], None] = Field(
         None,
         max_length=30,
         description="Updated dinner items",
     )
 
-    breakfast_time: Optional[time] = Field(
+    breakfast_time: Union[time, None] = Field(
         None,
         description="Updated breakfast time",
     )
-    lunch_time: Optional[time] = Field(
+    lunch_time: Union[time, None] = Field(
         None,
         description="Updated lunch time",
     )
-    snacks_time: Optional[time] = Field(
+    snacks_time: Union[time, None] = Field(
         None,
         description="Updated snacks time",
     )
-    dinner_time: Optional[time] = Field(
+    dinner_time: Union[time, None] = Field(
         None,
         description="Updated dinner time",
     )
 
-    is_special_menu: Optional[bool] = Field(
+    is_special_menu: Union[bool, None] = Field(
         None,
         description="Updated special menu flag",
     )
-    special_occasion: Optional[str] = Field(
+    special_occasion: Union[str, None] = Field(
         None,
         max_length=255,
         description="Updated special occasion",
     )
-    special_notes: Optional[str] = Field(
+    special_notes: Union[str, None] = Field(
         None,
         max_length=500,
         description="Updated special notes",
     )
 
-    vegetarian_available: Optional[bool] = None
-    non_vegetarian_available: Optional[bool] = None
-    vegan_available: Optional[bool] = None
-    jain_available: Optional[bool] = None
+    vegetarian_available: Union[bool, None] = None
+    non_vegetarian_available: Union[bool, None] = None
+    vegan_available: Union[bool, None] = None
+    jain_available: Union[bool, None] = None
 
     @field_validator(
         "breakfast_items",
@@ -416,7 +414,7 @@ class MessMenuUpdate(BaseUpdateSchema):
         mode="after"
     )
     @classmethod
-    def validate_menu_items(cls, v: Optional[List[str]]) -> Optional[List[str]]:
+    def validate_menu_items(cls, v: Union[List[str], None]) -> Union[List[str], None]:
         """Validate and normalize menu items if provided."""
         if v is None:
             return None
@@ -450,7 +448,7 @@ class MessMenuUpdate(BaseUpdateSchema):
 
     @field_validator("special_occasion", "special_notes", mode="before")
     @classmethod
-    def normalize_text(cls, v: Optional[str]) -> Optional[str]:
+    def normalize_text(cls, v: Union[str, None]) -> Union[str, None]:
         """Normalize text fields."""
         if v is not None:
             v = v.strip()

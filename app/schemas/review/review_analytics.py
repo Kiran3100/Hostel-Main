@@ -14,14 +14,12 @@ Pydantic v2 Migration Notes:
 - Percentage fields use proper constraints for 0-100 range
 """
 
-from __future__ import annotations
-
-from datetime import date as Date, datetime
+from datetime import Date, datetime
 from decimal import Decimal
-from typing import Annotated, Dict, List, Optional
+from typing import Annotated, Dict, List, Union
+from uuid import UUID
 
 from pydantic import Field, field_validator, computed_field
-from uuid import UUID
 
 from app.schemas.common.base import BaseSchema
 from app.schemas.common.filters import DateRangeFilter
@@ -226,7 +224,7 @@ class TrendAnalysis(BaseSchema):
         pattern=r"^(improving|declining|stable)$",
         description="Overall trend direction",
     )
-    trend_percentage: Optional[
+    trend_percentage: Union[
         Annotated[
             Decimal,
             Field(
@@ -236,7 +234,8 @@ class TrendAnalysis(BaseSchema):
                 decimal_places=2,
                 description="Percentage change in rating",
             ),
-        ]
+        ],
+        None,
     ] = None
     
     # Time-based ratings with proper constraints
@@ -601,7 +600,7 @@ class ReviewAnalytics(BaseSchema):
     )
     
     # Analysis period
-    analysis_period: Optional[DateRangeFilter] = Field(
+    analysis_period: Union[DateRangeFilter, None] = Field(
         default=None,
         description="Period for which analytics are calculated",
     )
@@ -661,7 +660,7 @@ class ReviewAnalytics(BaseSchema):
     )
     
     # Sentiment
-    sentiment_analysis: Optional[SentimentAnalysis] = Field(
+    sentiment_analysis: Union[SentimentAnalysis, None] = Field(
         default=None,
         description="AI-powered sentiment analysis",
     )

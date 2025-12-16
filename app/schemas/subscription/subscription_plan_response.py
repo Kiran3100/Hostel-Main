@@ -5,10 +5,8 @@ Provides structured responses for plan details, feature listings,
 and plan comparison functionality.
 """
 
-from __future__ import annotations
-
 from decimal import Decimal
-from typing import Any, Dict, List, Optional, Annotated
+from typing import Any, Dict, List, Union, Annotated
 
 from pydantic import Field, computed_field, ConfigDict
 
@@ -36,8 +34,8 @@ class PlanResponse(BaseResponseSchema):
     display_name: str = Field(..., description="Plan display name")
     plan_type: SubscriptionPlan = Field(..., description="Plan tier")
 
-    description: Optional[str] = Field(None, description="Full description")
-    short_description: Optional[str] = Field(
+    description: Union[str, None] = Field(None, description="Full description")
+    short_description: Union[str, None] = Field(
         None, description="Short description"
     )
 
@@ -52,12 +50,12 @@ class PlanResponse(BaseResponseSchema):
     )
 
     # Limits
-    max_hostels: Optional[int] = Field(None, description="Max hostels")
-    max_rooms_per_hostel: Optional[int] = Field(
+    max_hostels: Union[int, None] = Field(None, description="Max hostels")
+    max_rooms_per_hostel: Union[int, None] = Field(
         None, description="Max rooms per hostel"
     )
-    max_students: Optional[int] = Field(None, description="Max students")
-    max_admins: Optional[int] = Field(None, description="Max admin users")
+    max_students: Union[int, None] = Field(None, description="Max students")
+    max_admins: Union[int, None] = Field(None, description="Max admin users")
 
     # Status
     is_active: bool = Field(..., description="Plan is active")
@@ -70,24 +68,28 @@ class PlanResponse(BaseResponseSchema):
     # Trial
     trial_days: int = Field(default=0, description="Trial period days")
 
-    @computed_field
+    @computed_field  # type: ignore[misc]
+    @property
     def price_monthly_formatted(self) -> str:
         """Format monthly price with currency."""
         return f"{self.currency} {self.price_monthly:,.2f}"
 
-    @computed_field
+    @computed_field  # type: ignore[misc]
+    @property
     def price_yearly_formatted(self) -> str:
         """Format yearly price with currency."""
         return f"{self.currency} {self.price_yearly:,.2f}"
 
-    @computed_field
+    @computed_field  # type: ignore[misc]
+    @property
     def yearly_savings(self) -> Decimal:
         """Calculate yearly savings vs monthly billing."""
         return (self.price_monthly * 12 - self.price_yearly).quantize(
             Decimal("0.01")
         )
 
-    @computed_field
+    @computed_field  # type: ignore[misc]
+    @property
     def yearly_discount_percent(self) -> Decimal:
         """Calculate yearly discount percentage."""
         if self.price_monthly == Decimal("0"):
@@ -99,12 +101,14 @@ class PlanResponse(BaseResponseSchema):
             (monthly_yearly - self.price_yearly) / monthly_yearly * 100
         ).quantize(Decimal("0.01"))
 
-    @computed_field
+    @computed_field  # type: ignore[misc]
+    @property
     def has_trial(self) -> bool:
         """Check if plan offers trial."""
         return self.trial_days > 0
 
-    @computed_field
+    @computed_field  # type: ignore[misc]
+    @property
     def limits_display(self) -> Dict[str, str]:
         """Format limits for display."""
         return {
@@ -136,7 +140,7 @@ class PlanSummary(BaseSchema):
     price_yearly: Annotated[Decimal, Field(..., description="Yearly price")]
     currency: str = Field(..., description="Currency")
 
-    short_description: Optional[str] = Field(None)
+    short_description: Union[str, None] = Field(None)
     is_featured: bool = Field(default=False)
     trial_days: int = Field(default=0)
 
@@ -232,10 +236,10 @@ class PlanComparison(BaseSchema):
     )
 
     # Recommendations
-    recommended_plan: Optional[str] = Field(
+    recommended_plan: Union[str, None] = Field(
         None, description="Recommended plan name"
     )
-    recommendation_reason: Optional[str] = Field(
+    recommendation_reason: Union[str, None] = Field(
         None, description="Reason for recommendation"
     )
 
@@ -243,7 +247,7 @@ class PlanComparison(BaseSchema):
     def create(
         cls,
         plans: List[PlanResponse],
-        feature_order: Optional[List[str]] = None,
+        feature_order: Union[List[str], None] = None,
     ) -> "PlanComparison":
         """
         Create comparison from list of plans.

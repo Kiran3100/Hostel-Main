@@ -6,11 +6,9 @@ This module provides schemas for managing notification queues, batch
 processing, and monitoring queue performance and health.
 """
 
-from __future__ import annotations
-
 from datetime import datetime
 from decimal import Decimal
-from typing import Annotated, List, Optional
+from typing import Annotated, List, Union
 from uuid import UUID
 
 from pydantic import Field, computed_field
@@ -107,7 +105,7 @@ class QueueStatus(BaseSchema):
         ...,
         description="Whether queue is operating normally",
     )
-    oldest_queued_age_minutes: Optional[int] = Field(
+    oldest_queued_age_minutes: Union[int, None] = Field(
         default=None,
         ge=0,
         description="Age of oldest queued notification in minutes",
@@ -170,7 +168,7 @@ class QueuedNotification(BaseSchema):
     )
 
     # Timing
-    scheduled_at: Optional[datetime] = Field(
+    scheduled_at: Union[datetime, None] = Field(
         default=None,
         description="Scheduled delivery time",
     )
@@ -178,7 +176,7 @@ class QueuedNotification(BaseSchema):
         ...,
         description="When notification was queued",
     )
-    processing_started_at: Optional[datetime] = Field(
+    processing_started_at: Union[datetime, None] = Field(
         default=None,
         description="When processing started",
     )
@@ -194,24 +192,24 @@ class QueuedNotification(BaseSchema):
         ge=0,
         description="Maximum allowed retries",
     )
-    next_retry_at: Optional[datetime] = Field(
+    next_retry_at: Union[datetime, None] = Field(
         default=None,
         description="When next retry will be attempted",
     )
 
     # Estimates
-    estimated_send_time: Optional[datetime] = Field(
+    estimated_send_time: Union[datetime, None] = Field(
         default=None,
         description="Estimated send time based on queue position",
     )
-    queue_position: Optional[int] = Field(
+    queue_position: Union[int, None] = Field(
         default=None,
         ge=1,
         description="Position in queue (by priority)",
     )
 
     # Error tracking
-    last_error: Optional[str] = Field(
+    last_error: Union[str, None] = Field(
         default=None,
         max_length=500,
         description="Last error message if failed",
@@ -246,7 +244,7 @@ class BatchProcessing(BaseSchema):
     )
 
     # Batch details
-    batch_name: Optional[str] = Field(
+    batch_name: Union[str, None] = Field(
         default=None,
         max_length=100,
         description="Batch/campaign name",
@@ -295,21 +293,21 @@ class BatchProcessing(BaseSchema):
         ...,
         description="When batch was created",
     )
-    started_at: Optional[datetime] = Field(
+    started_at: Union[datetime, None] = Field(
         default=None,
         description="When processing started",
     )
-    completed_at: Optional[datetime] = Field(
+    completed_at: Union[datetime, None] = Field(
         default=None,
         description="When processing completed",
     )
 
     # Estimates
-    estimated_completion: Optional[datetime] = Field(
+    estimated_completion: Union[datetime, None] = Field(
         default=None,
         description="Estimated completion time",
     )
-    estimated_duration_seconds: Optional[int] = Field(
+    estimated_duration_seconds: Union[int, None] = Field(
         default=None,
         ge=0,
         description="Estimated total duration",
@@ -326,7 +324,7 @@ class BatchProcessing(BaseSchema):
     )
 
     # Error summary
-    error_summary: Optional[str] = Field(
+    error_summary: Union[str, None] = Field(
         default=None,
         max_length=1000,
         description="Summary of errors encountered",
@@ -377,7 +375,7 @@ class QueueStats(BaseSchema):
         ge=0,
         description="Current number of queued notifications",
     )
-    oldest_queued_age_minutes: Optional[int] = Field(
+    oldest_queued_age_minutes: Union[int, None] = Field(
         default=None,
         ge=0,
         description="Age of oldest notification in queue",
@@ -554,11 +552,11 @@ class QueueHealth(BaseSchema):
     )
 
     # Resource usage
-    memory_usage_percent: Optional[Annotated[Decimal, Field(ge=0, le=100)]] = Field(
+    memory_usage_percent: Union[Annotated[Decimal, Field(ge=0, le=100)], None] = Field(
         default=None,
         description="Memory usage percentage",
     )
-    cpu_usage_percent: Optional[Annotated[Decimal, Field(ge=0, le=100)]] = Field(
+    cpu_usage_percent: Union[Annotated[Decimal, Field(ge=0, le=100)], None] = Field(
         default=None,
         description="CPU usage percentage",
     )

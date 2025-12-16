@@ -6,11 +6,9 @@ This module defines the core payment schemas that serve as foundation
 for other payment-related schemas.
 """
 
-from __future__ import annotations
-
 from datetime import date as Date, datetime
 from decimal import Decimal
-from typing import Optional
+from typing import Union
 from uuid import UUID
 
 from pydantic import Field, field_validator
@@ -82,11 +80,11 @@ class PaymentCreate(BaseCreateSchema):
         ...,
         description="Hostel ID",
     )
-    student_id: Optional[UUID] = Field(
+    student_id: Union[UUID, None] = Field(
         None,
         description="Student ID (for student-related payments)",
     )
-    booking_id: Optional[UUID] = Field(
+    booking_id: Union[UUID, None] = Field(
         None,
         description="Booking ID (for booking-related payments)",
     )
@@ -117,38 +115,38 @@ class PaymentCreate(BaseCreateSchema):
         ...,
         description="Payment method",
     )
-    payment_gateway: Optional[str] = Field(
+    payment_gateway: Union[str, None] = Field(
         None,
         max_length=50,
         description="Payment gateway identifier",
     )
 
     # Transaction Details
-    transaction_id: Optional[str] = Field(
+    transaction_id: Union[str, None] = Field(
         None,
         max_length=100,
         description="External transaction ID",
     )
-    gateway_order_id: Optional[str] = Field(
+    gateway_order_id: Union[str, None] = Field(
         None,
         max_length=100,
         description="Gateway order ID",
     )
 
     # Payment Period (for recurring fees)
-    payment_period_start: Optional[Date] = Field(
+    payment_period_start: Union[Date, None] = Field(
         None,
-        description="Payment period start date",
+        description="Payment period start Date",
     )
-    payment_period_end: Optional[Date] = Field(
+    payment_period_end: Union[Date, None] = Field(
         None,
-        description="Payment period end date",
+        description="Payment period end Date",
     )
 
     # Due Date
-    due_date: Optional[Date] = Field(
+    due_date: Union[Date, None] = Field(
         None,
-        description="Payment due date",
+        description="Payment due Date",
     )
 
     # Status
@@ -158,7 +156,7 @@ class PaymentCreate(BaseCreateSchema):
     )
 
     # Additional Information
-    notes: Optional[str] = Field(
+    notes: Union[str, None] = Field(
         None,
         max_length=1000,
         description="Additional notes about the payment",
@@ -190,33 +188,33 @@ class PaymentUpdate(BaseUpdateSchema):
     Only modifiable fields are included.
     """
 
-    payment_status: Optional[PaymentStatus] = Field(
+    payment_status: Union[PaymentStatus, None] = Field(
         None,
         description="Update payment status",
     )
-    transaction_id: Optional[str] = Field(
+    transaction_id: Union[str, None] = Field(
         None,
         max_length=100,
         description="Update transaction ID",
     )
-    paid_at: Optional[datetime] = Field(
+    paid_at: Union[datetime, None] = Field(
         None,
         description="Payment completion timestamp",
     )
-    failed_at: Optional[datetime] = Field(
+    failed_at: Union[datetime, None] = Field(
         None,
         description="Payment failure timestamp",
     )
-    failure_reason: Optional[str] = Field(
+    failure_reason: Union[str, None] = Field(
         None,
         max_length=500,
         description="Reason for payment failure",
     )
-    gateway_response: Optional[dict] = Field(
+    gateway_response: Union[dict, None] = Field(
         None,
         description="Gateway response data",
     )
-    notes: Optional[str] = Field(
+    notes: Union[str, None] = Field(
         None,
         max_length=1000,
         description="Update payment notes",
@@ -224,7 +222,7 @@ class PaymentUpdate(BaseUpdateSchema):
 
     @field_validator("failure_reason")
     @classmethod
-    def validate_failure_reason(cls, v: Optional[str]) -> Optional[str]:
+    def validate_failure_reason(cls, v: Union[str, None]) -> Union[str, None]:
         """Validate failure reason."""
         if v is not None:
             v = v.strip()

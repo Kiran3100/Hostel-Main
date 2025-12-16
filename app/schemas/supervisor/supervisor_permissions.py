@@ -6,11 +6,9 @@ Provides granular permission management with templates, bulk operations,
 and audit tracking. Optimized for performance and maintainability.
 """
 
-from __future__ import annotations
-
 from datetime import datetime
 from decimal import Decimal
-from typing import Any, Dict, List, Literal, Optional, Set
+from typing import Any, Dict, List, Literal, Union, Set
 
 from pydantic import Field, field_validator, model_validator, computed_field
 
@@ -105,7 +103,7 @@ class SupervisorPermissions(BaseSchema):
         default=False,
         description="Can permanently close complaints (admin-level)",
     )
-    complaint_priority_limit: Optional[Literal["low", "medium", "high", "urgent"]] = Field(
+    complaint_priority_limit: Union[Literal["low", "medium", "high", "urgent"], None] = Field(
         default=None,
         description="Maximum priority level can handle independently",
     )
@@ -444,7 +442,7 @@ class SupervisorPermissions(BaseSchema):
             summary["security_permissions"] += 1
         
         return summary
-# Continuing supervisor_permissions.py...
+
 
 class PermissionUpdate(BaseUpdateSchema):
     """
@@ -453,11 +451,11 @@ class PermissionUpdate(BaseUpdateSchema):
     Allows partial permission updates with audit trail support.
     """
 
-    permissions: Dict[str, bool | int | Decimal] = Field(
+    permissions: Dict[str, Union[bool, int, Decimal]] = Field(
         ...,
         description="Permission key-value pairs to update",
     )
-    reason: Optional[str] = Field(
+    reason: Union[str, None] = Field(
         default=None,
         max_length=500,
         description="Reason for permission change",
@@ -465,7 +463,7 @@ class PermissionUpdate(BaseUpdateSchema):
 
     @field_validator("permissions")
     @classmethod
-    def validate_permissions(cls, v: Dict[str, bool | int | Decimal]) -> Dict[str, bool | int | Decimal]:
+    def validate_permissions(cls, v: Dict[str, Union[bool, int, Decimal]]) -> Dict[str, Union[bool, int, Decimal]]:
         """
         Validate permission keys and value types.
         
@@ -542,7 +540,7 @@ class PermissionCheckRequest(BaseCreateSchema):
             "can_approve_maintenance_costs",
         ],
     )
-    context: Optional[Dict[str, Any]] = Field(
+    context: Union[Dict[str, Any], None] = Field(
         default=None,
         description="Additional context for permission check",
         examples=[
@@ -598,21 +596,21 @@ class PermissionCheckResponse(BaseSchema):
         default=False,
         description="Whether threshold limit is exceeded",
     )
-    message: Optional[str] = Field(
+    message: Union[str, None] = Field(
         default=None,
         description="Explanation message",
     )
 
     # Threshold details
-    threshold_value: Optional[Decimal] = Field(
+    threshold_value: Union[Decimal, None] = Field(
         default=None,
         description="Configured threshold value",
     )
-    actual_value: Optional[Decimal] = Field(
+    actual_value: Union[Decimal, None] = Field(
         default=None,
         description="Actual value being checked",
     )
-    allowed_value: Optional[Decimal] = Field(
+    allowed_value: Union[Decimal, None] = Field(
         default=None,
         description="Maximum allowed value",
     )
@@ -652,7 +650,7 @@ class BulkPermissionUpdate(BaseUpdateSchema):
         max_length=50,
         description="Supervisor IDs to update (max 50)",
     )
-    permissions: Dict[str, bool | int | Decimal] = Field(
+    permissions: Dict[str, Union[bool, int, Decimal]] = Field(
         ...,
         description="Permissions to update for all supervisors",
     )
@@ -662,7 +660,7 @@ class BulkPermissionUpdate(BaseUpdateSchema):
         max_length=500,
         description="Reason for bulk permission change",
     )
-    effective_date: Optional[datetime] = Field(
+    effective_date: Union[datetime, None] = Field(
         default=None,
         description="Effective date for permission change",
     )
@@ -677,10 +675,10 @@ class BulkPermissionUpdate(BaseUpdateSchema):
 
     @field_validator("permissions")
     @classmethod
-    def validate_permissions(cls, v: Dict[str, bool | int | Decimal]) -> Dict[str, bool | int | Decimal]:
+    def validate_permissions(cls, v: Dict[str, Union[bool, int, Decimal]]) -> Dict[str, Union[bool, int, Decimal]]:
         """Validate permissions using PermissionUpdate validator."""
         # Reuse the validation logic from PermissionUpdate
-        return PermissionUpdate.model_fields["permissions"].validators[0](v)
+        return PermissionUpdate.model_fields["permissions"].metadata[0].func(v)
 
 
 class PermissionTemplate(BaseSchema):
@@ -701,7 +699,7 @@ class PermissionTemplate(BaseSchema):
         max_length=100,
         description="Template name",
     )
-    description: Optional[str] = Field(
+    description: Union[str, None] = Field(
         default=None,
         max_length=500,
         description="Template description",
@@ -718,15 +716,15 @@ class PermissionTemplate(BaseSchema):
         default=True,
         description="Template is active and can be used",
     )
-    created_at: Optional[datetime] = Field(
+    created_at: Union[datetime, None] = Field(
         default=None,
         description="Template creation timestamp",
     )
-    created_by: Optional[str] = Field(
+    created_by: Union[str, None] = Field(
         default=None,
         description="Admin who created template",
     )
-    updated_at: Optional[datetime] = Field(
+    updated_at: Union[datetime, None] = Field(
         default=None,
         description="Last update timestamp",
     )
@@ -918,7 +916,7 @@ class ApplyPermissionTemplate(BaseCreateSchema):
         default=False,
         description="Merge with existing permissions (upgrade only)",
     )
-    reason: Optional[str] = Field(
+    reason: Union[str, None] = Field(
         default=None,
         max_length=500,
         description="Reason for applying template",
@@ -984,21 +982,21 @@ class PermissionAuditLog(BaseSchema):
         ...,
         description="Type of change",
     )
-    reason: Optional[str] = Field(
+    reason: Union[str, None] = Field(
         default=None,
         description="Reason for change",
     )
 
     # Context
-    ip_address: Optional[str] = Field(
+    ip_address: Union[str, None] = Field(
         default=None,
         description="IP address of change initiator",
     )
-    user_agent: Optional[str] = Field(
+    user_agent: Union[str, None] = Field(
         default=None,
         description="User agent string",
     )
-    template_applied: Optional[str] = Field(
+    template_applied: Union[str, None] = Field(
         default=None,
         description="Template name if template was applied",
     )
@@ -1008,11 +1006,11 @@ class PermissionAuditLog(BaseSchema):
         default=False,
         description="Whether change requires approval",
     )
-    approved_by: Optional[str] = Field(
+    approved_by: Union[str, None] = Field(
         default=None,
         description="Admin who approved change",
     )
-    approved_at: Optional[datetime] = Field(
+    approved_at: Union[datetime, None] = Field(
         default=None,
         description="Approval timestamp",
     )

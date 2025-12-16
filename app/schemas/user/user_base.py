@@ -3,10 +3,8 @@
 User base schemas with enhanced validation and type safety.
 """
 
-from __future__ import annotations
-
 from datetime import date as Date, datetime
-from typing import Optional
+from typing import Union
 from uuid import UUID
 
 from pydantic import BaseModel, EmailStr, Field, field_validator, model_validator
@@ -58,15 +56,15 @@ class UserBase(BaseSchema):
         ...,
         description="User role for authorization",
     )
-    gender: Optional[Gender] = Field(
+    gender: Union[Gender, None] = Field(
         default=None,
         description="Gender (optional)",
     )
-    date_of_birth: Optional[Date] = Field(
+    date_of_birth: Union[Date, None] = Field(
         default=None,
         description="Date of birth",
     )
-    profile_image_url: Optional[str] = Field(
+    profile_image_url: Union[str, None] = Field(
         default=None,
         description="Profile image URL",
         examples=["https://example.com/images/profile.jpg"],
@@ -104,18 +102,18 @@ class UserBase(BaseSchema):
 
     @field_validator("date_of_birth")
     @classmethod
-    def validate_age(cls, v: Optional[Date]) -> Optional[Date]:
+    def validate_age(cls, v: Union[Date, None]) -> Union[Date, None]:
         """
         Validate user age constraints.
         
-        Ensures user is at least 16 years old and date is not in the future.
+        Ensures user is at least 16 years old and Date is not in the future.
         """
         if v is None:
             return v
 
         today = Date.today()
         
-        # Check if date is in the future
+        # Check if Date is in the future
         if v >= today:
             raise ValueError("Date of birth cannot be in the future")
 
@@ -125,13 +123,13 @@ class UserBase(BaseSchema):
         if age < 16:
             raise ValueError("User must be at least 16 years old")
         if age > 100:
-            raise ValueError("Invalid date of birth (age exceeds 100 years)")
+            raise ValueError("Invalid Date of birth (age exceeds 100 years)")
 
         return v
 
     @field_validator("profile_image_url")
     @classmethod
-    def validate_image_url(cls, v: Optional[str]) -> Optional[str]:
+    def validate_image_url(cls, v: Union[str, None]) -> Union[str, None]:
         """Validate profile image URL format."""
         if v is not None:
             v = v.strip()
@@ -184,41 +182,41 @@ class UserUpdate(BaseUpdateSchema):
     Used for partial updates to user profiles.
     """
 
-    email: Optional[EmailStr] = Field(
+    email: Union[EmailStr, None] = Field(
         default=None,
         description="Email address",
     )
-    phone: Optional[str] = Field(
+    phone: Union[str, None] = Field(
         default=None,
         pattern=r"^\+?[1-9]\d{9,14}$",
         description="Phone number",
     )
-    full_name: Optional[str] = Field(
+    full_name: Union[str, None] = Field(
         default=None,
         min_length=2,
         max_length=255,
         description="Full name",
     )
-    gender: Optional[Gender] = Field(
+    gender: Union[Gender, None] = Field(
         default=None,
         description="Gender",
     )
-    date_of_birth: Optional[Date] = Field(
+    date_of_birth: Union[Date, None] = Field(
         default=None,
         description="Date of birth",
     )
-    profile_image_url: Optional[str] = Field(
+    profile_image_url: Union[str, None] = Field(
         default=None,
         description="Profile image URL",
     )
-    is_active: Optional[bool] = Field(
+    is_active: Union[bool, None] = Field(
         default=None,
         description="Account active status",
     )
 
     @field_validator("email")
     @classmethod
-    def normalize_email(cls, v: Optional[EmailStr]) -> Optional[EmailStr]:
+    def normalize_email(cls, v: Union[EmailStr, None]) -> Union[EmailStr, None]:
         """Normalize email to lowercase and trim whitespace."""
         if v is not None:
             return EmailStr(v.lower().strip())
@@ -226,7 +224,7 @@ class UserUpdate(BaseUpdateSchema):
 
     @field_validator("phone")
     @classmethod
-    def normalize_phone(cls, v: Optional[str]) -> Optional[str]:
+    def normalize_phone(cls, v: Union[str, None]) -> Union[str, None]:
         """Normalize phone number by removing spaces and dashes."""
         if v is not None:
             return v.replace(" ", "").replace("-", "").strip()
@@ -234,7 +232,7 @@ class UserUpdate(BaseUpdateSchema):
 
     @field_validator("full_name")
     @classmethod
-    def validate_full_name(cls, v: Optional[str]) -> Optional[str]:
+    def validate_full_name(cls, v: Union[str, None]) -> Union[str, None]:
         """Validate and normalize full name."""
         if v is not None:
             v = v.strip()
@@ -247,7 +245,7 @@ class UserUpdate(BaseUpdateSchema):
 
     @field_validator("date_of_birth")
     @classmethod
-    def validate_age(cls, v: Optional[Date]) -> Optional[Date]:
+    def validate_age(cls, v: Union[Date, None]) -> Union[Date, None]:
         """Validate user age constraints."""
         if v is not None:
             today = Date.today()
@@ -258,12 +256,12 @@ class UserUpdate(BaseUpdateSchema):
             if age < 16:
                 raise ValueError("User must be at least 16 years old")
             if age > 100:
-                raise ValueError("Invalid date of birth")
+                raise ValueError("Invalid Date of birth")
         return v
 
     @field_validator("profile_image_url")
     @classmethod
-    def validate_image_url(cls, v: Optional[str]) -> Optional[str]:
+    def validate_image_url(cls, v: Union[str, None]) -> Union[str, None]:
         """Validate profile image URL format."""
         if v is not None:
             v = v.strip()
@@ -280,35 +278,35 @@ class UserAddressUpdate(AddressMixin, BaseUpdateSchema):
     """
 
     # Override to make all fields optional for updates
-    address_line1: Optional[str] = Field(
+    address_line1: Union[str, None] = Field(
         default=None,
         min_length=5,
         max_length=255,
         description="Address line 1",
     )
-    address_line2: Optional[str] = Field(
+    address_line2: Union[str, None] = Field(
         default=None,
         max_length=255,
         description="Address line 2",
     )
-    city: Optional[str] = Field(
+    city: Union[str, None] = Field(
         default=None,
         min_length=2,
         max_length=100,
         description="City",
     )
-    state: Optional[str] = Field(
+    state: Union[str, None] = Field(
         default=None,
         min_length=2,
         max_length=100,
         description="State",
     )
-    pincode: Optional[str] = Field(
+    pincode: Union[str, None] = Field(
         default=None,
         pattern=r"^\d{6}$",
         description="6-digit pincode",
     )
-    country: Optional[str] = Field(
+    country: Union[str, None] = Field(
         default=None,
         min_length=2,
         max_length=100,
@@ -324,23 +322,23 @@ class UserEmergencyContactUpdate(EmergencyContactMixin, BaseUpdateSchema):
     """
 
     # Override to make all fields optional for updates
-    emergency_contact_name: Optional[str] = Field(
+    emergency_contact_name: Union[str, None] = Field(
         default=None,
         description="Emergency contact name",
     )
-    emergency_contact_phone: Optional[str] = Field(
+    emergency_contact_phone: Union[str, None] = Field(
         default=None,
         pattern=r"^\+?[1-9]\d{9,14}$",
         description="Emergency contact phone",
     )
-    emergency_contact_relation: Optional[str] = Field(
+    emergency_contact_relation: Union[str, None] = Field(
         default=None,
         description="Relation to user",
     )
 
     @field_validator("emergency_contact_phone")
     @classmethod
-    def normalize_phone(cls, v: Optional[str]) -> Optional[str]:
+    def normalize_phone(cls, v: Union[str, None]) -> Union[str, None]:
         """Normalize phone number by removing spaces and dashes."""
         if v is not None:
             return v.replace(" ", "").replace("-", "").strip()

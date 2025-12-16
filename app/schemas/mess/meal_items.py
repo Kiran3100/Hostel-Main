@@ -6,14 +6,12 @@ Provides comprehensive schemas for menu item definitions, dietary classification
 allergen tracking, and nutritional data management.
 """
 
-from __future__ import annotations
-
 from datetime import datetime
 from decimal import Decimal
-from typing import Annotated, List, Optional
+from typing import Annotated, List, Union
+from uuid import UUID
 
 from pydantic import Field, field_validator, model_validator
-from uuid import UUID
 
 from app.schemas.common.base import BaseCreateSchema, BaseSchema
 from app.schemas.common.enums import DietaryPreference, MealType
@@ -37,7 +35,7 @@ class MenuItem(BaseSchema):
     for dietary preferences and allergen warnings.
     """
 
-    item_id: Optional[str] = Field(
+    item_id: Union[str, None] = Field(
         None,
         max_length=50,
         description="Unique item identifier/code",
@@ -48,12 +46,12 @@ class MenuItem(BaseSchema):
         max_length=100,
         description="Menu item name",
     )
-    item_name_local: Optional[str] = Field(
+    item_name_local: Union[str, None] = Field(
         None,
         max_length=100,
         description="Item name in local language",
     )
-    item_description: Optional[str] = Field(
+    item_description: Union[str, None] = Field(
         None,
         max_length=255,
         description="Brief item description",
@@ -65,7 +63,7 @@ class MenuItem(BaseSchema):
         pattern=r"^(main_course|side_dish|bread|rice|dal|curry|dessert|beverage|salad|soup|starter)$",
         description="Item category",
     )
-    meal_type: Optional[MealType] = Field(
+    meal_type: Union[MealType, None] = Field(
         None,
         description="Typical meal type for this item",
     )
@@ -123,7 +121,7 @@ class MenuItem(BaseSchema):
         False,
         description="Spicy food item",
     )
-    spice_level: Optional[int] = Field(
+    spice_level: Union[int, None] = Field(
         None,
         ge=0,
         le=5,
@@ -137,7 +135,7 @@ class MenuItem(BaseSchema):
         False,
         description="Seasonal availability",
     )
-    serving_size: Optional[str] = Field(
+    serving_size: Union[str, None] = Field(
         None,
         max_length=50,
         description="Standard serving size description",
@@ -145,7 +143,7 @@ class MenuItem(BaseSchema):
 
     @field_validator("item_name", "item_name_local", "item_description", mode="before")
     @classmethod
-    def normalize_text(cls, v: Optional[str]) -> Optional[str]:
+    def normalize_text(cls, v: Union[str, None]) -> Union[str, None]:
         """Normalize text fields."""
         if v is not None:
             v = v.strip()
@@ -213,7 +211,7 @@ class MealItems(BaseSchema):
         ...,
         description="Type of meal",
     )
-    meal_name: Optional[str] = Field(
+    meal_name: Union[str, None] = Field(
         None,
         description="Custom meal name (e.g., 'Continental Breakfast')",
     )
@@ -223,11 +221,11 @@ class MealItems(BaseSchema):
         max_length=50,
         description="List of menu items for this meal",
     )
-    serving_start_time: Optional[datetime.time] = Field(
+    serving_start_time: Union[datetime.time, None] = Field(
         None,
         description="Meal serving start time",
     )
-    serving_end_time: Optional[datetime.time] = Field(
+    serving_end_time: Union[datetime.time, None] = Field(
         None,
         description="Meal serving end time",
     )
@@ -357,7 +355,7 @@ class AllergenInfo(BaseSchema):
         pattern=r"^(trace|contains|may_contain)$",
         description="Allergen presence level",
     )
-    details: Optional[str] = Field(
+    details: Union[str, None] = Field(
         None,
         max_length=500,
         description="Additional allergen details",
@@ -383,7 +381,7 @@ class NutritionalInfo(BaseSchema):
         ...,
         description="Menu item name",
     )
-    item_id: Optional[str] = Field(
+    item_id: Union[str, None] = Field(
         None,
         description="Item identifier",
     )
@@ -394,20 +392,20 @@ class NutritionalInfo(BaseSchema):
         max_length=50,
         description="Serving size description (e.g., '1 cup', '150g')",
     )
-    servings_per_container: Optional[int] = Field(
+    servings_per_container: Union[int, None] = Field(
         None,
         ge=1,
         description="Number of servings in container",
     )
 
     # Calories
-    calories: Optional[int] = Field(
+    calories: Union[int, None] = Field(
         None,
         ge=0,
         le=10000,
         description="Calories per serving",
     )
-    calories_from_fat: Optional[int] = Field(
+    calories_from_fat: Union[int, None] = Field(
         None,
         ge=0,
         description="Calories from fat",
@@ -415,82 +413,82 @@ class NutritionalInfo(BaseSchema):
 
     # Macronutrients (grams)
     # Pydantic v2: Using Decimal with validation in field_validator instead of max_digits/decimal_places
-    protein_g: Optional[Decimal] = Field(
+    protein_g: Union[Decimal, None] = Field(
         None,
         ge=0,
         le=1000,
         description="Protein in grams",
     )
-    carbohydrates_g: Optional[Decimal] = Field(
+    carbohydrates_g: Union[Decimal, None] = Field(
         None,
         ge=0,
         le=1000,
         description="Carbohydrates in grams",
     )
-    fat_g: Optional[Decimal] = Field(
+    fat_g: Union[Decimal, None] = Field(
         None,
         ge=0,
         le=1000,
         description="Total fat in grams",
     )
-    saturated_fat_g: Optional[Decimal] = Field(
+    saturated_fat_g: Union[Decimal, None] = Field(
         None,
         ge=0,
         description="Saturated fat in grams",
     )
-    trans_fat_g: Optional[Decimal] = Field(
+    trans_fat_g: Union[Decimal, None] = Field(
         None,
         ge=0,
         description="Trans fat in grams",
     )
-    fiber_g: Optional[Decimal] = Field(
+    fiber_g: Union[Decimal, None] = Field(
         None,
         ge=0,
         description="Dietary fiber in grams",
     )
 
     # Micronutrients
-    sodium_mg: Optional[Decimal] = Field(
+    sodium_mg: Union[Decimal, None] = Field(
         None,
         ge=0,
         description="Sodium in milligrams",
     )
-    sugar_g: Optional[Decimal] = Field(
+    sugar_g: Union[Decimal, None] = Field(
         None,
         ge=0,
         description="Total sugars in grams",
     )
-    cholesterol_mg: Optional[Decimal] = Field(
+    cholesterol_mg: Union[Decimal, None] = Field(
         None,
         ge=0,
         description="Cholesterol in milligrams",
     )
-    potassium_mg: Optional[Decimal] = Field(
+    potassium_mg: Union[Decimal, None] = Field(
         None,
         ge=0,
         description="Potassium in milligrams",
     )
 
     # Vitamins and minerals (% daily value)
-    vitamin_a_percent: Optional[Decimal] = Field(
+    vitamin_a_percent: Union[Decimal, None] = Field(
         None,
         ge=0,
         le=1000,
         description="Vitamin A % daily value",
     )
-    vitamin_c_percent: Optional[Decimal] = Field(
+    vitamin_c_percent: Union[Decimal, None] = Field(
         None,
         ge=0,
         le=1000,
         description="Vitamin C % daily value",
     )
-    calcium_percent: Optional[Decimal] = Field(
+    calcium_percent: Union[Decimal, None] = Field(
         None,
         ge=0,
         le=1000,
         description="Calcium % daily value",
     )
-    iron_percent: Optional[Decimal] = Field(
+    iron_percent: Union[Decimal, None] = Field(
         None,
         ge=0,
         le=1000,
@@ -498,12 +496,12 @@ class NutritionalInfo(BaseSchema):
     )
 
     # Additional info
-    ingredients: Optional[str] = Field(
+    ingredients: Union[str, None] = Field(
         None,
         max_length=1000,
         description="List of ingredients",
     )
-    preparation_method: Optional[str] = Field(
+    preparation_method: Union[str, None] = Field(
         None,
         max_length=500,
         description="Preparation method",
@@ -524,7 +522,7 @@ class NutritionalInfo(BaseSchema):
         mode="after"
     )
     @classmethod
-    def round_to_two_decimals(cls, v: Optional[Decimal]) -> Optional[Decimal]:
+    def round_to_two_decimals(cls, v: Union[Decimal, None]) -> Union[Decimal, None]:
         """Round decimal values to 2 decimal places."""
         if v is not None:
             return v.quantize(Decimal("0.01"))
@@ -564,7 +562,7 @@ class ItemCategory(BaseSchema):
     Groups related items for easier menu planning.
     """
 
-    category_id: Optional[str] = Field(
+    category_id: Union[str, None] = Field(
         None,
         max_length=50,
         description="Category identifier",
@@ -575,7 +573,7 @@ class ItemCategory(BaseSchema):
         max_length=100,
         description="Category name",
     )
-    category_description: Optional[str] = Field(
+    category_description: Union[str, None] = Field(
         None,
         max_length=255,
         description="Category description",
@@ -609,7 +607,7 @@ class ItemMasterList(BaseSchema):
         ...,
         description="Hostel unique identifier",
     )
-    list_name: Optional[str] = Field(
+    list_name: Union[str, None] = Field(
         None,
         description="Master list name/version",
     )
@@ -624,7 +622,7 @@ class ItemMasterList(BaseSchema):
         ge=0,
         description="Total number of items across all categories",
     )
-    last_updated: Optional[datetime] = Field(
+    last_updated: Union[datetime, None] = Field(
         None,
         description="Last update timestamp",
     )

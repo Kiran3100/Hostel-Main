@@ -6,8 +6,6 @@ This module exports all visitor-related schemas for easy importing
 across the application.
 """
 
-from __future__ import annotations
-
 from app.schemas.visitor.visitor_base import (
     VisitorBase,
     VisitorCreate,
