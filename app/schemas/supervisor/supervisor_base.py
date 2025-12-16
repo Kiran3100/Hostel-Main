@@ -8,7 +8,7 @@ status management, and hostel reassignment with comprehensive validation.
 
 from datetime import date as Date, timedelta
 from decimal import Decimal
-from typing import Dict, Union
+from typing import Dict, Union, Annotated
 
 from pydantic import Field, field_validator, model_validator
 
@@ -46,6 +46,10 @@ class SupervisorValidationConstants:
     MAX_SHIFT_TIMING_LENGTH = 100
     MIN_SALARY = 0
     MAX_PROBATION_MONTHS = 3
+
+
+# Define a custom type for Decimal with precision constraints
+DecimalWithPrecision = Annotated[Decimal, Field(decimal_places=2)]
 
 
 class SupervisorBase(BaseSchema):
@@ -92,11 +96,9 @@ class SupervisorBase(BaseSchema):
         description="Job designation/title",
         examples=["Hostel Supervisor", "Senior Supervisor", "Floor Supervisor"],
     )
-    salary: Union[Decimal, None] = Field(
+    salary: Union[DecimalWithPrecision, None] = Field(
         default=None,
         ge=SupervisorValidationConstants.MIN_SALARY,
-        max_digits=10,
-        decimal_places=2,
         description="Monthly salary (confidential)",
     )
 
@@ -268,11 +270,9 @@ class SupervisorUpdate(BaseUpdateSchema):
         max_length=SupervisorValidationConstants.MAX_DESIGNATION_LENGTH,
         description="Designation",
     )
-    salary: Union[Decimal, None] = Field(
+    salary: Union[DecimalWithPrecision, None] = Field(
         default=None,
         ge=SupervisorValidationConstants.MIN_SALARY,
-        max_digits=10,
-        decimal_places=2,
         description="Monthly salary",
     )
 
@@ -546,10 +546,8 @@ class SupervisorReassignment(BaseCreateSchema):
     )
 
     # Salary adjustment
-    salary_adjustment: Union[Decimal, None] = Field(
+    salary_adjustment: Union[DecimalWithPrecision, None] = Field(
         default=None,
-        max_digits=10,
-        decimal_places=2,
         description="Salary adjustment amount (positive or negative)",
     )
     salary_adjustment_reason: Union[str, None] = Field(
@@ -707,11 +705,9 @@ class SupervisorTermination(BaseCreateSchema):
     )
 
     # Final settlement
-    final_settlement_amount: Union[Decimal, None] = Field(
+    final_settlement_amount: Union[DecimalWithPrecision, None] = Field(
         default=None,
         ge=0,
-        max_digits=10,
-        decimal_places=2,
         description="Final settlement amount",
     )
     settlement_date: Union[Date, None] = Field(

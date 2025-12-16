@@ -725,6 +725,175 @@ class PeriodComparison(BaseSchema):
             return f"Mixed performance: {improved_count} improved, {declined_count} declined"
 
 
+# MOVED THESE CLASSES BEFORE PerformanceReport
+class PerformanceGoal(BaseCreateSchema):
+    """Set performance goal for supervisor."""
+    
+    supervisor_id: str = Field(..., description="Supervisor ID")
+    goal_name: str = Field(
+        ...,
+        min_length=5,
+        max_length=255,
+        description="Goal name",
+    )
+    goal_description: str = Field(
+        ...,
+        min_length=20,
+        max_length=1000,
+        description="Detailed goal description",
+    )
+    
+    # Measurable target
+    metric_name: str = Field(
+        ...,
+        description="Metric to measure",
+        examples=[
+            "complaint_resolution_rate",
+            "sla_compliance_rate",
+            "attendance_punctuality_rate",
+        ],
+    )
+    target_value: Decimal = Field(
+        ...,
+        description="Target value to achieve",
+    )
+    current_value: Union[Decimal, None] = Field(
+        default=None,
+        description="Current baseline value",
+    )
+    
+    # Timeline
+    start_date: Date = Field(..., description="Goal start Date")
+    end_date: Date = Field(..., description="Goal target completion Date")
+    
+    # Priority and category
+    priority: str = Field(
+        default="medium",
+        pattern=r"^(low|medium|high|critical)$",
+        description="Goal priority level",
+    )
+    category: str = Field(
+        ...,
+        pattern=r"^(complaint|attendance|maintenance|communication|efficiency|quality)$",
+        description="Goal category",
+    )
+    
+    # Tracking
+    measurement_frequency: str = Field(
+        default="weekly",
+        pattern=r"^(daily|weekly|monthly)$",
+        description="How often to measure progress",
+    )
+
+    @field_validator("end_date")
+    @classmethod
+    def validate_end_date(cls, v: Date, info) -> Date:
+        """Validate end Date is after start Date."""
+        # In Pydantic v2, we use info.data instead of values
+        start_date = info.data.get("start_date")
+        if start_date and v <= start_date:
+            raise ValueError("End Date must be after start Date")
+        return v
+
+    @computed_field
+    @property
+    def duration_days(self) -> int:
+        """Calculate goal duration in days."""
+        return (self.end_date - self.start_date).days
+
+
+class PerformanceGoalProgress(BaseSchema):
+    """Track progress on performance goal."""
+    
+    goal_id: str = Field(..., description="Goal ID")
+    goal_name: str = Field(..., description="Goal name")
+    metric_name: str = Field(..., description="Metric being measured")
+    
+    # Values
+    target_value: Decimal = Field(..., description="Target value")
+    current_value: Decimal = Field(..., description="Current achieved value")
+    baseline_value: Union[Decimal, None] = Field(
+        default=None,
+        description="Starting baseline value",
+    )
+    
+    # Progress calculation
+    progress_percentage: Decimal = Field(
+        ...,
+        ge=0,
+        le=100,
+        description="Progress percentage towards goal",
+    )
+    
+    # Timeline
+    start_date: Date = Field(..., description="Goal start Date")
+    end_date: Date = Field(..., description="Goal end Date")
+    days_remaining: int = Field(..., ge=0, description="Days remaining to achieve goal")
+    
+    # Status
+    status: str = Field(
+        ...,
+        pattern=r"^(on_track|at_risk|behind|completed|failed|paused)$",
+        description="Goal progress status",
+    )
+    
+    # Tracking
+    last_updated: datetime = Field(..., description="Last progress update")
+    measurement_history: List[Dict[str, Any]] = Field(
+        default_factory=list,
+        description="Historical measurements",
+    )
+
+    @computed_field
+    @property
+    def days_elapsed(self) -> int:
+        """Calculate days elapsed since goal start."""
+        return (Date.today() - self.start_date).days
+
+    @computed_field
+    @property
+    def time_progress_percentage(self) -> Decimal:
+        """Calculate time progress percentage."""
+        total_days = (self.end_date - self.start_date).days
+        if total_days == 0:
+            return Decimal("100.00")
+        
+        elapsed_days = self.days_elapsed
+        time_progress = min(100, (elapsed_days / total_days) * 100)
+        return Decimal(str(time_progress)).quantize(Decimal("0.01"))
+
+    @computed_field
+    @property
+    def is_on_schedule(self) -> bool:
+        """Check if goal progress is on schedule."""
+        time_progress = float(self.time_progress_percentage)
+        actual_progress = float(self.progress_percentage)
+        
+        # Allow 10% tolerance
+        return actual_progress >= (time_progress - 10)
+
+    @computed_field
+    @property
+    def projected_completion_date(self) -> Union[Date, None]:
+        """Project completion Date based on current progress rate."""
+        if self.progress_percentage == 0:
+            return None
+        
+        days_elapsed = self.days_elapsed
+        if days_elapsed == 0:
+            return None
+        
+        progress_rate = float(self.progress_percentage) / days_elapsed
+        if progress_rate == 0:
+            return None
+        
+        remaining_progress = 100 - float(self.progress_percentage)
+        days_to_complete = remaining_progress / progress_rate
+        
+        projected_date = Date.today() + timedelta(days=int(days_to_complete))
+        return projected_date
+
+
 class PerformanceReport(BaseSchema):
     """Comprehensive performance report."""
     
@@ -780,7 +949,7 @@ class PerformanceReport(BaseSchema):
     )
     
     # Goals and targets
-    current_goals: List["PerformanceGoalProgress"] = Field(
+    current_goals: List[PerformanceGoalProgress] = Field(  # NOW THIS WORKS!
         default_factory=list,
         description="Current performance goals progress",
     )
@@ -987,174 +1156,6 @@ class PerformanceReviewResponse(BaseSchema):
             return "Below Expectations"
         else:
             return "Unsatisfactory"
-
-
-class PerformanceGoal(BaseCreateSchema):
-    """Set performance goal for supervisor."""
-    
-    supervisor_id: str = Field(..., description="Supervisor ID")
-    goal_name: str = Field(
-        ...,
-        min_length=5,
-        max_length=255,
-        description="Goal name",
-    )
-    goal_description: str = Field(
-        ...,
-        min_length=20,
-        max_length=1000,
-        description="Detailed goal description",
-    )
-    
-    # Measurable target
-    metric_name: str = Field(
-        ...,
-        description="Metric to measure",
-        examples=[
-            "complaint_resolution_rate",
-            "sla_compliance_rate",
-            "attendance_punctuality_rate",
-        ],
-    )
-    target_value: Decimal = Field(
-        ...,
-        description="Target value to achieve",
-    )
-    current_value: Union[Decimal, None] = Field(
-        default=None,
-        description="Current baseline value",
-    )
-    
-    # Timeline
-    start_date: Date = Field(..., description="Goal start Date")
-    end_date: Date = Field(..., description="Goal target completion Date")
-    
-    # Priority and category
-    priority: str = Field(
-        default="medium",
-        pattern=r"^(low|medium|high|critical)$",
-        description="Goal priority level",
-    )
-    category: str = Field(
-        ...,
-        pattern=r"^(complaint|attendance|maintenance|communication|efficiency|quality)$",
-        description="Goal category",
-    )
-    
-    # Tracking
-    measurement_frequency: str = Field(
-        default="weekly",
-        pattern=r"^(daily|weekly|monthly)$",
-        description="How often to measure progress",
-    )
-
-    @field_validator("end_date")
-    @classmethod
-    def validate_end_date(cls, v: Date, info) -> Date:
-        """Validate end Date is after start Date."""
-        # In Pydantic v2, we use info.data instead of values
-        start_date = info.data.get("start_date")
-        if start_date and v <= start_date:
-            raise ValueError("End Date must be after start Date")
-        return v
-
-    @computed_field
-    @property
-    def duration_days(self) -> int:
-        """Calculate goal duration in days."""
-        return (self.end_date - self.start_date).days
-
-
-class PerformanceGoalProgress(BaseSchema):
-    """Track progress on performance goal."""
-    
-    goal_id: str = Field(..., description="Goal ID")
-    goal_name: str = Field(..., description="Goal name")
-    metric_name: str = Field(..., description="Metric being measured")
-    
-    # Values
-    target_value: Decimal = Field(..., description="Target value")
-    current_value: Decimal = Field(..., description="Current achieved value")
-    baseline_value: Union[Decimal, None] = Field(
-        default=None,
-        description="Starting baseline value",
-    )
-    
-    # Progress calculation
-    progress_percentage: Decimal = Field(
-        ...,
-        ge=0,
-        le=100,
-        description="Progress percentage towards goal",
-    )
-    
-    # Timeline
-    start_date: Date = Field(..., description="Goal start Date")
-    end_date: Date = Field(..., description="Goal end Date")
-    days_remaining: int = Field(..., ge=0, description="Days remaining to achieve goal")
-    
-    # Status
-    status: str = Field(
-        ...,
-        pattern=r"^(on_track|at_risk|behind|completed|failed|paused)$",
-        description="Goal progress status",
-    )
-    
-    # Tracking
-    last_updated: datetime = Field(..., description="Last progress update")
-    measurement_history: List[Dict[str, Any]] = Field(
-        default_factory=list,
-        description="Historical measurements",
-    )
-
-    @computed_field
-    @property
-    def days_elapsed(self) -> int:
-        """Calculate days elapsed since goal start."""
-        return (Date.today() - self.start_date).days
-
-    @computed_field
-    @property
-    def time_progress_percentage(self) -> Decimal:
-        """Calculate time progress percentage."""
-        total_days = (self.end_date - self.start_date).days
-        if total_days == 0:
-            return Decimal("100.00")
-        
-        elapsed_days = self.days_elapsed
-        time_progress = min(100, (elapsed_days / total_days) * 100)
-        return Decimal(str(time_progress)).quantize(Decimal("0.01"))
-
-    @computed_field
-    @property
-    def is_on_schedule(self) -> bool:
-        """Check if goal progress is on schedule."""
-        time_progress = float(self.time_progress_percentage)
-        actual_progress = float(self.progress_percentage)
-        
-        # Allow 10% tolerance
-        return actual_progress >= (time_progress - 10)
-
-    @computed_field
-    @property
-    def projected_completion_date(self) -> Union[Date, None]:
-        """Project completion Date based on current progress rate."""
-        if self.progress_percentage == 0:
-            return None
-        
-        days_elapsed = self.days_elapsed
-        if days_elapsed == 0:
-            return None
-        
-        progress_rate = float(self.progress_percentage) / days_elapsed
-        if progress_rate == 0:
-            return None
-        
-        remaining_progress = 100 - float(self.progress_percentage)
-        days_to_complete = remaining_progress / progress_rate
-        
-        projected_date = Date.today() + timedelta(days=int(days_to_complete))
-        return projected_date
 
 
 class PerformanceInsights(BaseSchema):

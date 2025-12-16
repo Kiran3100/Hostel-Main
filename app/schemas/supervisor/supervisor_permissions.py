@@ -8,7 +8,7 @@ and audit tracking. Optimized for performance and maintainability.
 
 from datetime import datetime
 from decimal import Decimal
-from typing import Any, Dict, List, Literal, Union, Set
+from typing import Any, Dict, List, Literal, Union
 
 from pydantic import Field, field_validator, model_validator, computed_field
 
@@ -496,11 +496,13 @@ class PermissionUpdate(BaseUpdateSchema):
             expected_type = field_info.annotation
             
             # Handle Optional types
-            if hasattr(expected_type, "__origin__"):
-                # Extract actual type from Optional
+            if hasattr(expected_type, "__origin__") and expected_type.__origin__ is Union:
+                # Extract actual type from Optional/Union
                 args = getattr(expected_type, "__args__", ())
-                if args:
-                    expected_type = args[0]
+                # Filter out None type
+                non_none_args = [arg for arg in args if arg is not type(None)]
+                if non_none_args:
+                    expected_type = non_none_args[0]
             
             # Validate type
             if expected_type == bool:
@@ -678,7 +680,7 @@ class BulkPermissionUpdate(BaseUpdateSchema):
     def validate_permissions(cls, v: Dict[str, Union[bool, int, Decimal]]) -> Dict[str, Union[bool, int, Decimal]]:
         """Validate permissions using PermissionUpdate validator."""
         # Reuse the validation logic from PermissionUpdate
-        return PermissionUpdate.model_fields["permissions"].metadata[0].func(v)
+        return PermissionUpdate.validate_permissions(v)
 
 
 class PermissionTemplate(BaseSchema):
