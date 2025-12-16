@@ -1,4 +1,3 @@
-# --- File: app/schemas/analytics/financial_analytics.py ---
 """
 Financial analytics schemas with comprehensive P&L and cashflow tracking.
 
@@ -12,7 +11,7 @@ Provides detailed financial analytics including:
 
 from datetime import date as Date, datetime
 from decimal import Decimal
-from typing import Dict, List, Optional, Any, Annotated
+from typing import Dict, List, Union, Any, Annotated
 from enum import Enum
 
 from pydantic import BaseModel, Field, field_validator, computed_field, model_validator, AfterValidator
@@ -375,7 +374,7 @@ class FinancialRatios(BaseSchema):
         ...,
         description="Collection efficiency percentage"
     )
-    days_sales_outstanding: Optional[DecimalCurrency] = Field(
+    days_sales_outstanding: Union[DecimalCurrency, None] = Field(
         None,
         description="Average days to collect payment"
     )
@@ -531,11 +530,11 @@ class ProfitAndLossReport(BaseSchema):
         pattern="^(hostel|platform)$",
         description="Scope of the P&L report"
     )
-    scope_id: Optional[UUID] = Field(
+    scope_id: Union[UUID, None] = Field(
         None,
         description="Hostel ID if scope is hostel"
     )
-    scope_name: Optional[str] = Field(
+    scope_name: Union[str, None] = Field(
         None,
         max_length=255,
         description="Display name for the scope"
@@ -595,13 +594,13 @@ class ProfitAndLossReport(BaseSchema):
     )
     
     # Financial ratios
-    ratios: Optional[FinancialRatios] = Field(
+    ratios: Union[FinancialRatios, None] = Field(
         None,
         description="Key financial ratios"
     )
     
     # Tax information
-    tax_summary: Optional[TaxSummary] = Field(
+    tax_summary: Union[TaxSummary, None] = Field(
         None,
         description="Tax-related summary"
     )
@@ -733,11 +732,11 @@ class CashflowSummary(BaseSchema):
         pattern="^(hostel|platform)$",
         description="Scope of cashflow analysis"
     )
-    scope_id: Optional[UUID] = Field(
+    scope_id: Union[UUID, None] = Field(
         None,
         description="Hostel ID if scope is hostel"
     )
-    scope_name: Optional[str] = Field(
+    scope_name: Union[str, None] = Field(
         None,
         max_length=255,
         description="Display name"
@@ -866,7 +865,7 @@ class CashflowSummary(BaseSchema):
     
     @computed_field  # type: ignore[misc]
     @property
-    def burn_rate_days(self) -> Optional[int]:
+    def burn_rate_days(self) -> Union[int, None]:
         """
         Calculate runway in days based on current burn rate.
         
@@ -914,11 +913,11 @@ class FinancialReport(BaseSchema):
         pattern="^(hostel|platform)$",
         description="Report scope"
     )
-    scope_id: Optional[UUID] = Field(
+    scope_id: Union[UUID, None] = Field(
         None,
         description="Hostel ID if applicable"
     )
-    scope_name: Optional[str] = Field(
+    scope_name: Union[str, None] = Field(
         None,
         max_length=255,
         description="Display name"
@@ -962,21 +961,21 @@ class FinancialReport(BaseSchema):
     )
     
     # Operational metrics
-    occupancy_rate: Optional[DecimalPercentage] = Field(
+    occupancy_rate: Union[DecimalPercentage, None] = Field(
         None,
         description="Average occupancy rate during period"
     )
-    average_daily_rate: Optional[DecimalCurrency] = Field(
+    average_daily_rate: Union[DecimalCurrency, None] = Field(
         None,
         description="Average daily rate (ADR) charged"
     )
     
     # Year-over-year comparison
-    revenue_growth_yoy: Optional[DecimalAmount] = Field(
+    revenue_growth_yoy: Union[DecimalAmount, None] = Field(
         None,
         description="Year-over-year revenue growth percentage"
     )
-    profit_growth_yoy: Optional[DecimalAmount] = Field(
+    profit_growth_yoy: Union[DecimalAmount, None] = Field(
         None,
         description="Year-over-year profit growth percentage"
     )

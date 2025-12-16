@@ -5,10 +5,8 @@ Handles document uploads including ID proofs, agreements, invoices,
 and other official documents with OCR and verification support.
 """
 
-from __future__ import annotations
-
 from datetime import date as Date, datetime
-from typing import Dict, List, Optional
+from typing import Dict, List, Union
 
 from pydantic import Field, HttpUrl, field_validator, model_validator, computed_field
 
@@ -51,11 +49,11 @@ class DocumentUploadInitRequest(BaseCreateSchema):
     )
 
     uploaded_by_user_id: str = Field(...)
-    student_id: Optional[str] = Field(
+    student_id: Union[str, None] = Field(
         default=None,
         description="Student ID if document belongs to student",
     )
-    hostel_id: Optional[str] = Field(
+    hostel_id: Union[str, None] = Field(
         default=None,
         description="Hostel ID if document is hostel-related",
     )
@@ -68,30 +66,30 @@ class DocumentUploadInitRequest(BaseCreateSchema):
         r"parent_consent|police_verification|other)$",
         description="Type of document being uploaded",
     )
-    document_subtype: Optional[str] = Field(
+    document_subtype: Union[str, None] = Field(
         default=None,
         max_length=50,
         description="Specific subtype (e.g., 'aadhaar', 'passport' for id_proof)",
     )
 
     # Metadata
-    description: Optional[str] = Field(
+    description: Union[str, None] = Field(
         default=None,
         max_length=500,
         description="Document description or notes",
     )
-    reference_number: Optional[str] = Field(
+    reference_number: Union[str, None] = Field(
         default=None,
         max_length=100,
         description="Document reference/ID number",
     )
 
     # Dates
-    issue_date: Optional[Date] = Field(
+    issue_date: Union[Date, None] = Field(
         default=None,
         description="Document issue Date",
     )
-    expiry_date: Optional[Date] = Field(
+    expiry_date: Union[Date, None] = Field(
         default=None,
         description="Document expiry Date (if applicable)",
     )
@@ -128,7 +126,7 @@ class DocumentUploadInitRequest(BaseCreateSchema):
 
     @field_validator("reference_number")
     @classmethod
-    def validate_reference_number(cls, v: Optional[str]) -> Optional[str]:
+    def validate_reference_number(cls, v: Union[str, None]) -> Union[str, None]:
         """Normalize reference number."""
         if v is not None:
             v = v.strip().upper()
@@ -138,7 +136,7 @@ class DocumentUploadInitRequest(BaseCreateSchema):
 
     @field_validator("expiry_date")
     @classmethod
-    def validate_expiry_date(cls, v: Optional[Date]) -> Optional[Date]:
+    def validate_expiry_date(cls, v: Union[Date, None]) -> Union[Date, None]:
         """Validate expiry Date is in the future."""
         if v is not None and v < Date.today():
             raise ValueError(
@@ -178,7 +176,7 @@ class DocumentUploadInitResponse(FileUploadInitResponse):
     )
     
     # Expected processing time
-    estimated_processing_time_seconds: Optional[int] = Field(
+    estimated_processing_time_seconds: Union[int, None] = Field(
         default=None,
         ge=0,
         description="Estimated time for document processing",
@@ -219,25 +217,25 @@ class DocumentValidationResult(BaseSchema):
     )
 
     # Failure details
-    reason: Optional[str] = Field(
+    reason: Union[str, None] = Field(
         default=None,
         description="Primary reason if invalid",
     )
-    error_details: Optional[str] = Field(
+    error_details: Union[str, None] = Field(
         default=None,
         description="Detailed error information",
     )
 
     # Extracted metadata (non-PII summary)
-    extracted_metadata: Optional[Dict[str, str]] = Field(
+    extracted_metadata: Union[Dict[str, str], None] = Field(
         default=None,
         description="Extracted document metadata",
     )
-    detected_type: Optional[str] = Field(
+    detected_type: Union[str, None] = Field(
         default=None,
         description="Auto-detected document type",
     )
-    confidence_level: Optional[str] = Field(
+    confidence_level: Union[str, None] = Field(
         default=None,
         description="Detection confidence",
     )
@@ -261,26 +259,26 @@ class DocumentInfo(BaseResponseSchema):
 
     # URLs
     url: HttpUrl = Field(..., description="Document access URL")
-    thumbnail_url: Optional[HttpUrl] = Field(
+    thumbnail_url: Union[HttpUrl, None] = Field(
         default=None,
         description="Thumbnail URL for preview",
     )
 
     # Classification
     document_type: str = Field(..., description="Document type")
-    document_subtype: Optional[str] = Field(default=None, description="Document subtype")
-    description: Optional[str] = Field(default=None, description="Description")
+    document_subtype: Union[str, None] = Field(default=None, description="Document subtype")
+    description: Union[str, None] = Field(default=None, description="Description")
 
     # Ownership
     uploaded_by_user_id: str = Field(..., description="Uploader user ID")
-    uploaded_by_name: Optional[str] = Field(default=None, description="Uploader name")
-    student_id: Optional[str] = Field(default=None, description="Associated student")
-    hostel_id: Optional[str] = Field(default=None, description="Associated hostel")
+    uploaded_by_name: Union[str, None] = Field(default=None, description="Uploader name")
+    student_id: Union[str, None] = Field(default=None, description="Associated student")
+    hostel_id: Union[str, None] = Field(default=None, description="Associated hostel")
 
     # Document details
-    reference_number: Optional[str] = Field(default=None, description="Reference number")
-    issue_date: Optional[Date] = Field(default=None, description="Issue Date")
-    expiry_date: Optional[Date] = Field(default=None, description="Expiry Date")
+    reference_number: Union[str, None] = Field(default=None, description="Reference number")
+    issue_date: Union[Date, None] = Field(default=None, description="Issue Date")
+    expiry_date: Union[Date, None] = Field(default=None, description="Expiry Date")
 
     # File metadata
     filename: str = Field(..., description="Original filename")
@@ -292,19 +290,19 @@ class DocumentInfo(BaseResponseSchema):
         default=False,
         description="Whether document has been verified",
     )
-    verified_by: Optional[str] = Field(
+    verified_by: Union[str, None] = Field(
         default=None,
         description="User ID who verified",
     )
-    verified_by_name: Optional[str] = Field(
+    verified_by_name: Union[str, None] = Field(
         default=None,
         description="Verifier name",
     )
-    verified_at: Optional[datetime] = Field(
+    verified_at: Union[datetime, None] = Field(
         default=None,
         description="Verification timestamp",
     )
-    verification_notes: Optional[str] = Field(
+    verification_notes: Union[str, None] = Field(
         default=None,
         description="Verification notes",
     )
@@ -314,7 +312,7 @@ class DocumentInfo(BaseResponseSchema):
         default="pending",
         description="Document status",
     )
-    rejection_reason: Optional[str] = Field(
+    rejection_reason: Union[str, None] = Field(
         default=None,
         description="Reason for rejection if rejected",
     )
@@ -324,7 +322,7 @@ class DocumentInfo(BaseResponseSchema):
         default=False,
         description="Whether OCR was performed",
     )
-    extracted_text: Optional[str] = Field(
+    extracted_text: Union[str, None] = Field(
         default=None,
         description="OCR extracted text (truncated for display)",
     )
@@ -343,7 +341,7 @@ class DocumentInfo(BaseResponseSchema):
 
     @computed_field
     @property
-    def days_until_expiry(self) -> Optional[int]:
+    def days_until_expiry(self) -> Union[int, None]:
         """Get days until expiry."""
         if self.expiry_date is None:
             return None
@@ -425,28 +423,28 @@ class DocumentVerificationRequest(BaseCreateSchema):
     )
 
     # Notes
-    verification_notes: Optional[str] = Field(
+    verification_notes: Union[str, None] = Field(
         default=None,
         max_length=1000,
         description="Verification notes or comments",
     )
-    rejection_reason: Optional[str] = Field(
+    rejection_reason: Union[str, None] = Field(
         default=None,
         max_length=500,
         description="Reason for rejection (required if rejected)",
     )
 
     # Extracted information (manual correction)
-    extracted_reference_number: Optional[str] = Field(
+    extracted_reference_number: Union[str, None] = Field(
         default=None,
         max_length=100,
         description="Manually extracted reference number",
     )
-    extracted_issue_date: Optional[Date] = Field(
+    extracted_issue_date: Union[Date, None] = Field(
         default=None,
         description="Manually extracted issue Date",
     )
-    extracted_expiry_date: Optional[Date] = Field(
+    extracted_expiry_date: Union[Date, None] = Field(
         default=None,
         description="Manually extracted expiry Date",
     )
@@ -497,7 +495,7 @@ class DocumentOCRResult(BaseSchema):
         ...,
         description="OCR processing status",
     )
-    confidence_score: Optional[float] = Field(
+    confidence_score: Union[float, None] = Field(
         default=None,
         ge=0,
         le=100,
@@ -522,17 +520,17 @@ class DocumentOCRResult(BaseSchema):
     )
 
     # For ID documents
-    extracted_name: Optional[str] = Field(default=None, description="Extracted name")
-    extracted_id_number: Optional[str] = Field(default=None, description="Extracted ID number")
-    extracted_dob: Optional[str] = Field(default=None, description="Extracted Date of birth")
-    extracted_address: Optional[str] = Field(default=None, description="Extracted address")
+    extracted_name: Union[str, None] = Field(default=None, description="Extracted name")
+    extracted_id_number: Union[str, None] = Field(default=None, description="Extracted ID number")
+    extracted_dob: Union[str, None] = Field(default=None, description="Extracted Date of birth")
+    extracted_address: Union[str, None] = Field(default=None, description="Extracted address")
 
     # Processing metadata
     ocr_engine: str = Field(
         default="tesseract",
         description="OCR engine used",
     )
-    processing_time_seconds: Optional[float] = Field(
+    processing_time_seconds: Union[float, None] = Field(
         default=None,
         ge=0,
         description="OCR processing time",
@@ -540,7 +538,7 @@ class DocumentOCRResult(BaseSchema):
     processed_at: datetime = Field(..., description="OCR completion timestamp")
 
     # Error information
-    error_message: Optional[str] = Field(
+    error_message: Union[str, None] = Field(
         default=None,
         description="Error message if OCR failed",
     )
@@ -555,7 +553,7 @@ class DocumentExpiryAlert(BaseSchema):
 
     document_id: str = Field(..., description="Document identifier")
     document_type: str = Field(..., description="Document type")
-    reference_number: Optional[str] = Field(default=None, description="Document reference")
+    reference_number: Union[str, None] = Field(default=None, description="Document reference")
 
     owner_id: str = Field(..., description="Document owner ID")
     owner_type: str = Field(..., description="Owner type (student/hostel)")
@@ -583,7 +581,7 @@ class DocumentExpiryAlert(BaseSchema):
         default=False,
         description="Whether notification was sent",
     )
-    notification_sent_at: Optional[datetime] = Field(
+    notification_sent_at: Union[datetime, None] = Field(
         default=None,
         description="Notification timestamp",
     )

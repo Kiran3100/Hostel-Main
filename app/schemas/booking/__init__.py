@@ -1,12 +1,9 @@
-# --- File: app/schemas/booking/__init__.py ---
 """
 Booking schemas package.
 
 This module exports all booking-related schemas for easy importing
 across the application.
 """
-
-from __future__ import annotations
 
 from app.schemas.booking.booking_approval import (
     ApprovalResponse,

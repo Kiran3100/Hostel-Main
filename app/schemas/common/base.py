@@ -3,10 +3,8 @@
 Base schema classes with common fields and configurations.
 """
 
-from __future__ import annotations
-
 from datetime import datetime
-from typing import Any, Optional
+from typing import Any, Union
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -57,7 +55,7 @@ class TimestampMixin(BaseModel):
 class SoftDeleteMixin(BaseModel):
     """Mixin for soft delete support."""
 
-    deleted_at: Optional[datetime] = Field(
+    deleted_at: Union[datetime, None] = Field(
         default=None,
         description="Deletion timestamp",
     )

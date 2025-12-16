@@ -5,11 +5,9 @@ Provides comprehensive analytics, metrics, and insights
 for complaint management performance.
 """
 
-from __future__ import annotations
-
 from datetime import date as Date
 from decimal import Decimal
-from typing import Annotated, Dict, List, Optional
+from typing import Annotated, Dict, List, Union
 
 from pydantic import ConfigDict, Field, field_validator, model_validator
 
@@ -214,14 +212,14 @@ class StaffPerformance(BaseSchema):
         )
     ]
 
-    average_rating: Optional[Annotated[
+    average_rating: Union[Annotated[
         Decimal,
         Field(
             ge=Decimal("0"),
             le=Decimal("5"),
             description="Average feedback rating (1-5)"
         )
-    ]] = None
+    ], None] = None
 
 
 class RoomComplaintCount(BaseSchema):
@@ -290,7 +288,7 @@ class ComplaintAnalytics(BaseSchema):
     """
     model_config = ConfigDict(from_attributes=True)
 
-    hostel_id: Optional[str] = Field(
+    hostel_id: Union[str, None] = Field(
         default=None,
         description="Hostel ID (None for system-wide analytics)",
     )
@@ -347,7 +345,7 @@ class ComplaintAnalytics(BaseSchema):
     )
 
     @model_validator(mode="after")
-    def validate_period_range(self) -> "ComplaintAnalytics":
+    def validate_period_range(self):
         """Validate analytics period is logical."""
         if self.period_end < self.period_start:
             raise ValueError("period_end must be >= period_start")

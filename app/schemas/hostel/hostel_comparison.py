@@ -3,11 +3,9 @@
 Hostel comparison schemas for side-by-side analysis.
 """
 
-from __future__ import annotations
-
 from datetime import datetime
 from decimal import Decimal
-from typing import Annotated, Dict, List, Optional
+from typing import Annotated, Dict, List, Union
 from uuid import UUID
 
 from pydantic import ConfigDict, Field, field_validator
@@ -99,10 +97,10 @@ class ComparisonItem(BaseSchema):
     city: str = Field(..., description="City")
     state: str = Field(..., description="State")
     address: str = Field(..., description="Full address")
-    distance_from_center_km: Optional[Annotated[
+    distance_from_center_km: Union[Annotated[
         Decimal,
         Field(ge=0, description="Distance from city center (km)")
-    ]] = None
+    ], None] = None
 
     # Pricing
     starting_price_monthly: Annotated[
@@ -113,10 +111,10 @@ class ComparisonItem(BaseSchema):
         ...,
         description="Price range (e.g., '₹5,000 - ₹15,000')",
     )
-    security_deposit: Optional[Annotated[
+    security_deposit: Union[Annotated[
         Decimal,
         Field(ge=0, description="Security deposit amount")
-    ]] = None
+    ], None] = None
 
     # Capacity
     total_beds: int = Field(
@@ -170,11 +168,11 @@ class ComparisonItem(BaseSchema):
     )
 
     # Policies
-    check_in_time: Optional[str] = Field(
+    check_in_time: Union[str, None] = Field(
         default=None,
         description="Check-in time",
     )
-    check_out_time: Optional[str] = Field(
+    check_out_time: Union[str, None] = Field(
         default=None,
         description="Check-out time",
     )
@@ -184,7 +182,7 @@ class ComparisonItem(BaseSchema):
     )
 
     # Media
-    cover_image_url: Optional[str] = Field(
+    cover_image_url: Union[str, None] = Field(
         default=None,
         description="Cover image URL",
     )
@@ -278,7 +276,7 @@ class ComparisonSummary(BaseSchema):
         ...,
         description="Highest rated hostel (hostel ID)",
     )
-    best_location: Optional[UUID] = Field(
+    best_location: Union[UUID, None] = Field(
         default=None,
         description="Best location (hostel ID)",
     )

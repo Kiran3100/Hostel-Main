@@ -3,10 +3,8 @@
 Common filter schemas used for query/filter parameters across the API.
 """
 
-from __future__ import annotations
-
 from datetime import date as Date, datetime, time
-from typing import Dict, List, Optional
+from typing import Dict, List, Union
 
 from pydantic import Field, field_validator, model_validator
 
@@ -31,17 +29,17 @@ __all__ = [
 class DateRangeFilter(BaseFilterSchema):
     """Date range filter."""
 
-    start_date: Optional[Date] = Field(
+    start_date: Union[Date, None] = Field(
         default=None,
         description="Start Date (inclusive)",
     )
-    end_date: Optional[Date] = Field(
+    end_date: Union[Date, None] = Field(
         default=None,
         description="End Date (inclusive)",
     )
 
     @model_validator(mode="after")
-    def validate_date_range(self) -> "DateRangeFilter":
+    def validate_date_range(self):
         """Validate end_date is after or equal to start_date."""
         if (
             self.end_date is not None
@@ -55,17 +53,17 @@ class DateRangeFilter(BaseFilterSchema):
 class DateTimeRangeFilter(BaseFilterSchema):
     """Datetime range filter."""
 
-    start_datetime: Optional[datetime] = Field(
+    start_datetime: Union[datetime, None] = Field(
         default=None,
         description="Start datetime (inclusive)",
     )
-    end_datetime: Optional[datetime] = Field(
+    end_datetime: Union[datetime, None] = Field(
         default=None,
         description="End datetime (inclusive)",
     )
 
     @model_validator(mode="after")
-    def validate_datetime_range(self) -> "DateTimeRangeFilter":
+    def validate_datetime_range(self):
         """Validate end_datetime is after or equal to start_datetime."""
         if (
             self.end_datetime is not None
@@ -81,11 +79,11 @@ class DateTimeRangeFilter(BaseFilterSchema):
 class TimeRangeFilter(BaseFilterSchema):
     """Time range filter."""
 
-    start_time: Optional[time] = Field(
+    start_time: Union[time, None] = Field(
         default=None,
         description="Start time",
     )
-    end_time: Optional[time] = Field(
+    end_time: Union[time, None] = Field(
         default=None,
         description="End time",
     )
@@ -94,19 +92,19 @@ class TimeRangeFilter(BaseFilterSchema):
 class PriceRangeFilter(BaseFilterSchema):
     """Price range filter."""
 
-    min_price: Optional[float] = Field(
+    min_price: Union[float, None] = Field(
         default=None,
         ge=0,
         description="Minimum price",
     )
-    max_price: Optional[float] = Field(
+    max_price: Union[float, None] = Field(
         default=None,
         ge=0,
         description="Maximum price",
     )
 
     @model_validator(mode="after")
-    def validate_price_range(self) -> "PriceRangeFilter":
+    def validate_price_range(self):
         """Validate max_price is greater than or equal to min_price."""
         if (
             self.max_price is not None
@@ -122,7 +120,7 @@ class PriceRangeFilter(BaseFilterSchema):
 class SearchFilter(BaseFilterSchema):
     """Generic search filter."""
 
-    search_query: Optional[str] = Field(
+    search_query: Union[str, None] = Field(
         default=None,
         min_length=1,
         max_length=255,
@@ -150,11 +148,11 @@ class SortOptions(BaseFilterSchema):
 class StatusFilter(BaseFilterSchema):
     """Status filter."""
 
-    statuses: Optional[List[str]] = Field(
+    statuses: Union[List[str], None] = Field(
         default=None,
         description="Filter by status values",
     )
-    exclude_statuses: Optional[List[str]] = Field(
+    exclude_statuses: Union[List[str], None] = Field(
         default=None,
         description="Exclude status values",
     )
@@ -163,17 +161,17 @@ class StatusFilter(BaseFilterSchema):
 class NumericRangeFilter(BaseFilterSchema):
     """Generic numeric range filter."""
 
-    min_value: Optional[float] = Field(
+    min_value: Union[float, None] = Field(
         default=None,
         description="Minimum value",
     )
-    max_value: Optional[float] = Field(
+    max_value: Union[float, None] = Field(
         default=None,
         description="Maximum value",
     )
 
     @model_validator(mode="after")
-    def validate_range(self) -> "NumericRangeFilter":
+    def validate_range(self):
         """Validate max_value is greater than or equal to min_value."""
         if (
             self.max_value is not None
@@ -189,33 +187,33 @@ class NumericRangeFilter(BaseFilterSchema):
 class LocationFilter(BaseFilterSchema):
     """Location-based filter."""
 
-    latitude: Optional[float] = Field(
+    latitude: Union[float, None] = Field(
         default=None,
         ge=-90,
         le=90,
         description="Latitude",
     )
-    longitude: Optional[float] = Field(
+    longitude: Union[float, None] = Field(
         default=None,
         ge=-180,
         le=180,
         description="Longitude",
     )
-    radius_km: Optional[float] = Field(
+    radius_km: Union[float, None] = Field(
         default=None,
         ge=0,
         le=100,
         description="Search radius in kilometers",
     )
-    city: Optional[str] = Field(
+    city: Union[str, None] = Field(
         default=None,
         description="City name",
     )
-    state: Optional[str] = Field(
+    state: Union[str, None] = Field(
         default=None,
         description="State name",
     )
-    pincode: Optional[str] = Field(
+    pincode: Union[str, None] = Field(
         default=None,
         pattern=r"^\d{6}$",
         description="Pincode",
@@ -225,11 +223,11 @@ class LocationFilter(BaseFilterSchema):
 class MultiSelectFilter(BaseFilterSchema):
     """Multi-select filter with include/exclude."""
 
-    include: Optional[List[str]] = Field(
+    include: Union[List[str], None] = Field(
         default=None,
         description="Include these values",
     )
-    exclude: Optional[List[str]] = Field(
+    exclude: Union[List[str], None] = Field(
         default=None,
         description="Exclude these values",
     )
@@ -238,7 +236,7 @@ class MultiSelectFilter(BaseFilterSchema):
 class BooleanFilter(BaseFilterSchema):
     """Boolean filter (yes/no/all)."""
 
-    value: Optional[bool] = Field(
+    value: Union[bool, None] = Field(
         default=None,
         description="Boolean filter value",
     )
@@ -253,7 +251,7 @@ class TextSearchFilter(BaseFilterSchema):
         max_length=500,
         description="Search query",
     )
-    fields: Optional[List[str]] = Field(
+    fields: Union[List[str], None] = Field(
         default=None,
         description="Fields to search in",
     )
@@ -261,7 +259,7 @@ class TextSearchFilter(BaseFilterSchema):
         default=False,
         description="Enable fuzzy search",
     )
-    boost: Optional[Dict[str, float]] = Field(
+    boost: Union[Dict[str, float], None] = Field(
         default=None,
         description="Field boost weights",
     )

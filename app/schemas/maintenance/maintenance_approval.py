@@ -6,11 +6,9 @@ Provides schemas for approval requests, responses, threshold configuration,
 and rejection handling with comprehensive validation.
 """
 
-from __future__ import annotations
-
 from datetime import date as Date, datetime
 from decimal import Decimal
-from typing import Annotated, Any, Dict, List, Optional
+from typing import Annotated, Any, Dict, List, Optional, Union
 
 from pydantic import ConfigDict, Field, field_validator, model_validator
 from uuid import UUID
@@ -174,7 +172,7 @@ class ApprovalRequest(BaseCreateSchema):
         return None
 
     @model_validator(mode="after")
-    def validate_urgency_requirements(self) -> "ApprovalRequest":
+    def validate_urgency_requirements(self):
         """
         Validate urgency flag consistency.
         
@@ -188,7 +186,7 @@ class ApprovalRequest(BaseCreateSchema):
         return self
 
     @model_validator(mode="after")
-    def validate_cost_breakdown_total(self) -> "ApprovalRequest":
+    def validate_cost_breakdown_total(self):
         """
         Validate cost breakdown matches estimated cost.
         
@@ -264,7 +262,7 @@ class ApprovalResponse(BaseSchema):
     )
     
     # Approved details (if approved)
-    approved_amount: Optional[Annotated[Decimal, Field(ge=0, decimal_places=2)]] = Field(
+    approved_amount: Union[Annotated[Decimal, Field(ge=0, decimal_places=2)], None] = Field(
         None,
         description="Approved amount (may differ from requested)",
     )
@@ -314,7 +312,7 @@ class ApprovalResponse(BaseSchema):
         return round(v, 2) if v is not None else None
 
     @model_validator(mode="after")
-    def validate_response_consistency(self) -> "ApprovalResponse":
+    def validate_response_consistency(self):
         """
         Validate approval response consistency.
         
@@ -406,7 +404,7 @@ class ThresholdConfig(BaseSchema):
     )
     
     # Senior management threshold
-    senior_management_required_above: Optional[Annotated[Decimal, Field(ge=0, decimal_places=2)]] = Field(
+    senior_management_required_above: Union[Annotated[Decimal, Field(ge=0, decimal_places=2)], None] = Field(
         None,
         description="Amount requiring senior management approval",
     )
@@ -416,7 +414,7 @@ class ThresholdConfig(BaseSchema):
         True,
         description="Allow emergency requests to bypass normal thresholds",
     )
-    emergency_approval_limit: Optional[Annotated[Decimal, Field(ge=0, decimal_places=2)]] = Field(
+    emergency_approval_limit: Union[Annotated[Decimal, Field(ge=0, decimal_places=2)], None] = Field(
         None,
         description="Special limit for emergency approvals",
     )
@@ -428,7 +426,7 @@ class ThresholdConfig(BaseSchema):
     )
     
     # Approval workflow
-    require_multiple_quotes_above: Optional[Annotated[Decimal, Field(ge=0, decimal_places=2)]] = Field(
+    require_multiple_quotes_above: Union[Annotated[Decimal, Field(ge=0, decimal_places=2)], None] = Field(
         None,
         description="Amount above which multiple quotes required",
     )
@@ -463,7 +461,7 @@ class ThresholdConfig(BaseSchema):
         return round(v, 2) if v is not None else None
 
     @model_validator(mode="after")
-    def validate_threshold_hierarchy(self) -> "ThresholdConfig":
+    def validate_threshold_hierarchy(self):
         """
         Validate threshold amounts are in logical hierarchy.
         
@@ -649,7 +647,7 @@ class RejectionRequest(BaseCreateSchema):
         max_length=500,
         description="Suggested alternative approach",
     )
-    suggested_cost_reduction: Optional[Annotated[Decimal, Field(ge=0, decimal_places=2)]] = Field(
+    suggested_cost_reduction: Union[Annotated[Decimal, Field(ge=0, decimal_places=2)], None] = Field(
         None,
         description="Suggested reduced cost amount",
     )
@@ -706,7 +704,7 @@ class RejectionRequest(BaseCreateSchema):
         return round(v, 2) if v is not None else None
 
     @model_validator(mode="after")
-    def validate_resubmission_guidance(self) -> "RejectionRequest":
+    def validate_resubmission_guidance(self):
         """
         Validate resubmission guidance.
         

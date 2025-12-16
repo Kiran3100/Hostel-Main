@@ -6,11 +6,9 @@ Provides schemas for marking maintenance as completed, quality checks,
 material tracking, and completion certificates.
 """
 
-from __future__ import annotations
-
 from datetime import date as Date, datetime, time
 from decimal import Decimal
-from typing import Annotated, List, Optional
+from typing import Annotated, List, Union
 
 from pydantic import ConfigDict, Field, HttpUrl, field_validator, model_validator
 from uuid import UUID
@@ -53,12 +51,12 @@ class MaterialItem(BaseSchema):
         max_length=255,
         description="Material/item name",
     )
-    material_code: Optional[str] = Field(
+    material_code: Union[str, None] = Field(
         None,
         max_length=50,
         description="Material code/SKU",
     )
-    category: Optional[str] = Field(
+    category: Union[str, None] = Field(
         None,
         max_length=100,
         description="Material category",
@@ -83,17 +81,17 @@ class MaterialItem(BaseSchema):
         ...,
         description="Total cost for this material",
     )
-    supplier: Optional[str] = Field(
+    supplier: Union[str, None] = Field(
         None,
         max_length=255,
         description="Material supplier name",
     )
-    supplier_invoice: Optional[str] = Field(
+    supplier_invoice: Union[str, None] = Field(
         None,
         max_length=100,
         description="Supplier invoice number",
     )
-    warranty_months: Optional[int] = Field(
+    warranty_months: Union[int, None] = Field(
         None,
         ge=0,
         le=120,
@@ -109,7 +107,7 @@ class MaterialItem(BaseSchema):
 
     @field_validator("material_name", "category", "unit", "supplier")
     @classmethod
-    def normalize_text(cls, v: Optional[str]) -> Optional[str]:
+    def normalize_text(cls, v: Union[str, None]) -> Union[str, None]:
         """Normalize text fields."""
         if v is not None:
             v = v.strip()
@@ -173,7 +171,7 @@ class CompletionRequest(BaseCreateSchema):
         max_length=2000,
         description="Detailed notes about work performed",
     )
-    work_summary: Optional[str] = Field(
+    work_summary: Union[str, None] = Field(
         None,
         max_length=500,
         description="Brief work summary",
@@ -191,7 +189,7 @@ class CompletionRequest(BaseCreateSchema):
         ...,
         description="Total labor hours spent",
     )
-    labor_rate_per_hour: Optional[Annotated[Decimal, Field(ge=0, decimal_places=2)]] = Field(
+    labor_rate_per_hour: Union[Annotated[Decimal, Field(ge=0, decimal_places=2)], None] = Field(
         None,
         description="Labor rate per hour",
     )
@@ -223,7 +221,7 @@ class CompletionRequest(BaseCreateSchema):
         ...,
         description="Total actual cost",
     )
-    cost_breakdown: Optional[dict] = Field(
+    cost_breakdown: Union[dict, None] = Field(
         None,
         description="Detailed cost breakdown",
     )
@@ -241,7 +239,7 @@ class CompletionRequest(BaseCreateSchema):
     )
     
     # Timeline
-    actual_start_date: Optional[Date] = Field(
+    actual_start_date: Union[Date, None] = Field(
         None,
         description="Actual work start Date",
     )
@@ -249,7 +247,7 @@ class CompletionRequest(BaseCreateSchema):
         ...,
         description="Actual completion Date",
     )
-    total_working_days: Optional[int] = Field(
+    total_working_days: Union[int, None] = Field(
         None,
         ge=0,
         description="Total working days taken",
@@ -260,12 +258,12 @@ class CompletionRequest(BaseCreateSchema):
         False,
         description="Whether follow-up inspection needed",
     )
-    follow_up_notes: Optional[str] = Field(
+    follow_up_notes: Union[str, None] = Field(
         None,
         max_length=500,
         description="Follow-up requirements",
     )
-    follow_up_date: Optional[Date] = Field(
+    follow_up_date: Union[Date, None] = Field(
         None,
         description="Scheduled follow-up Date",
     )
@@ -275,13 +273,13 @@ class CompletionRequest(BaseCreateSchema):
         default=False,
         description="Whether warranty applies to this work",
     )
-    warranty_period_months: Optional[int] = Field(
+    warranty_period_months: Union[int, None] = Field(
         None,
         ge=0,
         le=120,
         description="Warranty period in months",
     )
-    warranty_terms: Optional[str] = Field(
+    warranty_terms: Union[str, None] = Field(
         None,
         max_length=1000,
         description="Warranty terms and conditions",
@@ -297,13 +295,13 @@ class CompletionRequest(BaseCreateSchema):
         "labor_rate_per_hour",
     )
     @classmethod
-    def round_decimals(cls, v: Optional[Decimal]) -> Optional[Decimal]:
+    def round_decimals(cls, v: Union[Decimal, None]) -> Union[Decimal, None]:
         """Round decimal values to 2 places."""
         return round(v, 2) if v is not None else None
 
     @field_validator("work_notes", "work_summary", "follow_up_notes", "warranty_terms")
     @classmethod
-    def normalize_text(cls, v: Optional[str]) -> Optional[str]:
+    def normalize_text(cls, v: Union[str, None]) -> Union[str, None]:
         """Normalize text fields."""
         if v is not None:
             v = v.strip()
@@ -463,7 +461,7 @@ class ChecklistItem(BaseSchema):
         }
     )
 
-    item_id: Optional[str] = Field(
+    item_id: Union[str, None] = Field(
         None,
         max_length=50,
         description="Checklist item unique ID",
@@ -474,7 +472,7 @@ class ChecklistItem(BaseSchema):
         max_length=500,
         description="What to check/verify",
     )
-    category: Optional[str] = Field(
+    category: Union[str, None] = Field(
         None,
         max_length=100,
         description="Check category",
@@ -488,24 +486,24 @@ class ChecklistItem(BaseSchema):
         default=False,
         description="Whether this is a critical check",
     )
-    notes: Optional[str] = Field(
+    notes: Union[str, None] = Field(
         None,
         max_length=500,
         description="Additional notes or observations",
     )
-    checked_by: Optional[str] = Field(
+    checked_by: Union[str, None] = Field(
         None,
         max_length=255,
         description="Person who performed this check",
     )
-    photo_evidence: Optional[HttpUrl] = Field(
+    photo_evidence: Union[HttpUrl, None] = Field(
         None,
         description="Photo evidence URL",
     )
 
     @field_validator("item_description", "notes")
     @classmethod
-    def normalize_text(cls, v: Optional[str]) -> Optional[str]:
+    def normalize_text(cls, v: Union[str, None]) -> Union[str, None]:
         """Normalize text fields."""
         if v is not None:
             v = v.strip()
@@ -544,7 +542,7 @@ class QualityCheck(BaseCreateSchema):
         ...,
         description="Overall quality check result",
     )
-    overall_rating: Optional[int] = Field(
+    overall_rating: Union[int, None] = Field(
         None,
         ge=1,
         le=5,
@@ -560,12 +558,12 @@ class QualityCheck(BaseCreateSchema):
     )
     
     # Inspection details
-    quality_check_notes: Optional[str] = Field(
+    quality_check_notes: Union[str, None] = Field(
         None,
         max_length=1000,
         description="Detailed quality check notes",
     )
-    defects_found: Optional[str] = Field(
+    defects_found: Union[str, None] = Field(
         None,
         max_length=1000,
         description="Any defects or issues found",
@@ -580,7 +578,7 @@ class QualityCheck(BaseCreateSchema):
         ...,
         description="Inspection Date",
     )
-    inspection_time: Optional[time] = Field(
+    inspection_time: Union[time, None] = Field(
         None,
         description="Inspection time",
     )
@@ -590,22 +588,22 @@ class QualityCheck(BaseCreateSchema):
         False,
         description="Whether rework is needed",
     )
-    rework_details: Optional[str] = Field(
+    rework_details: Union[str, None] = Field(
         None,
         max_length=1000,
         description="Details of required rework",
     )
-    rework_deadline: Optional[Date] = Field(
+    rework_deadline: Union[Date, None] = Field(
         None,
         description="Deadline for completing rework",
     )
     
     # Sign-off
-    customer_acceptance: Optional[bool] = Field(
+    customer_acceptance: Union[bool, None] = Field(
         None,
         description="Customer/requester acceptance",
     )
-    customer_feedback: Optional[str] = Field(
+    customer_feedback: Union[str, None] = Field(
         None,
         max_length=1000,
         description="Customer feedback",
@@ -633,7 +631,7 @@ class QualityCheck(BaseCreateSchema):
         "customer_feedback",
     )
     @classmethod
-    def normalize_text(cls, v: Optional[str]) -> Optional[str]:
+    def normalize_text(cls, v: Union[str, None]) -> Union[str, None]:
         """Normalize text fields."""
         if v is not None:
             v = v.strip()
@@ -766,11 +764,11 @@ class CompletionResponse(BaseSchema):
         ...,
         description="Whether quality check was performed",
     )
-    quality_check_passed: Optional[bool] = Field(
+    quality_check_passed: Union[bool, None] = Field(
         None,
         description="Quality check result (if performed)",
     )
-    quality_rating: Optional[int] = Field(
+    quality_rating: Union[int, None] = Field(
         None,
         ge=1,
         le=5,
@@ -782,7 +780,7 @@ class CompletionResponse(BaseSchema):
         ...,
         description="Actual completion Date",
     )
-    total_days_taken: Optional[int] = Field(
+    total_days_taken: Union[int, None] = Field(
         None,
         ge=0,
         description="Total days from request to completion",
@@ -878,7 +876,7 @@ class CompletionCertificate(BaseSchema):
         ...,
         description="Total work cost",
     )
-    cost_breakdown: Optional[dict] = Field(
+    cost_breakdown: Union[dict, None] = Field(
         None,
         description="Detailed cost breakdown",
     )
@@ -888,7 +886,7 @@ class CompletionCertificate(BaseSchema):
         ...,
         description="Person/team who completed work",
     )
-    completed_by_designation: Optional[str] = Field(
+    completed_by_designation: Union[str, None] = Field(
         None,
         description="Designation of person who completed",
     )
@@ -896,7 +894,7 @@ class CompletionCertificate(BaseSchema):
         ...,
         description="Person who verified completion",
     )
-    verified_by_designation: Optional[str] = Field(
+    verified_by_designation: Union[str, None] = Field(
         None,
         description="Designation of verifier",
     )
@@ -904,7 +902,7 @@ class CompletionCertificate(BaseSchema):
         ...,
         description="Person who approved completion",
     )
-    approved_by_designation: Optional[str] = Field(
+    approved_by_designation: Union[str, None] = Field(
         None,
         description="Designation of approver",
     )
@@ -932,43 +930,43 @@ class CompletionCertificate(BaseSchema):
         default=False,
         description="Whether warranty applies",
     )
-    warranty_period_months: Optional[int] = Field(
+    warranty_period_months: Union[int, None] = Field(
         None,
         ge=0,
         le=120,
         description="Warranty period in months",
     )
-    warranty_terms: Optional[str] = Field(
+    warranty_terms: Union[str, None] = Field(
         None,
         description="Warranty terms and conditions",
     )
-    warranty_valid_until: Optional[Date] = Field(
+    warranty_valid_until: Union[Date, None] = Field(
         None,
         description="Warranty expiry Date",
     )
     
     # Quality assurance
-    quality_rating: Optional[int] = Field(
+    quality_rating: Union[int, None] = Field(
         None,
         ge=1,
         le=5,
         description="Quality rating",
     )
-    quality_remarks: Optional[str] = Field(
+    quality_remarks: Union[str, None] = Field(
         None,
         description="Quality remarks",
     )
     
     # Digital signatures (placeholders)
-    completed_by_signature: Optional[str] = Field(
+    completed_by_signature: Union[str, None] = Field(
         None,
         description="Completed by signature data",
     )
-    verified_by_signature: Optional[str] = Field(
+    verified_by_signature: Union[str, None] = Field(
         None,
         description="Verified by signature data",
     )
-    approved_by_signature: Optional[str] = Field(
+    approved_by_signature: Union[str, None] = Field(
         None,
         description="Approved by signature data",
     )

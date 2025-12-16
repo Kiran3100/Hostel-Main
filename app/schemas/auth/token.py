@@ -4,10 +4,8 @@ Token management schemas with enhanced security features.
 Pydantic v2 compliant.
 """
 
-from __future__ import annotations
-
 from datetime import datetime
-from typing import Optional
+from typing import Union
 from uuid import UUID
 
 from pydantic import Field, field_validator
@@ -77,7 +75,7 @@ class TokenPayload(BaseSchema):
         ...,
         description="User role for authorization",
     )
-    hostel_id: Optional[UUID] = Field(
+    hostel_id: Union[UUID, None] = Field(
         default=None,
         description="Active hostel context (for multi-hostel scenarios)",
     )
@@ -193,19 +191,19 @@ class TokenValidationResponse(BaseSchema):
         ...,
         description="Whether token is valid and not expired",
     )
-    user_id: Optional[UUID] = Field(
+    user_id: Union[UUID, None] = Field(
         default=None,
         description="User ID if token is valid",
     )
-    role: Optional[UserRole] = Field(
+    role: Union[UserRole, None] = Field(
         default=None,
         description="User role if token is valid",
     )
-    expires_at: Optional[datetime] = Field(
+    expires_at: Union[datetime, None] = Field(
         default=None,
         description="Token expiration datetime (UTC)",
     )
-    error: Optional[str] = Field(
+    error: Union[str, None] = Field(
         default=None,
         description="Error message if token is invalid",
         examples=["Token expired", "Invalid signature"],
@@ -246,7 +244,7 @@ class LogoutRequest(BaseCreateSchema):
     Used to terminate user session(s).
     """
 
-    refresh_token: Optional[str] = Field(
+    refresh_token: Union[str, None] = Field(
         default=None,
         description="Refresh token to revoke (optional if using access token)",
     )
@@ -257,7 +255,7 @@ class LogoutRequest(BaseCreateSchema):
 
     @field_validator("refresh_token", mode="before")
     @classmethod
-    def validate_token_format(cls, v: Optional[str]) -> Optional[str]:
+    def validate_token_format(cls, v: Union[str, None]) -> Union[str, None]:
         """Validate refresh token format if provided."""
         if v is not None:
             if isinstance(v, str):

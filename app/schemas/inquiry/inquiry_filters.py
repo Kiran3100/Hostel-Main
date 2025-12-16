@@ -1,4 +1,3 @@
-# --- File: app/schemas/inquiry/inquiry_filters.py ---
 """
 Inquiry filter and search schemas.
 
@@ -6,10 +5,8 @@ This module defines schemas for filtering, searching, and sorting
 inquiry data.
 """
 
-from __future__ import annotations
-
 from datetime import date as Date
-from typing import List, Optional
+from typing import List, Union
 from uuid import UUID
 
 from pydantic import ConfigDict, Field, field_validator
@@ -46,100 +43,100 @@ class InquiryFilterParams(BaseFilterSchema):
     )
 
     # Text Search
-    search: Optional[str] = Field(
+    search: Union[str, None] = Field(
         default=None,
         max_length=255,
         description="Search in visitor name, email, or phone",
     )
 
     # Hostel Filter
-    hostel_id: Optional[UUID] = Field(
+    hostel_id: Union[UUID, None] = Field(
         default=None,
         description="Filter by specific hostel",
     )
-    hostel_ids: Optional[List[UUID]] = Field(
+    hostel_ids: Union[List[UUID], None] = Field(
         default=None,
         max_length=20,
         description="Filter by multiple hostels",
     )
 
     # Status Filter
-    status: Optional[InquiryStatus] = Field(
+    status: Union[InquiryStatus, None] = Field(
         default=None,
         description="Filter by specific status",
     )
-    statuses: Optional[List[InquiryStatus]] = Field(
+    statuses: Union[List[InquiryStatus], None] = Field(
         default=None,
         max_length=10,
         description="Filter by multiple statuses",
     )
 
     # Source Filter
-    source: Optional[InquirySource] = Field(
+    source: Union[InquirySource, None] = Field(
         default=None,
         description="Filter by inquiry source",
     )
-    sources: Optional[List[InquirySource]] = Field(
+    sources: Union[List[InquirySource], None] = Field(
         default=None,
         max_length=10,
         description="Filter by multiple sources",
     )
 
     # Date Filters
-    created_from: Optional[Date] = Field(
+    created_from: Union[Date, None] = Field(
         default=None,
         description="Filter inquiries created from this Date",
     )
-    created_to: Optional[Date] = Field(
+    created_to: Union[Date, None] = Field(
         default=None,
         description="Filter inquiries created until this Date",
     )
 
     # Check-in Date Filter
-    check_in_from: Optional[Date] = Field(
+    check_in_from: Union[Date, None] = Field(
         default=None,
         description="Filter by preferred check-in Date from",
     )
-    check_in_to: Optional[Date] = Field(
+    check_in_to: Union[Date, None] = Field(
         default=None,
         description="Filter by preferred check-in Date to",
     )
 
     # Room Type Filter
-    room_type: Optional[RoomType] = Field(
+    room_type: Union[RoomType, None] = Field(
         default=None,
         description="Filter by room type preference",
     )
 
     # Assignment Filters
-    assigned_to: Optional[UUID] = Field(
+    assigned_to: Union[UUID, None] = Field(
         default=None,
         description="Filter by assigned admin",
     )
-    is_assigned: Optional[bool] = Field(
+    is_assigned: Union[bool, None] = Field(
         default=None,
         description="Filter by assignment status",
     )
 
     # Contact Status
-    is_contacted: Optional[bool] = Field(
+    is_contacted: Union[bool, None] = Field(
         default=None,
         description="Filter by whether inquiry has been contacted",
     )
 
     # Urgency Filters
-    is_urgent: Optional[bool] = Field(
+    is_urgent: Union[bool, None] = Field(
         default=None,
         description="Show only urgent inquiries (new and recent)",
     )
-    is_stale: Optional[bool] = Field(
+    is_stale: Union[bool, None] = Field(
         default=None,
         description="Show only stale inquiries (old without contact)",
     )
 
     @field_validator("created_to")
     @classmethod
-    def validate_created_date_range(cls, v: Optional[Date], info) -> Optional[Date]:
+    def validate_created_date_range(cls, v: Union[Date, None], info) -> Union[Date, None]:
         """Validate created Date range."""
         created_from = info.data.get("created_from")
         if v is not None and created_from is not None:
@@ -149,7 +146,7 @@ class InquiryFilterParams(BaseFilterSchema):
 
     @field_validator("check_in_to")
     @classmethod
-    def validate_check_in_date_range(cls, v: Optional[Date], info) -> Optional[Date]:
+    def validate_check_in_date_range(cls, v: Union[Date, None], info) -> Union[Date, None]:
         """Validate check-in Date range."""
         check_in_from = info.data.get("check_in_from")
         if v is not None and check_in_from is not None:
@@ -185,7 +182,7 @@ class InquirySearchRequest(BaseFilterSchema):
         max_length=255,
         description="Search query string",
     )
-    hostel_id: Optional[UUID] = Field(
+    hostel_id: Union[UUID, None] = Field(
         default=None,
         description="Limit search to specific hostel",
     )
@@ -209,7 +206,7 @@ class InquirySearchRequest(BaseFilterSchema):
     )
 
     # Status Filter
-    status: Optional[InquiryStatus] = Field(
+    status: Union[InquiryStatus, None] = Field(
         default=None,
         description="Limit search to specific status",
     )
@@ -286,11 +283,11 @@ class InquiryExportRequest(BaseFilterSchema):
         }
     )
 
-    hostel_id: Optional[UUID] = Field(
+    hostel_id: Union[UUID, None] = Field(
         default=None,
         description="Export inquiries for specific hostel",
     )
-    filters: Optional[InquiryFilterParams] = Field(
+    filters: Union[InquiryFilterParams, None] = Field(
         default=None,
         description="Apply filters to export",
     )

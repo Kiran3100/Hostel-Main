@@ -6,8 +6,6 @@ Comprehensive attendance tracking, reporting, and alerting schemas
 for hostel management system with enhanced validation and type safety.
 """
 
-from __future__ import annotations
-
 from app.schemas.attendance.attendance_alert import (
     AlertAcknowledgment,
     AlertConfig,

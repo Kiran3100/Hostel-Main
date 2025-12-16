@@ -6,11 +6,9 @@ This module defines schemas for the approval process
 when supervisors create announcements requiring admin approval.
 """
 
-from __future__ import annotations
-
 from datetime import datetime
 from enum import Enum
-from typing import Optional
+from typing import Optional, Union
 from uuid import UUID
 
 from pydantic import Field, field_validator, model_validator, ConfigDict
@@ -59,7 +57,7 @@ class ApprovalRequest(BaseCreateSchema):
     )
     
     # Justification
-    approval_reason: Optional[str] = Field(
+    approval_reason: Union[str, None] = Field(
         None,
         max_length=500,
         description="Justification for why approval is needed",
@@ -72,7 +70,7 @@ class ApprovalRequest(BaseCreateSchema):
     )
     
     # Preferred approver (optional)
-    preferred_approver_id: Optional[UUID] = Field(
+    preferred_approver_id: Union[UUID, None] = Field(
         None,
         description="Preferred admin to review (optional)",
     )
@@ -119,7 +117,7 @@ class ApprovalResponse(BaseSchema):
     )
     
     # Feedback
-    approval_notes: Optional[str] = Field(
+    approval_notes: Union[str, None] = Field(
         None,
         description="Notes from the approver",
     )
@@ -129,7 +127,7 @@ class ApprovalResponse(BaseSchema):
         ...,
         description="Whether announcement was auto-published",
     )
-    published_at: Optional[datetime] = Field(
+    published_at: Union[datetime, None] = Field(
         None,
         description="Publication timestamp if published",
     )
@@ -167,7 +165,7 @@ class RejectionRequest(BaseCreateSchema):
     )
     
     # Constructive feedback
-    suggested_modifications: Optional[str] = Field(
+    suggested_modifications: Union[str, None] = Field(
         None,
         max_length=1000,
         description="Suggestions for improving the announcement",
@@ -223,41 +221,41 @@ class ApprovalWorkflow(BaseSchema):
     )
     
     # Timeline
-    submitted_for_approval_at: Optional[datetime] = Field(
+    submitted_for_approval_at: Union[datetime, None] = Field(
         None,
         description="When submitted for approval",
     )
-    approved_rejected_at: Optional[datetime] = Field(
+    approved_rejected_at: Union[datetime, None] = Field(
         None,
         description="When decision was made",
     )
     
     # Current approver (if pending)
-    pending_with: Optional[UUID] = Field(
+    pending_with: Union[UUID, None] = Field(
         None,
         description="Admin currently reviewing (if assigned)",
     )
-    pending_with_name: Optional[str] = Field(
+    pending_with_name: Union[str, None] = Field(
         None,
         description="Reviewing admin's name",
     )
     
     # Decision details
-    decision_by: Optional[UUID] = Field(
+    decision_by: Union[UUID, None] = Field(
         None,
         description="Admin who made the decision",
     )
-    decision_by_name: Optional[str] = Field(
+    decision_by_name: Union[str, None] = Field(
         None,
         description="Decision maker's name",
     )
     
     # Rejection details (if rejected)
-    rejection_reason: Optional[str] = Field(
+    rejection_reason: Union[str, None] = Field(
         None,
         description="Rejection reason if rejected",
     )
-    suggested_modifications: Optional[str] = Field(
+    suggested_modifications: Union[str, None] = Field(
         None,
         description="Suggested changes if rejected",
     )
@@ -267,7 +265,7 @@ class ApprovalWorkflow(BaseSchema):
     )
     
     # Timing metrics
-    time_pending_hours: Optional[float] = Field(
+    time_pending_hours: Union[float, None] = Field(
         None,
         ge=0,
         description="Hours in pending state",
@@ -394,7 +392,7 @@ class SupervisorApprovalQueue(BaseSchema):
     )
     
     # Average response time
-    avg_approval_time_hours: Optional[float] = Field(
+    avg_approval_time_hours: Union[float, None] = Field(
         None,
         ge=0,
         description="Average approval response time",
@@ -428,14 +426,14 @@ class BulkApproval(BaseCreateSchema):
     )
     
     # Notes
-    approval_notes: Optional[str] = Field(
+    approval_notes: Union[str, None] = Field(
         None,
         max_length=500,
         description="Notes for the decision",
     )
     
     # For rejections
-    rejection_reason: Optional[str] = Field(
+    rejection_reason: Union[str, None] = Field(
         None,
         max_length=500,
         description="Rejection reason (required if rejecting)",
@@ -486,7 +484,7 @@ class ApprovalHistory(BaseSchema):
         ...,
         description="Action taken (submitted/approved/rejected/resubmitted)",
     )
-    previous_status: Optional[ApprovalStatus] = Field(
+    previous_status: Union[ApprovalStatus, None] = Field(
         None,
         description="Status before action",
     )
@@ -510,7 +508,7 @@ class ApprovalHistory(BaseSchema):
     )
     
     # Details
-    notes: Optional[str] = Field(
+    notes: Union[str, None] = Field(
         None,
         description="Additional notes",
     )

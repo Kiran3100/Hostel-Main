@@ -1,4 +1,3 @@
-# --- File: app/schemas/admin/multi_hostel_dashboard.py ---
 """
 Multi‑hostel admin dashboard schemas.
 
@@ -10,11 +9,9 @@ Key points:
 - Focused on read‑only dashboard views and analytics
 """
 
-from __future__ import annotations
-
 from datetime import date as Date, datetime
 from decimal import Decimal
-from typing import Dict, List, Optional
+from typing import Dict, List, Union
 from uuid import UUID
 
 from pydantic import Field, computed_field, field_validator, model_validator
@@ -105,15 +102,15 @@ class HostelQuickStats(BaseSchema):
     )
 
     # Satisfaction / quality signals
-    avg_student_rating: Optional[Decimal] = Field(
+    avg_student_rating: Union[Decimal, None] = Field(
         None, ge=0, le=5, description="Average student rating for this hostel"
     )
-    admin_satisfaction_score: Optional[Decimal] = Field(
+    admin_satisfaction_score: Union[Decimal, None] = Field(
         None, ge=0, le=5, description="Internal satisfaction score for this hostel"
     )
 
     # Activity from this admin
-    last_activity: Optional[datetime] = Field(
+    last_activity: Union[datetime, None] = Field(
         None, description="Last time this admin interacted with this hostel"
     )
     access_count: int = Field(0, ge=0, description="Total accesses by this admin")
@@ -174,7 +171,7 @@ class HostelQuickStats(BaseSchema):
 
     @computed_field  # type: ignore[misc]
     @property
-    def hours_since_last_activity(self) -> Optional[int]:
+    def hours_since_last_activity(self) -> Union[int, None]:
         """Hours since this admin last interacted with this hostel."""
         if not self.last_activity:
             return None
@@ -216,10 +213,10 @@ class AggregatedStats(BaseSchema):
         Decimal("0.00"), ge=0, description="Total outstanding payments"
     )
 
-    avg_student_rating: Optional[Decimal] = Field(
+    avg_student_rating: Union[Decimal, None] = Field(
         None, ge=0, le=5, description="Average student rating across hostels"
     )
-    avg_admin_satisfaction_score: Optional[Decimal] = Field(
+    avg_admin_satisfaction_score: Union[Decimal, None] = Field(
         None, ge=0, le=5, description="Average internal satisfaction score"
     )
 
@@ -355,7 +352,7 @@ class TopPerformer(BaseSchema):
     )
     rank: int = Field(..., ge=1, description="Rank among hostels")
     key_metric: str = Field(..., min_length=1, description="Primary metric driving this ranking")
-    key_metric_value: Optional[Decimal] = Field(
+    key_metric_value: Union[Decimal, None] = Field(
         None, description="Value of the primary metric (e.g. occupancy %)"
     )
 
@@ -386,7 +383,7 @@ class BottomPerformer(BaseSchema):
     )
     rank: int = Field(..., ge=1, description="Rank among hostels (1 = worst)")
     key_metric: str = Field(..., min_length=1, description="Primary metric driving this ranking")
-    key_metric_value: Optional[Decimal] = Field(
+    key_metric_value: Union[Decimal, None] = Field(
         None, description="Value of the primary metric (e.g. complaints count)"
     )
 
@@ -418,15 +415,15 @@ class HostelMetricComparison(BaseSchema):
         Decimal("0.00"), description="Portfolio‑wide average for this metric"
     )
 
-    best_hostel_id: Optional[UUID] = Field(None, description="Best performing hostel ID")
-    best_hostel_name: Optional[str] = Field(None, description="Best performing hostel name")
-    best_value: Optional[Decimal] = Field(
+    best_hostel_id: Union[UUID, None] = Field(None, description="Best performing hostel ID")
+    best_hostel_name: Union[str, None] = Field(None, description="Best performing hostel name")
+    best_value: Union[Decimal, None] = Field(
         None, description="Best value for the metric (direction depends on metric)"
     )
 
-    worst_hostel_id: Optional[UUID] = Field(None, description="Worst performing hostel ID")
-    worst_hostel_name: Optional[str] = Field(None, description="Worst performing hostel name")
-    worst_value: Optional[Decimal] = Field(
+    worst_hostel_id: Union[UUID, None] = Field(None, description="Worst performing hostel ID")
+    worst_hostel_name: Union[str, None] = Field(None, description="Worst performing hostel name")
+    worst_value: Union[Decimal, None] = Field(
         None, description="Worst value for the metric (direction depends on metric)"
     )
 
@@ -522,12 +519,12 @@ class MultiHostelDashboard(BaseResponseSchema):
     )
 
     # Comparisons / rankings
-    cross_hostel_comparison: Optional[CrossHostelComparison] = Field(
+    cross_hostel_comparison: Union[CrossHostelComparison, None] = Field(
         None, description="Cross‑hostel comparisons and rankings"
     )
 
     # UI helpers
-    active_hostel_id: Optional[UUID] = Field(
+    active_hostel_id: Union[UUID, None] = Field(
         None, description="Hostel currently focused in UI (optional)"
     )
 

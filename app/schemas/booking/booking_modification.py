@@ -1,4 +1,3 @@
-# --- File: app/schemas/booking/booking_modification.py ---
 """
 Booking modification schemas.
 
@@ -6,11 +5,9 @@ This module defines schemas for modifying existing bookings including
 Date changes, duration changes, and room type changes.
 """
 
-from __future__ import annotations
-
 from datetime import date as Date
 from decimal import Decimal
-from typing import List, Optional
+from typing import List, Union
 from uuid import UUID
 
 from pydantic import Field, field_validator, model_validator
@@ -46,7 +43,7 @@ class ModificationRequest(BaseCreateSchema):
         False,
         description="Whether to modify check-in Date",
     )
-    new_check_in_date: Optional[Date] = Field(
+    new_check_in_date: Union[Date, None] = Field(
         None,
         description="New check-in Date if modifying",
     )
@@ -56,7 +53,7 @@ class ModificationRequest(BaseCreateSchema):
         False,
         description="Whether to modify stay duration",
     )
-    new_duration_months: Optional[int] = Field(
+    new_duration_months: Union[int, None] = Field(
         None,
         ge=1,
         le=24,
@@ -68,7 +65,7 @@ class ModificationRequest(BaseCreateSchema):
         False,
         description="Whether to modify room type",
     )
-    new_room_type: Optional[RoomType] = Field(
+    new_room_type: Union[RoomType, None] = Field(
         None,
         description="New room type if modifying",
     )
@@ -123,7 +120,7 @@ class ModificationRequest(BaseCreateSchema):
 
     @field_validator("new_check_in_date")
     @classmethod
-    def validate_new_check_in_date(cls, v: Optional[Date]) -> Optional[Date]:
+    def validate_new_check_in_date(cls, v: Union[Date, None]) -> Union[Date, None]:
         """Validate new check-in Date."""
         if v is not None and v < Date.today():
             raise ValueError(
@@ -341,21 +338,21 @@ class ModificationApproval(BaseCreateSchema):
     )
 
     # If Approved - decimal_places removed
-    adjusted_price: Optional[Decimal] = Field(
+    adjusted_price: Union[Decimal, None] = Field(
         None,
         ge=0,
         description="Adjusted price if admin wants to override calculated price (precision: 2 decimal places)",
     )
 
     # If Rejected
-    rejection_reason: Optional[str] = Field(
+    rejection_reason: Union[str, None] = Field(
         None,
         max_length=500,
         description="Reason for rejection if not approved",
     )
 
     # Admin Notes
-    admin_notes: Optional[str] = Field(
+    admin_notes: Union[str, None] = Field(
         None,
         max_length=500,
         description="Internal admin notes about the decision",
@@ -363,7 +360,7 @@ class ModificationApproval(BaseCreateSchema):
 
     @field_validator("adjusted_price")
     @classmethod
-    def quantize_decimal_field(cls, v: Optional[Decimal]) -> Optional[Decimal]:
+    def quantize_decimal_field(cls, v: Union[Decimal, None]) -> Union[Decimal, None]:
         """Quantize decimal field to 2 decimal places."""
         if v is not None:
             return v.quantize(Decimal("0.01"))
@@ -381,7 +378,7 @@ class ModificationApproval(BaseCreateSchema):
 
     @field_validator("rejection_reason")
     @classmethod
-    def validate_rejection_reason(cls, v: Optional[str]) -> Optional[str]:
+    def validate_rejection_reason(cls, v: Union[str, None]) -> Union[str, None]:
         """Validate rejection reason if provided."""
         if v is not None:
             v = v.strip()

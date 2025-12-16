@@ -3,11 +3,9 @@
 Hostel search schemas with comprehensive search and filtering.
 """
 
-from __future__ import annotations
-
 from datetime import date as Date
 from decimal import Decimal
-from typing import Annotated, List, Optional
+from typing import Annotated, List, Union
 
 from pydantic import ConfigDict, Field, field_validator, model_validator
 
@@ -35,7 +33,7 @@ class HostelSearchRequest(BaseFilterSchema):
     model_config = ConfigDict(from_attributes=True)
 
     # Text search
-    query: Optional[str] = Field(
+    query: Union[str, None] = Field(
         default=None,
         min_length=1,
         max_length=255,
@@ -43,75 +41,75 @@ class HostelSearchRequest(BaseFilterSchema):
     )
 
     # Location filters
-    city: Optional[str] = Field(
+    city: Union[str, None] = Field(
         default=None,
         description="Filter by city name",
     )
-    state: Optional[str] = Field(
+    state: Union[str, None] = Field(
         default=None,
         description="Filter by state name",
     )
-    pincode: Optional[str] = Field(
+    pincode: Union[str, None] = Field(
         default=None,
         pattern=r"^\d{6}$",
         description="Filter by 6-digit pincode",
     )
 
     # Location-based search (radius)
-    latitude: Optional[Annotated[
+    latitude: Union[Annotated[
         Decimal,
         Field(ge=-90, le=90, description="Latitude for radius search")
-    ]] = None
-    longitude: Optional[Annotated[
+    ], None] = None
+    longitude: Union[Annotated[
         Decimal,
         Field(ge=-180, le=180, description="Longitude for radius search")
-    ]] = None
-    radius_km: Optional[Annotated[
+    ], None] = None
+    radius_km: Union[Annotated[
         Decimal,
         Field(ge=0, le=50, description="Search radius in kilometers")
-    ]] = None
+    ], None] = None
 
     # Type filter
-    hostel_type: Optional[HostelType] = Field(
+    hostel_type: Union[HostelType, None] = Field(
         default=None,
         description="Filter by hostel type",
     )
 
     # Price filter
-    min_price: Optional[Annotated[
+    min_price: Union[Annotated[
         Decimal,
         Field(ge=0, description="Minimum monthly price")
-    ]] = None
-    max_price: Optional[Annotated[
+    ], None] = None
+    max_price: Union[Annotated[
         Decimal,
         Field(ge=0, description="Maximum monthly price")
-    ]] = None
+    ], None] = None
 
     # Room type
-    room_type: Optional[RoomType] = Field(
+    room_type: Union[RoomType, None] = Field(
         default=None,
         description="Preferred room type",
     )
 
     # Amenities filter
-    amenities: Optional[List[str]] = Field(
+    amenities: Union[List[str], None] = Field(
         default=None,
         max_length=10,
         description="Required amenities (all must be present)",
     )
 
     # Availability
-    available_beds_min: Optional[int] = Field(
+    available_beds_min: Union[int, None] = Field(
         default=None,
         ge=0,
         description="Minimum available beds required",
     )
 
     # Rating filter
-    min_rating: Optional[Annotated[
+    min_rating: Union[Annotated[
         Decimal,
         Field(ge=0, le=5, description="Minimum average rating")
-    ]] = None
+    ], None] = None
 
     # Features
     verified_only: bool = Field(
@@ -144,7 +142,7 @@ class HostelSearchRequest(BaseFilterSchema):
     )
 
     @model_validator(mode="after")
-    def validate_location_search(self) -> "HostelSearchRequest":
+    def validate_location_search(self):
         """Validate location-based search parameters."""
         # If radius search, both lat/lon and radius are required
         has_lat = self.latitude is not None
@@ -161,7 +159,7 @@ class HostelSearchRequest(BaseFilterSchema):
 
     @field_validator("max_price")
     @classmethod
-    def validate_price_range(cls, v: Optional[Decimal], info) -> Optional[Decimal]:
+    def validate_price_range(cls, v: Union[Decimal, None], info) -> Union[Decimal, None]:
         """Validate price range."""
         if v is not None:
             min_price = info.data.get("min_price")
@@ -301,66 +299,65 @@ class HostelSearchFilters(BaseFilterSchema):
     model_config = ConfigDict(from_attributes=True)
 
     # Gender
-    gender: Optional[str] = Field(
+    gender: Union[str, None] = Field(
         default=None,
         pattern=r"^(boys|girls|co_ed)$",
         description="Gender preference",
     )
 
     # Facilities (boolean filters)
-    has_wifi: Optional[bool] = Field(
+    has_wifi: Union[bool, None] = Field(
         default=None,
         description="Has WiFi",
     )
-    has_ac: Optional[bool] = Field(
+    has_ac: Union[bool, None] = Field(
         default=None,
         description="Has AC",
     )
-    has_laundry: Optional[bool] = Field(
+    has_laundry: Union[bool, None] = Field(
         default=None,
         description="Has laundry facility",
     )
-    has_parking: Optional[bool] = Field(
+    has_parking: Union[bool, None] = Field(
         default=None,
         description="Has parking",
     )
-    has_gym: Optional[bool] = Field(
+    has_gym: Union[bool, None] = Field(
         default=None,
         description="Has gym/fitness center",
     )
-    has_mess: Optional[bool] = Field(
+    has_mess: Union[bool, None] = Field(
         default=None,
         description="Has mess/canteen",
     )
 
     # Security
-    has_cctv: Optional[bool] = Field(
+    has_cctv: Union[bool, None] = Field(
         default=None,
         description="Has CCTV surveillance",
     )
-    has_security_guard: Optional[bool] = Field(
+    has_security_guard: Union[bool, None] = Field(
         default=None,
         description="Has security guard",
     )
 
     # Rules
-    allow_visitors: Optional[bool] = Field(
+    allow_visitors: Union[bool, None] = Field(
         default=None,
         description="Allows visitors",
     )
 
     # Availability
-    check_in_date: Optional[Date] = Field(
+    check_in_date: Union[Date, None] = Field(
         default=None,
         description="Desired check-in Date",
     )
 
     @field_validator("check_in_date")
     @classmethod
-    def validate_check_in_date(cls, v: Optional[Date]) -> Optional[Date]:
+    def validate_check_in_date(cls, v: Union[Date, None]) -> Union[Date, None]:
         """Validate check-in Date is not in the past."""
         if v is not None:
-            from datetime import date as dt
-            if v < dt.today():
+            if v < Date.today():
                 raise ValueError("Check-in Date cannot be in the past")
         return v

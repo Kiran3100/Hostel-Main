@@ -6,10 +6,8 @@ Provides various response formats for leave data including
 detailed, summary, and list views with computed fields.
 """
 
-from __future__ import annotations
-
 from datetime import date as Date, datetime
-from typing import Optional
+from typing import Union
 
 from pydantic import ConfigDict, Field, computed_field
 from uuid import UUID
@@ -88,7 +86,7 @@ class LeaveResponse(BaseResponseSchema):
         ...,
         description="Application submission timestamp",
     )
-    reason: Optional[str] = Field(
+    reason: Union[str, None] = Field(
         None,
         description="Leave reason (truncated for list view)",
     )
@@ -130,7 +128,7 @@ class LeaveResponse(BaseResponseSchema):
 
     @computed_field
     @property
-    def days_remaining(self) -> Optional[int]:
+    def days_remaining(self) -> Union[int, None]:
         """Calculate remaining days for active leave."""
         if not self.is_active:
             return None
@@ -171,15 +169,15 @@ class LeaveDetail(BaseResponseSchema):
         ...,
         description="Student full name",
     )
-    student_email: Optional[str] = Field(
+    student_email: Union[str, None] = Field(
         None,
         description="Student email address",
     )
-    student_phone: Optional[str] = Field(
+    student_phone: Union[str, None] = Field(
         None,
         description="Student phone number",
     )
-    student_room: Optional[str] = Field(
+    student_room: Union[str, None] = Field(
         None,
         description="Student room number",
     )
@@ -215,25 +213,25 @@ class LeaveDetail(BaseResponseSchema):
     )
 
     # Contact information
-    contact_during_leave: Optional[str] = Field(
+    contact_during_leave: Union[str, None] = Field(
         None,
         description="Contact number during leave",
     )
-    emergency_contact: Optional[str] = Field(
+    emergency_contact: Union[str, None] = Field(
         None,
         description="Emergency contact number",
     )
-    emergency_contact_relation: Optional[str] = Field(
+    emergency_contact_relation: Union[str, None] = Field(
         None,
         description="Relation with emergency contact",
     )
-    destination_address: Optional[str] = Field(
+    destination_address: Union[str, None] = Field(
         None,
         description="Destination address",
     )
 
     # Supporting documents
-    supporting_document_url: Optional[str] = Field(
+    supporting_document_url: Union[str, None] = Field(
         None,
         description="Supporting document URL",
     )
@@ -249,65 +247,65 @@ class LeaveDetail(BaseResponseSchema):
     )
 
     # Approval details
-    approved_at: Optional[datetime] = Field(
+    approved_at: Union[datetime, None] = Field(
         None,
         description="Approval timestamp",
     )
-    approved_by: Optional[UUID] = Field(
+    approved_by: Union[UUID, None] = Field(
         None,
         description="Approver user ID",
     )
-    approved_by_name: Optional[str] = Field(
+    approved_by_name: Union[str, None] = Field(
         None,
         description="Approver name",
     )
-    approval_notes: Optional[str] = Field(
+    approval_notes: Union[str, None] = Field(
         None,
         description="Approval notes",
     )
-    conditions: Optional[str] = Field(
+    conditions: Union[str, None] = Field(
         None,
         description="Approval conditions",
     )
 
     # Rejection details
-    rejected_at: Optional[datetime] = Field(
+    rejected_at: Union[datetime, None] = Field(
         None,
         description="Rejection timestamp",
     )
-    rejected_by: Optional[UUID] = Field(
+    rejected_by: Union[UUID, None] = Field(
         None,
         description="Rejector user ID",
     )
-    rejected_by_name: Optional[str] = Field(
+    rejected_by_name: Union[str, None] = Field(
         None,
         description="Rejector name",
     )
-    rejection_reason: Optional[str] = Field(
+    rejection_reason: Union[str, None] = Field(
         None,
         description="Rejection reason",
     )
 
     # Cancellation details
-    cancelled_at: Optional[datetime] = Field(
+    cancelled_at: Union[datetime, None] = Field(
         None,
         description="Cancellation timestamp",
     )
-    cancelled_by: Optional[UUID] = Field(
+    cancelled_by: Union[UUID, None] = Field(
         None,
         description="User who cancelled",
     )
-    cancellation_reason: Optional[str] = Field(
+    cancellation_reason: Union[str, None] = Field(
         None,
         description="Cancellation reason",
     )
 
     # Additional metadata
-    last_modified_at: Optional[datetime] = Field(
+    last_modified_at: Union[datetime, None] = Field(
         None,
         description="Last modification timestamp",
     )
-    last_modified_by: Optional[UUID] = Field(
+    last_modified_by: Union[UUID, None] = Field(
         None,
         description="Last modifier user ID",
     )
@@ -387,7 +385,7 @@ class LeaveListItem(BaseSchema):
         ...,
         description="Student name",
     )
-    room_number: Optional[str] = Field(
+    room_number: Union[str, None] = Field(
         None,
         description="Room number",
     )
@@ -463,11 +461,11 @@ class LeaveSummary(BaseSchema):
         }
     )
 
-    student_id: Optional[UUID] = Field(
+    student_id: Union[UUID, None] = Field(
         None,
         description="Student ID (if student-specific summary)",
     )
-    hostel_id: Optional[UUID] = Field(
+    hostel_id: Union[UUID, None] = Field(
         None,
         description="Hostel ID (if hostel-specific summary)",
     )

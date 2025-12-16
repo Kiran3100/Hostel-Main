@@ -7,12 +7,10 @@ and detailed permission tracking for multi-hostel administration.
 Fully migrated to Pydantic v2 with proper Decimal field handling.
 """
 
-from __future__ import annotations
-
 from datetime import datetime
 from datetime import date as Date
 from decimal import Decimal
-from typing import Annotated, Any, Dict, List, Optional, Union
+from typing import Annotated, Any, Dict, List, Union
 from uuid import UUID
 
 from pydantic import Field, computed_field, field_validator, model_validator, ConfigDict
@@ -72,8 +70,8 @@ class AdminHostelAssignment(BaseResponseSchema):
     hostel_type: str = Field(..., description="Hostel type (boys/girls/co-ed)")
     
     # Assignment metadata
-    assigned_by: Optional[UUID] = Field(None, description="Admin who created this assignment")
-    assigned_by_name: Optional[str] = Field(None, description="Name of assigning admin")
+    assigned_by: Union[UUID, None] = Field(None, description="Admin who created this assignment")
+    assigned_by_name: Union[str, None] = Field(None, description="Name of assigning admin")
     assigned_date: Date = Field(..., description="Date assignment was created")
     
     # Permission configuration
@@ -88,12 +86,12 @@ class AdminHostelAssignment(BaseResponseSchema):
     is_primary: bool = Field(False, description="Primary hostel for this admin")
     
     # Revocation tracking
-    revoked_date: Optional[Date] = Field(None, description="Date assignment was revoked")
-    revoked_by: Optional[UUID] = Field(None, description="Admin who revoked assignment")
-    revoke_reason: Optional[str] = Field(None, description="Reason for revocation")
+    revoked_date: Union[Date, None] = Field(None, description="Date assignment was revoked")
+    revoked_by: Union[UUID, None] = Field(None, description="Admin who revoked assignment")
+    revoke_reason: Union[str, None] = Field(None, description="Reason for revocation")
     
     # Activity and performance tracking
-    last_accessed: Optional[datetime] = Field(None, description="Last access timestamp")
+    last_accessed: Union[datetime, None] = Field(None, description="Last access timestamp")
     access_count: int = Field(0, ge=0, description="Total access count")
     total_session_time_minutes: int = Field(0, ge=0, description="Total time spent in hostel")
     
@@ -101,10 +99,10 @@ class AdminHostelAssignment(BaseResponseSchema):
     decisions_made: int = Field(0, ge=0, description="Total decisions made for this hostel")
     
     # Pydantic v2: Decimal fields with constraints using ge/le instead of max_digits/decimal_places
-    avg_response_time_minutes: Optional[Decimal] = Field(
+    avg_response_time_minutes: Union[Decimal, None] = Field(
         None, ge=Decimal("0"), description="Average response time for this hostel"
     )
-    satisfaction_score: Optional[Decimal] = Field(
+    satisfaction_score: Union[Decimal, None] = Field(
         None, ge=Decimal("0"), le=Decimal("5"), description="Admin satisfaction score for this hostel"
     )
 
@@ -177,7 +175,7 @@ class AssignmentCreate(BaseCreateSchema):
         description="Permission level for this assignment"
     )
     
-    permissions: Optional[Dict[str, Union[bool, int, str]]] = Field(
+    permissions: Union[Dict[str, Union[bool, int, str]], None] = Field(
         None,
         description="Specific permissions (required for LIMITED_ACCESS level)"
     )
@@ -185,12 +183,12 @@ class AssignmentCreate(BaseCreateSchema):
     is_primary: bool = Field(False, description="Set as primary hostel for admin")
     
     # Assignment metadata
-    assignment_notes: Optional[str] = Field(
+    assignment_notes: Union[str, None] = Field(
         None,
         max_length=1000,
         description="Administrative notes about this assignment"
     )
-    effective_date: Optional[Date] = Field(
+    effective_date: Union[Date, None] = Field(
         None,
         description="Effective Date for assignment (defaults to today)"
     )
@@ -229,8 +227,8 @@ class AssignmentCreate(BaseCreateSchema):
     @field_validator("permissions")
     @classmethod
     def validate_permissions_structure(
-        cls, v: Optional[Dict[str, Union[bool, int, str]]]
-    ) -> Optional[Dict[str, Union[bool, int, str]]]:
+        cls, v: Union[Dict[str, Union[bool, int, str]], None]
+    ) -> Union[Dict[str, Union[bool, int, str]], None]:
         """Validate permissions dictionary structure and values."""
         if v is None:
             return None
@@ -261,7 +259,7 @@ class AssignmentCreate(BaseCreateSchema):
 
     @field_validator("assignment_notes")
     @classmethod
-    def validate_assignment_notes(cls, v: Optional[str]) -> Optional[str]:
+    def validate_assignment_notes(cls, v: Union[str, None]) -> Union[str, None]:
         """Validate and clean assignment notes."""
         if v is not None:
             v = v.strip()
@@ -282,23 +280,23 @@ class AssignmentUpdate(BaseUpdateSchema):
     
     model_config = ConfigDict(validate_assignment=True)
     
-    permission_level: Optional[PermissionLevel] = Field(
+    permission_level: Union[PermissionLevel, None] = Field(
         None, description="Updated permission level"
     )
-    permissions: Optional[Dict[str, Union[bool, int, str]]] = Field(
+    permissions: Union[Dict[str, Union[bool, int, str]], None] = Field(
         None, description="Updated specific permissions"
     )
-    is_primary: Optional[bool] = Field(None, description="Update primary hostel status")
-    is_active: Optional[bool] = Field(None, description="Update assignment active status")
+    is_primary: Union[bool, None] = Field(None, description="Update primary hostel status")
+    is_active: Union[bool, None] = Field(None, description="Update assignment active status")
     
-    assignment_notes: Optional[str] = Field(
+    assignment_notes: Union[str, None] = Field(
         None,
         max_length=1000,
         description="Updated assignment notes"
     )
     
     # Update metadata
-    update_reason: Optional[str] = Field(
+    update_reason: Union[str, None] = Field(
         None,
         max_length=500,
         description="Reason for this update"
@@ -327,8 +325,8 @@ class AssignmentUpdate(BaseUpdateSchema):
     @field_validator("permissions")
     @classmethod
     def validate_permissions_structure(
-        cls, v: Optional[Dict[str, Union[bool, int, str]]]
-    ) -> Optional[Dict[str, Union[bool, int, str]]]:
+        cls, v: Union[Dict[str, Union[bool, int, str]], None]
+    ) -> Union[Dict[str, Union[bool, int, str]], None]:
         """Validate permissions dictionary structure and values."""
         if v is None:
             return None
@@ -380,12 +378,12 @@ class BulkAssignment(BaseCreateSchema):
         PermissionLevel.FULL_ACCESS,
         description="Permission level for all assignments"
     )
-    permissions: Optional[Dict[str, Union[bool, int, str]]] = Field(
+    permissions: Union[Dict[str, Union[bool, int, str]], None] = Field(
         None,
         description="Permissions applied to all assignments"
     )
     
-    primary_hostel_id: Optional[UUID] = Field(
+    primary_hostel_id: Union[UUID, None] = Field(
         None,
         description="Which hostel should be set as primary (must be in hostel_ids)"
     )
@@ -405,7 +403,7 @@ class BulkAssignment(BaseCreateSchema):
     )
     
     # Metadata and notifications
-    bulk_notes: Optional[str] = Field(
+    bulk_notes: Union[str, None] = Field(
         None,
         max_length=1000,
         description="Notes applied to all assignments in this bulk operation"
@@ -449,8 +447,8 @@ class BulkAssignment(BaseCreateSchema):
     @field_validator("permissions")
     @classmethod
     def validate_permissions_structure(
-        cls, v: Optional[Dict[str, Union[bool, int, str]]]
-    ) -> Optional[Dict[str, Union[bool, int, str]]]:
+        cls, v: Union[Dict[str, Union[bool, int, str]], None]
+    ) -> Union[Dict[str, Union[bool, int, str]], None]:
         """Validate permissions dictionary structure and values."""
         if v is None:
             return None
@@ -499,7 +497,7 @@ class RevokeAssignment(BaseCreateSchema):
     )
     
     # Revocation timing and options
-    effective_date: Optional[Date] = Field(
+    effective_date: Union[Date, None] = Field(
         None,
         description="Effective revocation Date (defaults to today)"
     )
@@ -509,11 +507,11 @@ class RevokeAssignment(BaseCreateSchema):
     )
     
     # Transition management
-    transfer_to_admin_id: Optional[UUID] = Field(
+    transfer_to_admin_id: Union[UUID, None] = Field(
         None,
         description="Transfer responsibilities to another admin"
     )
-    handover_notes: Optional[str] = Field(
+    handover_notes: Union[str, None] = Field(
         None,
         max_length=1000,
         description="Handover notes for responsibility transfer"
@@ -541,7 +539,7 @@ class RevokeAssignment(BaseCreateSchema):
 
     @field_validator("effective_date")
     @classmethod
-    def validate_effective_date(cls, v: Optional[Date]) -> Optional[Date]:
+    def validate_effective_date(cls, v: Union[Date, None]) -> Union[Date, None]:
         """Validate revocation effective Date."""
         if v is not None:
             today = Date.today()
@@ -604,11 +602,11 @@ class AssignmentList(BaseSchema):
     inactive_hostels: int = Field(..., ge=0, description="Inactive assignments")
     
     # Primary hostel information
-    primary_hostel_id: Optional[UUID] = Field(None, description="Primary hostel ID")
-    primary_hostel_name: Optional[str] = Field(None, description="Primary hostel name")
+    primary_hostel_id: Union[UUID, None] = Field(None, description="Primary hostel ID")
+    primary_hostel_name: Union[str, None] = Field(None, description="Primary hostel name")
     
     # Activity summary
-    last_activity: Optional[datetime] = Field(None, description="Last activity across all hostels")
+    last_activity: Union[datetime, None] = Field(None, description="Last activity across all hostels")
     total_access_count: int = Field(0, ge=0, description="Total access count across hostels")
     
     # Assignment details
@@ -618,7 +616,7 @@ class AssignmentList(BaseSchema):
     )
     
     # Performance metrics - Pydantic v2: use ge constraint instead of max_digits/decimal_places
-    avg_response_time_minutes: Optional[Decimal] = Field(
+    avg_response_time_minutes: Union[Decimal, None] = Field(
         None, ge=Decimal("0"), description="Average response time across all hostels"
     )
     total_decisions_made: int = Field(0, ge=0, description="Total decisions across hostels")
@@ -633,7 +631,7 @@ class AssignmentList(BaseSchema):
 
     @computed_field
     @property
-    def most_active_hostel(self) -> Optional[str]:
+    def most_active_hostel(self) -> Union[str, None]:
         """Identify most active hostel by access count."""
         if not self.assignments:
             return None
@@ -677,20 +675,20 @@ class HostelAdminItem(BaseSchema):
     
     # Assignment metadata
     assigned_date: Date = Field(..., description="Assignment creation Date")
-    assigned_by_name: Optional[str] = Field(None, description="Name of assigning admin")
+    assigned_by_name: Union[str, None] = Field(None, description="Name of assigning admin")
     
     # Activity tracking
-    last_active: Optional[datetime] = Field(None, description="Last activity timestamp")
+    last_active: Union[datetime, None] = Field(None, description="Last activity timestamp")
     access_count: int = Field(0, ge=0, description="Total access count")
     
     # Pydantic v2: Decimal with ge constraint
-    avg_session_duration_minutes: Optional[Decimal] = Field(
+    avg_session_duration_minutes: Union[Decimal, None] = Field(
         None, ge=Decimal("0"), description="Average session duration"
     )
     
     # Performance metrics
     decisions_made: int = Field(0, ge=0, description="Total decisions made")
-    response_time_avg_minutes: Optional[Decimal] = Field(
+    response_time_avg_minutes: Union[Decimal, None] = Field(
         None, ge=Decimal("0"), description="Average response time"
     )
     
@@ -799,12 +797,12 @@ class HostelAdminList(BaseSchema):
     active_admins: int = Field(..., ge=0, description="Currently active admin assignments")
     
     # Primary admin information
-    primary_admin_id: Optional[UUID] = Field(None, description="Primary admin ID")
-    primary_admin_name: Optional[str] = Field(None, description="Primary admin name")
+    primary_admin_id: Union[UUID, None] = Field(None, description="Primary admin ID")
+    primary_admin_name: Union[str, None] = Field(None, description="Primary admin name")
     
     # Coverage information
     coverage_24x7: bool = Field(False, description="24x7 admin coverage available")
-    last_admin_activity: Optional[datetime] = Field(None, description="Last admin activity")
+    last_admin_activity: Union[datetime, None] = Field(None, description="Last admin activity")
     
     # Admin details - Now HostelAdminItem is defined above, so no quotes needed
     admins: List[HostelAdminItem] = Field(

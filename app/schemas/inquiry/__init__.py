@@ -1,4 +1,3 @@
-# --- File: app/schemas/inquiry/__init__.py ---
 """
 Visitor inquiry and contact schemas package.
 
@@ -7,8 +6,6 @@ across the application.
 
 Migrated to Pydantic v2 with full compatibility.
 """
-
-from __future__ import annotations
 
 from app.schemas.inquiry.inquiry_base import (
     InquiryBase,

@@ -3,11 +3,9 @@
 Hostel filter and sort schemas with advanced filtering options.
 """
 
-from __future__ import annotations
-
 from datetime import date as Date
 from decimal import Decimal
-from typing import Annotated, List, Optional
+from typing import Annotated, List, Union
 from uuid import UUID
 
 from pydantic import ConfigDict, Field, field_validator
@@ -32,7 +30,7 @@ class HostelFilterParams(BaseFilterSchema):
     model_config = ConfigDict(from_attributes=True)
 
     # Text search
-    search: Optional[str] = Field(
+    search: Union[str, None] = Field(
         default=None,
         min_length=1,
         max_length=255,
@@ -40,97 +38,97 @@ class HostelFilterParams(BaseFilterSchema):
     )
 
     # Location
-    city: Optional[str] = Field(
+    city: Union[str, None] = Field(
         default=None,
         description="Filter by city",
     )
-    state: Optional[str] = Field(
+    state: Union[str, None] = Field(
         default=None,
         description="Filter by state",
     )
-    cities: Optional[List[str]] = Field(
+    cities: Union[List[str], None] = Field(
         default=None,
         description="Filter by multiple cities",
     )
 
     # Type
-    hostel_type: Optional[HostelType] = Field(
+    hostel_type: Union[HostelType, None] = Field(
         default=None,
         description="Filter by hostel type",
     )
-    hostel_types: Optional[List[HostelType]] = Field(
+    hostel_types: Union[List[HostelType], None] = Field(
         default=None,
         description="Filter by multiple hostel types",
     )
 
     # Status
-    status: Optional[HostelStatus] = Field(
+    status: Union[HostelStatus, None] = Field(
         default=None,
         description="Filter by operational status",
     )
-    is_active: Optional[bool] = Field(
+    is_active: Union[bool, None] = Field(
         default=None,
         description="Filter by active status",
     )
-    is_public: Optional[bool] = Field(
+    is_public: Union[bool, None] = Field(
         default=None,
         description="Filter by public visibility",
     )
-    is_featured: Optional[bool] = Field(
+    is_featured: Union[bool, None] = Field(
         default=None,
         description="Filter by featured status",
     )
-    is_verified: Optional[bool] = Field(
+    is_verified: Union[bool, None] = Field(
         default=None,
         description="Filter by verification status",
     )
 
     # Price range
-    price_min: Optional[Annotated[
+    price_min: Union[Annotated[
         Decimal,
         Field(ge=0, description="Minimum monthly price")
-    ]] = None
-    price_max: Optional[Annotated[
+    ], None] = None
+    price_max: Union[Annotated[
         Decimal,
         Field(ge=0, description="Maximum monthly price")
-    ]] = None
+    ], None] = None
 
     # Rating
-    min_rating: Optional[Annotated[
+    min_rating: Union[Annotated[
         Decimal,
         Field(ge=0, le=5, description="Minimum average rating")
-    ]] = None
+    ], None] = None
 
     # Availability
-    has_availability: Optional[bool] = Field(
+    has_availability: Union[bool, None] = Field(
         default=None,
         description="Filter by bed availability",
     )
-    min_available_beds: Optional[int] = Field(
+    min_available_beds: Union[int, None] = Field(
         default=None,
         ge=0,
         description="Minimum available beds required",
     )
 
     # Amenities
-    amenities: Optional[List[str]] = Field(
+    amenities: Union[List[str], None] = Field(
         default=None,
         description="Required amenities (all must be present)",
     )
 
     # Admin filters
-    admin_id: Optional[UUID] = Field(
+    admin_id: Union[UUID, None] = Field(
         default=None,
         description="Filter by assigned admin (admin only)",
     )
-    has_subscription: Optional[bool] = Field(
+    has_subscription: Union[bool, None] = Field(
         default=None,
         description="Filter by subscription status (admin only)",
     )
 
     @field_validator("price_max")
     @classmethod
-    def validate_price_range(cls, v: Optional[Decimal], info) -> Optional[Decimal]:
+    def validate_price_range(cls, v: Union[Decimal, None], info) -> Union[Decimal, None]:
         """Validate price range."""
         if v is not None:
             price_min = info.data.get("price_min")
@@ -174,57 +172,57 @@ class AdvancedFilters(BaseFilterSchema):
     model_config = ConfigDict(from_attributes=True)
 
     # Date filters
-    created_after: Optional[Date] = Field(
+    created_after: Union[Date, None] = Field(
         default=None,
         description="Filter hostels created after this Date",
     )
-    created_before: Optional[Date] = Field(
+    created_before: Union[Date, None] = Field(
         default=None,
         description="Filter hostels created before this Date",
     )
 
     # Occupancy
-    occupancy_min: Optional[Annotated[
+    occupancy_min: Union[Annotated[
         Decimal,
         Field(ge=0, le=100, description="Minimum occupancy percentage")
-    ]] = None
-    occupancy_max: Optional[Annotated[
+    ], None] = None
+    occupancy_max: Union[Annotated[
         Decimal,
         Field(ge=0, le=100, description="Maximum occupancy percentage")
-    ]] = None
+    ], None] = None
 
     # Reviews
-    min_reviews: Optional[int] = Field(
+    min_reviews: Union[int, None] = Field(
         default=None,
         ge=0,
         description="Minimum number of reviews",
     )
 
     # Rooms
-    min_rooms: Optional[int] = Field(
+    min_rooms: Union[int, None] = Field(
         default=None,
         ge=0,
         description="Minimum number of rooms",
     )
-    max_rooms: Optional[int] = Field(
+    max_rooms: Union[int, None] = Field(
         default=None,
         ge=0,
         description="Maximum number of rooms",
     )
 
     # Revenue (admin only)
-    revenue_min: Optional[Annotated[
+    revenue_min: Union[Annotated[
         Decimal,
         Field(ge=0, description="Minimum monthly revenue (admin only)")
-    ]] = None
-    revenue_max: Optional[Annotated[
+    ], None] = None
+    revenue_max: Union[Annotated[
         Decimal,
         Field(ge=0, description="Maximum monthly revenue (admin only)")
-    ]] = None
+    ], None] = None
 
     @field_validator("created_before")
     @classmethod
-    def validate_date_range(cls, v: Optional[Date], info) -> Optional[Date]:
+    def validate_date_range(cls, v: Union[Date, None], info) -> Union[Date, None]:
         """Validate Date range."""
         if v is not None:
             created_after = info.data.get("created_after")
@@ -234,7 +232,7 @@ class AdvancedFilters(BaseFilterSchema):
 
     @field_validator("occupancy_max")
     @classmethod
-    def validate_occupancy_range(cls, v: Optional[Decimal], info) -> Optional[Decimal]:
+    def validate_occupancy_range(cls, v: Union[Decimal, None], info) -> Union[Decimal, None]:
         """Validate occupancy range."""
         if v is not None:
             occupancy_min = info.data.get("occupancy_min")
@@ -263,7 +261,7 @@ class BulkFilterParams(BaseFilterSchema):
         default=False,
         description="Use filter criteria instead of explicit IDs",
     )
-    filters: Optional[HostelFilterParams] = Field(
+    filters: Union[HostelFilterParams, None] = Field(
         default=None,
         description="Filter criteria (if use_filters is True)",
     )

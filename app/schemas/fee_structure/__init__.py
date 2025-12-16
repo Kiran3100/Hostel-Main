@@ -6,8 +6,6 @@ This module exports all fee structure-related schemas for easy importing
 across the application.
 """
 
-from __future__ import annotations
-
 from app.schemas.fee_structure.fee_base import (
     FeeStructureBase,
     FeeStructureCreate,

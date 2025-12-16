@@ -4,10 +4,9 @@ Registration schemas with comprehensive validation.
 Pydantic v2 compliant.
 """
 
-from __future__ import annotations
+from datetime import date as Date, datetime
 
-from datetime import date as Date
-from typing import Optional
+from typing import Union
 from uuid import UUID
 
 from pydantic import EmailStr, Field, field_validator, model_validator
@@ -63,11 +62,11 @@ class RegisterRequest(BaseCreateSchema):
         default=UserRole.VISITOR,
         description="User role (defaults to visitor for security)",
     )
-    gender: Optional[Gender] = Field(
+    gender: Union[Gender, None] = Field(
         default=None,
         description="Gender (optional)",
     )
-    date_of_birth: Optional[Date] = Field(
+    date_of_birth: Union[Date, None] = Field(
         default=None,
         description="Date of birth (optional)",
     )
@@ -101,7 +100,7 @@ class RegisterRequest(BaseCreateSchema):
 
     @field_validator("date_of_birth", mode="after")
     @classmethod
-    def validate_age(cls, v: Optional[Date]) -> Optional[Date]:
+    def validate_age(cls, v: Union[Date, None]) -> Union[Date, None]:
         """
         Validate Date of birth for reasonable age constraints.
         
@@ -137,7 +136,7 @@ class RegisterRequest(BaseCreateSchema):
         return v
 
     @model_validator(mode="after")
-    def validate_passwords_match(self) -> "RegisterRequest":
+    def validate_passwords_match(self):
         """Ensure password and confirm_password match."""
         if self.password != self.confirm_password:
             raise ValueError("Passwords do not match")

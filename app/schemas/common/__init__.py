@@ -8,8 +8,6 @@ pagination helpers, responses, and filters from a single location:
     from app.schemas.common import BaseSchema, UserRole, PaginationParams
 """
 
-from __future__ import annotations
-
 from app.schemas.common.base import (
     BaseCreateSchema,
     BaseDBSchema,

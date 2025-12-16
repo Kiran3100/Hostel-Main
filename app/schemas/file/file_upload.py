@@ -5,10 +5,8 @@ Handles file upload initialization, completion, and validation
 for various storage backends (S3, GCS, Azure Blob, etc.).
 """
 
-from __future__ import annotations
-
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Union
 
 from pydantic import Field, HttpUrl, field_validator, model_validator
 
@@ -52,7 +50,7 @@ class FileUploadInitRequest(BaseCreateSchema):
     )
 
     # Logical organization
-    folder: Optional[str] = Field(
+    folder: Union[str, None] = Field(
         default=None,
         max_length=500,
         description="Logical folder path (e.g., 'hostels/123/documents')",
@@ -63,17 +61,17 @@ class FileUploadInitRequest(BaseCreateSchema):
         ...,
         description="User ID initiating the upload",
     )
-    hostel_id: Optional[str] = Field(
+    hostel_id: Union[str, None] = Field(
         default=None,
         description="Associated hostel ID (if applicable)",
     )
-    student_id: Optional[str] = Field(
+    student_id: Union[str, None] = Field(
         default=None,
         description="Associated student ID (if applicable)",
     )
 
     # Classification
-    category: Optional[str] = Field(
+    category: Union[str, None] = Field(
         default=None,
         max_length=50,
         description="File category for organization",
@@ -155,7 +153,7 @@ class FileUploadInitRequest(BaseCreateSchema):
 
     @field_validator("folder")
     @classmethod
-    def validate_folder(cls, v: Optional[str]) -> Optional[str]:
+    def validate_folder(cls, v: Union[str, None]) -> Union[str, None]:
         """Validate folder path."""
         if v is not None:
             v = v.strip()
@@ -251,7 +249,7 @@ class FileUploadInitResponse(BaseResponseSchema):
     )
 
     # Direct upload information
-    upload_url: Optional[HttpUrl] = Field(
+    upload_url: Union[HttpUrl, None] = Field(
         default=None,
         description="Pre-signed URL for direct upload to storage",
     )
@@ -272,7 +270,7 @@ class FileUploadInitResponse(BaseResponseSchema):
 
     # Access information
     is_public: bool = Field(..., description="Public access flag")
-    public_url: Optional[HttpUrl] = Field(
+    public_url: Union[HttpUrl, None] = Field(
         default=None,
         description="Public URL (if is_public=True)",
     )
@@ -320,19 +318,19 @@ class FileUploadCompleteRequest(BaseCreateSchema):
     )
 
     # Verification
-    checksum: Optional[str] = Field(
+    checksum: Union[str, None] = Field(
         default=None,
         max_length=128,
         description="File checksum (MD5/SHA256) for integrity verification",
     )
-    etag: Optional[str] = Field(
+    etag: Union[str, None] = Field(
         default=None,
         max_length=128,
         description="ETag from storage provider",
     )
 
     # Optional metadata
-    actual_size_bytes: Optional[int] = Field(
+    actual_size_bytes: Union[int, None] = Field(
         default=None,
         ge=1,
         description="Actual uploaded file size (for verification)",
@@ -340,7 +338,7 @@ class FileUploadCompleteRequest(BaseCreateSchema):
 
     @field_validator("checksum", "etag")
     @classmethod
-    def validate_hash(cls, v: Optional[str]) -> Optional[str]:
+    def validate_hash(cls, v: Union[str, None]) -> Union[str, None]:
         """Validate checksum/etag format."""
         if v is not None:
             v = v.strip()
@@ -364,7 +362,7 @@ class FileUploadCompleteResponse(BaseSchema):
 
     # Access URLs
     url: HttpUrl = Field(..., description="File access URL")
-    public_url: Optional[HttpUrl] = Field(
+    public_url: Union[HttpUrl, None] = Field(
         default=None,
         description="Public CDN URL (if applicable)",
     )
@@ -417,9 +415,9 @@ class MultipartUploadInitRequest(BaseCreateSchema):
     )
 
     uploaded_by_user_id: str = Field(...)
-    hostel_id: Optional[str] = Field(default=None)
+    hostel_id: Union[str, None] = Field(default=None)
 
-    category: Optional[str] = Field(default=None, max_length=50)
+    category: Union[str, None] = Field(default=None, max_length=50)
     is_public: bool = Field(default=False)
 
     @field_validator("filename")

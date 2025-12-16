@@ -5,9 +5,7 @@ This module provides base schemas for complaint creation, updates, and status ma
 with comprehensive field validation and business rule enforcement.
 """
 
-from __future__ import annotations
-
-from typing import List, Optional
+from typing import List, Union
 
 from pydantic import ConfigDict, Field, HttpUrl, field_validator, model_validator
 
@@ -39,7 +37,7 @@ class ComplaintBase(BaseSchema):
         ...,
         description="User ID who raised the complaint",
     )
-    student_id: Optional[str] = Field(
+    student_id: Union[str, None] = Field(
         default=None,
         description="Student ID if complaint raised by a student",
     )
@@ -63,7 +61,7 @@ class ComplaintBase(BaseSchema):
         ...,
         description="Primary complaint category",
     )
-    sub_category: Optional[str] = Field(
+    sub_category: Union[str, None] = Field(
         default=None,
         max_length=100,
         description="Optional sub-category for finer classification",
@@ -76,11 +74,11 @@ class ComplaintBase(BaseSchema):
     )
 
     # Location details
-    room_id: Optional[str] = Field(
+    room_id: Union[str, None] = Field(
         default=None,
         description="Room identifier if complaint is room-specific",
     )
-    location_details: Optional[str] = Field(
+    location_details: Union[str, None] = Field(
         default=None,
         max_length=500,
         description="Detailed location information within hostel",
@@ -131,7 +129,7 @@ class ComplaintBase(BaseSchema):
 
     @field_validator("sub_category")
     @classmethod
-    def validate_sub_category(cls, v: Optional[str]) -> Optional[str]:
+    def validate_sub_category(cls, v: Union[str, None]) -> Union[str, None]:
         """Normalize sub-category if provided."""
         if v is not None:
             v = v.strip()
@@ -141,7 +139,7 @@ class ComplaintBase(BaseSchema):
 
     @field_validator("location_details")
     @classmethod
-    def validate_location_details(cls, v: Optional[str]) -> Optional[str]:
+    def validate_location_details(cls, v: Union[str, None]) -> Union[str, None]:
         """Normalize location details if provided."""
         if v is not None:
             v = v.strip()
@@ -158,7 +156,7 @@ class ComplaintBase(BaseSchema):
         return v
 
     @model_validator(mode="after")
-    def validate_location_consistency(self) -> "ComplaintBase":
+    def validate_location_consistency(self):
         """
         Validate location-related fields are consistent.
         
@@ -182,7 +180,7 @@ class ComplaintCreate(ComplaintBase, BaseCreateSchema):
     model_config = ConfigDict(from_attributes=True)
 
     @model_validator(mode="after")
-    def validate_create_specific_rules(self) -> "ComplaintCreate":
+    def validate_create_specific_rules(self):
         """
         Enforce creation-specific business rules.
         
@@ -208,49 +206,49 @@ class ComplaintUpdate(BaseUpdateSchema):
     """
     model_config = ConfigDict(from_attributes=True)
 
-    title: Optional[str] = Field(
+    title: Union[str, None] = Field(
         default=None,
         min_length=5,
         max_length=255,
         description="Updated complaint title",
     )
-    description: Optional[str] = Field(
+    description: Union[str, None] = Field(
         default=None,
         min_length=20,
         max_length=2000,
         description="Updated complaint description",
     )
-    category: Optional[ComplaintCategory] = Field(
+    category: Union[ComplaintCategory, None] = Field(
         default=None,
         description="Updated complaint category",
     )
-    sub_category: Optional[str] = Field(
+    sub_category: Union[str, None] = Field(
         default=None,
         max_length=100,
         description="Updated sub-category",
     )
-    priority: Optional[Priority] = Field(
+    priority: Union[Priority, None] = Field(
         default=None,
         description="Updated priority level",
     )
-    location_details: Optional[str] = Field(
+    location_details: Union[str, None] = Field(
         default=None,
         max_length=500,
         description="Updated location details",
     )
-    attachments: Optional[List[HttpUrl]] = Field(
+    attachments: Union[List[HttpUrl], None] = Field(
         default=None,
         max_length=10,
         description="Updated attachments list",
     )
-    status: Optional[ComplaintStatus] = Field(
+    status: Union[ComplaintStatus, None] = Field(
         default=None,
         description="Updated complaint status",
     )
 
     @field_validator("title")
     @classmethod
-    def validate_title(cls, v: Optional[str]) -> Optional[str]:
+    def validate_title(cls, v: Union[str, None]) -> Union[str, None]:
         """Validate title if provided."""
         if v is not None:
             v = v.strip()
@@ -262,7 +260,7 @@ class ComplaintUpdate(BaseUpdateSchema):
 
     @field_validator("description")
     @classmethod
-    def validate_description(cls, v: Optional[str]) -> Optional[str]:
+    def validate_description(cls, v: Union[str, None]) -> Union[str, None]:
         """Validate description if provided."""
         if v is not None:
             v = v.strip()
@@ -278,14 +276,14 @@ class ComplaintUpdate(BaseUpdateSchema):
 
     @field_validator("attachments")
     @classmethod
-    def validate_attachments_limit(cls, v: Optional[List[HttpUrl]]) -> Optional[List[HttpUrl]]:
+    def validate_attachments_limit(cls, v: Union[List[HttpUrl], None]) -> Union[List[HttpUrl], None]:
         """Ensure attachment count doesn't exceed limit."""
         if v is not None and len(v) > 10:
             raise ValueError("Maximum 10 attachments allowed per complaint")
         return v
 
     @model_validator(mode="after")
-    def validate_has_updates(self) -> "ComplaintUpdate":
+    def validate_has_updates(self):
         """
         Ensure at least one field is being updated.
         
@@ -315,7 +313,7 @@ class ComplaintStatusUpdate(BaseUpdateSchema):
         ...,
         description="New complaint status",
     )
-    notes: Optional[str] = Field(
+    notes: Union[str, None] = Field(
         default=None,
         max_length=500,
         description="Reason or notes for status change",
@@ -323,7 +321,7 @@ class ComplaintStatusUpdate(BaseUpdateSchema):
 
     @field_validator("notes")
     @classmethod
-    def validate_notes(cls, v: Optional[str]) -> Optional[str]:
+    def validate_notes(cls, v: Union[str, None]) -> Union[str, None]:
         """Normalize status change notes."""
         if v is not None:
             v = v.strip()
@@ -332,7 +330,7 @@ class ComplaintStatusUpdate(BaseUpdateSchema):
         return v
 
     @model_validator(mode="after")
-    def validate_status_change_requirements(self) -> "ComplaintStatusUpdate":
+    def validate_status_change_requirements(self):
         """
         Enforce business rules for status changes.
         

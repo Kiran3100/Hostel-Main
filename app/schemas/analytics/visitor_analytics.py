@@ -1,4 +1,3 @@
-# --- File: app/schemas/analytics/visitor_analytics.py ---
 """
 Visitor and funnel analytics schemas for marketing optimization.
 
@@ -12,7 +11,7 @@ Provides comprehensive visitor behavior analysis including:
 
 from datetime import date, datetime
 from decimal import Decimal
-from typing import Dict, List, Optional, Annotated
+from typing import Dict, List, Union, Annotated
 from enum import Enum
 
 from pydantic import BaseModel, Field, field_validator, computed_field, model_validator, AfterValidator
@@ -71,7 +70,7 @@ class TrafficSourceMetrics(BaseSchema):
         ...,
         description="Traffic source"
     )
-    source_name: Optional[str] = Field(
+    source_name: Union[str, None] = Field(
         None,
         max_length=100,
         description="Human-readable source name"
@@ -150,15 +149,15 @@ class TrafficSourceMetrics(BaseSchema):
     )
     
     # Cost metrics (if available)
-    marketing_cost: Optional[DecimalNonNegative] = Field(
+    marketing_cost: Union[DecimalNonNegative, None] = Field(
         None,
         description="Marketing cost for this source"
     )
-    cost_per_acquisition: Optional[DecimalNonNegative] = Field(
+    cost_per_acquisition: Union[DecimalNonNegative, None] = Field(
         None,
         description="Cost per booking acquisition"
     )
-    roi: Optional[Annotated[Decimal, AfterValidator(round_to_2_places)]] = Field(
+    roi: Union[Annotated[Decimal, AfterValidator(round_to_2_places)], None] = Field(
         None,
         description="Return on investment percentage"
     )
@@ -434,7 +433,7 @@ class TrafficSourceAnalytics(BaseSchema):
     
     @computed_field  # type: ignore[misc]
     @property
-    def best_converting_source(self) -> Optional[SearchSource]:
+    def best_converting_source(self) -> Union[SearchSource, None]:
         """Identify source with highest conversion rate."""
         if not self.source_metrics:
             return None
@@ -445,7 +444,7 @@ class TrafficSourceAnalytics(BaseSchema):
     
     @computed_field  # type: ignore[misc]
     @property
-    def highest_volume_source(self) -> Optional[SearchSource]:
+    def highest_volume_source(self) -> Union[SearchSource, None]:
         """Identify source with highest visit volume."""
         if not self.source_metrics:
             return None
@@ -456,7 +455,7 @@ class TrafficSourceAnalytics(BaseSchema):
     
     @computed_field  # type: ignore[misc]
     @property
-    def best_roi_source(self) -> Optional[SearchSource]:
+    def best_roi_source(self) -> Union[SearchSource, None]:
         """Identify source with best ROI."""
         sources_with_roi = [
             s for s in self.source_metrics
@@ -515,7 +514,7 @@ class SearchBehavior(BaseSchema):
         max_length=10,
         description="Top 10 filtered amenities"
     )
-    most_common_price_range: Optional[str] = Field(
+    most_common_price_range: Union[str, None] = Field(
         None,
         max_length=50,
         description="Most common price range filter"

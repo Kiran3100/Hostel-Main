@@ -8,8 +8,6 @@ Example:
     from app.schemas.file import FileUploadInitRequest, DocumentInfo
 """
 
-from __future__ import annotations
-
 from app.schemas.file.document_upload import (
     DocumentExpiryAlert,
     DocumentInfo,
