@@ -6,10 +6,8 @@ Provides comprehensive filtering capabilities with validation
 for Date ranges, status filters, and export configurations.
 """
 
-from __future__ import annotations
-
 from datetime import date as Date
-from typing import List, Optional
+from typing import List, Union
 import re
 
 from pydantic import Field, field_validator, model_validator
@@ -35,11 +33,11 @@ class AttendanceFilterParams(BaseFilterSchema):
     """
 
     # Hostel filters
-    hostel_id: Optional[UUID] = Field(
+    hostel_id: Union[UUID, None] = Field(
         None,
         description="Filter by specific hostel",
     )
-    hostel_ids: Optional[List[UUID]] = Field(
+    hostel_ids: Union[List[UUID], None] = Field(
         None,
         min_length=1,
         max_length=100,
@@ -47,21 +45,21 @@ class AttendanceFilterParams(BaseFilterSchema):
     )
 
     # Student filters
-    student_id: Optional[UUID] = Field(
+    student_id: Union[UUID, None] = Field(
         None,
         description="Filter by specific student",
     )
-    student_ids: Optional[List[UUID]] = Field(
+    student_ids: Union[List[UUID], None] = Field(
         None,
         min_length=1,
         max_length=500,
         description="Filter by multiple students",
     )
-    room_id: Optional[UUID] = Field(
+    room_id: Union[UUID, None] = Field(
         None,
         description="Filter by room",
     )
-    room_ids: Optional[List[UUID]] = Field(
+    room_ids: Union[List[UUID], None] = Field(
         None,
         min_length=1,
         max_length=100,
@@ -69,68 +67,68 @@ class AttendanceFilterParams(BaseFilterSchema):
     )
 
     # Date range filters
-    date_from: Optional[Date] = Field(
+    date_from: Union[Date, None] = Field(
         None,
         description="Start Date (inclusive)",
     )
-    date_to: Optional[Date] = Field(
+    date_to: Union[Date, None] = Field(
         None,
         description="End Date (inclusive)",
     )
-    specific_date: Optional[Date] = Field(
+    specific_date: Union[Date, None] = Field(
         None,
         description="Filter by specific Date",
     )
 
     # Status filters
-    status: Optional[AttendanceStatus] = Field(
+    status: Union[AttendanceStatus, None] = Field(
         None,
         description="Filter by specific status",
     )
-    statuses: Optional[List[AttendanceStatus]] = Field(
+    statuses: Union[List[AttendanceStatus], None] = Field(
         None,
         min_length=1,
         description="Filter by multiple statuses",
     )
-    exclude_statuses: Optional[List[AttendanceStatus]] = Field(
+    exclude_statuses: Union[List[AttendanceStatus], None] = Field(
         None,
         min_length=1,
         description="Exclude specific statuses",
     )
 
     # Late filter
-    late_only: Optional[bool] = Field(
+    late_only: Union[bool, None] = Field(
         None,
         description="Filter only late arrivals (True) or exclude late (False)",
     )
 
     # Marking metadata
-    marked_by: Optional[UUID] = Field(
+    marked_by: Union[UUID, None] = Field(
         None,
         description="Filter by user who marked attendance",
     )
-    supervisor_id: Optional[UUID] = Field(
+    supervisor_id: Union[UUID, None] = Field(
         None,
         description="Filter by supervisor",
     )
-    attendance_mode: Optional[AttendanceMode] = Field(
+    attendance_mode: Union[AttendanceMode, None] = Field(
         None,
         description="Filter by marking method",
     )
 
     # Advanced filters
-    has_notes: Optional[bool] = Field(
+    has_notes: Union[bool, None] = Field(
         None,
         description="Filter records with/without notes",
     )
-    has_location: Optional[bool] = Field(
+    has_location: Union[bool, None] = Field(
         None,
         description="Filter records with/without location data",
     )
 
     @field_validator("date_to")
     @classmethod
-    def validate_date_range(cls, v: Optional[Date], info) -> Optional[Date]:
+    def validate_date_range(cls, v: Union[Date, None], info) -> Union[Date, None]:
         """Validate end Date is after or equal to start Date."""
         if v is not None and info.data.get("date_from"):
             date_from = info.data["date_from"]
@@ -263,19 +261,19 @@ class AttendanceExportRequest(BaseFilterSchema):
     )
 
     # Student filters
-    student_ids: Optional[List[UUID]] = Field(
+    student_ids: Union[List[UUID], None] = Field(
         None,
         max_length=500,
         description="Export specific students only",
     )
-    room_ids: Optional[List[UUID]] = Field(
+    room_ids: Union[List[UUID], None] = Field(
         None,
         max_length=100,
         description="Export specific rooms only",
     )
 
     # Status filters
-    statuses: Optional[List[AttendanceStatus]] = Field(
+    statuses: Union[List[AttendanceStatus], None] = Field(
         None,
         description="Filter by attendance statuses",
     )
@@ -331,7 +329,7 @@ class AttendanceExportRequest(BaseFilterSchema):
     )
 
     # Output options
-    file_name: Optional[str] = Field(
+    file_name: Union[str, None] = Field(
         None,
         max_length=255,
         description="Custom filename for export (without extension)",
@@ -343,7 +341,7 @@ class AttendanceExportRequest(BaseFilterSchema):
 
     @field_validator("file_name")
     @classmethod
-    def validate_filename(cls, v: Optional[str]) -> Optional[str]:
+    def validate_filename(cls, v: Union[str, None]) -> Union[str, None]:
         """Validate and sanitize filename."""
         if v is not None:
             # Remove invalid characters

@@ -1,4 +1,3 @@
-# --- File: app/schemas/analytics/supervisor_analytics.py ---
 """
 Supervisor analytics schemas for performance tracking.
 
@@ -12,7 +11,7 @@ Provides comprehensive supervisor metrics including:
 
 from datetime import date as Date, datetime
 from decimal import Decimal
-from typing import Dict, List, Optional, Annotated
+from typing import Dict, List, Union, Annotated
 
 from pydantic import BaseModel, Field, field_validator, computed_field, model_validator, AfterValidator
 from uuid import UUID
@@ -302,7 +301,7 @@ class SupervisorKPI(BaseSchema):
     )
     
     # Feedback
-    student_feedback_score: Optional[DecimalRating] = Field(
+    student_feedback_score: Union[DecimalRating, None] = Field(
         None,
         description="Average student rating (1-5 scale)"
     )
@@ -319,13 +318,13 @@ class SupervisorKPI(BaseSchema):
     )
     
     # Workload
-    workload: Optional[SupervisorWorkload] = Field(
+    workload: Union[SupervisorWorkload, None] = Field(
         None,
         description="Current workload metrics"
     )
     
     # Performance ratings
-    performance_rating: Optional[SupervisorPerformanceRating] = Field(
+    performance_rating: Union[SupervisorPerformanceRating, None] = Field(
         None,
         description="Detailed performance ratings"
     )
@@ -431,7 +430,7 @@ class SupervisorTrendPoint(BaseSchema):
         ...,
         description="Performance score for period"
     )
-    student_feedback_score: Optional[DecimalRating] = Field(
+    student_feedback_score: Union[DecimalRating, None] = Field(
         None,
         description="Student feedback score"
     )
@@ -504,12 +503,12 @@ class SupervisorDashboardAnalytics(BaseSchema):
     )
     
     # Goals and targets
-    monthly_target_tasks: Optional[int] = Field(
+    monthly_target_tasks: Union[int, None] = Field(
         None,
         ge=0,
         description="Monthly task completion target"
     )
-    target_achievement_rate: Optional[DecimalPercentage] = Field(
+    target_achievement_rate: Union[DecimalPercentage, None] = Field(
         None,
         description="Percentage of target achieved"
     )
@@ -529,7 +528,7 @@ class SupervisorDashboardAnalytics(BaseSchema):
     
     @computed_field  # type: ignore[misc]
     @property
-    def most_common_complaint_category(self) -> Optional[str]:
+    def most_common_complaint_category(self) -> Union[str, None]:
         """Identify most frequent complaint category."""
         if not self.complaints_by_category:
             return None
@@ -569,11 +568,11 @@ class SupervisorComparison(BaseSchema):
         pattern="^(hostel|platform)$",
         description="Comparison scope"
     )
-    hostel_id: Optional[UUID] = Field(
+    hostel_id: Union[UUID, None] = Field(
         None,
         description="Hostel ID if scope is hostel"
     )
-    hostel_name: Optional[str] = Field(
+    hostel_name: Union[str, None] = Field(
         None,
         max_length=255,
         description="Hostel name"
@@ -651,7 +650,7 @@ class SupervisorComparison(BaseSchema):
     
     @computed_field  # type: ignore[misc]
     @property
-    def top_performer(self) -> Optional[UUID]:
+    def top_performer(self) -> Union[UUID, None]:
         """Get ID of top performing supervisor."""
         if not self.ranked_by_performance:
             return None
@@ -670,7 +669,7 @@ class SupervisorComparison(BaseSchema):
         
         return round(Decimal(str(variance)), 2)
     
-    def get_supervisor_rank(self, supervisor_id: UUID, metric: str = "performance") -> Optional[int]:
+    def get_supervisor_rank(self, supervisor_id: UUID, metric: str = "performance") -> Union[int, None]:
         """
         Get rank of specific supervisor for a metric.
         

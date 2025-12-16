@@ -6,12 +6,10 @@ This module defines schemas for tracking read receipts,
 acknowledgments, and engagement metrics.
 """
 
-from __future__ import annotations
-
 from datetime import datetime
 from decimal import Decimal
 from enum import Enum
-from typing import Annotated, Optional
+from typing import Annotated, Optional, Union
 from uuid import UUID
 
 from pydantic import Field, computed_field, field_validator, ConfigDict
@@ -71,19 +69,19 @@ class ReadReceipt(BaseCreateSchema):
     )
     
     # Reading context
-    reading_time_seconds: Optional[int] = Field(
+    reading_time_seconds: Union[int, None] = Field(
         None,
         ge=0,
         le=3600,
         description="Time spent reading in seconds (max 1 hour)",
     )
-    device_type: Optional[DeviceType] = Field(
+    device_type: Union[DeviceType, None] = Field(
         None,
         description="Device used to read",
     )
     
     # Scroll tracking (for long announcements)
-    scroll_percentage: Optional[int] = Field(
+    scroll_percentage: Union[int, None] = Field(
         None,
         ge=0,
         le=100,
@@ -129,7 +127,7 @@ class ReadReceiptResponse(BaseResponseSchema):
         ...,
         description="Whether already acknowledged",
     )
-    acknowledgment_deadline: Optional[datetime] = Field(
+    acknowledgment_deadline: Union[datetime, None] = Field(
         None,
         description="Deadline for acknowledgment if required",
     )
@@ -163,14 +161,14 @@ class AcknowledgmentRequest(BaseCreateSchema):
         True,
         description="Acknowledgment confirmation",
     )
-    acknowledgment_note: Optional[str] = Field(
+    acknowledgment_note: Union[str, None] = Field(
         None,
         max_length=500,
         description="Optional note from student",
     )
     
     # For announcements requiring specific action
-    action_taken: Optional[str] = Field(
+    action_taken: Union[str, None] = Field(
         None,
         max_length=500,
         description="Description of action taken if required",
@@ -225,11 +223,11 @@ class PendingAcknowledgment(BaseSchema):
         ...,
         description="Student name",
     )
-    room_number: Optional[str] = Field(
+    room_number: Union[str, None] = Field(
         None,
         description="Room number",
     )
-    floor_number: Optional[int] = Field(
+    floor_number: Union[int, None] = Field(
         None,
         description="Floor number",
     )
@@ -249,17 +247,17 @@ class PendingAcknowledgment(BaseSchema):
         ...,
         description="Whether announcement was read",
     )
-    read_at: Optional[datetime] = Field(
+    read_at: Union[datetime, None] = Field(
         None,
         description="When announcement was read",
     )
     
     # Contact info for follow-up
-    phone: Optional[str] = Field(
+    phone: Union[str, None] = Field(
         None,
         description="Student phone for follow-up",
     )
-    email: Optional[str] = Field(
+    email: Union[str, None] = Field(
         None,
         description="Student email for follow-up",
     )
@@ -295,7 +293,7 @@ class AcknowledgmentTracking(BaseSchema):
         ...,
         description="Whether acknowledgment is required",
     )
-    acknowledgment_deadline: Optional[datetime] = Field(
+    acknowledgment_deadline: Union[datetime, None] = Field(
         None,
         description="Acknowledgment deadline",
     )
@@ -329,7 +327,7 @@ class AcknowledgmentTracking(BaseSchema):
         description="Acknowledged after deadline",
     )
     
-    # Rates - Using Annotated for Decimal constraints
+    # Rates
     acknowledgment_rate: Annotated[Decimal, Field(ge=0, le=100)] = Field(
         ...,
         description="Acknowledgment rate percentage",
@@ -341,8 +339,8 @@ class AcknowledgmentTracking(BaseSchema):
         description="Students pending acknowledgment",
     )
     
-    # Time tracking - Using Annotated for Decimal with ge constraint only
-    average_time_to_acknowledge_hours: Optional[Annotated[Decimal, Field(ge=0)]] = Field(
+    # Time tracking
+    average_time_to_acknowledge_hours: Union[Annotated[Decimal, Field(ge=0)], None] = Field(
         None,
         description="Average hours to acknowledge",
     )
@@ -357,7 +355,7 @@ class AcknowledgmentTracking(BaseSchema):
     
     @computed_field
     @property
-    def hours_until_deadline(self) -> Optional[float]:
+    def hours_until_deadline(self) -> Union[float, None]:
         """Hours remaining until deadline."""
         if self.acknowledgment_deadline is None:
             return None
@@ -415,12 +413,12 @@ class EngagementMetrics(BaseSchema):
         description="Read rate percentage",
     )
     
-    # Reading depth - Using Annotated for Decimal with ge constraint
-    average_reading_time_seconds: Optional[Annotated[Decimal, Field(ge=0)]] = Field(
+    # Reading depth
+    average_reading_time_seconds: Union[Annotated[Decimal, Field(ge=0)], None] = Field(
         None,
         description="Average reading time",
     )
-    average_scroll_percentage: Optional[Annotated[Decimal, Field(ge=0, le=100)]] = Field(
+    average_scroll_percentage: Union[Annotated[Decimal, Field(ge=0, le=100)], None] = Field(
         None,
         description="Average scroll depth",
     )
@@ -440,12 +438,12 @@ class EngagementMetrics(BaseSchema):
         description="Acknowledgment rate percentage",
     )
     
-    # Timing metrics - Using Annotated for Decimal with ge constraint
-    average_time_to_read_hours: Optional[Annotated[Decimal, Field(ge=0)]] = Field(
+    # Timing metrics
+    average_time_to_read_hours: Union[Annotated[Decimal, Field(ge=0)], None] = Field(
         None,
         description="Average hours from delivery to read",
     )
-    average_time_to_acknowledge_hours: Optional[Annotated[Decimal, Field(ge=0)]] = Field(
+    average_time_to_acknowledge_hours: Union[Annotated[Decimal, Field(ge=0)], None] = Field(
         None,
         description="Average hours from delivery to acknowledge",
     )
@@ -457,11 +455,11 @@ class EngagementMetrics(BaseSchema):
     )
     
     # Comparison
-    is_above_average: Optional[bool] = Field(
+    is_above_average: Union[bool, None] = Field(
         None,
         description="Whether engagement is above hostel average",
     )
-    hostel_average_engagement: Optional[Annotated[Decimal, Field(ge=0, le=100)]] = Field(
+    hostel_average_engagement: Union[Annotated[Decimal, Field(ge=0, le=100)], None] = Field(
         None,
         description="Hostel average engagement score",
     )
@@ -488,7 +486,7 @@ class ReadingTime(BaseSchema):
         description="Number of readers with time data",
     )
     
-    # Statistics - Using Annotated for Decimal with ge constraint
+    # Statistics
     average_reading_time_seconds: Annotated[Decimal, Field(ge=0)] = Field(
         ...,
         description="Average reading time",
@@ -557,17 +555,17 @@ class StudentEngagement(BaseSchema):
         ...,
         description="Student name",
     )
-    room_number: Optional[str] = Field(
+    room_number: Union[str, None] = Field(
         None,
         description="Room number",
     )
     
     # Delivery
-    delivered_at: Optional[datetime] = Field(
+    delivered_at: Union[datetime, None] = Field(
         None,
         description="Delivery timestamp",
     )
-    delivery_channel: Optional[str] = Field(
+    delivery_channel: Union[str, None] = Field(
         None,
         description="Delivery channel used",
     )
@@ -577,15 +575,15 @@ class StudentEngagement(BaseSchema):
         ...,
         description="Whether read",
     )
-    read_at: Optional[datetime] = Field(
+    read_at: Union[datetime, None] = Field(
         None,
         description="Read timestamp",
     )
-    reading_time_seconds: Optional[int] = Field(
+    reading_time_seconds: Union[int, None] = Field(
         None,
         description="Time spent reading",
     )
-    device_type: Optional[DeviceType] = Field(
+    device_type: Union[DeviceType, None] = Field(
         None,
         description="Device used",
     )
@@ -595,18 +593,18 @@ class StudentEngagement(BaseSchema):
         False,
         description="Whether acknowledged",
     )
-    acknowledged_at: Optional[datetime] = Field(
+    acknowledged_at: Union[datetime, None] = Field(
         None,
         description="Acknowledgment timestamp",
     )
-    acknowledgment_note: Optional[str] = Field(
+    acknowledgment_note: Union[str, None] = Field(
         None,
         description="Student's acknowledgment note",
     )
     
     @computed_field
     @property
-    def time_to_read_hours(self) -> Optional[float]:
+    def time_to_read_hours(self) -> Union[float, None]:
         """Hours from delivery to read."""
         if self.delivered_at and self.read_at:
             delta = self.read_at - self.delivered_at
@@ -653,11 +651,11 @@ class EngagementTrend(BaseSchema):
     )
     
     # Peak times
-    peak_reading_hour: Optional[str] = Field(
+    peak_reading_hour: Union[str, None] = Field(
         None,
         description="Hour with most reads",
     )
-    peak_reading_day: Optional[str] = Field(
+    peak_reading_day: Union[str, None] = Field(
         None,
         description="Day with most reads",
     )
@@ -716,7 +714,7 @@ class AnnouncementAnalytics(BaseSchema):
     )
     
     # Acknowledgment (if applicable)
-    acknowledgment_tracking: Optional[AcknowledgmentTracking] = Field(
+    acknowledgment_tracking: Union[AcknowledgmentTracking, None] = Field(
         None,
         description="Acknowledgment tracking if required",
     )

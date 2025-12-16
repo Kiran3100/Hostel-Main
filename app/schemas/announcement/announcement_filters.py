@@ -6,11 +6,9 @@ This module defines schemas for filtering, searching,
 and exporting announcements.
 """
 
-from __future__ import annotations
-
 from datetime import date as Date, datetime
 from enum import Enum
-from typing import Optional
+from typing import Optional, Union
 from uuid import UUID
 
 from pydantic import Field, field_validator, model_validator, ConfigDict
@@ -61,7 +59,7 @@ class AnnouncementFilterParams(BaseFilterSchema):
     model_config = ConfigDict(from_attributes=True)
     
     # Text search
-    search: Optional[str] = Field(
+    search: Union[str, None] = Field(
         None,
         min_length=2,
         max_length=100,
@@ -69,127 +67,127 @@ class AnnouncementFilterParams(BaseFilterSchema):
     )
     
     # Hostel filter
-    hostel_id: Optional[UUID] = Field(
+    hostel_id: Union[UUID, None] = Field(
         None,
         description="Filter by single hostel",
     )
-    hostel_ids: Optional[list[UUID]] = Field(
+    hostel_ids: Union[list[UUID], None] = Field(
         None,
         max_length=50,
         description="Filter by multiple hostels",
     )
     
     # Category filter
-    category: Optional[AnnouncementCategory] = Field(
+    category: Union[AnnouncementCategory, None] = Field(
         None,
         description="Filter by single category",
     )
-    categories: Optional[list[AnnouncementCategory]] = Field(
+    categories: Union[list[AnnouncementCategory], None] = Field(
         None,
         description="Filter by multiple categories",
     )
-    exclude_categories: Optional[list[AnnouncementCategory]] = Field(
+    exclude_categories: Union[list[AnnouncementCategory], None] = Field(
         None,
         description="Exclude specific categories",
     )
     
     # Priority filter
-    priority: Optional[Priority] = Field(
+    priority: Union[Priority, None] = Field(
         None,
         description="Filter by single priority",
     )
-    priorities: Optional[list[Priority]] = Field(
+    priorities: Union[list[Priority], None] = Field(
         None,
         description="Filter by multiple priorities",
     )
-    min_priority: Optional[Priority] = Field(
+    min_priority: Union[Priority, None] = Field(
         None,
         description="Minimum priority level",
     )
     
     # Status filters
-    is_published: Optional[bool] = Field(
+    is_published: Union[bool, None] = Field(
         None,
         description="Filter by publication status",
     )
-    is_urgent: Optional[bool] = Field(
+    is_urgent: Union[bool, None] = Field(
         None,
         description="Filter by urgent flag",
     )
-    is_pinned: Optional[bool] = Field(
+    is_pinned: Union[bool, None] = Field(
         None,
         description="Filter by pinned flag",
     )
-    requires_acknowledgment: Optional[bool] = Field(
+    requires_acknowledgment: Union[bool, None] = Field(
         None,
         description="Filter by acknowledgment requirement",
     )
     
     # Creator filters
-    created_by: Optional[UUID] = Field(
+    created_by: Union[UUID, None] = Field(
         None,
         description="Filter by creator UUID",
     )
-    created_by_role: Optional[str] = Field(
+    created_by_role: Union[str, None] = Field(
         None,
         pattern=r"^(admin|supervisor|super_admin)$",
         description="Filter by creator role",
     )
     
     # Date filters
-    published_date_from: Optional[Date] = Field(
+    published_date_from: Union[Date, None] = Field(
         None,
         description="Published on or after this Date",
     )
-    published_date_to: Optional[Date] = Field(
+    published_date_to: Union[Date, None] = Field(
         None,
         description="Published on or before this Date",
     )
-    created_date_from: Optional[Date] = Field(
+    created_date_from: Union[Date, None] = Field(
         None,
         description="Created on or after this Date",
     )
-    created_date_to: Optional[Date] = Field(
+    created_date_to: Union[Date, None] = Field(
         None,
         description="Created on or before this Date",
     )
     
     # Expiry filters
-    active_only: Optional[bool] = Field(
+    active_only: Union[bool, None] = Field(
         None,
         description="Only non-expired announcements",
     )
-    expired_only: Optional[bool] = Field(
+    expired_only: Union[bool, None] = Field(
         None,
         description="Only expired announcements",
     )
-    expires_before: Optional[Date] = Field(
+    expires_before: Union[Date, None] = Field(
         None,
         description="Expires before this Date",
     )
-    expires_after: Optional[Date] = Field(
+    expires_after: Union[Date, None] = Field(
         None,
         description="Expires after this Date",
     )
     
     # Approval filters
-    approval_pending: Optional[bool] = Field(
+    approval_pending: Union[bool, None] = Field(
         None,
         description="Filter by pending approval status",
     )
-    approved_by: Optional[UUID] = Field(
+    approved_by: Union[UUID, None] = Field(
         None,
         description="Filter by approver UUID",
     )
     
     # Engagement filters
-    min_read_rate: Optional[int] = Field(
+    min_read_rate: Union[int, None] = Field(
         None,
         ge=0,
         le=100,
         description="Minimum read rate percentage",
     )
-    min_engagement_score: Optional[int] = Field(
+    min_engagement_score: Union[int, None] = Field(
         None,
         ge=0,
         le=100,
@@ -222,7 +220,7 @@ class AnnouncementFilterParams(BaseFilterSchema):
     
     @field_validator("hostel_ids")
     @classmethod
-    def validate_hostel_ids(cls, v: Optional[list[UUID]]) -> Optional[list[UUID]]:
+    def validate_hostel_ids(cls, v: Union[list[UUID], None]) -> Union[list[UUID], None]:
         """Ensure unique hostel IDs."""
         if v and len(v) != len(set(v)):
             raise ValueError("Duplicate hostel IDs not allowed")
@@ -231,8 +229,8 @@ class AnnouncementFilterParams(BaseFilterSchema):
     @field_validator("published_date_to")
     @classmethod
     def validate_published_date_range(
-        cls, v: Optional[Date], info
-    ) -> Optional[Date]:
+        cls, v: Union[Date, None], info
+    ) -> Union[Date, None]:
         """Validate Date range."""
         from_date = info.data.get("published_date_from")
         if v and from_date and v < from_date:
@@ -242,8 +240,8 @@ class AnnouncementFilterParams(BaseFilterSchema):
     @field_validator("created_date_to")
     @classmethod
     def validate_created_date_range(
-        cls, v: Optional[Date], info
-    ) -> Optional[Date]:
+        cls, v: Union[Date, None], info
+    ) -> Union[Date, None]:
         """Validate Date range."""
         from_date = info.data.get("created_date_from")
         if v and from_date and v < from_date:
@@ -280,7 +278,7 @@ class SearchRequest(BaseFilterSchema):
         max_length=200,
         description="Search query string",
     )
-    hostel_id: Optional[UUID] = Field(
+    hostel_id: Union[UUID, None] = Field(
         None,
         description="Limit search to specific hostel",
     )
@@ -300,7 +298,7 @@ class SearchRequest(BaseFilterSchema):
     )
     
     # Filters
-    category: Optional[AnnouncementCategory] = Field(
+    category: Union[AnnouncementCategory, None] = Field(
         None,
         description="Filter by category",
     )
@@ -310,11 +308,11 @@ class SearchRequest(BaseFilterSchema):
     )
     
     # Date range
-    date_from: Optional[Date] = Field(
+    date_from: Union[Date, None] = Field(
         None,
         description="Search from this Date",
     )
-    date_to: Optional[Date] = Field(
+    date_to: Union[Date, None] = Field(
         None,
         description="Search until this Date",
     )
@@ -397,7 +395,7 @@ class ArchiveRequest(BaseCreateSchema):
         False,
         description="Don't archive urgent announcements",
     )
-    exclude_categories: Optional[list[AnnouncementCategory]] = Field(
+    exclude_categories: Union[list[AnnouncementCategory], None] = Field(
         None,
         description="Categories to exclude from archiving",
     )
@@ -436,7 +434,7 @@ class AnnouncementExportRequest(BaseFilterSchema):
     )
     
     # Filters
-    filters: Optional[AnnouncementFilterParams] = Field(
+    filters: Union[AnnouncementFilterParams, None] = Field(
         None,
         description="Filter parameters for export",
     )
@@ -470,24 +468,24 @@ class AnnouncementExportRequest(BaseFilterSchema):
     )
     
     # Date range
-    date_from: Optional[Date] = Field(
+    date_from: Union[Date, None] = Field(
         None,
         description="Export from this Date",
     )
-    date_to: Optional[Date] = Field(
+    date_to: Union[Date, None] = Field(
         None,
         description="Export until this Date",
     )
     
     # Delivery
-    send_to_email: Optional[str] = Field(
+    send_to_email: Union[str, None] = Field(
         None,
         description="Email address to send export (optional)",
     )
     
     @field_validator("date_to")
     @classmethod
-    def validate_date_range(cls, v: Optional[Date], info) -> Optional[Date]:
+    def validate_date_range(cls, v: Union[Date, None], info) -> Union[Date, None]:
         """Validate Date range."""
         date_from = info.data.get("date_from")
         if v and date_from and v < date_from:
@@ -554,7 +552,7 @@ class AnnouncementStatsRequest(BaseFilterSchema):
     
     model_config = ConfigDict(from_attributes=True)
     
-    hostel_id: Optional[UUID] = Field(
+    hostel_id: Union[UUID, None] = Field(
         None,
         description="Hostel UUID (None for all hostels)",
     )

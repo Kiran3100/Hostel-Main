@@ -4,11 +4,8 @@ Complaint filtering and search schemas.
 Provides comprehensive filtering, searching, and sorting
 capabilities for complaint queries.
 """
-
-from __future__ import annotations
-
 from datetime import date as Date
-from typing import List, Optional
+from typing import List, Union
 
 from pydantic import ConfigDict, Field, field_validator, model_validator
 
@@ -32,7 +29,7 @@ class ComplaintFilterParams(BaseFilterSchema):
     model_config = ConfigDict(from_attributes=True)
 
     # Text search
-    search: Optional[str] = Field(
+    search: Union[str, None] = Field(
         default=None,
         min_length=1,
         max_length=255,
@@ -40,110 +37,110 @@ class ComplaintFilterParams(BaseFilterSchema):
     )
 
     # Hostel filters
-    hostel_id: Optional[str] = Field(
+    hostel_id: Union[str, None] = Field(
         default=None,
         description="Filter by single hostel",
     )
-    hostel_ids: Optional[List[str]] = Field(
+    hostel_ids: Union[List[str], None] = Field(
         default=None,
         max_length=50,
         description="Filter by multiple hostels (max 50)",
     )
 
     # User filters
-    raised_by: Optional[str] = Field(
+    raised_by: Union[str, None] = Field(
         default=None,
         description="Filter by complainant user ID",
     )
-    student_id: Optional[str] = Field(
+    student_id: Union[str, None] = Field(
         default=None,
         description="Filter by student ID",
     )
 
     # Assignment filters
-    assigned_to: Optional[str] = Field(
+    assigned_to: Union[str, None] = Field(
         default=None,
         description="Filter by assigned staff member",
     )
-    unassigned_only: Optional[bool] = Field(
+    unassigned_only: Union[bool, None] = Field(
         default=None,
         description="Show only unassigned complaints",
     )
 
     # Category filters
-    category: Optional[ComplaintCategory] = Field(
+    category: Union[ComplaintCategory, None] = Field(
         default=None,
         description="Filter by single category",
     )
-    categories: Optional[List[ComplaintCategory]] = Field(
+    categories: Union[List[ComplaintCategory], None] = Field(
         default=None,
         max_length=20,
         description="Filter by multiple categories",
     )
 
     # Priority filters
-    priority: Optional[Priority] = Field(
+    priority: Union[Priority, None] = Field(
         default=None,
         description="Filter by single priority",
     )
-    priorities: Optional[List[Priority]] = Field(
+    priorities: Union[List[Priority], None] = Field(
         default=None,
         max_length=10,
         description="Filter by multiple priorities",
     )
 
     # Status filters
-    status: Optional[ComplaintStatus] = Field(
+    status: Union[ComplaintStatus, None] = Field(
         default=None,
         description="Filter by single status",
     )
-    statuses: Optional[List[ComplaintStatus]] = Field(
+    statuses: Union[List[ComplaintStatus], None] = Field(
         default=None,
         max_length=10,
         description="Filter by multiple statuses",
     )
 
     # Date range filters
-    opened_date_from: Optional[Date] = Field(
+    opened_date_from: Union[Date, None] = Field(
         default=None,
         description="Opened Date range start (inclusive)",
     )
-    opened_date_to: Optional[Date] = Field(
+    opened_date_to: Union[Date, None] = Field(
         default=None,
         description="Opened Date range end (inclusive)",
     )
-    resolved_date_from: Optional[Date] = Field(
+    resolved_date_from: Union[Date, None] = Field(
         default=None,
         description="Resolved Date range start",
     )
-    resolved_date_to: Optional[Date] = Field(
+    resolved_date_to: Union[Date, None] = Field(
         default=None,
         description="Resolved Date range end",
     )
 
     # Special filters
-    sla_breached_only: Optional[bool] = Field(
+    sla_breached_only: Union[bool, None] = Field(
         default=None,
         description="Show only SLA breached complaints",
     )
-    escalated_only: Optional[bool] = Field(
+    escalated_only: Union[bool, None] = Field(
         default=None,
         description="Show only escalated complaints",
     )
 
     # Location filters
-    room_id: Optional[str] = Field(
+    room_id: Union[str, None] = Field(
         default=None,
         description="Filter by specific room",
     )
 
     # Age filters
-    age_hours_min: Optional[int] = Field(
+    age_hours_min: Union[int, None] = Field(
         default=None,
         ge=0,
         description="Minimum complaint age in hours",
     )
-    age_hours_max: Optional[int] = Field(
+    age_hours_max: Union[int, None] = Field(
         default=None,
         ge=0,
         description="Maximum complaint age in hours",
@@ -151,7 +148,7 @@ class ComplaintFilterParams(BaseFilterSchema):
 
     @field_validator("search")
     @classmethod
-    def validate_search(cls, v: Optional[str]) -> Optional[str]:
+    def validate_search(cls, v: Union[str, None]) -> Union[str, None]:
         """Normalize search query."""
         if v is not None:
             v = v.strip()
@@ -161,14 +158,14 @@ class ComplaintFilterParams(BaseFilterSchema):
 
     @field_validator("hostel_ids", "categories", "priorities", "statuses")
     @classmethod
-    def validate_list_length(cls, v: Optional[List]) -> Optional[List]:
+    def validate_list_length(cls, v: Union[List, None]) -> Union[List, None]:
         """Ensure filter lists don't exceed reasonable limits."""
         if v is not None and len(v) > 50:
             raise ValueError("Too many items in filter list (max 50)")
         return v
 
     @model_validator(mode="after")
-    def validate_date_and_age_ranges(self) -> "ComplaintFilterParams":
+    def validate_date_and_age_ranges(self):
         """Validate Date and age ranges are logical."""
         # Validate opened Date range
         if self.opened_date_to is not None and self.opened_date_from is not None:
@@ -202,7 +199,7 @@ class ComplaintSearchRequest(BaseFilterSchema):
         max_length=500,
         description="Search query string",
     )
-    hostel_id: Optional[str] = Field(
+    hostel_id: Union[str, None] = Field(
         default=None,
         description="Limit search to specific hostel",
     )
@@ -222,11 +219,11 @@ class ComplaintSearchRequest(BaseFilterSchema):
     )
 
     # Optional filters
-    status: Optional[ComplaintStatus] = Field(
+    status: Union[ComplaintStatus, None] = Field(
         default=None,
         description="Filter by status",
     )
-    priority: Optional[Priority] = Field(
+    priority: Union[Priority, None] = Field(
         default=None,
         description="Filter by priority",
     )
@@ -288,11 +285,11 @@ class ComplaintExportRequest(BaseFilterSchema):
     """
     model_config = ConfigDict(from_attributes=True)
 
-    hostel_id: Optional[str] = Field(
+    hostel_id: Union[str, None] = Field(
         default=None,
         description="Limit export to specific hostel",
     )
-    filters: Optional[ComplaintFilterParams] = Field(
+    filters: Union[ComplaintFilterParams, None] = Field(
         default=None,
         description="Apply filters to export",
     )

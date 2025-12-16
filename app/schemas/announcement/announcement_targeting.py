@@ -6,10 +6,8 @@ This module defines schemas for configuring and managing
 announcement targeting rules and audience selection.
 """
 
-from __future__ import annotations
-
 from enum import Enum
-from typing import Optional
+from typing import Optional, Union
 from uuid import UUID
 
 from pydantic import Field, field_validator, model_validator, ConfigDict
@@ -163,11 +161,11 @@ class AudienceSelection(BaseCreateSchema):
     )
     
     # Filters
-    room_types: Optional[list[RoomType]] = Field(
+    room_types: Union[list[RoomType], None] = Field(
         None,
         description="Filter by room types",
     )
-    floors: Optional[list[int]] = Field(
+    floors: Union[list[int], None] = Field(
         None,
         description="Filter by floor numbers",
     )
@@ -194,7 +192,7 @@ class AudienceSelection(BaseCreateSchema):
     
     @field_validator("floors")
     @classmethod
-    def validate_floors(cls, v: Optional[list[int]]) -> Optional[list[int]]:
+    def validate_floors(cls, v: Union[list[int], None]) -> Union[list[int], None]:
         """Validate floor numbers."""
         if v:
             if any(f < 0 for f in v):

@@ -6,11 +6,9 @@ Provides various response formats for maintenance data including
 detailed, summary, and list views with computed fields.
 """
 
-from __future__ import annotations
-
 from datetime import date as Date, datetime
 from decimal import Decimal
-from typing import Annotated, Dict, List, Optional
+from typing import Annotated, Dict, List, Union
 
 from pydantic import ConfigDict, Field, computed_field
 from uuid import UUID
@@ -90,20 +88,20 @@ class MaintenanceResponse(BaseResponseSchema):
         ...,
         description="Current status",
     )
-    assigned_to: Optional[UUID] = Field(
+    assigned_to: Union[UUID, None] = Field(
         None,
         description="Assignee user ID",
     )
-    assigned_to_name: Optional[str] = Field(
+    assigned_to_name: Union[str, None] = Field(
         None,
         description="Assignee name",
     )
     # Using Annotated for optional Decimal fields in v2
-    estimated_cost: Optional[Annotated[Decimal, Field(ge=0, decimal_places=2)]] = Field(
+    estimated_cost: Union[Annotated[Decimal, Field(ge=0, decimal_places=2)], None] = Field(
         None,
         description="Estimated cost",
     )
-    actual_cost: Optional[Annotated[Decimal, Field(ge=0, decimal_places=2)]] = Field(
+    actual_cost: Union[Annotated[Decimal, Field(ge=0, decimal_places=2)], None] = Field(
         None,
         description="Actual cost",
     )
@@ -111,11 +109,11 @@ class MaintenanceResponse(BaseResponseSchema):
         ...,
         description="Request creation timestamp",
     )
-    estimated_completion_date: Optional[Date] = Field(
+    estimated_completion_date: Union[Date, None] = Field(
         None,
         description="Estimated completion Date",
     )
-    completed_at: Optional[datetime] = Field(
+    completed_at: Union[datetime, None] = Field(
         None,
         description="Completion timestamp",
     )
@@ -215,19 +213,19 @@ class MaintenanceDetail(BaseResponseSchema):
         ...,
         description="Requester full name",
     )
-    requested_by_email: Optional[str] = Field(
+    requested_by_email: Union[str, None] = Field(
         None,
         description="Requester email",
     )
-    requested_by_phone: Optional[str] = Field(
+    requested_by_phone: Union[str, None] = Field(
         None,
         description="Requester phone",
     )
-    room_id: Optional[UUID] = Field(
+    room_id: Union[UUID, None] = Field(
         None,
         description="Room ID",
     )
-    room_number: Optional[str] = Field(
+    room_number: Union[str, None] = Field(
         None,
         description="Room number",
     )
@@ -255,15 +253,15 @@ class MaintenanceDetail(BaseResponseSchema):
     )
     
     # Location details
-    location: Optional[str] = Field(
+    location: Union[str, None] = Field(
         None,
         description="Location details",
     )
-    floor: Optional[int] = Field(
+    floor: Union[int, None] = Field(
         None,
         description="Floor number",
     )
-    specific_area: Optional[str] = Field(
+    specific_area: Union[str, None] = Field(
         None,
         description="Specific area",
     )
@@ -279,41 +277,41 @@ class MaintenanceDetail(BaseResponseSchema):
     )
     
     # Assignment information
-    assigned_to: Optional[UUID] = Field(
+    assigned_to: Union[UUID, None] = Field(
         None,
         description="Assignee user ID",
     )
-    assigned_to_name: Optional[str] = Field(
+    assigned_to_name: Union[str, None] = Field(
         None,
         description="Assignee name",
     )
-    assigned_to_role: Optional[str] = Field(
+    assigned_to_role: Union[str, None] = Field(
         None,
         description="Assignee role",
     )
-    assigned_by: Optional[UUID] = Field(
+    assigned_by: Union[UUID, None] = Field(
         None,
         description="Assignor user ID",
     )
-    assigned_by_name: Optional[str] = Field(
+    assigned_by_name: Union[str, None] = Field(
         None,
         description="Assignor name",
     )
-    assigned_at: Optional[datetime] = Field(
+    assigned_at: Union[datetime, None] = Field(
         None,
         description="Assignment timestamp",
     )
     
     # Vendor information (if applicable)
-    vendor_name: Optional[str] = Field(
+    vendor_name: Union[str, None] = Field(
         None,
         description="Vendor company name",
     )
-    vendor_contact: Optional[str] = Field(
+    vendor_contact: Union[str, None] = Field(
         None,
         description="Vendor contact number",
     )
-    vendor_email: Optional[str] = Field(
+    vendor_email: Union[str, None] = Field(
         None,
         description="Vendor email",
     )
@@ -323,7 +321,7 @@ class MaintenanceDetail(BaseResponseSchema):
         ...,
         description="Current status",
     )
-    status_history: Optional[List[dict]] = Field(
+    status_history: Union[List[dict], None] = Field(
         None,
         description="Status change history",
     )
@@ -337,47 +335,47 @@ class MaintenanceDetail(BaseResponseSchema):
         default=False,
         description="Whether approval is pending",
     )
-    approved_by: Optional[UUID] = Field(
+    approved_by: Union[UUID, None] = Field(
         None,
         description="Approver user ID",
     )
-    approved_by_name: Optional[str] = Field(
+    approved_by_name: Union[str, None] = Field(
         None,
         description="Approver name",
     )
-    approved_at: Optional[datetime] = Field(
+    approved_at: Union[datetime, None] = Field(
         None,
         description="Approval timestamp",
     )
-    rejected_by: Optional[UUID] = Field(
+    rejected_by: Union[UUID, None] = Field(
         None,
         description="Rejector user ID",
     )
-    rejected_at: Optional[datetime] = Field(
+    rejected_at: Union[datetime, None] = Field(
         None,
         description="Rejection timestamp",
     )
-    rejection_reason: Optional[str] = Field(
+    rejection_reason: Union[str, None] = Field(
         None,
         description="Rejection reason",
     )
     
     # Timeline
-    started_at: Optional[datetime] = Field(
+    started_at: Union[datetime, None] = Field(
         None,
         description="Work start timestamp",
     )
-    completed_at: Optional[datetime] = Field(
+    completed_at: Union[datetime, None] = Field(
         None,
         description="Completion timestamp",
     )
     
     # Cost tracking - Using Annotated for Decimal in v2
-    estimated_cost: Optional[Annotated[Decimal, Field(ge=0, decimal_places=2)]] = Field(
+    estimated_cost: Union[Annotated[Decimal, Field(ge=0, decimal_places=2)], None] = Field(
         None,
         description="Estimated cost",
     )
-    actual_cost: Optional[Annotated[Decimal, Field(ge=0, decimal_places=2)]] = Field(
+    actual_cost: Union[Annotated[Decimal, Field(ge=0, decimal_places=2)], None] = Field(
         None,
         description="Actual cost incurred",
     )
@@ -391,21 +389,21 @@ class MaintenanceDetail(BaseResponseSchema):
     )
     
     # Timeline estimates
-    estimated_completion_date: Optional[Date] = Field(
+    estimated_completion_date: Union[Date, None] = Field(
         None,
         description="Estimated completion Date",
     )
-    actual_completion_date: Optional[Date] = Field(
+    actual_completion_date: Union[Date, None] = Field(
         None,
         description="Actual completion Date",
     )
-    deadline: Optional[Date] = Field(
+    deadline: Union[Date, None] = Field(
         None,
         description="Completion deadline",
     )
     
     # Work details
-    work_notes: Optional[str] = Field(
+    work_notes: Union[str, None] = Field(
         None,
         description="Work performed notes",
     )
@@ -413,7 +411,7 @@ class MaintenanceDetail(BaseResponseSchema):
         default_factory=list,
         description="Materials used in work",
     )
-    labor_hours: Optional[Annotated[Decimal, Field(ge=0, decimal_places=2)]] = Field(
+    labor_hours: Union[Annotated[Decimal, Field(ge=0, decimal_places=2)], None] = Field(
         None,
         description="Labor hours spent",
     )
@@ -423,23 +421,23 @@ class MaintenanceDetail(BaseResponseSchema):
         default=False,
         description="Whether quality check was performed",
     )
-    quality_checked_by: Optional[UUID] = Field(
+    quality_checked_by: Union[UUID, None] = Field(
         None,
         description="Quality checker user ID",
     )
-    quality_check_passed: Optional[bool] = Field(
+    quality_check_passed: Union[bool, None] = Field(
         None,
         description="Quality check result",
     )
-    quality_check_notes: Optional[str] = Field(
+    quality_check_notes: Union[str, None] = Field(
         None,
         description="Quality check notes",
     )
-    quality_checked_at: Optional[datetime] = Field(
+    quality_checked_at: Union[datetime, None] = Field(
         None,
         description="Quality check timestamp",
     )
-    quality_rating: Optional[int] = Field(
+    quality_rating: Union[int, None] = Field(
         None,
         ge=1,
         le=5,
@@ -451,15 +449,15 @@ class MaintenanceDetail(BaseResponseSchema):
         default=False,
         description="Whether this is preventive maintenance",
     )
-    preventive_schedule_id: Optional[UUID] = Field(
+    preventive_schedule_id: Union[UUID, None] = Field(
         None,
         description="Related preventive schedule ID",
     )
-    next_scheduled_date: Optional[Date] = Field(
+    next_scheduled_date: Union[Date, None] = Field(
         None,
         description="Next scheduled maintenance Date",
     )
-    recurrence: Optional[str] = Field(
+    recurrence: Union[str, None] = Field(
         None,
         description="Recurrence pattern",
     )
@@ -469,11 +467,11 @@ class MaintenanceDetail(BaseResponseSchema):
         default=False,
         description="Whether warranty applies",
     )
-    warranty_period_months: Optional[int] = Field(
+    warranty_period_months: Union[int, None] = Field(
         None,
         description="Warranty period in months",
     )
-    warranty_expiry_date: Optional[Date] = Field(
+    warranty_expiry_date: Union[Date, None] = Field(
         None,
         description="Warranty expiry Date",
     )
@@ -496,7 +494,7 @@ class MaintenanceDetail(BaseResponseSchema):
 
     @computed_field  # type: ignore[misc]
     @property
-    def cost_variance(self) -> Optional[Decimal]:
+    def cost_variance(self) -> Union[Decimal, None]:
         """Calculate cost variance if both costs available."""
         if self.estimated_cost and self.actual_cost:
             return round(self.actual_cost - self.estimated_cost, 2)
@@ -504,7 +502,7 @@ class MaintenanceDetail(BaseResponseSchema):
 
     @computed_field  # type: ignore[misc]
     @property
-    def cost_variance_percentage(self) -> Optional[Decimal]:
+    def cost_variance_percentage(self) -> Union[Decimal, None]:
         """Calculate cost variance percentage."""
         if self.estimated_cost and self.actual_cost and self.estimated_cost > 0:
             variance_pct = (
@@ -515,7 +513,7 @@ class MaintenanceDetail(BaseResponseSchema):
 
     @computed_field  # type: ignore[misc]
     @property
-    def time_to_complete_days(self) -> Optional[int]:
+    def time_to_complete_days(self) -> Union[int, None]:
         """Calculate total days from creation to completion."""
         if self.completed_at:
             return (self.completed_at - self.created_at).days
@@ -567,15 +565,15 @@ class RequestListItem(BaseSchema):
         ...,
         description="Status",
     )
-    room_number: Optional[str] = Field(
+    room_number: Union[str, None] = Field(
         None,
         description="Room number",
     )
-    estimated_cost: Optional[Annotated[Decimal, Field(ge=0, decimal_places=2)]] = Field(
+    estimated_cost: Union[Annotated[Decimal, Field(ge=0, decimal_places=2)], None] = Field(
         None,
         description="Estimated cost",
     )
-    assigned_to_name: Optional[str] = Field(
+    assigned_to_name: Union[str, None] = Field(
         None,
         description="Assignee name",
     )
@@ -583,7 +581,7 @@ class RequestListItem(BaseSchema):
         ...,
         description="Creation timestamp",
     )
-    estimated_completion_date: Optional[Date] = Field(
+    estimated_completion_date: Union[Date, None] = Field(
         None,
         description="Estimated completion",
     )
@@ -653,11 +651,11 @@ class MaintenanceSummary(BaseSchema):
         ...,
         description="Hostel name",
     )
-    period_start: Optional[Date] = Field(
+    period_start: Union[Date, None] = Field(
         None,
         description="Summary period start",
     )
-    period_end: Optional[Date] = Field(
+    period_end: Union[Date, None] = Field(
         None,
         description="Summary period end",
     )
@@ -730,7 +728,7 @@ class MaintenanceSummary(BaseSchema):
         ...,
         description="Average completion time in hours",
     )
-    average_completion_time_days: Optional[Annotated[Decimal, Field(ge=0, decimal_places=2)]] = Field(
+    average_completion_time_days: Union[Annotated[Decimal, Field(ge=0, decimal_places=2)], None] = Field(
         None,
         description="Average completion time in days",
     )
@@ -744,13 +742,13 @@ class MaintenanceSummary(BaseSchema):
         default=Decimal("0.00"),
         description="Quality check pass rate",
     )
-    average_quality_rating: Optional[Annotated[Decimal, Field(ge=0, le=5, decimal_places=2)]] = Field(
+    average_quality_rating: Union[Annotated[Decimal, Field(ge=0, le=5, decimal_places=2)], None] = Field(
         None,
         description="Average quality rating",
     )
     
     # Category breakdown
-    requests_by_category: Optional[Dict[str, int]] = Field(
+    requests_by_category: Union[Dict[str, int], None] = Field(
         None,
         description="Request count by category",
     )

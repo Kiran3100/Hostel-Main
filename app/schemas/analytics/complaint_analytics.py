@@ -1,4 +1,3 @@
-# --- File: app/schemas/analytics/complaint_analytics.py ---
 """
 Complaint analytics schemas with enhanced metrics and validation.
 
@@ -11,7 +10,7 @@ Provides comprehensive analytics for complaint management including:
 
 from datetime import date as Date, datetime
 from decimal import Decimal
-from typing import Dict, List, Optional, Annotated
+from typing import Dict, List, Union, Annotated
 
 from pydantic import BaseModel, Field, field_validator, computed_field
 from uuid import UUID
@@ -103,11 +102,11 @@ class ComplaintKPI(BaseSchema):
     and service quality for a specific hostel or platform-wide.
     """
     
-    hostel_id: Optional[UUID] = Field(
+    hostel_id: Union[UUID, None] = Field(
         None,
         description="Hostel identifier. None indicates platform-wide metrics"
     )
-    hostel_name: Optional[str] = Field(
+    hostel_name: Union[str, None] = Field(
         None,
         min_length=1,
         max_length=255,
@@ -170,9 +169,9 @@ class ComplaintKPI(BaseSchema):
     )
     
     # Customer satisfaction
-    average_satisfaction_score: Optional[Annotated[Decimal, Field(ge=0, le=5)]] = Field(
+    average_satisfaction_score: Union[Annotated[Decimal, Field(ge=0, le=5)], None] = Field(
         None,
-        description="Average customer satisfaction score (1-5)"
+        description="Average customer satisfaction score (1-5 scale)"
     )
     
     @field_validator(
@@ -211,7 +210,7 @@ class ComplaintKPI(BaseSchema):
     
     @field_validator("average_satisfaction_score")
     @classmethod
-    def round_satisfaction(cls, v: Optional[Decimal]) -> Optional[Decimal]:
+    def round_satisfaction(cls, v: Union[Decimal, None]) -> Union[Decimal, None]:
         """Round to 2 decimal places."""
         return round(v, 2) if v is not None else None
     
@@ -377,7 +376,7 @@ class ComplaintTrend(BaseSchema):
     
     @computed_field  # type: ignore[misc]
     @property
-    def peak_complaint_date(self) -> Optional[Date]:
+    def peak_complaint_date(self) -> Union[Date, None]:
         """Identify date with highest complaint volume."""
         if not self.points:
             return None
@@ -518,11 +517,11 @@ class ComplaintDashboard(BaseSchema):
     into a single actionable dashboard view.
     """
     
-    hostel_id: Optional[UUID] = Field(
+    hostel_id: Union[UUID, None] = Field(
         None,
         description="Hostel identifier. None for platform-wide analytics"
     )
-    hostel_name: Optional[str] = Field(
+    hostel_name: Union[str, None] = Field(
         None,
         min_length=1,
         max_length=255,
@@ -586,7 +585,7 @@ class ComplaintDashboard(BaseSchema):
     
     @computed_field  # type: ignore[misc]
     @property
-    def most_common_category(self) -> Optional[str]:
+    def most_common_category(self) -> Union[str, None]:
         """Identify the most common complaint category."""
         if not self.by_category:
             return None
@@ -594,7 +593,7 @@ class ComplaintDashboard(BaseSchema):
     
     @computed_field  # type: ignore[misc]
     @property
-    def slowest_category(self) -> Optional[str]:
+    def slowest_category(self) -> Union[str, None]:
         """Identify category with slowest average resolution time."""
         if not self.by_category:
             return None

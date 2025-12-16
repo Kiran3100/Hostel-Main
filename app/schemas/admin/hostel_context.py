@@ -7,11 +7,9 @@ for seamless multi-hostel administration with comprehensive audit trails.
 Fully migrated to Pydantic v2.
 """
 
-from __future__ import annotations
-
 from datetime import datetime, timedelta
 from decimal import Decimal
-from typing import List, Optional
+from typing import List, Union
 from uuid import UUID
 
 from pydantic import Field, computed_field, field_validator, model_validator, ConfigDict
@@ -104,7 +102,7 @@ class HostelContext(BaseSchema):
     )
 
     # Context metadata
-    previous_hostel_id: Optional[UUID] = Field(None, description="Previously active hostel")
+    previous_hostel_id: Union[UUID, None] = Field(None, description="Previously active hostel")
     switch_count: int = Field(0, ge=0, description="Number of context switches in session")
 
     @computed_field
@@ -235,16 +233,16 @@ class HostelSwitchRequest(BaseCreateSchema):
     )
 
     # Navigation context
-    return_url: Optional[str] = Field(
+    return_url: Union[str, None] = Field(
         None, max_length=MAX_RETURN_URL_LENGTH, description="URL to navigate to after switch"
     )
-    switch_reason: Optional[str] = Field(
+    switch_reason: Union[str, None] = Field(
         None, max_length=MAX_SWITCH_REASON_LENGTH, description="Reason for context switch (for analytics)"
     )
 
     @field_validator("return_url")
     @classmethod
-    def validate_return_url(cls, v: Optional[str]) -> Optional[str]:
+    def validate_return_url(cls, v: Union[str, None]) -> Union[str, None]:
         """Validate return URL format."""
         if v is not None:
             v = v.strip()
@@ -266,7 +264,7 @@ class HostelSwitchRequest(BaseCreateSchema):
 
     @field_validator("switch_reason")
     @classmethod
-    def validate_switch_reason(cls, v: Optional[str]) -> Optional[str]:
+    def validate_switch_reason(cls, v: Union[str, None]) -> Union[str, None]:
         """Validate and normalize switch reason."""
         if v is not None:
             v = v.strip()
@@ -291,8 +289,8 @@ class ActiveHostelResponse(BaseSchema):
     context_id: UUID = Field(..., description="New context session ID")
 
     # Previous and current hostel information
-    previous_hostel_id: Optional[UUID] = Field(None, description="Previous active hostel ID")
-    previous_hostel_name: Optional[str] = Field(None, description="Previous hostel name")
+    previous_hostel_id: Union[UUID, None] = Field(None, description="Previous active hostel ID")
+    previous_hostel_name: Union[str, None] = Field(None, description="Previous hostel name")
 
     active_hostel_id: UUID = Field(..., description="Newly active hostel ID")
     hostel_name: str = Field(..., min_length=1, description="Active hostel name")
@@ -305,7 +303,7 @@ class ActiveHostelResponse(BaseSchema):
 
     # Context timing
     switched_at: datetime = Field(..., description="Context switch timestamp")
-    previous_session_duration_minutes: Optional[int] = Field(
+    previous_session_duration_minutes: Union[int, None] = Field(
         None, ge=0, description="Duration of previous session"
     )
 
@@ -319,7 +317,7 @@ class ActiveHostelResponse(BaseSchema):
 
     # Response metadata
     message: str = Field(..., min_length=1, description="Success message")
-    dashboard_url: Optional[str] = Field(None, description="Dashboard URL for new context")
+    dashboard_url: Union[str, None] = Field(None, description="Dashboard URL for new context")
 
     # Navigation suggestions
     suggested_actions: List[str] = Field(
@@ -410,19 +408,19 @@ class ContextSwitch(BaseSchema):
     admin_id: UUID = Field(..., description="Admin user ID")
 
     # Source and destination hostels
-    from_hostel_id: Optional[UUID] = Field(None, description="Source hostel ID")
-    from_hostel_name: Optional[str] = Field(None, description="Source hostel name")
+    from_hostel_id: Union[UUID, None] = Field(None, description="Source hostel ID")
+    from_hostel_name: Union[str, None] = Field(None, description="Source hostel name")
     to_hostel_id: UUID = Field(..., description="Destination hostel ID")
     to_hostel_name: str = Field(..., min_length=1, description="Destination hostel name")
 
     # Switch timing
     switched_at: datetime = Field(..., description="Switch timestamp")
-    session_duration_minutes: Optional[int] = Field(
+    session_duration_minutes: Union[int, None] = Field(
         None, ge=0, description="Duration spent in previous hostel (if applicable)"
     )
 
     # Switch context
-    switch_reason: Optional[str] = Field(None, description="Reason for switch")
+    switch_reason: Union[str, None] = Field(None, description="Reason for switch")
     triggered_by: str = Field(
         "manual",
         description="What triggered the switch (manual, automatic, notification, alert, scheduled)",
@@ -433,8 +431,8 @@ class ContextSwitch(BaseSchema):
     decisions_made: int = Field(0, ge=0, description="Decisions made in session")
 
     # Navigation context
-    source_page: Optional[str] = Field(None, description="Page where switch was initiated")
-    destination_page: Optional[str] = Field(None, description="Landing page after switch")
+    source_page: Union[str, None] = Field(None, description="Page where switch was initiated")
+    destination_page: Union[str, None] = Field(None, description="Landing page after switch")
 
     @computed_field
     @property
@@ -542,10 +540,10 @@ class ContextHistory(BaseSchema):
     )
 
     # Most accessed hostel
-    most_accessed_hostel_id: Optional[UUID] = Field(
+    most_accessed_hostel_id: Union[UUID, None] = Field(
         None, description="Most frequently accessed hostel"
     )
-    most_accessed_hostel_name: Optional[str] = Field(
+    most_accessed_hostel_name: Union[str, None] = Field(
         None, description="Most accessed hostel name"
     )
     most_accessed_count: int = Field(0, ge=0, description="Access count for most accessed hostel")

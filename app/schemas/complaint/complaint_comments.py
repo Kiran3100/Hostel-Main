@@ -5,10 +5,8 @@ Handles internal notes and public comments on complaints
 with support for attachments and mentions.
 """
 
-from __future__ import annotations
-
 from datetime import datetime
-from typing import List, Optional
+from typing import List, Union
 
 from pydantic import ConfigDict, Field, HttpUrl, field_validator
 
@@ -176,7 +174,7 @@ class CommentDelete(BaseCreateSchema):
         ...,
         description="Comment identifier to delete",
     )
-    reason: Optional[str] = Field(
+    reason: Union[str, None] = Field(
         default=None,
         max_length=200,
         description="Deletion reason (optional)",
@@ -184,7 +182,7 @@ class CommentDelete(BaseCreateSchema):
 
     @field_validator("reason")
     @classmethod
-    def validate_reason(cls, v: Optional[str]) -> Optional[str]:
+    def validate_reason(cls, v: Union[str, None]) -> Union[str, None]:
         """Normalize deletion reason if provided."""
         if v is not None:
             v = v.strip()

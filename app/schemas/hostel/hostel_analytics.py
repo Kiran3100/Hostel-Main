@@ -3,11 +3,10 @@
 Hostel analytics and reporting schemas with comprehensive metrics.
 """
 
-from __future__ import annotations
-
-from datetime import date as Date, datetime
+from datetime import datetime
+from datetime import date as Date
 from decimal import Decimal
-from typing import Annotated, Dict, List, Optional
+from typing import Annotated, Dict, List, Union
 from uuid import UUID
 
 from pydantic import ConfigDict, Field, field_validator, model_validator
@@ -107,10 +106,10 @@ class OccupancyAnalytics(BaseSchema):
     )
 
     # Predictions
-    predicted_occupancy_next_month: Optional[Annotated[
+    predicted_occupancy_next_month: Union[Annotated[
         Decimal,
         Field(ge=0, le=100, description="Predicted occupancy for next month")
-    ]] = None
+    ], None] = None
     trend_direction: str = Field(
         ...,
         pattern=r"^(increasing|decreasing|stable)$",
@@ -186,7 +185,7 @@ class RevenueAnalytics(BaseSchema):
         ...,
         description="Percentage change from last period",
     )
-    revenue_vs_last_year: Optional[Decimal] = Field(
+    revenue_vs_last_year: Union[Decimal, None] = Field(
         default=None,
         description="Year-over-year percentage change",
     )
@@ -397,26 +396,26 @@ class ReviewAnalytics(BaseSchema):
     )
 
     # Detailed aspect ratings
-    average_cleanliness_rating: Optional[Annotated[
+    average_cleanliness_rating: Union[Annotated[
         Decimal,
         Field(ge=0, le=5, description="Average cleanliness rating")
-    ]] = None
-    average_food_quality_rating: Optional[Annotated[
+    ], None] = None
+    average_food_quality_rating: Union[Annotated[
         Decimal,
         Field(ge=0, le=5, description="Average food quality rating")
-    ]] = None
-    average_staff_behavior_rating: Optional[Annotated[
+    ], None] = None
+    average_staff_behavior_rating: Union[Annotated[
         Decimal,
         Field(ge=0, le=5, description="Average staff behavior rating")
-    ]] = None
-    average_security_rating: Optional[Annotated[
+    ], None] = None
+    average_security_rating: Union[Annotated[
         Decimal,
         Field(ge=0, le=5, description="Average security rating")
-    ]] = None
-    average_value_rating: Optional[Annotated[
+    ], None] = None
+    average_value_rating: Union[Annotated[
         Decimal,
         Field(ge=0, le=5, description="Average value for money rating")
-    ]] = None
+    ], None] = None
 
     # Trends
     rating_trend: List[RatingDataPoint] = Field(
@@ -563,14 +562,14 @@ class HostelOccupancyStats(BaseSchema):
     )
 
     # Projections
-    projected_occupancy_30_days: Optional[Annotated[
+    projected_occupancy_30_days: Union[Annotated[
         Decimal,
         Field(ge=0, le=100, description="Projected occupancy in 30 days")
-    ]] = None
-    projected_occupancy_90_days: Optional[Annotated[
+    ], None] = None
+    projected_occupancy_90_days: Union[Annotated[
         Decimal,
         Field(ge=0, le=100, description="Projected occupancy in 90 days")
-    ]] = None
+    ], None] = None
 
 
 class MonthlyRevenue(BaseSchema):
@@ -667,7 +666,7 @@ class HostelRevenueStats(BaseSchema):
         ...,
         description="Month-over-month growth percentage",
     )
-    revenue_growth_yoy: Optional[Decimal] = Field(
+    revenue_growth_yoy: Union[Decimal, None] = Field(
         default=None,
         description="Year-over-year growth percentage",
     )
@@ -695,7 +694,7 @@ class AnalyticsRequest(BaseSchema):
     )
 
     @model_validator(mode="after")
-    def validate_date_range(self) -> "AnalyticsRequest":
+    def validate_date_range(self):
         """Validate Date range is reasonable."""
         if self.end_date < self.start_date:
             raise ValueError("end_date must be after or equal to start_date")

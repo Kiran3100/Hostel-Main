@@ -4,9 +4,7 @@ Login schemas with enhanced validation and type safety.
 Pydantic v2 compliant.
 """
 
-from __future__ import annotations
-
-from typing import Optional
+from typing import Optional, Union
 from uuid import UUID
 
 from pydantic import EmailStr, Field, field_validator
@@ -114,7 +112,7 @@ class TokenData(BaseSchema):
         ...,
         description="User role for authorization",
     )
-    hostel_id: Optional[UUID] = Field(
+    hostel_id: Union[UUID, None] = Field(
         default=None,
         description="Active hostel context for multi-hostel admins",
     )
@@ -152,7 +150,7 @@ class UserLoginInfo(BaseSchema):
         ...,
         description="Phone verification status",
     )
-    profile_image_url: Optional[str] = Field(
+    profile_image_url: Union[str, None] = Field(
         default=None,
         description="Profile image URL",
         examples=["https://example.com/images/profile.jpg"],

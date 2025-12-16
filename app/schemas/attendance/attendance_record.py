@@ -6,10 +6,8 @@ Provides schemas for single, bulk, correction, and quick attendance marking
 operations with comprehensive validation logic.
 """
 
-from __future__ import annotations
-
 from datetime import date as Date, time
-from typing import List, Optional
+from typing import List, Union
 
 from pydantic import Field, field_validator, model_validator
 from pydantic.types import UUID4 as UUID
@@ -49,11 +47,11 @@ class AttendanceRecordRequest(BaseCreateSchema):
         AttendanceStatus.PRESENT,
         description="Attendance status",
     )
-    check_in_time: Optional[time] = Field(
+    check_in_time: Union[time, None] = Field(
         None,
         description="Check-in time (required for PRESENT status)",
     )
-    check_out_time: Optional[time] = Field(
+    check_out_time: Union[time, None] = Field(
         None,
         description="Check-out time",
     )
@@ -61,13 +59,13 @@ class AttendanceRecordRequest(BaseCreateSchema):
         False,
         description="Late arrival indicator",
     )
-    late_minutes: Optional[int] = Field(
+    late_minutes: Union[int, None] = Field(
         None,
         ge=0,
         le=1440,
         description="Minutes late (if applicable)",
     )
-    notes: Optional[str] = Field(
+    notes: Union[str, None] = Field(
         None,
         max_length=500,
         description="Additional notes or remarks",
@@ -83,7 +81,7 @@ class AttendanceRecordRequest(BaseCreateSchema):
 
     @field_validator("notes")
     @classmethod
-    def validate_notes(cls, v: Optional[str]) -> Optional[str]:
+    def validate_notes(cls, v: Union[str, None]) -> Union[str, None]:
         """Normalize and validate notes."""
         if v is not None:
             v = v.strip()
@@ -152,29 +150,29 @@ class StudentAttendanceRecord(BaseSchema):
         ...,
         description="Student unique identifier",
     )
-    status: Optional[AttendanceStatus] = Field(
+    status: Union[AttendanceStatus, None] = Field(
         None,
         description="Attendance status (uses default_status if None)",
     )
-    check_in_time: Optional[time] = Field(
+    check_in_time: Union[time, None] = Field(
         None,
         description="Check-in time",
     )
-    check_out_time: Optional[time] = Field(
+    check_out_time: Union[time, None] = Field(
         None,
         description="Check-out time",
     )
-    is_late: Optional[bool] = Field(
+    is_late: Union[bool, None] = Field(
         None,
         description="Late arrival indicator",
     )
-    late_minutes: Optional[int] = Field(
+    late_minutes: Union[int, None] = Field(
         None,
         ge=0,
         le=1440,
         description="Minutes late",
     )
-    notes: Optional[str] = Field(
+    notes: Union[str, None] = Field(
         None,
         max_length=500,
         description="Additional notes",
@@ -182,7 +180,7 @@ class StudentAttendanceRecord(BaseSchema):
 
     @field_validator("notes")
     @classmethod
-    def validate_notes(cls, v: Optional[str]) -> Optional[str]:
+    def validate_notes(cls, v: Union[str, None]) -> Union[str, None]:
         """Normalize notes."""
         if v is not None:
             v = v.strip()
@@ -246,7 +244,7 @@ class BulkAttendanceRequest(BaseCreateSchema):
         ...,
         description="User ID who marked the attendance",
     )
-    supervisor_id: Optional[UUID] = Field(
+    supervisor_id: Union[UUID, None] = Field(
         None,
         description="Supervisor ID who verified the attendance",
     )
@@ -305,19 +303,19 @@ class AttendanceCorrection(BaseCreateSchema):
         ...,
         description="Corrected attendance status",
     )
-    corrected_check_in_time: Optional[time] = Field(
+    corrected_check_in_time: Union[time, None] = Field(
         None,
         description="Corrected check-in time",
     )
-    corrected_check_out_time: Optional[time] = Field(
+    corrected_check_out_time: Union[time, None] = Field(
         None,
         description="Corrected check-out time",
     )
-    corrected_is_late: Optional[bool] = Field(
+    corrected_is_late: Union[bool, None] = Field(
         None,
         description="Corrected late status",
     )
-    corrected_late_minutes: Optional[int] = Field(
+    corrected_late_minutes: Union[int, None] = Field(
         None,
         ge=0,
         le=1440,
@@ -396,7 +394,7 @@ class QuickAttendanceMarkAll(BaseCreateSchema):
         ...,
         description="Date for attendance marking",
     )
-    default_check_in_time: Optional[time] = Field(
+    default_check_in_time: Union[time, None] = Field(
         None,
         description="Default check-in time for all present students",
     )
@@ -419,7 +417,7 @@ class QuickAttendanceMarkAll(BaseCreateSchema):
         ...,
         description="User ID who marked the attendance",
     )
-    supervisor_id: Optional[UUID] = Field(
+    supervisor_id: Union[UUID, None] = Field(
         None,
         description="Supervisor ID who verified attendance",
     )

@@ -6,11 +6,9 @@ Defines policy rules, thresholds, and violation tracking for
 attendance management with comprehensive validation.
 """
 
-from __future__ import annotations
-
 from datetime import date as Date, datetime, time
 from decimal import Decimal
-from typing import List, Optional
+from typing import List, Union
 
 from pydantic import Field, field_validator, model_validator
 from pydantic.types import UUID4 as UUID
@@ -108,7 +106,7 @@ class AttendancePolicy(BaseResponseSchema):
         default=False,
         description="Enable automatic absent marking",
     )
-    auto_mark_absent_after_time: Optional[time] = Field(
+    auto_mark_absent_after_time: Union[time, None] = Field(
         None,
         description="Auto mark absent if not checked in by this time",
     )
@@ -128,11 +126,11 @@ class AttendancePolicy(BaseResponseSchema):
         True,
         description="Whether policy is currently active",
     )
-    effective_from: Optional[Date] = Field(
+    effective_from: Union[Date, None] = Field(
         None,
         description="Date from which policy is effective",
     )
-    effective_until: Optional[Date] = Field(
+    effective_until: Union[Date, None] = Field(
         None,
         description="Date until which policy is effective",
     )
@@ -189,7 +187,7 @@ class PolicyConfig(BaseSchema):
         pattern=r"^(weekly|monthly|semester|yearly|custom)$",
         description="Period for attendance calculation",
     )
-    custom_period_days: Optional[int] = Field(
+    custom_period_days: Union[int, None] = Field(
         None,
         ge=1,
         le=365,
@@ -211,7 +209,7 @@ class PolicyConfig(BaseSchema):
         le=31,
         description="Maximum allowed leaves per month",
     )
-    max_leaves_per_semester: Optional[int] = Field(
+    max_leaves_per_semester: Union[int, None] = Field(
         None,
         ge=0,
         description="Maximum allowed leaves per semester",
@@ -260,7 +258,7 @@ class PolicyConfig(BaseSchema):
         pattern=r"^(warning|deduction|fine)$",
         description="Type of penalty for excessive late entries",
     )
-    late_penalty_deduction_percentage: Optional[Decimal] = Field(
+    late_penalty_deduction_percentage: Union[Decimal, None] = Field(
         None,
         ge=Decimal("0"),
         le=Decimal("100"),
@@ -331,59 +329,59 @@ class PolicyUpdate(BaseUpdateSchema):
     All fields are optional for flexible policy updates.
     """
 
-    minimum_attendance_percentage: Optional[Decimal] = Field(
+    minimum_attendance_percentage: Union[Decimal, None] = Field(
         None,
         ge=Decimal("0"),
         le=Decimal("100"),
         description="Updated minimum attendance percentage",
     )
-    late_entry_threshold_minutes: Optional[int] = Field(
+    late_entry_threshold_minutes: Union[int, None] = Field(
         None,
         ge=0,
         le=240,
         description="Updated late entry threshold",
     )
-    grace_period_minutes: Optional[int] = Field(
+    grace_period_minutes: Union[int, None] = Field(
         None,
         ge=0,
         le=30,
         description="Updated grace period",
     )
-    grace_days_per_month: Optional[int] = Field(
+    grace_days_per_month: Union[int, None] = Field(
         None,
         ge=0,
         le=31,
         description="Updated grace days per month",
     )
-    consecutive_absence_alert_days: Optional[int] = Field(
+    consecutive_absence_alert_days: Union[int, None] = Field(
         None,
         ge=1,
         le=30,
         description="Updated consecutive absence alert threshold",
     )
-    notify_guardian_on_absence: Optional[bool] = None
-    notify_admin_on_low_attendance: Optional[bool] = None
-    notify_student_on_low_attendance: Optional[bool] = None
-    low_attendance_threshold: Optional[Decimal] = Field(
+    notify_guardian_on_absence: Union[bool, None] = None
+    notify_admin_on_low_attendance: Union[bool, None] = None
+    notify_student_on_low_attendance: Union[bool, None] = None
+    low_attendance_threshold: Union[Decimal, None] = Field(
         None,
         ge=Decimal("0"),
         le=Decimal("100"),
         description="Updated low attendance threshold",
     )
-    auto_mark_absent_enabled: Optional[bool] = None
-    auto_mark_absent_after_time: Optional[time] = None
-    track_weekend_attendance: Optional[bool] = None
-    track_holiday_attendance: Optional[bool] = None
-    is_active: Optional[bool] = None
-    effective_from: Optional[Date] = None
-    effective_until: Optional[Date] = None
+    auto_mark_absent_enabled: Union[bool, None] = None
+    auto_mark_absent_after_time: Union[time, None] = None
+    track_weekend_attendance: Union[bool, None] = None
+    track_holiday_attendance: Union[bool, None] = None
+    is_active: Union[bool, None] = None
+    effective_from: Union[Date, None] = None
+    effective_until: Union[Date, None] = None
 
     @field_validator(
         "minimum_attendance_percentage",
         "low_attendance_threshold",
     )
     @classmethod
-    def round_percentage(cls, v: Optional[Decimal]) -> Optional[Decimal]:
+    def round_percentage(cls, v: Union[Decimal, None]) -> Union[Decimal, None]:
         """Round percentage to 2 decimal places."""
         return round(v, 2) if v is not None else None
 
@@ -434,7 +432,7 @@ class PolicyViolation(BaseSchema):
         ...,
         description="Hostel name",
     )
-    room_number: Optional[str] = Field(
+    room_number: Union[str, None] = Field(
         None,
         description="Student room number",
     )
@@ -452,29 +450,29 @@ class PolicyViolation(BaseSchema):
     )
 
     # Metrics
-    current_attendance_percentage: Optional[Decimal] = Field(
+    current_attendance_percentage: Union[Decimal, None] = Field(
         None,
         ge=Decimal("0"),
         le=Decimal("100"),
         description="Current attendance percentage",
     )
-    required_attendance_percentage: Optional[Decimal] = Field(
+    required_attendance_percentage: Union[Decimal, None] = Field(
         None,
         ge=Decimal("0"),
         le=Decimal("100"),
         description="Required attendance percentage",
     )
-    consecutive_absences: Optional[int] = Field(
+    consecutive_absences: Union[int, None] = Field(
         None,
         ge=0,
         description="Number of consecutive absences",
     )
-    late_entries_this_month: Optional[int] = Field(
+    late_entries_this_month: Union[int, None] = Field(
         None,
         ge=0,
         description="Late entries in current month",
     )
-    total_absences_this_month: Optional[int] = Field(
+    total_absences_this_month: Union[int, None] = Field(
         None,
         ge=0,
         description="Total absences in current month",
@@ -485,7 +483,7 @@ class PolicyViolation(BaseSchema):
         ...,
         description="Date when violation was detected",
     )
-    first_violation_date: Optional[Date] = Field(
+    first_violation_date: Union[Date, None] = Field(
         None,
         description="Date of first related violation",
     )
@@ -495,7 +493,7 @@ class PolicyViolation(BaseSchema):
         ...,
         description="Guardian notification sent",
     )
-    guardian_notified_at: Optional[datetime] = Field(
+    guardian_notified_at: Union[datetime, None] = Field(
         None,
         description="Guardian notification timestamp",
     )
@@ -503,7 +501,7 @@ class PolicyViolation(BaseSchema):
         ...,
         description="Admin notification sent",
     )
-    admin_notified_at: Optional[datetime] = Field(
+    admin_notified_at: Union[datetime, None] = Field(
         None,
         description="Admin notification timestamp",
     )
@@ -515,7 +513,7 @@ class PolicyViolation(BaseSchema):
         ...,
         description="Formal warning issued",
     )
-    warning_issued_at: Optional[datetime] = Field(
+    warning_issued_at: Union[datetime, None] = Field(
         None,
         description="Warning issue timestamp",
     )
@@ -525,23 +523,23 @@ class PolicyViolation(BaseSchema):
         default=False,
         description="Whether violation has been resolved",
     )
-    resolved_at: Optional[datetime] = Field(
+    resolved_at: Union[datetime, None] = Field(
         None,
         description="Resolution timestamp",
     )
-    resolution_notes: Optional[str] = Field(
+    resolution_notes: Union[str, None] = Field(
         None,
         max_length=1000,
         description="Notes about how violation was resolved",
     )
 
     # Additional context
-    notes: Optional[str] = Field(
+    notes: Union[str, None] = Field(
         None,
         max_length=1000,
         description="Additional notes about violation",
     )
-    action_plan: Optional[str] = Field(
+    action_plan: Union[str, None] = Field(
         None,
         max_length=1000,
         description="Planned corrective actions",
@@ -549,7 +547,7 @@ class PolicyViolation(BaseSchema):
 
     @field_validator("resolution_notes", "notes", "action_plan")
     @classmethod
-    def validate_text_fields(cls, v: Optional[str]) -> Optional[str]:
+    def validate_text_fields(cls, v: Union[str, None]) -> Union[str, None]:
         """Normalize text fields."""
         if v is not None:
             v = v.strip()

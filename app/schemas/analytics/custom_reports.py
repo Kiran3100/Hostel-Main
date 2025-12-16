@@ -1,4 +1,3 @@
-# --- File: app/schemas/analytics/custom_reports.py ---
 """
 Custom report builder schemas with advanced filtering and aggregation.
 
@@ -11,7 +10,7 @@ Provides flexible report generation capabilities allowing users to:
 """
 
 from datetime import datetime
-from typing import Any, Dict, List, Optional, Union, Annotated
+from typing import Any, Dict, List, Union, Annotated
 from enum import Enum
 
 from pydantic import BaseModel, Field, field_validator, model_validator, computed_field
@@ -129,7 +128,7 @@ class CustomReportFilter(BaseSchema):
         ...,
         description="Filter value"
     )
-    value_to: Optional[Union[str, int, float, None]] = Field(
+    value_to: Union[str, int, float, None, None] = Field(
         None,
         description="Second value for BETWEEN operator"
     )
@@ -188,7 +187,7 @@ class CustomReportField(BaseSchema):
         max_length=100,
         description="Database field name"
     )
-    display_label: Optional[str] = Field(
+    display_label: Union[str, None] = Field(
         None,
         min_length=1,
         max_length=255,
@@ -198,7 +197,7 @@ class CustomReportField(BaseSchema):
         AggregationType.NONE,
         description="Aggregation function to apply"
     )
-    format_string: Optional[str] = Field(
+    format_string: Union[str, None] = Field(
         None,
         max_length=50,
         description="Format string for display (e.g., '%.2f' for decimals)"
@@ -206,7 +205,7 @@ class CustomReportField(BaseSchema):
     
     @field_validator("display_label")
     @classmethod
-    def set_default_label(cls, v: Optional[str], info) -> Optional[str]:
+    def set_default_label(cls, v: Union[str, None], info) -> Union[str, None]:
         """Set default display label from field name if not provided."""
         if v is None and "field_name" in info.data:
             # Convert snake_case to Title Case
@@ -240,14 +239,14 @@ class CustomReportRequest(BaseCreateSchema):
         ...,
         description="Module/entity to report on"
     )
-    description: Optional[str] = Field(
+    description: Union[str, None] = Field(
         None,
         max_length=1000,
         description="Optional report description"
     )
     
     # Time period
-    period: Optional[DateRangeFilter] = Field(
+    period: Union[DateRangeFilter, None] = Field(
         None,
         description="Optional date range filter"
     )
@@ -268,14 +267,14 @@ class CustomReportRequest(BaseCreateSchema):
     )
     
     # Grouping and aggregation
-    group_by: Optional[List[str]] = Field(
+    group_by: Union[List[str], None] = Field(
         None,
         max_length=10,
         description="Field names to group by"
     )
     
     # Sorting
-    sort_by: Optional[str] = Field(
+    sort_by: Union[str, None] = Field(
         None,
         max_length=100,
         description="Field name to sort by"
@@ -287,7 +286,7 @@ class CustomReportRequest(BaseCreateSchema):
     )
     
     # Pagination
-    limit: Optional[int] = Field(
+    limit: Union[int, None] = Field(
         None,
         ge=1,
         le=10000,
@@ -414,7 +413,7 @@ class CustomReportDefinition(BaseResponseSchema):
         max_length=255,
         description="Report name"
     )
-    description: Optional[str] = Field(
+    description: Union[str, None] = Field(
         None,
         max_length=1000,
         description="Report description"
@@ -425,11 +424,11 @@ class CustomReportDefinition(BaseResponseSchema):
     )
     
     # Report configuration
-    period: Optional[DateRangeFilter] = None
+    period: Union[DateRangeFilter, None] = None
     fields: List[CustomReportField] = Field(..., min_length=1)
     filters: List[CustomReportFilter] = Field(default_factory=list)
-    group_by: Optional[List[str]] = None
-    sort_by: Optional[str] = None
+    group_by: Union[List[str], None] = None
+    sort_by: Union[str, None] = None
     sort_order: str = Field("asc", pattern="^(asc|desc)$")
     
     # Sharing and permissions
@@ -445,7 +444,7 @@ class CustomReportDefinition(BaseResponseSchema):
         default_factory=list,
         description="User IDs with access to this report"
     )
-    shared_with_role: Optional[str] = Field(
+    shared_with_role: Union[str, None] = Field(
         None,
         description="Role with access to this report"
     )
@@ -456,7 +455,7 @@ class CustomReportDefinition(BaseResponseSchema):
         ge=0,
         description="Number of times this report has been run"
     )
-    last_run_at: Optional[datetime] = Field(
+    last_run_at: Union[datetime, None] = Field(
         None,
         description="Timestamp of last execution"
     )
@@ -507,7 +506,7 @@ class CustomReportResult(BaseSchema):
     and optional chart data.
     """
     
-    report_id: Optional[UUID] = Field(
+    report_id: Union[UUID, None] = Field(
         None,
         description="Report definition ID if using saved report"
     )
@@ -526,7 +525,7 @@ class CustomReportResult(BaseSchema):
         default_factory=datetime.utcnow,
         description="Report generation timestamp"
     )
-    execution_time_ms: Optional[int] = Field(
+    execution_time_ms: Union[int, None] = Field(
         None,
         ge=0,
         description="Query execution time in milliseconds"
@@ -555,17 +554,17 @@ class CustomReportResult(BaseSchema):
     )
     
     # Summary statistics
-    summary: Optional[Dict[str, Any]] = Field(
+    summary: Union[Dict[str, Any], None] = Field(
         None,
         description="Aggregated summary statistics"
     )
-    column_totals: Optional[Dict[str, Any]] = Field(
+    column_totals: Union[Dict[str, Any], None] = Field(
         None,
         description="Column-wise totals"
     )
     
     # Chart data
-    charts: Optional[Dict[str, Any]] = Field(
+    charts: Union[Dict[str, Any], None] = Field(
         None,
         description="Suggested chart configurations and data"
     )
@@ -575,7 +574,7 @@ class CustomReportResult(BaseSchema):
         default_factory=list,
         description="Filters that were applied"
     )
-    grouping_applied: Optional[List[str]] = Field(
+    grouping_applied: Union[List[str], None] = Field(
         None,
         description="Grouping fields that were applied"
     )
@@ -627,7 +626,7 @@ class CustomReportResult(BaseSchema):
 class ReportExportRequest(BaseSchema):
     """Request to export a report in specific format."""
     
-    report_result_id: Optional[UUID] = Field(
+    report_result_id: Union[UUID, None] = Field(
         None,
         description="ID of cached report result to export"
     )
@@ -674,13 +673,13 @@ class ReportSchedule(BaseSchema):
         pattern="^([01]?[0-9]|2[0-3]):[0-5][0-9]$",
         description="Time to run (HH:MM format, 24-hour)"
     )
-    day_of_week: Optional[int] = Field(
+    day_of_week: Union[int, None] = Field(
         None,
         ge=0,
         le=6,
         description="Day of week for weekly reports (0=Monday)"
     )
-    day_of_month: Optional[int] = Field(
+    day_of_month: Union[int, None] = Field(
         None,
         ge=1,
         le=31,
@@ -703,11 +702,11 @@ class ReportSchedule(BaseSchema):
         True,
         description="Whether schedule is active"
     )
-    last_run_at: Optional[datetime] = Field(
+    last_run_at: Union[datetime, None] = Field(
         None,
         description="Last execution timestamp"
     )
-    next_run_at: Optional[datetime] = Field(
+    next_run_at: Union[datetime, None] = Field(
         None,
         description="Next scheduled execution"
     )

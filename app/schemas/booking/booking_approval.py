@@ -1,4 +1,3 @@
-# --- File: app/schemas/booking/booking_approval.py ---
 """
 Booking approval schemas for admin approval workflow.
 
@@ -6,11 +5,9 @@ This module defines schemas for approving, rejecting, and managing
 booking approval workflows including bulk operations and settings.
 """
 
-from __future__ import annotations
-
 from datetime import date as Date, datetime
 from decimal import Decimal
-from typing import Dict, List, Optional
+from typing import Dict, List, Union
 from uuid import UUID
 
 from pydantic import Field, field_validator, model_validator
@@ -77,12 +74,12 @@ class BookingApprovalRequest(BaseCreateSchema):
     )
 
     # Notes and Communication
-    admin_notes: Optional[str] = Field(
+    admin_notes: Union[str, None] = Field(
         None,
         max_length=500,
         description="Internal notes visible only to admins",
     )
-    message_to_guest: Optional[str] = Field(
+    message_to_guest: Union[str, None] = Field(
         None,
         max_length=1000,
         description="Message to be sent to guest with approval",
@@ -155,7 +152,7 @@ class BookingApprovalRequest(BaseCreateSchema):
 
     @field_validator("admin_notes", "message_to_guest")
     @classmethod
-    def clean_text_fields(cls, v: Optional[str]) -> Optional[str]:
+    def clean_text_fields(cls, v: Union[str, None]) -> Union[str, None]:
         """Clean optional text fields."""
         if v is not None:
             v = v.strip()
@@ -232,7 +229,7 @@ class ApprovalResponse(BaseSchema):
         ...,
         description="Whether payment is still pending",
     )
-    payment_deadline: Optional[datetime] = Field(
+    payment_deadline: Union[datetime, None] = Field(
         None,
         description="Deadline for advance payment",
     )
@@ -272,7 +269,7 @@ class RejectionRequest(BaseCreateSchema):
         False,
         description="Whether to suggest alternative check-in dates",
     )
-    alternative_check_in_dates: Optional[List[Date]] = Field(
+    alternative_check_in_dates: Union[List[Date], None] = Field(
         None,
         max_length=3,
         description="Up to 3 alternative check-in dates",
@@ -282,14 +279,14 @@ class RejectionRequest(BaseCreateSchema):
         False,
         description="Whether to suggest alternative room types",
     )
-    alternative_room_types: Optional[List[str]] = Field(
+    alternative_room_types: Union[List[str], None] = Field(
         None,
         max_length=3,
         description="Alternative room types available",
     )
 
     # Communication
-    message_to_guest: Optional[str] = Field(
+    message_to_guest: Union[str, None] = Field(
         None,
         max_length=1000,
         description="Personalized message to guest explaining rejection",
@@ -363,7 +360,7 @@ class BulkApprovalRequest(BaseCreateSchema):
     )
 
     # Common admin note for all approvals
-    admin_notes: Optional[str] = Field(
+    admin_notes: Union[str, None] = Field(
         None,
         max_length=500,
         description="Common admin notes for all approvals",

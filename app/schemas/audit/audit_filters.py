@@ -6,8 +6,9 @@ Provides comprehensive filtering options for audit log queries
 including time ranges, actors, entities, actions, and more.
 """
 
-from datetime import datetime, date
-from typing import List, Optional
+from datetime import date as Date, datetime
+
+from typing import List, Union
 from enum import Enum
 
 from pydantic import Field, field_validator, model_validator, computed_field
@@ -45,37 +46,37 @@ class AuditFilterParams(BaseFilterSchema):
     """
     
     # Actor filters
-    user_id: Optional[UUID] = Field(
+    user_id: Union[UUID, None] = Field(
         default=None,
         description="Filter by specific user"
     )
-    user_ids: Optional[List[UUID]] = Field(
+    user_ids: Union[List[UUID], None] = Field(
         default=None,
         max_length=50,
         description="Filter by list of users"
     )
-    user_role: Optional[UserRole] = Field(
+    user_role: Union[UserRole, None] = Field(
         default=None,
         description="Filter by user role"
     )
-    user_roles: Optional[List[UserRole]] = Field(
+    user_roles: Union[List[UserRole], None] = Field(
         default=None,
         max_length=10,
         description="Filter by multiple user roles"
     )
-    user_email: Optional[str] = Field(
+    user_email: Union[str, None] = Field(
         default=None,
         max_length=255,
         description="Filter by user email (partial match)"
     )
-    exclude_user_ids: Optional[List[UUID]] = Field(
+    exclude_user_ids: Union[List[UUID], None] = Field(
         default=None,
         max_length=50,
         description="Exclude specific users"
     )
     
     # Impersonation
-    impersonator_id: Optional[UUID] = Field(
+    impersonator_id: Union[UUID, None] = Field(
         default=None,
         description="Filter by impersonator"
     )
@@ -85,85 +86,85 @@ class AuditFilterParams(BaseFilterSchema):
     )
     
     # Hostel context
-    hostel_id: Optional[UUID] = Field(
+    hostel_id: Union[UUID, None] = Field(
         default=None,
         description="Filter by hostel"
     )
-    hostel_ids: Optional[List[UUID]] = Field(
+    hostel_ids: Union[List[UUID], None] = Field(
         default=None,
         max_length=100,
         description="Filter by multiple hostels"
     )
     
     # Entity filters
-    entity_type: Optional[str] = Field(
+    entity_type: Union[str, None] = Field(
         default=None,
         max_length=50,
         description="Filter by entity type"
     )
-    entity_types: Optional[List[str]] = Field(
+    entity_types: Union[List[str], None] = Field(
         default=None,
         max_length=20,
         description="Filter by multiple entity types"
     )
-    entity_id: Optional[UUID] = Field(
+    entity_id: Union[UUID, None] = Field(
         default=None,
         description="Filter by specific entity"
     )
-    entity_ids: Optional[List[UUID]] = Field(
+    entity_ids: Union[List[UUID], None] = Field(
         default=None,
         max_length=100,
         description="Filter by multiple entities"
     )
     
     # Action filters
-    action_type: Optional[str] = Field(
+    action_type: Union[str, None] = Field(
         default=None,
         max_length=100,
         description="Filter by action type"
     )
-    action_types: Optional[List[str]] = Field(
+    action_types: Union[List[str], None] = Field(
         default=None,
         max_length=50,
         description="Filter by multiple action types"
     )
-    action_category: Optional[AuditActionCategory] = Field(
+    action_category: Union[AuditActionCategory, None] = Field(
         default=None,
         description="Filter by action category"
     )
-    action_categories: Optional[List[AuditActionCategory]] = Field(
+    action_categories: Union[List[AuditActionCategory], None] = Field(
         default=None,
         max_length=15,
         description="Filter by multiple categories"
     )
-    action_pattern: Optional[str] = Field(
+    action_pattern: Union[str, None] = Field(
         default=None,
         max_length=100,
         description="Filter by action type pattern (supports wildcards)"
     )
     
     # Time range filters
-    datetime_range: Optional[DateTimeRangeFilter] = Field(
+    datetime_range: Union[DateTimeRangeFilter, None] = Field(
         default=None,
         description="Filter by datetime range"
     )
-    created_after: Optional[datetime] = Field(
+    created_after: Union[datetime, None] = Field(
         default=None,
         description="Filter events after this datetime"
     )
-    created_before: Optional[datetime] = Field(
+    created_before: Union[datetime, None] = Field(
         default=None,
         description="Filter events before this datetime"
     )
     
     # Quick time filters
-    last_hours: Optional[int] = Field(
+    last_hours: Union[int, None] = Field(
         default=None,
         ge=1,
         le=720,  # Max 30 days
         description="Filter events in last N hours"
     )
-    last_days: Optional[int] = Field(
+    last_days: Union[int, None] = Field(
         default=None,
         ge=1,
         le=365,
@@ -171,12 +172,12 @@ class AuditFilterParams(BaseFilterSchema):
     )
     
     # Status filters
-    status: Optional[str] = Field(
+    status: Union[str, None] = Field(
         default=None,
         pattern="^(success|failure|partial|pending)$",
         description="Filter by status"
     )
-    statuses: Optional[List[str]] = Field(
+    statuses: Union[List[str], None] = Field(
         default=None,
         max_length=4,
         description="Filter by multiple statuses"
@@ -187,85 +188,85 @@ class AuditFilterParams(BaseFilterSchema):
     )
     
     # Severity filters
-    severity_level: Optional[str] = Field(
+    severity_level: Union[str, None] = Field(
         default=None,
         pattern="^(critical|high|medium|low|info)$",
         description="Filter by severity level"
     )
-    min_severity: Optional[str] = Field(
+    min_severity: Union[str, None] = Field(
         default=None,
         pattern="^(critical|high|medium|low|info)$",
         description="Minimum severity level"
     )
     
     # Security filters
-    is_sensitive: Optional[bool] = Field(
+    is_sensitive: Union[bool, None] = Field(
         default=None,
         description="Filter by sensitive data flag"
     )
-    requires_review: Optional[bool] = Field(
+    requires_review: Union[bool, None] = Field(
         default=None,
         description="Filter by review requirement"
     )
-    compliance_tag: Optional[str] = Field(
+    compliance_tag: Union[str, None] = Field(
         default=None,
         max_length=50,
         description="Filter by compliance tag"
     )
     
     # Network filters
-    ip_address: Optional[str] = Field(
+    ip_address: Union[str, None] = Field(
         default=None,
         description="Filter by IP address"
     )
-    ip_addresses: Optional[List[str]] = Field(
+    ip_addresses: Union[List[str], None] = Field(
         default=None,
         max_length=100,
         description="Filter by multiple IP addresses"
     )
-    country_code: Optional[str] = Field(
+    country_code: Union[str, None] = Field(
         default=None,
         pattern=r"^[A-Z]{2}$",
         description="Filter by country code"
     )
     
     # Device filters
-    device_type: Optional[str] = Field(
+    device_type: Union[str, None] = Field(
         default=None,
         pattern="^(desktop|mobile|tablet|api|system)$",
         description="Filter by device type"
     )
-    platform: Optional[str] = Field(
+    platform: Union[str, None] = Field(
         default=None,
         max_length=50,
         description="Filter by platform/OS"
     )
     
     # Request context
-    request_id: Optional[str] = Field(
+    request_id: Union[str, None] = Field(
         default=None,
         max_length=100,
         description="Filter by request ID"
     )
-    session_id: Optional[str] = Field(
+    session_id: Union[str, None] = Field(
         default=None,
         max_length=100,
         description="Filter by session ID"
     )
     
     # Change filters
-    has_changes: Optional[bool] = Field(
+    has_changes: Union[bool, None] = Field(
         default=None,
         description="Filter by presence of value changes"
     )
-    changed_field: Optional[str] = Field(
+    changed_field: Union[str, None] = Field(
         default=None,
         max_length=100,
         description="Filter by specific changed field"
     )
     
     # Search
-    search_query: Optional[str] = Field(
+    search_query: Union[str, None] = Field(
         default=None,
         min_length=1,
         max_length=500,
@@ -414,9 +415,9 @@ class AuditSearchParams(BaseFilterSchema):
     )
     
     # Additional filters (subset from AuditFilterParams)
-    datetime_range: Optional[DateTimeRangeFilter] = None
-    action_category: Optional[AuditActionCategory] = None
-    severity_level: Optional[str] = Field(
+    datetime_range: Union[DateTimeRangeFilter, None] = None
+    action_category: Union[AuditActionCategory, None] = None
+    severity_level: Union[str, None] = Field(
         default=None,
         pattern="^(critical|high|medium|low|info)$"
     )
@@ -447,12 +448,12 @@ class AuditExportParams(BaseFilterSchema):
     )
     
     # Field selection
-    include_fields: Optional[List[str]] = Field(
+    include_fields: Union[List[str], None] = Field(
         default=None,
         max_length=50,
         description="Specific fields to include (if None, include all)"
     )
-    exclude_fields: Optional[List[str]] = Field(
+    exclude_fields: Union[List[str], None] = Field(
         default=None,
         max_length=50,
         description="Fields to exclude from export"

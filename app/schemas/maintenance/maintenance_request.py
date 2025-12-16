@@ -6,11 +6,9 @@ Provides schemas for different types of maintenance requests including
 standard, detailed supervisor submissions, and emergency requests.
 """
 
-from __future__ import annotations
-
 from datetime import date as Date
 from decimal import Decimal
-from typing import Annotated, List, Optional
+from typing import Annotated, List, Union
 
 from pydantic import ConfigDict, Field, HttpUrl, field_validator, model_validator
 from uuid import UUID
@@ -50,7 +48,7 @@ class MaintenanceRequest(BaseCreateSchema):
         ...,
         description="Hostel unique identifier",
     )
-    room_id: Optional[UUID] = Field(
+    room_id: Union[UUID, None] = Field(
         None,
         description="Room where issue exists",
     )
@@ -74,7 +72,7 @@ class MaintenanceRequest(BaseCreateSchema):
         Priority.MEDIUM,
         description="Requested priority (may be adjusted by supervisor)",
     )
-    location: Optional[str] = Field(
+    location: Union[str, None] = Field(
         None,
         max_length=500,
         description="Additional location details",
@@ -84,12 +82,12 @@ class MaintenanceRequest(BaseCreateSchema):
         max_length=10,
         description="Issue photographs",
     )
-    preferred_time_slot: Optional[str] = Field(
+    preferred_time_slot: Union[str, None] = Field(
         None,
         pattern=r"^(morning|afternoon|evening|any)$",
         description="Preferred time for repair work",
     )
-    contact_number: Optional[str] = Field(
+    contact_number: Union[str, None] = Field(
         None,
         pattern=r"^\+?[1-9]\d{9,14}$",
         description="Contact number for follow-up",
@@ -114,7 +112,7 @@ class MaintenanceRequest(BaseCreateSchema):
 
     @field_validator("contact_number")
     @classmethod
-    def normalize_phone(cls, v: Optional[str]) -> Optional[str]:
+    def normalize_phone(cls, v: Union[str, None]) -> Union[str, None]:
         """Normalize phone number."""
         if v is not None:
             return v.replace(" ", "").replace("-", "").strip()
@@ -122,7 +120,7 @@ class MaintenanceRequest(BaseCreateSchema):
 
     @field_validator("location")
     @classmethod
-    def normalize_location(cls, v: Optional[str]) -> Optional[str]:
+    def normalize_location(cls, v: Union[str, None]) -> Union[str, None]:
         """Normalize location field."""
         if v is not None:
             v = v.strip()
@@ -157,7 +155,7 @@ class RequestSubmission(BaseCreateSchema):
         ...,
         description="Hostel unique identifier",
     )
-    room_id: Optional[UUID] = Field(
+    room_id: Union[UUID, None] = Field(
         None,
         description="Room where issue exists",
     )
@@ -181,7 +179,7 @@ class RequestSubmission(BaseCreateSchema):
         ...,
         description="Issue priority",
     )
-    location: Optional[str] = Field(
+    location: Union[str, None] = Field(
         None,
         max_length=500,
         description="Location details",
@@ -193,26 +191,26 @@ class RequestSubmission(BaseCreateSchema):
     )
 
     # Supervisor-specific fields - Using Annotated for Decimal in v2
-    estimated_cost: Optional[Annotated[Decimal, Field(ge=0, decimal_places=2)]] = Field(
+    estimated_cost: Union[Annotated[Decimal, Field(ge=0, decimal_places=2)], None] = Field(
         None,
         description="Estimated repair cost",
     )
-    cost_justification: Optional[str] = Field(
+    cost_justification: Union[str, None] = Field(
         None,
         max_length=500,
         description="Justification for estimated cost",
     )
-    preferred_vendor: Optional[str] = Field(
+    preferred_vendor: Union[str, None] = Field(
         None,
         max_length=255,
         description="Preferred vendor/contractor name",
     )
-    vendor_contact: Optional[str] = Field(
+    vendor_contact: Union[str, None] = Field(
         None,
         pattern=r"^\+?[1-9]\d{9,14}$",
         description="Vendor contact number",
     )
-    estimated_days: Optional[int] = Field(
+    estimated_days: Union[int, None] = Field(
         None,
         ge=1,
         le=365,
@@ -226,7 +224,7 @@ class RequestSubmission(BaseCreateSchema):
         False,
         description="Whether admin approval is required",
     )
-    materials_needed: Optional[str] = Field(
+    materials_needed: Union[str, None] = Field(
         None,
         max_length=1000,
         description="List of materials/parts needed",
@@ -234,13 +232,13 @@ class RequestSubmission(BaseCreateSchema):
 
     @field_validator("estimated_cost")
     @classmethod
-    def round_cost(cls, v: Optional[Decimal]) -> Optional[Decimal]:
+    def round_cost(cls, v: Union[Decimal, None]) -> Union[Decimal, None]:
         """Round cost to 2 decimal places."""
         return round(v, 2) if v is not None else None
 
     @field_validator("vendor_contact")
     @classmethod
-    def normalize_phone(cls, v: Optional[str]) -> Optional[str]:
+    def normalize_phone(cls, v: Union[str, None]) -> Union[str, None]:
         """Normalize vendor phone number."""
         if v is not None:
             return v.replace(" ", "").replace("-", "").strip()
@@ -248,7 +246,7 @@ class RequestSubmission(BaseCreateSchema):
 
     @field_validator("cost_justification", "materials_needed")
     @classmethod
-    def normalize_text(cls, v: Optional[str]) -> Optional[str]:
+    def normalize_text(cls, v: Union[str, None]) -> Union[str, None]:
         """Normalize text fields."""
         if v is not None:
             v = v.strip()
@@ -352,14 +350,14 @@ class EmergencyRequest(BaseCreateSchema):
         max_length=500,
         description="Exact emergency location",
     )
-    affected_area: Optional[str] = Field(
+    affected_area: Union[str, None] = Field(
         None,
         max_length=500,
         description="Area/rooms affected by emergency",
     )
 
     # Safety information
-    immediate_actions_taken: Optional[str] = Field(
+    immediate_actions_taken: Union[str, None] = Field(
         None,
         max_length=1000,
         description="Immediate actions already taken",
@@ -368,7 +366,7 @@ class EmergencyRequest(BaseCreateSchema):
         False,
         description="Whether area has been evacuated",
     )
-    evacuation_details: Optional[str] = Field(
+    evacuation_details: Union[str, None] = Field(
         None,
         max_length=500,
         description="Evacuation details if applicable",
@@ -377,7 +375,7 @@ class EmergencyRequest(BaseCreateSchema):
         False,
         description="Whether emergency services have been notified",
     )
-    authority_details: Optional[str] = Field(
+    authority_details: Union[str, None] = Field(
         None,
         max_length=500,
         description="Details of authorities notified",
@@ -395,7 +393,7 @@ class EmergencyRequest(BaseCreateSchema):
         pattern=r"^\+?[1-9]\d{9,14}$",
         description="Contact person phone number",
     )
-    alternate_contact: Optional[str] = Field(
+    alternate_contact: Union[str, None] = Field(
         None,
         pattern=r"^\+?[1-9]\d{9,14}$",
         description="Alternate contact number",
@@ -406,12 +404,12 @@ class EmergencyRequest(BaseCreateSchema):
         default=False,
         description="Whether there are any injuries",
     )
-    injury_details: Optional[str] = Field(
+    injury_details: Union[str, None] = Field(
         None,
         max_length=500,
         description="Details of injuries if any",
     )
-    property_damage_estimated: Optional[str] = Field(
+    property_damage_estimated: Union[str, None] = Field(
         None,
         pattern=r"^(minor|moderate|major|severe|catastrophic)$",
         description="Estimated property damage level",
@@ -437,7 +435,7 @@ class EmergencyRequest(BaseCreateSchema):
 
     @field_validator("contact_phone", "alternate_contact")
     @classmethod
-    def normalize_phone(cls, v: Optional[str]) -> Optional[str]:
+    def normalize_phone(cls, v: Union[str, None]) -> Union[str, None]:
         """Normalize phone numbers."""
         if v is not None:
             return v.replace(" ", "").replace("-", "").strip()
@@ -450,7 +448,7 @@ class EmergencyRequest(BaseCreateSchema):
         "injury_details",
     )
     @classmethod
-    def normalize_text_fields(cls, v: Optional[str]) -> Optional[str]:
+    def normalize_text_fields(cls, v: Union[str, None]) -> Union[str, None]:
         """Normalize optional text fields."""
         if v is not None:
             v = v.strip()

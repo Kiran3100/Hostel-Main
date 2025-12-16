@@ -1,4 +1,3 @@
-# --- File: app/schemas/analytics/dashboard_analytics.py ---
 """
 Dashboard-level analytics schemas with role-based views.
 
@@ -11,7 +10,7 @@ Provides comprehensive dashboard metrics including:
 
 from datetime import date as Date, datetime
 from decimal import Decimal
-from typing import Any, Dict, List, Optional, Union, Annotated
+from typing import Any, Dict, List, Union, Annotated
 
 from pydantic import BaseModel, Field, field_validator, computed_field
 from uuid import UUID
@@ -60,50 +59,50 @@ class KPIResponse(BaseSchema):
         ...,
         description="Current KPI value"
     )
-    unit: Optional[str] = Field(
+    unit: Union[str, None] = Field(
         None,
         max_length=20,
         description="Unit of measurement (e.g., 'INR', '%', 'students')"
     )
     
     # Trend analysis
-    trend_direction: Optional[str] = Field(
+    trend_direction: Union[str, None] = Field(
         None,
         pattern="^(up|down|stable)$",
         description="Trend indicator vs previous period"
     )
-    trend_percentage: Optional[Decimal] = Field(
+    trend_percentage: Union[Decimal, None] = Field(
         None,
         description="Percentage change vs previous period"
     )
-    previous_value: Optional[Union[Decimal, int, float]] = Field(
+    previous_value: Union[Decimal, int, float, None] = Field(
         None,
         description="Value from previous period for comparison"
     )
     
     # Target and context
-    target_value: Optional[Decimal] = Field(
+    target_value: Union[Decimal, None] = Field(
         None,
         description="Target/goal value for this KPI"
     )
-    good_when: Optional[str] = Field(
+    good_when: Union[str, None] = Field(
         None,
         pattern="^(higher_is_better|lower_is_better|closer_to_target)$",
         description="Interpretation rule for the KPI"
     )
     
     # Display hints
-    format_pattern: Optional[str] = Field(
+    format_pattern: Union[str, None] = Field(
         None,
         max_length=50,
         description="Format pattern for display (e.g., '%.2f')"
     )
-    icon: Optional[str] = Field(
+    icon: Union[str, None] = Field(
         None,
         max_length=50,
         description="Icon identifier for UI"
     )
-    color: Optional[str] = Field(
+    color: Union[str, None] = Field(
         None,
         pattern="^#[0-9A-Fa-f]{6}$",
         description="Hex color code for UI theming"
@@ -111,7 +110,7 @@ class KPIResponse(BaseSchema):
     
     @field_validator("trend_percentage")
     @classmethod
-    def validate_trend_percentage(cls, v: Optional[Decimal]) -> Optional[Decimal]:
+    def validate_trend_percentage(cls, v: Union[Decimal, None]) -> Union[Decimal, None]:
         """Round trend percentage to 2 decimal places."""
         if v is not None:
             return round(v, 2)
@@ -119,7 +118,7 @@ class KPIResponse(BaseSchema):
     
     @computed_field  # type: ignore[misc]
     @property
-    def is_on_target(self) -> Optional[bool]:
+    def is_on_target(self) -> Union[bool, None]:
         """Check if current value meets target."""
         if self.target_value is None:
             return None
@@ -382,12 +381,12 @@ class TimeseriesPoint(BaseSchema):
         ...,
         description="Metric value"
     )
-    label: Optional[str] = Field(
+    label: Union[str, None] = Field(
         None,
         max_length=100,
         description="Optional label for this point"
     )
-    metadata: Optional[Dict[str, Any]] = Field(
+    metadata: Union[Dict[str, Any], None] = Field(
         None,
         description="Additional metadata for this point"
     )
@@ -423,12 +422,12 @@ class AlertNotification(BaseSchema):
         max_length=1000,
         description="Alert message"
     )
-    action_url: Optional[str] = Field(
+    action_url: Union[str, None] = Field(
         None,
         max_length=500,
         description="URL for alert action"
     )
-    action_label: Optional[str] = Field(
+    action_label: Union[str, None] = Field(
         None,
         max_length=100,
         description="Label for action button"
@@ -437,7 +436,7 @@ class AlertNotification(BaseSchema):
         ...,
         description="Alert creation time"
     )
-    expires_at: Optional[datetime] = Field(
+    expires_at: Union[datetime, None] = Field(
         None,
         description="Alert expiration time"
     )
@@ -493,7 +492,7 @@ class DashboardWidget(BaseSchema):
         max_length=100,
         description="Data source identifier"
     )
-    refresh_interval_seconds: Optional[int] = Field(
+    refresh_interval_seconds: Union[int, None] = Field(
         None,
         ge=10,
         description="Auto-refresh interval in seconds"
@@ -517,11 +516,11 @@ class DashboardMetrics(BaseSchema):
         pattern="^(hostel|platform|admin)$",
         description="Scope of the dashboard"
     )
-    scope_id: Optional[UUID] = Field(
+    scope_id: Union[UUID, None] = Field(
         None,
         description="Hostel ID or admin ID if applicable"
     )
-    scope_name: Optional[str] = Field(
+    scope_name: Union[str, None] = Field(
         None,
         max_length=255,
         description="Display name for the scope"
@@ -609,7 +608,7 @@ class DashboardMetrics(BaseSchema):
             if alert.is_active and alert.severity == "critical"
         )
     
-    def get_kpi_by_key(self, key: str) -> Optional[KPIResponse]:
+    def get_kpi_by_key(self, key: str) -> Union[KPIResponse, None]:
         """Retrieve a specific KPI by its key."""
         for kpi in self.kpis:
             if kpi.key == key:
@@ -685,11 +684,11 @@ class RoleSpecificDashboard(BaseSchema):
     )
     
     # Preferences
-    default_section: Optional[str] = Field(
+    default_section: Union[str, None] = Field(
         None,
         description="Default section to display"
     )
-    layout_preferences: Optional[Dict[str, Any]] = Field(
+    layout_preferences: Union[Dict[str, Any], None] = Field(
         None,
         description="User's layout preferences"
     )
@@ -714,7 +713,7 @@ class RoleSpecificDashboard(BaseSchema):
                 return True
         return False
     
-    def get_section_metrics(self, section_name: str) -> Optional[DashboardMetrics]:
+    def get_section_metrics(self, section_name: str) -> Union[DashboardMetrics, None]:
         """Get metrics for a specific section."""
         return self.metrics_by_section.get(section_name)
     

@@ -6,11 +6,9 @@ This module defines response schemas for fee structure data including
 basic responses, detailed information, and list views.
 """
 
-from __future__ import annotations
-
 from datetime import date as Date
 from decimal import Decimal
-from typing import Dict, List, Optional
+from typing import Dict, List, Union
 from uuid import UUID
 
 from pydantic import Field, computed_field, field_validator
@@ -82,7 +80,7 @@ class FeeStructureResponse(BaseResponseSchema):
         ...,
         description="Electricity billing method",
     )
-    electricity_fixed_amount: Optional[Decimal] = Field(
+    electricity_fixed_amount: Union[Decimal, None] = Field(
         default=None,
         ge=Decimal("0"),
         description="Fixed electricity amount (precision: 2 decimal places)",
@@ -92,7 +90,7 @@ class FeeStructureResponse(BaseResponseSchema):
         ...,
         description="Water billing method",
     )
-    water_fixed_amount: Optional[Decimal] = Field(
+    water_fixed_amount: Union[Decimal, None] = Field(
         default=None,
         ge=Decimal("0"),
         description="Fixed water amount (precision: 2 decimal places)",
@@ -103,7 +101,7 @@ class FeeStructureResponse(BaseResponseSchema):
         ...,
         description="Effective start Date",
     )
-    effective_to: Optional[Date] = Field(
+    effective_to: Union[Date, None] = Field(
         default=None,
         description="Effective end Date",
     )
@@ -122,7 +120,7 @@ class FeeStructureResponse(BaseResponseSchema):
 
     @field_validator("electricity_fixed_amount", "water_fixed_amount")
     @classmethod
-    def quantize_optional_decimals(cls, v: Optional[Decimal]) -> Optional[Decimal]:
+    def quantize_optional_decimals(cls, v: Union[Decimal, None]) -> Union[Decimal, None]:
         """Quantize optional decimal fields to 2 decimal places."""
         if v is not None:
             return v.quantize(Decimal("0.01"))
@@ -268,7 +266,7 @@ class FeeDetail(BaseSchema):
         default=False,
         description="Whether discounts are available",
     )
-    discount_info: Optional[str] = Field(
+    discount_info: Union[str, None] = Field(
         default=None,
         description="Discount information",
     )
@@ -290,7 +288,7 @@ class FeeDetail(BaseSchema):
 
     @computed_field
     @property
-    def savings_with_longer_stay(self) -> Optional[Decimal]:
+    def savings_with_longer_stay(self) -> Union[Decimal, None]:
         """Calculate potential savings with longer billing periods."""
         # This would be calculated based on quarterly/yearly discounts
         # Placeholder for business logic
@@ -332,12 +330,12 @@ class FeeStructureList(BaseSchema):
     )
 
     # Price Range - decimal_places removed
-    min_monthly_rent: Optional[Decimal] = Field(
+    min_monthly_rent: Union[Decimal, None] = Field(
         default=None,
         ge=Decimal("0"),
         description="Minimum monthly rent across all room types (precision: 2 decimal places)",
     )
-    max_monthly_rent: Optional[Decimal] = Field(
+    max_monthly_rent: Union[Decimal, None] = Field(
         default=None,
         ge=Decimal("0"),
         description="Maximum monthly rent across all room types (precision: 2 decimal places)",
@@ -345,7 +343,7 @@ class FeeStructureList(BaseSchema):
 
     @field_validator("min_monthly_rent", "max_monthly_rent")
     @classmethod
-    def quantize_optional_decimals(cls, v: Optional[Decimal]) -> Optional[Decimal]:
+    def quantize_optional_decimals(cls, v: Union[Decimal, None]) -> Union[Decimal, None]:
         """Quantize optional decimal fields to 2 decimal places."""
         if v is not None:
             return v.quantize(Decimal("0.01"))
@@ -398,27 +396,27 @@ class FeeHistoryItem(BaseSchema):
         ...,
         description="Effective start Date",
     )
-    effective_to: Optional[Date] = Field(
+    effective_to: Union[Date, None] = Field(
         default=None,
         description="Effective end Date",
     )
 
     # Change Information
-    changed_by: Optional[UUID] = Field(
+    changed_by: Union[UUID, None] = Field(
         default=None,
         description="Admin who made the change",
     )
-    changed_by_name: Optional[str] = Field(
+    changed_by_name: Union[str, None] = Field(
         default=None,
         description="Name of admin who made change",
     )
-    change_reason: Optional[str] = Field(
+    change_reason: Union[str, None] = Field(
         default=None,
         description="Reason for change",
     )
 
     # Previous Value (for comparison)
-    previous_amount: Optional[Decimal] = Field(
+    previous_amount: Union[Decimal, None] = Field(
         default=None,
         ge=Decimal("0"),
         description="Previous rent amount (precision: 2 decimal places)",
@@ -426,7 +424,7 @@ class FeeHistoryItem(BaseSchema):
 
     @field_validator("amount", "previous_amount")
     @classmethod
-    def quantize_decimal_fields(cls, v: Optional[Decimal]) -> Optional[Decimal]:
+    def quantize_decimal_fields(cls, v: Union[Decimal, None]) -> Union[Decimal, None]:
         """Quantize decimal fields to 2 decimal places."""
         if v is not None:
             return v.quantize(Decimal("0.01"))
@@ -434,7 +432,7 @@ class FeeHistoryItem(BaseSchema):
 
     @computed_field
     @property
-    def amount_change(self) -> Optional[Decimal]:
+    def amount_change(self) -> Union[Decimal, None]:
         """Calculate amount change from previous."""
         if self.previous_amount is None:
             return None
@@ -442,7 +440,7 @@ class FeeHistoryItem(BaseSchema):
 
     @computed_field
     @property
-    def amount_change_percentage(self) -> Optional[Decimal]:
+    def amount_change_percentage(self) -> Union[Decimal, None]:
         """Calculate percentage change."""
         if self.previous_amount is None or self.previous_amount == 0:
             return None
@@ -491,7 +489,7 @@ class FeeHistory(BaseSchema):
         ge=0,
         description="Total number of fee changes",
     )
-    average_change_interval_days: Optional[int] = Field(
+    average_change_interval_days: Union[int, None] = Field(
         default=None,
         ge=0,
         description="Average days between fee changes",
@@ -499,7 +497,7 @@ class FeeHistory(BaseSchema):
 
     @computed_field
     @property
-    def current_fee(self) -> Optional[FeeHistoryItem]:
+    def current_fee(self) -> Union[FeeHistoryItem, None]:
         """Get current active fee structure."""
         today = Date.today()
         
@@ -583,7 +581,7 @@ class FeeCalculation(BaseSchema):
         ge=Decimal("0"),
         description="Total discount amount (precision: 2 decimal places)",
     )
-    discount_description: Optional[str] = Field(
+    discount_description: Union[str, None] = Field(
         default=None,
         description="Discount details",
     )

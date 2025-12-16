@@ -8,7 +8,7 @@ including list views, detailed views, and aggregated summaries.
 
 from datetime import datetime
 from decimal import Decimal, ROUND_HALF_UP
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Union
 
 from pydantic import Field, computed_field, field_validator
 from uuid import UUID
@@ -36,9 +36,9 @@ class AuditLogResponse(BaseResponseSchema):
     id: UUID = Field(..., description="Audit log entry ID")
     
     # Actor
-    user_id: Optional[UUID] = Field(default=None, description="User who performed action")
-    user_email: Optional[str] = Field(default=None, description="User email")
-    user_role: Optional[UserRole] = Field(default=None, description="User role")
+    user_id: Union[UUID, None] = Field(default=None, description="User who performed action")
+    user_email: Union[str, None] = Field(default=None, description="User email")
+    user_role: Union[UserRole, None] = Field(default=None, description="User role")
     
     # Action
     action_type: str = Field(..., description="Action type identifier")
@@ -46,26 +46,26 @@ class AuditLogResponse(BaseResponseSchema):
     action_description: str = Field(..., description="Action description")
     
     # Entity
-    entity_type: Optional[str] = Field(default=None, description="Affected entity type")
-    entity_id: Optional[UUID] = Field(default=None, description="Affected entity ID")
-    entity_name: Optional[str] = Field(default=None, description="Entity display name")
+    entity_type: Union[str, None] = Field(default=None, description="Affected entity type")
+    entity_id: Union[UUID, None] = Field(default=None, description="Affected entity ID")
+    entity_name: Union[str, None] = Field(default=None, description="Entity display name")
     
     # Context
-    hostel_id: Optional[UUID] = Field(default=None, description="Hostel context")
-    hostel_name: Optional[str] = Field(default=None, description="Hostel name")
+    hostel_id: Union[UUID, None] = Field(default=None, description="Hostel context")
+    hostel_name: Union[str, None] = Field(default=None, description="Hostel name")
     
     # Status
     status: str = Field(..., description="Action status")
     
     # Network
-    ip_address: Optional[str] = Field(default=None, description="Source IP address")
+    ip_address: Union[str, None] = Field(default=None, description="Source IP address")
     
     # Timestamps
     created_at: datetime = Field(..., description="When action occurred")
     
     # Security
     is_sensitive: bool = Field(default=False, description="Contains sensitive data")
-    severity_level: Optional[str] = Field(default=None, description="Severity level")
+    severity_level: Union[str, None] = Field(default=None, description="Severity level")
     
     @computed_field
     @property
@@ -130,10 +130,10 @@ class AuditLogDetail(BaseResponseSchema):
     id: UUID = Field(..., description="Audit log entry ID")
     
     # Actor information
-    user_id: Optional[UUID] = Field(default=None, description="User who performed action")
-    user_email: Optional[str] = Field(default=None, description="User email")
-    user_role: Optional[UserRole] = Field(default=None, description="User role at time of action")
-    impersonator_id: Optional[UUID] = Field(
+    user_id: Union[UUID, None] = Field(default=None, description="User who performed action")
+    user_email: Union[str, None] = Field(default=None, description="User email")
+    user_role: Union[UserRole, None] = Field(default=None, description="User role at time of action")
+    impersonator_id: Union[UUID, None] = Field(
         default=None,
         description="User impersonating (if applicable)"
     )
@@ -144,24 +144,24 @@ class AuditLogDetail(BaseResponseSchema):
     action_description: str = Field(..., description="Detailed action description")
     
     # Entity information
-    entity_type: Optional[str] = Field(default=None, description="Affected entity type")
-    entity_id: Optional[UUID] = Field(default=None, description="Affected entity ID")
-    entity_name: Optional[str] = Field(default=None, description="Entity display name")
+    entity_type: Union[str, None] = Field(default=None, description="Affected entity type")
+    entity_id: Union[UUID, None] = Field(default=None, description="Affected entity ID")
+    entity_name: Union[str, None] = Field(default=None, description="Entity display name")
     
     # Related entity
-    related_entity_type: Optional[str] = Field(default=None, description="Related entity type")
-    related_entity_id: Optional[UUID] = Field(default=None, description="Related entity ID")
+    related_entity_type: Union[str, None] = Field(default=None, description="Related entity type")
+    related_entity_id: Union[UUID, None] = Field(default=None, description="Related entity ID")
     
     # Context
-    hostel_id: Optional[UUID] = Field(default=None, description="Hostel context")
-    hostel_name: Optional[str] = Field(default=None, description="Hostel name")
+    hostel_id: Union[UUID, None] = Field(default=None, description="Hostel context")
+    hostel_name: Union[str, None] = Field(default=None, description="Hostel name")
     
     # Change tracking
-    old_values: Optional[Dict[str, Any]] = Field(
+    old_values: Union[Dict[str, Any], None] = Field(
         default=None,
         description="Previous values"
     )
-    new_values: Optional[Dict[str, Any]] = Field(
+    new_values: Union[Dict[str, Any], None] = Field(
         default=None,
         description="New values"
     )
@@ -171,29 +171,29 @@ class AuditLogDetail(BaseResponseSchema):
     )
     
     # Request context
-    ip_address: Optional[str] = Field(default=None, description="IP address")
-    user_agent: Optional[str] = Field(default=None, description="User agent string")
-    request_id: Optional[str] = Field(default=None, description="Request/trace ID")
-    session_id: Optional[str] = Field(default=None, description="Session ID")
+    ip_address: Union[str, None] = Field(default=None, description="IP address")
+    user_agent: Union[str, None] = Field(default=None, description="User agent string")
+    request_id: Union[str, None] = Field(default=None, description="Request/trace ID")
+    session_id: Union[str, None] = Field(default=None, description="Session ID")
     
     # Geographic context
-    country_code: Optional[str] = Field(default=None, description="Country code")
-    region: Optional[str] = Field(default=None, description="Region/state")
-    city: Optional[str] = Field(default=None, description="City")
+    country_code: Union[str, None] = Field(default=None, description="Country code")
+    region: Union[str, None] = Field(default=None, description="Region/state")
+    city: Union[str, None] = Field(default=None, description="City")
     
     # Device context
-    device_type: Optional[str] = Field(default=None, description="Device type")
-    platform: Optional[str] = Field(default=None, description="Platform/OS")
-    browser_name: Optional[str] = Field(default=None, description="Browser name")
+    device_type: Union[str, None] = Field(default=None, description="Device type")
+    platform: Union[str, None] = Field(default=None, description="Platform/OS")
+    browser_name: Union[str, None] = Field(default=None, description="Browser name")
     
     # API context
-    api_version: Optional[str] = Field(default=None, description="API version")
-    endpoint: Optional[str] = Field(default=None, description="API endpoint")
-    http_method: Optional[str] = Field(default=None, description="HTTP method")
+    api_version: Union[str, None] = Field(default=None, description="API version")
+    endpoint: Union[str, None] = Field(default=None, description="API endpoint")
+    http_method: Union[str, None] = Field(default=None, description="HTTP method")
     
     # Status and result
     status: str = Field(..., description="Action status")
-    error_message: Optional[str] = Field(default=None, description="Error message if failed")
+    error_message: Union[str, None] = Field(default=None, description="Error message if failed")
     
     # Security
     is_sensitive: bool = Field(default=False, description="Contains sensitive data")
@@ -208,14 +208,14 @@ class AuditLogDetail(BaseResponseSchema):
     created_at: datetime = Field(..., description="When action occurred")
     
     # Retention
-    retention_days: Optional[int] = Field(
+    retention_days: Union[int, None] = Field(
         default=None,
         description="Retention period in days"
     )
     
     @computed_field
     @property
-    def change_summary(self) -> Optional[str]:
+    def change_summary(self) -> Union[str, None]:
         """Generate human-readable change summary."""
         if not self.changed_fields:
             return None
@@ -231,7 +231,7 @@ class AuditLogDetail(BaseResponseSchema):
     
     @computed_field
     @property
-    def location_summary(self) -> Optional[str]:
+    def location_summary(self) -> Union[str, None]:
         """Generate location summary string."""
         parts = []
         if self.city:
@@ -243,7 +243,7 @@ class AuditLogDetail(BaseResponseSchema):
         
         return ", ".join(parts) if parts else None
     
-    def get_field_change(self, field_name: str) -> Optional[Dict[str, Any]]:
+    def get_field_change(self, field_name: str) -> Union[Dict[str, Any], None]:
         """
         Get change details for a specific field.
         
@@ -275,8 +275,8 @@ class AuditLogSummary(BaseResponseSchema):
     period_end: datetime = Field(..., description="Summary period end")
     
     # Scope
-    hostel_id: Optional[UUID] = Field(default=None, description="Hostel scope if applicable")
-    user_id: Optional[UUID] = Field(default=None, description="User scope if applicable")
+    hostel_id: Union[UUID, None] = Field(default=None, description="Hostel scope if applicable")
+    user_id: Union[UUID, None] = Field(default=None, description="User scope if applicable")
     
     # Overall metrics
     total_events: int = Field(..., ge=0, description="Total audit events")

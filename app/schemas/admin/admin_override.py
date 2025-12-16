@@ -7,12 +7,10 @@ with comprehensive analytics and audit trail support.
 Fully migrated to Pydantic v2.
 """
 
-from __future__ import annotations
-
 from datetime import datetime
 from datetime import date as Date
 from decimal import Decimal
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Union
 from uuid import UUID
 
 from pydantic import Field, computed_field, field_validator, model_validator, ConfigDict
@@ -66,7 +64,7 @@ class AdminOverrideRequest(BaseCreateSchema):
     
     model_config = ConfigDict(validate_assignment=True)
 
-    supervisor_id: Optional[UUID] = Field(
+    supervisor_id: Union[UUID, None] = Field(
         None, description="Supervisor whose action is being overridden"
     )
     hostel_id: UUID = Field(..., description="Hostel where override occurs")
@@ -89,7 +87,7 @@ class AdminOverrideRequest(BaseCreateSchema):
     )
 
     # Original and new values
-    original_action: Optional[Dict[str, Any]] = Field(
+    original_action: Union[Dict[str, Any], None] = Field(
         None, description="Original supervisor action"
     )
     override_action: Dict[str, Any] = Field(..., description="Admin's override action")
@@ -182,8 +180,8 @@ class OverrideLog(BaseResponseSchema):
 
     admin_id: UUID = Field(..., description="Admin who performed override")
     admin_name: str = Field(..., min_length=1, description="Admin full name")
-    supervisor_id: Optional[UUID] = Field(None, description="Affected supervisor ID")
-    supervisor_name: Optional[str] = Field(None, description="Affected supervisor name")
+    supervisor_id: Union[UUID, None] = Field(None, description="Affected supervisor ID")
+    supervisor_name: Union[str, None] = Field(None, description="Affected supervisor name")
 
     hostel_id: UUID = Field(..., description="Hostel where override occurred")
     hostel_name: str = Field(..., min_length=1, description="Hostel name")
@@ -194,7 +192,7 @@ class OverrideLog(BaseResponseSchema):
 
     reason: str = Field(..., description="Override reason")
 
-    original_action: Optional[Dict[str, Any]] = Field(
+    original_action: Union[Dict[str, Any], None] = Field(
         None, description="Original supervisor action"
     )
     override_action: Dict[str, Any] = Field(..., description="Override action taken")
@@ -310,7 +308,7 @@ class OverrideSummary(BaseSchema):
 
     @computed_field
     @property
-    def most_overridden_supervisor(self) -> Optional[str]:
+    def most_overridden_supervisor(self) -> Union[str, None]:
         """Identify supervisor with most overrides."""
         if not self.overrides_by_supervisor:
             return None
@@ -318,7 +316,7 @@ class OverrideSummary(BaseSchema):
 
     @computed_field
     @property
-    def most_common_override_type(self) -> Optional[str]:
+    def most_common_override_type(self) -> Union[str, None]:
         """Identify most common override type."""
         if not self.overrides_by_type:
             return None
@@ -424,7 +422,7 @@ class SupervisorOverrideStats(BaseSchema):
 
     @computed_field
     @property
-    def most_overridden_category(self) -> Optional[str]:
+    def most_overridden_category(self) -> Union[str, None]:
         """Identify category with most overrides."""
         if not self.overrides_by_type:
             return None

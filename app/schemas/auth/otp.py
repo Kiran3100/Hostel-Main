@@ -4,10 +4,8 @@ OTP (One-Time Password) schemas with enhanced validation.
 Pydantic v2 compliant.
 """
 
-from __future__ import annotations
-
 from datetime import datetime
-from typing import Optional
+from typing import Optional, Union
 from uuid import UUID
 
 from pydantic import EmailStr, Field, field_validator, model_validator
@@ -31,15 +29,15 @@ class OTPGenerateRequest(BaseCreateSchema):
     Requires at least one contact method (email or phone).
     """
 
-    user_id: Optional[UUID] = Field(
+    user_id: Union[UUID, None] = Field(
         default=None,
         description="User ID if authenticated context",
     )
-    email: Optional[EmailStr] = Field(
+    email: Union[EmailStr, None] = Field(
         default=None,
         description="Email address for OTP delivery",
     )
-    phone: Optional[str] = Field(
+    phone: Union[str, None] = Field(
         default=None,
         pattern=r"^\+?[1-9]\d{9,14}$",
         description="Phone number for OTP delivery",
@@ -50,7 +48,7 @@ class OTPGenerateRequest(BaseCreateSchema):
     )
 
     @model_validator(mode="after")
-    def validate_contact_method(self) -> "OTPGenerateRequest":
+    def validate_contact_method(self):
         """
         Ensure at least one contact method is provided.
         
@@ -65,7 +63,7 @@ class OTPGenerateRequest(BaseCreateSchema):
 
     @field_validator("phone", mode="before")
     @classmethod
-    def normalize_phone(cls, v: Optional[str]) -> Optional[str]:
+    def normalize_phone(cls, v: Union[str, None]) -> Union[str, None]:
         """Normalize phone number by removing spaces and dashes."""
         if v is not None and isinstance(v, str):
             return v.replace(" ", "").replace("-", "")
@@ -79,15 +77,15 @@ class OTPVerifyRequest(BaseCreateSchema):
     Validates OTP code format and ensures contact method is provided.
     """
 
-    user_id: Optional[UUID] = Field(
+    user_id: Union[UUID, None] = Field(
         default=None,
         description="User ID for verification",
     )
-    email: Optional[EmailStr] = Field(
+    email: Union[EmailStr, None] = Field(
         default=None,
         description="Email address used for OTP generation",
     )
-    phone: Optional[str] = Field(
+    phone: Union[str, None] = Field(
         default=None,
         pattern=r"^\+?[1-9]\d{9,14}$",
         description="Phone number used for OTP generation",
@@ -106,7 +104,7 @@ class OTPVerifyRequest(BaseCreateSchema):
     )
 
     @model_validator(mode="after")
-    def validate_contact_method(self) -> "OTPVerifyRequest":
+    def validate_contact_method(self):
         """Ensure at least one contact method is provided."""
         if not self.email and not self.phone:
             raise ValueError(
@@ -175,15 +173,15 @@ class OTPVerifyResponse(BaseSchema):
         description="Verification result message",
         examples=["OTP verified successfully", "Invalid or expired OTP"],
     )
-    verified_at: Optional[datetime] = Field(
+    verified_at: Union[datetime, None] = Field(
         default=None,
         description="Verification timestamp (UTC)",
     )
-    user_id: Optional[UUID] = Field(
+    user_id: Union[UUID, None] = Field(
         default=None,
         description="User ID associated with verified OTP",
     )
-    remaining_attempts: Optional[int] = Field(
+    remaining_attempts: Union[int, None] = Field(
         default=None,
         ge=0,
         description="Remaining verification attempts (if failed)",
@@ -197,15 +195,15 @@ class ResendOTPRequest(BaseCreateSchema):
     Used when user didn't receive the original OTP.
     """
 
-    user_id: Optional[UUID] = Field(
+    user_id: Union[UUID, None] = Field(
         default=None,
         description="User ID for OTP resend",
     )
-    email: Optional[EmailStr] = Field(
+    email: Union[EmailStr, None] = Field(
         default=None,
         description="Email address for OTP delivery",
     )
-    phone: Optional[str] = Field(
+    phone: Union[str, None] = Field(
         default=None,
         pattern=r"^\+?[1-9]\d{9,14}$",
         description="Phone number for OTP delivery",
@@ -216,7 +214,7 @@ class ResendOTPRequest(BaseCreateSchema):
     )
 
     @model_validator(mode="after")
-    def validate_contact_method(self) -> "ResendOTPRequest":
+    def validate_contact_method(self):
         """Ensure at least one contact method is provided."""
         if not self.email and not self.phone:
             raise ValueError(
