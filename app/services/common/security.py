@@ -11,6 +11,7 @@ from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from typing import Any, Literal, Optional
 from uuid import UUID
+import hashlib
 
 from jose import JWTError, jwt
 from passlib.context import CryptContext
@@ -65,6 +66,26 @@ class JWTSettings:
 # Password hashing
 # ------------------------------------------------------------------ #
 
+def _prepare_password_for_bcrypt(password: str) -> str:
+    """
+    Prepare a password for bcrypt by handling the 72-byte limit.
+    
+    For passwords that might exceed the limit, we use a SHA-256 hash
+    which produces a fixed-length output that's well under the limit.
+    
+    Args:
+        password: Original password
+        
+    Returns:
+        Password suitable for bcrypt
+    """
+    # Check if password might exceed bcrypt's 72-byte limit when encoded
+    if len(password.encode('utf-8')) > 71:
+        # Use SHA-256 to get a fixed-length representation
+        return hashlib.sha256(password.encode('utf-8')).hexdigest()
+    return password
+
+
 def hash_password(password: str) -> str:
     """
     Hash a plaintext password using bcrypt.
@@ -84,7 +105,10 @@ def hash_password(password: str) -> str:
     if not password:
         raise ValidationError("Password cannot be empty", field="password")
     
-    return _pwd_context.hash(password)
+    # Pre-process password to handle bcrypt's 72-byte limit
+    safe_password = _prepare_password_for_bcrypt(password)
+    
+    return _pwd_context.hash(safe_password)
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
@@ -106,7 +130,10 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
         return False
     
     try:
-        return _pwd_context.verify(plain_password, hashed_password)
+        # Pre-process password the same way as during hashing
+        safe_password = _prepare_password_for_bcrypt(plain_password)
+        
+        return _pwd_context.verify(safe_password, hashed_password)
     except Exception:
         # Handle any unexpected errors from passlib
         return False

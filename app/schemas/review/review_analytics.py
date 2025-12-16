@@ -14,7 +14,7 @@ Pydantic v2 Migration Notes:
 - Percentage fields use proper constraints for 0-100 range
 """
 
-from datetime import Date, datetime
+from datetime import date as Date, datetime
 from decimal import Decimal
 from typing import Annotated, Dict, List, Union
 from uuid import UUID

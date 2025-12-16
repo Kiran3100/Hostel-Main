@@ -399,7 +399,7 @@ class ScheduledMeeting(BaseSchema):
 class TodaySchedule(BaseSchema):
     """Today's schedule and planned activities."""
     
-    Date: Date = Field(..., description="Schedule Date")
+    date: Date = Field(..., description="Schedule Date")
     
     # Routine tasks
     attendance_marking_time: time = Field(
