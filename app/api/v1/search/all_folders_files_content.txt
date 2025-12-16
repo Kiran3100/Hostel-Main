@@ -210,3 +210,6 @@ __all__ = [
     "CurrentUser",
     "get_current_user",
 ]
+
+
+# ===== Folder: D:\Last Github Push\Last\Hostel-Main\app\api\v1\search\__pycache__ =====

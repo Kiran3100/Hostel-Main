@@ -29,8 +29,8 @@ __all__ = [
     "SearchResultItem",
     "SearchMetadata",
     "FacetBucket",
-    "FacetedSearchResponse",
     "SearchSuggestion",
+    "FacetedSearchResponse",
 ]
 
 
@@ -315,6 +315,38 @@ class FacetBucket(BaseSchema):
     )
 
 
+class SearchSuggestion(BaseSchema):
+    """
+    Search query suggestion for refinement.
+
+    Helps users refine their search when results are poor.
+    """
+
+    suggestion_type: str = Field(
+        ...,
+        pattern=r"^(spell_correction|alternative_query|related_search|popular_search)$",
+        description="Type of suggestion",
+    )
+    text: str = Field(
+        ...,
+        description="Suggested search text",
+    )
+    reason: Optional[str] = Field(
+        default=None,
+        description="Why this suggestion is offered",
+        examples=[
+            "Did you mean...",
+            "Popular search",
+            "Related to your search",
+        ],
+    )
+    expected_results: Optional[int] = Field(
+        default=None,
+        ge=0,
+        description="Estimated number of results for this suggestion",
+    )
+
+
 class FacetedSearchResponse(BaseSchema):
     """
     Complete faceted search response.
@@ -369,35 +401,3 @@ class FacetedSearchResponse(BaseSchema):
     def facet_names(self) -> List[str]:
         """Get list of available facet names."""
         return list(self.facets.keys())
-
-
-class SearchSuggestion(BaseSchema):
-    """
-    Search query suggestion for refinement.
-
-    Helps users refine their search when results are poor.
-    """
-
-    suggestion_type: str = Field(
-        ...,
-        pattern=r"^(spell_correction|alternative_query|related_search|popular_search)$",
-        description="Type of suggestion",
-    )
-    text: str = Field(
-        ...,
-        description="Suggested search text",
-    )
-    reason: Optional[str] = Field(
-        default=None,
-        description="Why this suggestion is offered",
-        examples=[
-            "Did you mean...",
-            "Popular search",
-            "Related to your search",
-        ],
-    )
-    expected_results: Optional[int] = Field(
-        default=None,
-        ge=0,
-        description="Estimated number of results for this suggestion",
-    )

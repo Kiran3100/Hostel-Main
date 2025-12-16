@@ -1,10 +1,10 @@
-### Combined Content from Folder: D:\Last Github Push\Last\HOStel-back\app\schemas\supervisor ###
+### Combined Content from Folder: D:\Last Github Push\Last\Hostel-Main\app\schemas\supervisor ###
 
 
 
-# ===== Folder: D:\Last Github Push\Last\HOStel-back\app\schemas\supervisor =====
+# ===== Folder: D:\Last Github Push\Last\Hostel-Main\app\schemas\supervisor =====
 
-# --- File: D:\Last Github Push\Last\HOStel-back\app\schemas\supervisor\supervisor_activity.py ---
+# --- File: D:\Last Github Push\Last\Hostel-Main\app\schemas\supervisor\supervisor_activity.py ---
 # --- File: app/schemas/supervisor/supervisor_activity.py ---
 """
 Supervisor activity and audit log schemas with enhanced tracking.
@@ -118,7 +118,7 @@ class SupervisorActivityLog(BaseResponseSchema):
         description="Error message if action failed",
     )
 
-    @computed_field  # type: ignore[misc]
+    @computed_field
     @property
     def action_display_name(self) -> str:
         """Get human-readable action name."""
@@ -198,13 +198,13 @@ class ActivityDetail(BaseSchema):
         description="Number of users affected by action",
     )
 
-    @computed_field  # type: ignore[misc]
+    @computed_field
     @property
     def has_changes(self) -> bool:
         """Check if activity involved data changes."""
         return bool(self.old_values or self.new_values)
 
-    @computed_field  # type: ignore[misc]
+    @computed_field
     @property
     def change_summary(self) -> Optional[str]:
         """Generate summary of changes made."""
@@ -246,7 +246,7 @@ class TopActivity(BaseSchema):
         description="Success rate percentage",
     )
 
-    @computed_field  # type: ignore[misc]
+    @computed_field
     @property
     def frequency_description(self) -> str:
         """Get frequency description."""
@@ -287,7 +287,7 @@ class ActivityTimelinePoint(BaseSchema):
         description="Average response time",
     )
 
-    @computed_field  # type: ignore[misc]
+    @computed_field
     @property
     def activity_level(self) -> str:
         """Categorize activity level."""
@@ -362,7 +362,7 @@ class ActivityMetrics(BaseSchema):
         description="Response time trend",
     )
 
-    @computed_field  # type: ignore[misc]
+    @computed_field
     @property
     def activity_score(self) -> float:
         """Calculate overall activity score (0-100)."""
@@ -373,7 +373,7 @@ class ActivityMetrics(BaseSchema):
         
         return round(volume_score + consistency_score + performance_score, 2)
 
-    @computed_field  # type: ignore[misc]
+    @computed_field
     @property
     def productivity_level(self) -> str:
         """Categorize productivity level."""
@@ -452,7 +452,7 @@ class ActivitySummary(BaseSchema):
         description="Overall success rate",
     )
 
-    @computed_field  # type: ignore[misc]
+    @computed_field
     @property
     def most_common_activity(self) -> Optional[str]:
         """Get most frequently performed activity."""
@@ -460,7 +460,7 @@ class ActivitySummary(BaseSchema):
             return None
         return self.top_activities[0].action_display_name
 
-    @computed_field  # type: ignore[misc]
+    @computed_field
     @property
     def activity_consistency(self) -> str:
         """Assess activity consistency."""
@@ -684,7 +684,7 @@ class ActivityExportRequest(BaseCreateSchema):
         """Normalize format to lowercase."""
         return v.lower().strip()
 
-# --- File: D:\Last Github Push\Last\HOStel-back\app\schemas\supervisor\supervisor_assignment.py ---
+# --- File: D:\Last Github Push\Last\Hostel-Main\app\schemas\supervisor\supervisor_assignment.py ---
 # --- File: app/schemas/supervisor/supervisor_assignment.py ---
 """
 Supervisor assignment schemas with enhanced validation.
@@ -752,7 +752,7 @@ class SupervisorAssignment(BaseResponseSchema):
         description="Total days in current assignment",
     )
 
-    @computed_field  # type: ignore[misc]
+    @computed_field
     @property
     def assignment_duration_months(self) -> int:
         """Calculate assignment duration in months."""
@@ -1065,7 +1065,7 @@ class AssignmentSummary(BaseSchema):
         description="Coverage by shift",
     )
 
-    @computed_field  # type: ignore[misc]
+    @computed_field
     @property
     def active_percentage(self) -> Decimal:
         """Calculate percentage of active supervisors."""
@@ -1075,13 +1075,13 @@ class AssignmentSummary(BaseSchema):
         rate = (self.active_supervisors / self.total_supervisors * 100)
         return Decimal(str(rate)).quantize(Decimal("0.01"))
 
-    @computed_field  # type: ignore[misc]
+    @computed_field
     @property
     def needs_coverage(self) -> bool:
         """Check if hostel needs more supervisor coverage."""
         return self.active_supervisors < 1
 
-# --- File: D:\Last Github Push\Last\HOStel-back\app\schemas\supervisor\supervisor_base.py ---
+# --- File: D:\Last Github Push\Last\Hostel-Main\app\schemas\supervisor\supervisor_base.py ---
 # --- File: app/schemas/supervisor/supervisor_base.py ---
 """
 Supervisor base schemas with enhanced validation and type safety.
@@ -1896,7 +1896,7 @@ class SupervisorTermination(BaseCreateSchema):
         
         return self
 
-# --- File: D:\Last Github Push\Last\HOStel-back\app\schemas\supervisor\supervisor_dashboard.py ---
+# --- File: D:\Last Github Push\Last\Hostel-Main\app\schemas\supervisor\supervisor_dashboard.py ---
 # --- File: app/schemas/supervisor/supervisor_dashboard.py ---
 """
 Supervisor dashboard schemas with real-time metrics and insights.
@@ -2015,7 +2015,7 @@ class DashboardMetrics(BaseSchema):
     unread_admin_messages: int = Field(..., ge=0, description="Unread messages from admin")
     pending_announcements: int = Field(..., ge=0, description="Announcements pending approval")
 
-    @computed_field  # type: ignore[misc]
+    @computed_field
     @property
     def overall_health_score(self) -> Decimal:
         """Calculate overall hostel health score (0-100)."""
@@ -2028,7 +2028,7 @@ class DashboardMetrics(BaseSchema):
         total_score = occupancy_score + complaint_score + maintenance_score + attendance_score
         return Decimal(str(total_score)).quantize(Decimal("0.1"))
 
-    @computed_field  # type: ignore[misc]
+    @computed_field
     @property
     def needs_attention(self) -> List[str]:
         """Identify areas needing immediate attention."""
@@ -2102,7 +2102,7 @@ class TaskSummary(BaseSchema):
         description="Total tasks requiring action",
     )
 
-    @computed_field  # type: ignore[misc]
+    @computed_field
     @property
     def priority_score(self) -> int:
         """Calculate task priority score (higher = more urgent)."""
@@ -2118,7 +2118,7 @@ class TaskSummary(BaseSchema):
         
         return score
 
-    @computed_field  # type: ignore[misc]
+    @computed_field
     @property
     def workload_level(self) -> str:
         """Assess current workload level."""
@@ -2154,7 +2154,7 @@ class RecentComplaintItem(BaseSchema):
         description="SLA deadline for resolution",
     )
 
-    @computed_field  # type: ignore[misc]
+    @computed_field
     @property
     def is_overdue(self) -> bool:
         """Check if complaint is past SLA deadline."""
@@ -2162,7 +2162,7 @@ class RecentComplaintItem(BaseSchema):
             return False
         return datetime.now() > self.sla_deadline
 
-    @computed_field  # type: ignore[misc]
+    @computed_field
     @property
     def urgency_indicator(self) -> str:
         """Get urgency indicator for UI."""
@@ -2211,7 +2211,7 @@ class RecentMaintenanceItem(BaseSchema):
         description="Assigned staff/vendor",
     )
 
-    @computed_field  # type: ignore[misc]
+    @computed_field
     @property
     def is_overdue(self) -> bool:
         """Check if maintenance is overdue."""
@@ -2219,7 +2219,7 @@ class RecentMaintenanceItem(BaseSchema):
             return False
         return Date.today() > self.scheduled_date
 
-    @computed_field  # type: ignore[misc]
+    @computed_field
     @property
     def days_pending(self) -> int:
         """Calculate days since request creation."""
@@ -2251,14 +2251,14 @@ class PendingLeaveItem(BaseSchema):
         description="Supporting documents provided",
     )
 
-    @computed_field  # type: ignore[misc]
+    @computed_field
     @property
     def is_urgent(self) -> bool:
         """Check if leave approval is urgent."""
         # Urgent if leave starts within 2 days
         return (self.from_date - Date.today()).days <= 2
 
-    @computed_field  # type: ignore[misc]
+    @computed_field
     @property
     def pending_days(self) -> int:
         """Days since application was submitted."""
@@ -2300,7 +2300,7 @@ class ScheduledMeeting(BaseSchema):
 class TodaySchedule(BaseSchema):
     """Today's schedule and planned activities."""
     
-    Date: Date = Field(..., description="Schedule Date")
+    date: Date = Field(..., description="Schedule Date")
     
     # Routine tasks
     attendance_marking_time: time = Field(
@@ -2334,7 +2334,7 @@ class TodaySchedule(BaseSchema):
         description="Reports due today",
     )
 
-    @computed_field  # type: ignore[misc]
+    @computed_field
     @property
     def total_scheduled_items(self) -> int:
         """Count total scheduled items for the day."""
@@ -2345,7 +2345,7 @@ class TodaySchedule(BaseSchema):
             len(self.report_deadlines)
         )
 
-    @computed_field  # type: ignore[misc]
+    @computed_field
     @property
     def schedule_density(self) -> str:
         """Assess schedule density for the day."""
@@ -2391,7 +2391,7 @@ class DashboardAlert(BaseSchema):
         description="Related entity ID",
     )
 
-    @computed_field  # type: ignore[misc]
+    @computed_field
     @property
     def is_expired(self) -> bool:
         """Check if alert has expired."""
@@ -2399,7 +2399,7 @@ class DashboardAlert(BaseSchema):
             return False
         return datetime.now() > self.expires_at
 
-    @computed_field  # type: ignore[misc]
+    @computed_field
     @property
     def age_minutes(self) -> int:
         """Calculate alert age in minutes."""
@@ -2447,7 +2447,7 @@ class QuickActions(BaseSchema):
         description="Available quick actions",
     )
 
-    @computed_field  # type: ignore[misc]
+    @computed_field
     @property
     def actions_by_category(self) -> Dict[str, List[QuickAction]]:
         """Group actions by category."""
@@ -2529,7 +2529,7 @@ class PerformanceIndicators(BaseSchema):
         description="Total number of peer supervisors",
     )
 
-    @computed_field  # type: ignore[misc]
+    @computed_field
     @property
     def overall_performance_score(self) -> Decimal:
         """Calculate overall performance score."""
@@ -2550,7 +2550,7 @@ class PerformanceIndicators(BaseSchema):
         
         return Decimal(str(score)).quantize(Decimal("0.1"))
 
-    @computed_field  # type: ignore[misc]
+    @computed_field
     @property
     def performance_grade(self) -> str:
         """Get performance grade based on overall score."""
@@ -2651,13 +2651,13 @@ class SupervisorDashboard(BaseSchema):
         description="Recommended refresh interval",
     )
 
-    @computed_field  # type: ignore[misc]
+    @computed_field
     @property
     def critical_alerts_count(self) -> int:
         """Count critical alerts requiring immediate attention."""
         return sum(1 for alert in self.alerts if alert.alert_type == "urgent")
 
-    @computed_field  # type: ignore[misc]
+    @computed_field
     @property
     def workload_summary(self) -> str:
         """Get workload summary description."""
@@ -2677,7 +2677,7 @@ class SupervisorDashboard(BaseSchema):
         else:
             return "Light workload - good job!"
 
-    @computed_field  # type: ignore[misc]
+    @computed_field
     @property
     def dashboard_health_status(self) -> str:
         """Overall dashboard health status."""
@@ -2698,7 +2698,7 @@ class SupervisorDashboard(BaseSchema):
         else:
             return "Excellent"
 
-# --- File: D:\Last Github Push\Last\HOStel-back\app\schemas\supervisor\supervisor_performance.py ---
+# --- File: D:\Last Github Push\Last\Hostel-Main\app\schemas\supervisor\supervisor_performance.py ---
 # --- File: app/schemas/supervisor/supervisor_performance.py ---
 """
 Supervisor performance tracking schemas with comprehensive analytics.
@@ -2894,7 +2894,7 @@ class PerformanceMetrics(BaseSchema):
         description="Performance grade",
     )
 
-    @computed_field  # type: ignore[misc]
+    @computed_field
     @property
     def efficiency_score(self) -> Decimal:
         """Calculate efficiency score based on time metrics."""
@@ -2905,7 +2905,7 @@ class PerformanceMetrics(BaseSchema):
         efficiency = (response_score * 0.4 + completion_score * 0.6)
         return Decimal(str(efficiency)).quantize(Decimal("0.1"))
 
-    @computed_field  # type: ignore[misc]
+    @computed_field
     @property
     def quality_score(self) -> Decimal:
         """Calculate quality score based on accuracy and satisfaction."""
@@ -2987,7 +2987,7 @@ class ComplaintPerformance(BaseSchema):
         description="Number of satisfaction responses received",
     )
 
-    @computed_field  # type: ignore[misc]
+    @computed_field
     @property
     def resolution_efficiency(self) -> str:
         """Categorize resolution efficiency."""
@@ -3072,7 +3072,7 @@ class AttendancePerformance(BaseSchema):
         description="Average time to process leave applications",
     )
 
-    @computed_field  # type: ignore[misc]
+    @computed_field
     @property
     def attendance_consistency(self) -> str:
         """Assess attendance marking consistency."""
@@ -3091,7 +3091,7 @@ class AttendancePerformance(BaseSchema):
         else:
             return "Poor"
 
-    @computed_field  # type: ignore[misc]
+    @computed_field
     @property
     def leave_approval_rate(self) -> Decimal:
         """Calculate leave approval rate."""
@@ -3190,7 +3190,7 @@ class MaintenancePerformance(BaseSchema):
         description="Preventive maintenance compliance rate",
     )
 
-    @computed_field  # type: ignore[misc]
+    @computed_field
     @property
     def completion_rate(self) -> Decimal:
         """Calculate maintenance completion rate."""
@@ -3201,7 +3201,7 @@ class MaintenancePerformance(BaseSchema):
         rate = (self.requests_completed / total_requests) * 100
         return Decimal(str(rate)).quantize(Decimal("0.01"))
 
-    @computed_field  # type: ignore[misc]
+    @computed_field
     @property
     def budget_utilization(self) -> Decimal:
         """Calculate budget utilization percentage."""
@@ -3210,7 +3210,8 @@ class MaintenancePerformance(BaseSchema):
         
         utilization = (self.total_maintenance_cost / self.budget_allocated) * 100
         return Decimal(str(utilization)).quantize(Decimal("0.01"))
-    
+# Continuing supervisor_performance.py...
+
 class PerformanceTrendPoint(BaseSchema):
     """Performance trend data point for analysis."""
     
@@ -3250,7 +3251,7 @@ class PerformanceTrendPoint(BaseSchema):
         description="Student satisfaction score",
     )
 
-    @computed_field  # type: ignore[misc]
+    @computed_field
     @property
     def trend_indicator(self) -> str:
         """Get trend indicator for the period."""
@@ -3288,7 +3289,7 @@ class MetricComparison(BaseSchema):
         description="Whether supervisor performs better than average",
     )
 
-    @computed_field  # type: ignore[misc]
+    @computed_field
     @property
     def performance_vs_peers(self) -> str:
         """Describe performance relative to peers."""
@@ -3347,7 +3348,7 @@ class PeerComparison(BaseSchema):
         description="Gap to top performer",
     )
 
-    @computed_field  # type: ignore[misc]
+    @computed_field
     @property
     def performance_tier(self) -> str:
         """Categorize performance tier among peers."""
@@ -3401,7 +3402,7 @@ class PeriodComparison(BaseSchema):
         description="Metrics that remained stable",
     )
 
-    @computed_field  # type: ignore[misc]
+    @computed_field
     @property
     def overall_trend(self) -> str:
         """Determine overall performance trend."""
@@ -3412,7 +3413,7 @@ class PeriodComparison(BaseSchema):
         else:
             return "Stable"
 
-    @computed_field  # type: ignore[misc]
+    @computed_field
     @property
     def improvement_summary(self) -> str:
         """Generate improvement summary."""
@@ -3487,7 +3488,7 @@ class PerformanceReport(BaseSchema):
         description="Current performance goals progress",
     )
 
-    @computed_field  # type: ignore[misc]
+    @computed_field
     @property
     def report_summary(self) -> str:
         """Generate executive summary of the report."""
@@ -3611,7 +3612,7 @@ class PerformanceReview(BaseCreateSchema):
         """Remove empty items from lists."""
         return [item.strip() for item in v if item.strip()]
 
-    @computed_field  # type: ignore[misc]
+    @computed_field
     @property
     def average_rating(self) -> Decimal:
         """Calculate average of all individual ratings."""
@@ -3673,7 +3674,7 @@ class PerformanceReviewResponse(BaseSchema):
         description="Supervisor's response comments",
     )
 
-    @computed_field  # type: ignore[misc]
+    @computed_field
     @property
     def performance_level(self) -> str:
         """Categorize performance level based on overall rating."""
@@ -3760,7 +3761,7 @@ class PerformanceGoal(BaseCreateSchema):
             raise ValueError("End Date must be after start Date")
         return v
 
-    @computed_field  # type: ignore[misc]
+    @computed_field
     @property
     def duration_days(self) -> int:
         """Calculate goal duration in days."""
@@ -3809,13 +3810,13 @@ class PerformanceGoalProgress(BaseSchema):
         description="Historical measurements",
     )
 
-    @computed_field  # type: ignore[misc]
+    @computed_field
     @property
     def days_elapsed(self) -> int:
         """Calculate days elapsed since goal start."""
         return (Date.today() - self.start_date).days
 
-    @computed_field  # type: ignore[misc]
+    @computed_field
     @property
     def time_progress_percentage(self) -> Decimal:
         """Calculate time progress percentage."""
@@ -3827,7 +3828,7 @@ class PerformanceGoalProgress(BaseSchema):
         time_progress = min(100, (elapsed_days / total_days) * 100)
         return Decimal(str(time_progress)).quantize(Decimal("0.01"))
 
-    @computed_field  # type: ignore[misc]
+    @computed_field
     @property
     def is_on_schedule(self) -> bool:
         """Check if goal progress is on schedule."""
@@ -3837,7 +3838,7 @@ class PerformanceGoalProgress(BaseSchema):
         # Allow 10% tolerance
         return actual_progress >= (time_progress - 10)
 
-    @computed_field  # type: ignore[misc]
+    @computed_field
     @property
     def projected_completion_date(self) -> Optional[Date]:
         """Project completion Date based on current progress rate."""
@@ -3920,7 +3921,7 @@ class PerformanceInsights(BaseSchema):
         description="Confidence level in insights (0-100)",
     )
 
-    @computed_field  # type: ignore[misc]
+    @computed_field
     @property
     def overall_assessment(self) -> str:
         """Generate overall performance assessment."""
@@ -3937,7 +3938,7 @@ class PerformanceInsights(BaseSchema):
         else:
             return "Balanced performer with mixed results"
 
-# --- File: D:\Last Github Push\Last\HOStel-back\app\schemas\supervisor\supervisor_permissions.py ---
+# --- File: D:\Last Github Push\Last\Hostel-Main\app\schemas\supervisor\supervisor_permissions.py ---
 # --- File: app/schemas/supervisor/supervisor_permissions.py ---
 """
 Supervisor permission schemas with comprehensive access control.
@@ -4384,7 +4385,7 @@ class SupervisorPermissions(BaseSchema):
             summary["security_permissions"] += 1
         
         return summary
-
+# Continuing supervisor_permissions.py...
 
 class PermissionUpdate(BaseUpdateSchema):
     """
@@ -4619,7 +4620,8 @@ class BulkPermissionUpdate(BaseUpdateSchema):
     @classmethod
     def validate_permissions(cls, v: Dict[str, bool | int | Decimal]) -> Dict[str, bool | int | Decimal]:
         """Validate permissions using PermissionUpdate validator."""
-        return PermissionUpdate.validate_permissions(v)
+        # Reuse the validation logic from PermissionUpdate
+        return PermissionUpdate.model_fields["permissions"].validators[0](v)
 
 
 class PermissionTemplate(BaseSchema):
@@ -4956,13 +4958,13 @@ class PermissionAuditLog(BaseSchema):
         description="Approval timestamp",
     )
 
-    @computed_field  # type: ignore[misc]
+    @computed_field
     @property
     def changes_count(self) -> int:
         """Count of permission changes made."""
         return len(self.permission_changes)
 
-    @computed_field  # type: ignore[misc]
+    @computed_field
     @property
     def change_summary(self) -> str:
         """Human-readable summary of changes."""
@@ -4971,7 +4973,7 @@ class PermissionAuditLog(BaseSchema):
         
         return f"{self.change_type.title()}: {self.changes_count} permission(s) modified"
 
-# --- File: D:\Last Github Push\Last\HOStel-back\app\schemas\supervisor\supervisor_profile.py ---
+# --- File: D:\Last Github Push\Last\Hostel-Main\app\schemas\supervisor\supervisor_profile.py ---
 # --- File: app/schemas/supervisor/supervisor_profile.py ---
 """
 Supervisor profile schemas with employment and personal information.
@@ -5063,14 +5065,14 @@ class SupervisorEmployment(BaseSchema):
         description="Last salary revision Date",
     )
 
-    @computed_field  # type: ignore[misc]
+    @computed_field
     @property
     def tenure_days(self) -> int:
         """Calculate total tenure in days."""
         end_date = self.termination_date or Date.today()
         return (end_date - self.join_date).days
 
-    @computed_field  # type: ignore[misc]
+    @computed_field
     @property
     def tenure_display(self) -> str:
         """Get human-readable tenure."""
@@ -5091,13 +5093,13 @@ class SupervisorEmployment(BaseSchema):
         
         return f"{years}y {remaining_months}m"
 
-    @computed_field  # type: ignore[misc]
+    @computed_field
     @property
     def is_contract_employee(self) -> bool:
         """Check if employee is on contract."""
         return self.employment_type == EmploymentType.CONTRACT
 
-    @computed_field  # type: ignore[misc]
+    @computed_field
     @property
     def contract_status(self) -> Optional[str]:
         """Get contract status for contract employees."""
@@ -5206,7 +5208,7 @@ class PerformanceSummary(BaseSchema):
         description="Number of student feedback responses",
     )
 
-    @computed_field  # type: ignore[misc]
+    @computed_field
     @property
     def overall_efficiency_score(self) -> Decimal:
         """Calculate overall efficiency score."""
@@ -5219,7 +5221,7 @@ class PerformanceSummary(BaseSchema):
         average_score = sum(scores) / len(scores)
         return Decimal(str(average_score)).quantize(Decimal("0.1"))
 
-    @computed_field  # type: ignore[misc]
+    @computed_field
     @property
     def performance_level(self) -> str:
         """Categorize performance level."""
@@ -5270,14 +5272,14 @@ class EmploymentHistory(BaseSchema):
         description="Performance rating for this period",
     )
 
-    @computed_field  # type: ignore[misc]
+    @computed_field
     @property
     def duration_days(self) -> int:
         """Calculate duration of this assignment."""
         end = self.end_date or Date.today()
         return (end - self.start_date).days
 
-    @computed_field  # type: ignore[misc]
+    @computed_field
     @property
     def is_current(self) -> bool:
         """Check if this is the current assignment."""
@@ -5420,7 +5422,7 @@ class SupervisorProfile(BaseSchema):
         description="Last activity timestamp",
     )
 
-    @computed_field  # type: ignore[misc]
+    @computed_field
     @property
     def total_experience_days(self) -> int:
         """Calculate total experience across all assignments."""
@@ -5432,7 +5434,7 @@ class SupervisorProfile(BaseSchema):
         total_days += self.employment.tenure_days
         return total_days
 
-    @computed_field  # type: ignore[misc]
+    @computed_field
     @property
     def experience_display(self) -> str:
         """Get human-readable total experience."""
@@ -5453,7 +5455,7 @@ class SupervisorProfile(BaseSchema):
         
         return f"{years}y {remaining_months}m"
 
-    @computed_field  # type: ignore[misc]
+    @computed_field
     @property
     def hostels_worked(self) -> int:
         """Count number of different hostels worked at."""
@@ -5511,7 +5513,7 @@ class SupervisorProfileUpdate(BaseUpdateSchema):
             return v.replace(" ", "").replace("-", "").strip()
         return v
 
-# --- File: D:\Last Github Push\Last\HOStel-back\app\schemas\supervisor\supervisor_response.py ---
+# --- File: D:\Last Github Push\Last\Hostel-Main\app\schemas\supervisor\supervisor_response.py ---
 # --- File: app/schemas/supervisor/supervisor_response.py ---
 """
 Supervisor response schemas for API responses.
@@ -5575,19 +5577,19 @@ class SupervisorResponse(BaseResponseSchema):
     assigned_by: str = Field(..., description="Admin who assigned")
     assigned_date: Date = Field(..., description="Assignment Date")
 
-    @computed_field  # type: ignore[misc]
+    @computed_field
     @property
     def tenure_days(self) -> int:
         """Calculate tenure in days since joining."""
         return (Date.today() - self.join_date).days
 
-    @computed_field  # type: ignore[misc]
+    @computed_field
     @property
     def tenure_months(self) -> int:
         """Calculate approximate tenure in months."""
         return self.tenure_days // 30
 
-    @computed_field  # type: ignore[misc]
+    @computed_field
     @property
     def is_probation(self) -> bool:
         """Check if supervisor is in probation period (first 3 months)."""
@@ -5722,7 +5724,7 @@ class SupervisorDetail(BaseResponseSchema):
         description="Administrative notes",
     )
 
-    @computed_field  # type: ignore[misc]
+    @computed_field
     @property
     def age(self) -> Optional[int]:
         """Calculate age from Date of birth."""
@@ -5737,31 +5739,31 @@ class SupervisorDetail(BaseResponseSchema):
         )
         return age
 
-    @computed_field  # type: ignore[misc]
+    @computed_field
     @property
     def tenure_months(self) -> int:
         """Calculate tenure in complete months."""
         return (Date.today() - self.join_date).days // 30
 
-    @computed_field  # type: ignore[misc]
+    @computed_field
     @property
     def tenure_years(self) -> int:
         """Calculate tenure in complete years."""
         return self.tenure_months // 12
 
-    @computed_field  # type: ignore[misc]
+    @computed_field
     @property
     def is_probation(self) -> bool:
         """Check if supervisor is in probation period."""
         return self.tenure_months < 3
 
-    @computed_field  # type: ignore[misc]
+    @computed_field
     @property
     def can_work(self) -> bool:
         """Check if supervisor is currently allowed to work."""
         return self.is_active and self.status == SupervisorStatus.ACTIVE
 
-    @computed_field  # type: ignore[misc]
+    @computed_field
     @property
     def suspension_days_remaining(self) -> Optional[int]:
         """Calculate remaining suspension days if currently suspended."""
@@ -5770,7 +5772,7 @@ class SupervisorDetail(BaseResponseSchema):
         
         remaining = (self.suspension_end_date - Date.today()).days
         return max(0, remaining)
-
+# Continuing supervisor_response.py...
 
 class SupervisorListItem(BaseSchema):
     """
@@ -5821,13 +5823,13 @@ class SupervisorListItem(BaseSchema):
         description="Last login",
     )
 
-    @computed_field  # type: ignore[misc]
+    @computed_field
     @property
     def tenure_months(self) -> int:
         """Calculate tenure in months."""
         return (Date.today() - self.join_date).days // 30
 
-    @computed_field  # type: ignore[misc]
+    @computed_field
     @property
     def display_status(self) -> str:
         """Get human-readable status."""
@@ -5891,7 +5893,7 @@ class SupervisorSummary(BaseSchema):
         description="Currently online",
     )
 
-    @computed_field  # type: ignore[misc]
+    @computed_field
     @property
     def complaint_resolution_rate(self) -> Decimal:
         """Calculate complaint resolution rate percentage."""
@@ -5905,7 +5907,7 @@ class SupervisorSummary(BaseSchema):
         )
         return Decimal(str(rate)).quantize(Decimal("0.01"))
 
-    @computed_field  # type: ignore[misc]
+    @computed_field
     @property
     def activity_status(self) -> str:
         """Get human-readable activity status."""
@@ -5990,14 +5992,14 @@ class SupervisorEmploymentInfo(BaseSchema):
         description="Rehire eligibility",
     )
 
-    @computed_field  # type: ignore[misc]
+    @computed_field
     @property
     def tenure_days(self) -> int:
         """Calculate total tenure in days."""
         end_date = self.termination_date or Date.today()
         return (end_date - self.join_date).days
 
-    @computed_field  # type: ignore[misc]
+    @computed_field
     @property
     def tenure_display(self) -> str:
         """Get human-readable tenure."""
@@ -6018,7 +6020,7 @@ class SupervisorEmploymentInfo(BaseSchema):
         
         return f"{years}y {remaining_months}m"
 
-    @computed_field  # type: ignore[misc]
+    @computed_field
     @property
     def is_contract_expiring_soon(self) -> bool:
         """Check if contract expires within 30 days."""
@@ -6028,7 +6030,7 @@ class SupervisorEmploymentInfo(BaseSchema):
         days_until_expiry = (self.contract_end_date - Date.today()).days
         return 0 < days_until_expiry <= 30
 
-    @computed_field  # type: ignore[misc]
+    @computed_field
     @property
     def contract_status(self) -> str:
         """Get contract status description."""
@@ -6166,7 +6168,7 @@ class SupervisorStatistics(BaseSchema):
         description="Calculated performance score",
     )
 
-    @computed_field  # type: ignore[misc]
+    @computed_field
     @property
     def complaint_resolution_rate(self) -> Decimal:
         """Calculate complaint resolution rate percentage."""
@@ -6176,7 +6178,7 @@ class SupervisorStatistics(BaseSchema):
         rate = (self.complaints_resolved / self.total_complaints_assigned * 100)
         return Decimal(str(rate)).quantize(Decimal("0.01"))
 
-    @computed_field  # type: ignore[misc]
+    @computed_field
     @property
     def maintenance_completion_rate(self) -> Decimal:
         """Calculate maintenance completion rate percentage."""
@@ -6186,7 +6188,7 @@ class SupervisorStatistics(BaseSchema):
         rate = (self.maintenance_completed / self.maintenance_requests_created * 100)
         return Decimal(str(rate)).quantize(Decimal("0.01"))
 
-    @computed_field  # type: ignore[misc]
+    @computed_field
     @property
     def attendance_punctuality_rate(self) -> Decimal:
         """Calculate attendance marking punctuality rate."""
@@ -6196,7 +6198,7 @@ class SupervisorStatistics(BaseSchema):
         rate = (self.attendance_marked_on_time / self.attendance_records_created * 100)
         return Decimal(str(rate)).quantize(Decimal("0.01"))
 
-    @computed_field  # type: ignore[misc]
+    @computed_field
     @property
     def activity_rate(self) -> Decimal:
         """Calculate activity rate (active days / total days in period)."""
@@ -6210,7 +6212,7 @@ class SupervisorStatistics(BaseSchema):
         rate = (self.active_days / total_days * 100)
         return Decimal(str(rate)).quantize(Decimal("0.01"))
 
-    @computed_field  # type: ignore[misc]
+    @computed_field
     @property
     def performance_grade(self) -> str:
         """Get performance grade based on overall score."""
@@ -6229,7 +6231,7 @@ class SupervisorStatistics(BaseSchema):
         else:
             return "D (Poor)"
 
-# --- File: D:\Last Github Push\Last\HOStel-back\app\schemas\supervisor\__init__.py ---
+# --- File: D:\Last Github Push\Last\Hostel-Main\app\schemas\supervisor\__init__.py ---
 # --- File: app/schemas/supervisor/__init__.py ---
 # app/schemas/supervisor/__init__.py
 """
@@ -6349,4 +6351,4 @@ __all__ = [
 ]
 
 
-# ===== Folder: D:\Last Github Push\Last\HOStel-back\app\schemas\supervisor\__pycache__ =====
+# ===== Folder: D:\Last Github Push\Last\Hostel-Main\app\schemas\supervisor\__pycache__ =====
