@@ -1,7 +1,5 @@
 # app/repositories/system/feature_flag_repository.py
-from __future__ import annotations
-
-from typing import List, Optional
+from typing import List, Union
 
 from sqlalchemy.orm import Session
 
@@ -13,7 +11,7 @@ class FeatureFlagRepository(BaseRepository[FeatureFlag]):
     def __init__(self, session: Session):
         super().__init__(session, FeatureFlag)
 
-    def get_by_name(self, name: str) -> Optional[FeatureFlag]:
+    def get_by_name(self, name: str) -> Union[FeatureFlag, None]:
         stmt = self._base_select().where(FeatureFlag.name == name)
         return self.session.execute(stmt).scalar_one_or_none()
 

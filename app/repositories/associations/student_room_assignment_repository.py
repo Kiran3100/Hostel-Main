@@ -1,8 +1,6 @@
 # app/repositories/associations/student_room_assignment_repository.py
-from __future__ import annotations
-
 from datetime import date
-from typing import List, Optional
+from typing import List, Union
 from uuid import UUID
 
 from sqlalchemy import and_, select
@@ -24,7 +22,7 @@ class StudentRoomAssignmentRepository(BaseRepository[StudentRoomAssignment]):
         )
         return self.session.execute(stmt).scalars().all()
 
-    def get_active_assignment(self, student_id: UUID) -> Optional[StudentRoomAssignment]:
+    def get_active_assignment(self, student_id: UUID) -> Union[StudentRoomAssignment, None]:
         stmt = (
             self._base_select()
             .where(

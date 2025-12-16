@@ -1,8 +1,6 @@
 # app/repositories/transactions/fee_structure_repository.py
-from __future__ import annotations
-
 from datetime import date
-from typing import List, Optional
+from typing import List, Union
 from uuid import UUID
 
 from sqlalchemy import and_
@@ -23,7 +21,7 @@ class FeeStructureRepository(BaseRepository[FeeStructure]):
         room_type: RoomType,
         fee_type: FeeType,
         as_of: date,
-    ) -> Optional[FeeStructure]:
+    ) -> Union[FeeStructure, None]:
         stmt = (
             self._base_select()
             .where(

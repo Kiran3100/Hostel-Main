@@ -1,5 +1,4 @@
 # models/mixins/validation_mixin.py
-from __future__ import annotations
 
 
 class ValidationMixin:

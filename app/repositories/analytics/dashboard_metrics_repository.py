@@ -1,8 +1,6 @@
 # app/repositories/analytics/dashboard_metrics_repository.py
-from __future__ import annotations
-
 from datetime import date
-from typing import Optional
+from typing import Union
 from uuid import UUID
 
 from sqlalchemy import and_, select
@@ -20,10 +18,10 @@ class DashboardMetricsRepository(BaseRepository[DashboardMetrics]):
         self,
         *,
         scope_type: str,
-        scope_id: Optional[UUID],
+        scope_id: Union[UUID, None],
         period_start: date,
         period_end: date,
-    ) -> Optional[DashboardMetrics]:
+    ) -> Union[DashboardMetrics, None]:
         stmt = (
             self._base_select()
             .where(
@@ -41,8 +39,8 @@ class DashboardMetricsRepository(BaseRepository[DashboardMetrics]):
         self,
         *,
         scope_type: str,
-        scope_id: Optional[UUID],
-    ) -> Optional[DashboardMetrics]:
+        scope_id: Union[UUID, None],
+    ) -> Union[DashboardMetrics, None]:
         stmt = (
             self._base_select()
             .where(

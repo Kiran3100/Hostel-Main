@@ -1,8 +1,6 @@
 # app/repositories/analytics/supervisor_performance_metrics_repository.py
-from __future__ import annotations
-
 from datetime import date
-from typing import Optional
+from typing import Union
 from uuid import UUID
 
 from sqlalchemy import and_, select
@@ -23,7 +21,7 @@ class SupervisorPerformanceMetricsRepository(BaseRepository[SupervisorPerformanc
         hostel_id: UUID,
         period_start: date,
         period_end: date,
-    ) -> Optional[SupervisorPerformanceMetrics]:
+    ) -> Union[SupervisorPerformanceMetrics, None]:
         stmt = (
             self._base_select()
             .where(

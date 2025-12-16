@@ -1,7 +1,5 @@
 # app/repositories/content/review_repository.py
-from __future__ import annotations
-
-from typing import List, Optional
+from typing import List, Union
 from uuid import UUID
 
 from sqlalchemy import func, select

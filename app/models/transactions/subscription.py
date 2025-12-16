@@ -1,15 +1,13 @@
 # app.models/transactions/subscription.py
-from __future__ import annotations
-
 from datetime import date
 from decimal import Decimal
-from typing import Dict, Optional
+from typing import Dict, Union
 from uuid import UUID
 
-from sqlalchemy import Date, Enum as SAEnum, JSON, Numeric, String, Boolean, ForeignKey
+from sqlalchemy import Date, Enum as SAEnum, JSON, Numeric, String, Boolean, ForeignKey, Integer
 from sqlalchemy.orm import Mapped, mapped_column
 
-from app.schemas.common.enums import SubscriptionStatus, BillingCycle, SubscriptionPlan
+from app.schemas.common.enums import SubscriptionStatus, BillingCycle, SubscriptionPlan as SubscriptionPlanEnum
 from app.models.base import BaseItem
 
 
@@ -19,9 +17,9 @@ class SubscriptionPlan(BaseItem):
 
     plan_name: Mapped[str] = mapped_column(String(100), unique=True)
     display_name: Mapped[str] = mapped_column(String(100))
-    plan_type: Mapped[SubscriptionPlan] = mapped_column(SAEnum(SubscriptionPlan, name="subscription_plan"))
+    plan_type: Mapped[SubscriptionPlanEnum] = mapped_column(SAEnum(SubscriptionPlanEnum, name="subscription_plan"))
 
-    description: Mapped[Optional[str]] = mapped_column(String(1000))
+    description: Mapped[Union[str, None]] = mapped_column(String(1000))
 
     price_monthly: Mapped[Decimal] = mapped_column(Numeric(10, 2))
     price_yearly: Mapped[Decimal] = mapped_column(Numeric(10, 2))
@@ -29,13 +27,13 @@ class SubscriptionPlan(BaseItem):
 
     features: Mapped[Dict[str, object]] = mapped_column(JSON, default=dict)
 
-    max_hostels: Mapped[Optional[int]] = mapped_column()
-    max_rooms_per_hostel: Mapped[Optional[int]] = mapped_column()
-    max_students: Mapped[Optional[int]] = mapped_column()
+    max_hostels: Mapped[Union[int, None]] = mapped_column()
+    max_rooms_per_hostel: Mapped[Union[int, None]] = mapped_column()
+    max_students: Mapped[Union[int, None]] = mapped_column()
 
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     is_public: Mapped[bool] = mapped_column(Boolean, default=True)
-    sort_order: Mapped[int] = mapped_column(default=0)
+    sort_order: Mapped[int] = mapped_column(Integer, default=0)
 
 
 class Subscription(BaseItem):
@@ -55,6 +53,6 @@ class Subscription(BaseItem):
     end_date: Mapped[date] = mapped_column(Date)
 
     auto_renew: Mapped[bool] = mapped_column(Boolean, default=True)
-    next_billing_date: Mapped[Optional[date]] = mapped_column(Date)
+    next_billing_date: Mapped[Union[date, None]] = mapped_column(Date)
 
     status: Mapped[SubscriptionStatus] = mapped_column(SAEnum(SubscriptionStatus, name="subscription_status"))

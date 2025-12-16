@@ -1,6 +1,4 @@
 # app/repositories/services/leave_application_repository.py
-from __future__ import annotations
-
 from datetime import date
 from typing import List
 from uuid import UUID

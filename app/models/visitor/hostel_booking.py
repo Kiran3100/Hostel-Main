@@ -1,9 +1,7 @@
 # app.models/visitor/hostel_booking.py
-from __future__ import annotations
-
 from datetime import date, datetime
 from decimal import Decimal
-from typing import Optional
+from typing import Union
 from uuid import UUID
 
 from sqlalchemy import Date, DateTime, Integer, Numeric, String
@@ -32,13 +30,11 @@ class HostelBooking(BaseVisitorItem):
 
     booking_status: Mapped[str] = mapped_column(String(50), index=True)
 
-    confirmed_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
-    checked_in_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
-    checked_out_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
-    cancelled_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
-    cancellation_reason: Mapped[Optional[str]] = mapped_column(String(500))
+    confirmed_at: Mapped[Union[datetime, None]] = mapped_column(DateTime(timezone=True))
+    checked_in_at: Mapped[Union[datetime, None]] = mapped_column(DateTime(timezone=True))
+    checked_out_at: Mapped[Union[datetime, None]] = mapped_column(DateTime(timezone=True))
+    cancelled_at: Mapped[Union[datetime, None]] = mapped_column(DateTime(timezone=True))
+    cancellation_reason: Mapped[Union[str, None]] = mapped_column(String(500))
 
-    special_requests: Mapped[Optional[str]] = mapped_column(String(1000))
+    special_requests: Mapped[Union[str, None]] = mapped_column(String(1000))
     guest_count: Mapped[int] = mapped_column(Integer, default=1)
-
-    # you might add a relationship to Payment later (1:1)

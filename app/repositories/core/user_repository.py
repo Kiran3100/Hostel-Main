@@ -1,7 +1,5 @@
 # app/repositories/core/user_repository.py
-from __future__ import annotations
-
-from typing import List, Optional
+from typing import List, Union
 from uuid import UUID
 
 from sqlalchemy import select
@@ -16,11 +14,11 @@ class UserRepository(BaseRepository[User]):
     def __init__(self, session: Session):
         super().__init__(session, User)
 
-    def get_by_email(self, email: str) -> Optional[User]:
+    def get_by_email(self, email: str) -> Union[User, None]:
         stmt = self._base_select().where(User.email == email)
         return self.session.execute(stmt).scalar_one_or_none()
 
-    def get_by_phone(self, phone: str) -> Optional[User]:
+    def get_by_phone(self, phone: str) -> Union[User, None]:
         stmt = self._base_select().where(User.phone == phone)
         return self.session.execute(stmt).scalar_one_or_none()
 

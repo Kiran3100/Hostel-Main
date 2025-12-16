@@ -1,7 +1,5 @@
 # app/repositories/core/supervisor_repository.py
-from __future__ import annotations
-
-from typing import List, Optional
+from typing import List, Union
 from uuid import UUID
 
 from sqlalchemy import select
@@ -20,7 +18,7 @@ class SupervisorRepository(BaseRepository[Supervisor]):
         self,
         hostel_id: UUID,
         *,
-        status: Optional[SupervisorStatus] = None,
+        status: Union[SupervisorStatus, None] = None,
     ) -> List[Supervisor]:
         stmt = self._base_select().where(Supervisor.hostel_id == hostel_id)
         if status is not None:

@@ -1,8 +1,6 @@
 # app/repositories/analytics/analytics_data_repository.py
-from __future__ import annotations
-
 from datetime import datetime
-from typing import Optional
+from typing import Union
 
 from sqlalchemy import and_, select
 from sqlalchemy.orm import Session
@@ -20,7 +18,7 @@ class AnalyticsDataRepository(BaseRepository[AnalyticsData]):
         *,
         period_start: datetime,
         period_end: datetime,
-    ) -> Optional[AnalyticsData]:
+    ) -> Union[AnalyticsData, None]:
         stmt = (
             self._base_select()
             .where(
@@ -32,6 +30,6 @@ class AnalyticsDataRepository(BaseRepository[AnalyticsData]):
         )
         return self.session.execute(stmt).scalar_one_or_none()
 
-    def get_latest(self) -> Optional[AnalyticsData]:
+    def get_latest(self) -> Union[AnalyticsData, None]:
         stmt = self._base_select().order_by(AnalyticsData.period_end.desc()).limit(1)
         return self.session.execute(stmt).scalar_one_or_none()

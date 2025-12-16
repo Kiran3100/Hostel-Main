@@ -1,8 +1,6 @@
 # app.models/workflows/approval_workflow.py
-from __future__ import annotations
-
 from datetime import datetime
-from typing import Optional
+from typing import Union
 from uuid import UUID
 
 from sqlalchemy import DateTime, String, ForeignKey
@@ -23,10 +21,10 @@ class ApprovalWorkflow(BaseItem):
 
     status: Mapped[str] = mapped_column(String(50))  # pending, approved, rejected
     requested_by_id: Mapped[UUID] = mapped_column(ForeignKey("core_user.id"))
-    approver_id: Mapped[Optional[UUID]] = mapped_column(ForeignKey("core_user.id"))
+    approver_id: Mapped[Union[UUID, None]] = mapped_column(ForeignKey("core_user.id"))
 
     requested_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=datetime.utcnow)
-    decided_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
+    decided_at: Mapped[Union[datetime, None]] = mapped_column(DateTime(timezone=True))
 
-    reason: Mapped[Optional[str]] = mapped_column()
-    decision_notes: Mapped[Optional[str]] = mapped_column()
+    reason: Mapped[Union[str, None]] = mapped_column()
+    decision_notes: Mapped[Union[str, None]] = mapped_column()

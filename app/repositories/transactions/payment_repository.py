@@ -1,8 +1,6 @@
 # app/repositories/transactions/payment_repository.py
-from __future__ import annotations
-
 from datetime import date
-from typing import List, Optional
+from typing import List, Union
 from uuid import UUID
 
 from sqlalchemy import and_
@@ -21,7 +19,7 @@ class PaymentRepository(BaseRepository[Payment]):
         self,
         student_id: UUID,
         *,
-        status: Optional[PaymentStatus] = None,
+        status: Union[PaymentStatus, None] = None,
     ) -> List[Payment]:
         stmt = self._base_select().where(Payment.student_id == student_id)
         if status is not None:
@@ -33,7 +31,7 @@ class PaymentRepository(BaseRepository[Payment]):
         self,
         hostel_id: UUID,
         *,
-        on_or_before: Optional[date] = None,
+        on_or_before: Union[date, None] = None,
     ) -> List[Payment]:
         stmt = self._base_select().where(
             Payment.hostel_id == hostel_id,

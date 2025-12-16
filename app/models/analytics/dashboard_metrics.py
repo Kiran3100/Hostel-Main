@@ -1,8 +1,7 @@
 # app.models/analytics/dashboard_metrics.py
-from __future__ import annotations
-
 from datetime import datetime, date
 from decimal import Decimal
+from typing import Union
 from uuid import UUID
 
 from sqlalchemy import Date, DateTime, Numeric, Integer, String
@@ -21,7 +20,7 @@ class DashboardMetrics(BaseItem):
     scope_type: Mapped[str] = mapped_column(
         String(20)
     )  # hostel | platform | admin
-    scope_id: Mapped[UUID | None] = mapped_column(nullable=True)
+    scope_id: Mapped[Union[UUID, None]] = mapped_column(nullable=True)
 
     period_start: Mapped[date] = mapped_column(Date)
     period_end: Mapped[date] = mapped_column(Date)
