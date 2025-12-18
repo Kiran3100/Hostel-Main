@@ -1,4 +1,4 @@
-# --- File: app/schemas/search/search_autocomplete.py ---
+    # --- File: app/schemas/search/search_autocomplete.py ---
 """
 Autocomplete and suggestion schemas for search.
 
