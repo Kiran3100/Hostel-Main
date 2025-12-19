@@ -10,4 +10,4 @@
         
     -   python -m scripts.seed_all
         
-    -   python -m uvicorn app.main:app --reload
+    -   python -m uvicorn app.main:app --reload                                     

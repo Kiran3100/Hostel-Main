@@ -11,7 +11,7 @@ from uuid import UUID
 
 from app.core import get_session
 from app.core.security import decode_token, TokenDecodeError
-from app.models.core import User
+from app.models import user
 from app.schemas.common.enums import UserRole
 from app.services.common.unit_of_work import UnitOfWork
 from app.services.auth import (
