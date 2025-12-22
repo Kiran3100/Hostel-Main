@@ -1,0 +1,169 @@
+# Classes in Core Module Files
+
+## Dependencies (dependencies.py)
+- **DatabaseDependency**: Provides database session dependency
+- **AuthenticationDependency**: Handles user authentication from JWT tokens
+- **AuthorizationDependency**: Manages permission-based authorization
+- **TenantContextDependency**: Extracts multi-tenant context
+- **CurrentUserDependency**: Loads user with role relationships
+- **SuperAdminDependency**: Super admin access control
+- **AdminDependency**: Admin level access control
+- **SupervisorDependency**: Supervisor level access control
+- **StudentDependency**: Student access control
+- **HostelContextDependency**: Hostel context validation
+- **PaginationDependency**: Pagination parameter handling
+- **FilterDependency**: Query filtering
+- **CacheDependency**: Cache service provider
+- **NotificationDependency**: Notification service provider
+- **FileUploadDependency**: File upload validation
+
+## Exceptions (exceptions.py)
+- **BaseHostelException**: Base exception class
+- **AuthenticationException**: Authentication failures
+- **AuthorizationException**: Permission/access failures
+- **ValidationException**: Data validation errors
+- **BusinessLogicException**: Business rule violations
+- **DatabaseException**: Database operation failures
+- **ExternalServiceException**: External service failures
+- **PaymentException**: Payment processing errors
+- **BookingException**: Booking operation errors
+- **RoomUnavailableException**: Room availability errors
+- **InsufficientPermissionsException**: Permission errors
+- **TokenExpiredException**: Token expiration errors
+- **InvalidCredentialsException**: Invalid credential errors
+- **TenantNotFoundException**: Tenant not found errors
+- **HostelNotFoundException**: Hostel not found errors
+- **StudentNotFoundException**: Student not found errors
+- **DuplicateResourceException**: Resource already exists errors
+- **FileUploadException**: File upload errors
+- **NotificationException**: Notification delivery errors
+- **MaintenanceException**: Maintenance operation errors
+- **ComplaintException**: Complaint handling errors
+
+## Domain Events (domain_events.py)
+- **EventCategory**: Event category enum
+- **EventSeverity**: Event severity enum
+- **BaseDomainEvent**: Base event class
+- Various domain-specific events:
+  - User events (UserRegisteredEvent, UserVerifiedEvent, etc.)
+  - Booking events (BookingCreatedEvent, BookingConfirmedEvent, etc.)
+  - Payment events (PaymentProcessedEvent, PaymentFailedEvent, etc.)
+  - Complaint events (ComplaintCreatedEvent, ComplaintResolvedEvent, etc.)
+  - Maintenance events
+  - Student events
+  - Room events
+  - Attendance events
+  - Announcement events
+  - And more...
+
+## Event Bus (event_bus.py)
+- **EventPriority**: Event priority enum
+- **EventMetadata**: Event tracking metadata
+- **EventBus**: Central event dispatcher
+- **EventDispatcher**: Event distribution manager
+- **AsyncEventBus**: Async event processing
+- **EventQueue**: Event queuing manager
+- **EventRouter**: Event routing and filtering
+- **EventPriorityManager**: Priority-based processing
+- **EventBatch**: Batch event processing
+
+## Event Handlers (handlers.py)
+- **EventHandlerRegistry**: Handler registration
+- **BaseEventHandler**: Base handler class
+- **AsyncEventHandler**: Async handler with concurrency
+- **RetryableEventHandler**: Handler with retry capability
+- **EventHandlerChain**: Chain of responsibility
+- **EventHandlerMetrics**: Performance metrics
+- **EventHandlerValidator**: Handler validation
+
+## Authentication Middleware (authentication.py)
+- **JWTAuthenticationMiddleware**: JWT validation
+- **SessionAuthenticationMiddleware**: Session-based auth
+- **TokenValidationMiddleware**: Token refresh/validation
+- **DeviceTrackingMiddleware**: Device fingerprinting
+- **LoginAttemptMiddleware**: Failed login tracking
+- **SecurityEventMiddleware**: Security event logging
+
+## Authorization Middleware (authorization.py)
+- **RoleBasedAuthorizationMiddleware**: Role-based access
+- **PermissionCheckMiddleware**: Permission validation
+- **HostelAccessMiddleware**: Hostel-specific access
+- **ResourceOwnershipMiddleware**: Resource ownership checks
+- **SuperAdminOverrideMiddleware**: Admin override
+- **PermissionCacheMiddleware**: Permission caching
+
+## Error Handling Middleware (error_handling.py)
+- **GlobalExceptionHandler**: Exception handling
+- **ValidationErrorHandler**: Validation error formatting
+- **DatabaseErrorHandler**: Database error handling
+- **ExternalServiceErrorHandler**: External service errors
+- **BusinessLogicErrorHandler**: Business logic errors
+- **SecurityExceptionHandler**: Security exception handling
+- **ErrorResponseFormatter**: Error response standardization
+- **ErrorNotificationHandler**: Error notifications
+
+## Rate Limiting Middleware (rate_limiting.py)
+- **GlobalRateLimitMiddleware**: Global API rate limits
+- **UserSpecificRateLimitMiddleware**: User-specific limits
+- **EndpointRateLimitMiddleware**: Endpoint-specific limits
+- **IPBasedRateLimitMiddleware**: IP-based limits
+- **APIQuotaMiddleware**: Subscription quotas
+- **RateLimitExceptionMiddleware**: Rate limit exceptions
+
+## Request Logging Middleware (request_logging.py)
+- **RequestLoggingMiddleware**: Request/response logging
+- **AuditTrailMiddleware**: Audit trail generation
+- **PerformanceMonitoringMiddleware**: Performance tracking
+- **SensitiveDataMaskingMiddleware**: Data masking
+- **RequestTrackingMiddleware**: Request correlation
+- **SlowQueryLoggingMiddleware**: Slow query logging
+
+## Tenant Context Middleware (tenant_context.py)
+- **TenantContextMiddleware**: Tenant resolution
+- **HostelContextMiddleware**: Hostel context
+- **TenantIsolationMiddleware**: Data isolation
+- **CrossTenantAccessMiddleware**: Cross-tenant access
+- **ContextSwitchTrackingMiddleware**: Context tracking
+
+## Encryption (encryption.py)
+- **DataEncryption**: Basic encryption operations
+- **FieldEncryption**: Database field encryption
+- **FileEncryption**: File encryption
+- **KeyManager**: Encryption key management
+- **TokenEncryption**: Secure token encryption
+- **PIIEncryption**: Personal data protection
+- **EncryptionKeyRotation**: Key rotation management
+
+## JWT Handler (jwt_handler.py)
+- **JWTManager**: JWT token creation/validation
+- **TokenGenerator**: Token generation utility
+- **TokenValidator**: Token validation utility
+- **RefreshTokenManager**: Refresh token management
+- **TokenBlacklistManager**: Token revocation
+- **ClaimsExtractor**: JWT claims extraction
+- **TokenRotationManager**: Token rotation utility
+
+## Password Hasher (password_hasher.py)
+- **PasswordHasher**: Password hashing/verification
+- **PasswordValidator**: Password strength validation
+- **PasswordHistoryManager**: Password history tracking
+- **PasswordPolicyEnforcer**: Password policy management
+- **SecureRandomGenerator**: Secure random generation
+- **SaltGenerator**: Salt generation utility
+
+## Permissions (permissions.py)
+- **PermissionLevel**: Permission level enum
+- **ResourceType**: Resource type enum
+- **PermissionContext**: Permission context data
+- **PermissionChecker**: Permission validation
+- **RolePermissionManager**: Role-based permissions
+- **ResourcePermissionChecker**: Resource-specific checks
+- **PermissionDecorator**: Permission decorators
+- **AdminPermissionChecker**: Admin permission checks
+- **SupervisorPermissionChecker**: Supervisor permissions
+- **StudentPermissionChecker**: Student permissions
+- **HostelPermissionChecker**: Hostel permissions
+- **CrossHostelPermissionChecker**: Cross-hostel access
+- **PermissionCache**: Permission result caching
+
+These classes represent a comprehensive architecture for handling authentication, authorization, error management, event handling, encryption, and other core functionalities in the Hostel Management System.

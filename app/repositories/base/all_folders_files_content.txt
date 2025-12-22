@@ -1,0 +1,5129 @@
+### Combined Content from Folder: C:\Hostel-Main\app\repositories\base ###
+
+
+
+# ===== Folder: C:\Hostel-Main\app\repositories\base =====
+
+# --- File: C:\Hostel-Main\app\repositories\base\base_repository.py ---
+"""
+Base repository with standardized CRUD operations, transaction management, and error handling.
+
+Provides foundation for all domain repositories with type safety,
+audit integration, and multi-tenant support.
+"""
+
+from typing import Any, Dict, Generic, List, Optional, Type, TypeVar, Union
+from uuid import UUID
+from datetime import datetime
+from contextlib import contextmanager
+
+from sqlalchemy import and_, or_, func, select, update, delete
+from sqlalchemy.orm import Session, Query
+from sqlalchemy.exc import SQLAlchemyError, IntegrityError
+from sqlalchemy.inspection import inspect
+
+from app.models.base import BaseModel, SoftDeleteModel, TenantModel
+from app.core.logging import get_logger
+from app.core.exceptions import (
+    RepositoryError,
+    EntityNotFoundError,
+    EntityAlreadyExistsError,
+    OptimisticLockError,
+    ValidationError
+)
+
+logger = get_logger(__name__)
+
+# Type variable for model classes
+ModelType = TypeVar("ModelType", bound=BaseModel)
+
+
+class AuditContext:
+    """Context for audit trail information."""
+    
+    def __init__(
+        self,
+        user_id: Optional[UUID] = None,
+        ip_address: Optional[str] = None,
+        action: Optional[str] = None,
+        metadata: Optional[Dict[str, Any]] = None
+    ):
+        self.user_id = user_id
+        self.ip_address = ip_address
+        self.action = action
+        self.metadata = metadata or {}
+        self.timestamp = datetime.utcnow()
+
+
+class BaseRepository(Generic[ModelType]):
+    """
+    Abstract base repository with standardized operations.
+    
+    Provides CRUD operations, transaction management, and error handling
+    for all domain repositories.
+    """
+    
+    def __init__(self, model: Type[ModelType], db: Session):
+        """
+        Initialize repository.
+        
+        Args:
+            model: SQLAlchemy model class
+            db: Database session
+        """
+        self.model = model
+        self.db = db
+        self._cache = None  # Will be injected by CachingRepository
+        self._is_soft_delete = issubclass(model, SoftDeleteModel)
+        self._is_tenant_model = issubclass(model, TenantModel)
+    
+    # ==================== Transaction Management ====================
+    
+    @contextmanager
+    def transaction(self):
+        """
+        Transaction context manager with automatic rollback.
+        
+        Usage:
+            with repository.transaction():
+                repository.create(entity)
+                repository.update(id, data)
+        """
+        try:
+            yield self.db
+            self.db.commit()
+        except Exception as e:
+            self.db.rollback()
+            logger.error(f"Transaction rollback: {str(e)}", exc_info=True)
+            raise RepositoryError(f"Transaction failed: {str(e)}") from e
+    
+    def begin_transaction(self):
+        """Begin new transaction."""
+        self.db.begin()
+    
+    def commit(self):
+        """Commit current transaction."""
+        try:
+            self.db.commit()
+        except SQLAlchemyError as e:
+            self.db.rollback()
+            raise RepositoryError(f"Commit failed: {str(e)}") from e
+    
+    def rollback(self):
+        """Rollback current transaction."""
+        self.db.rollback()
+    
+    # ==================== Create Operations ====================
+    
+    def create(
+        self,
+        entity: ModelType,
+        audit_context: Optional[AuditContext] = None,
+        commit: bool = True
+    ) -> ModelType:
+        """
+        Create new entity with audit logging.
+        
+        Args:
+            entity: Entity to create
+            audit_context: Audit information
+            commit: Whether to commit immediately
+            
+        Returns:
+            Created entity
+            
+        Raises:
+            EntityAlreadyExistsError: If entity already exists
+            ValidationError: If validation fails
+        """
+        try:
+            # Apply audit context
+            if audit_context and hasattr(entity, 'created_by'):
+                entity.created_by = audit_context.user_id
+            
+            # Add to session
+            self.db.add(entity)
+            
+            if commit:
+                self.db.commit()
+                self.db.refresh(entity)
+                
+                # Invalidate cache
+                if self._cache:
+                    self._cache.invalidate_entity(self.model.__tablename__, entity.id)
+            else:
+                self.db.flush()
+            
+            logger.info(f"Created {self.model.__name__} with id: {entity.id}")
+            return entity
+            
+        except IntegrityError as e:
+            self.db.rollback()
+            raise EntityAlreadyExistsError(
+                f"{self.model.__name__} already exists"
+            ) from e
+        except SQLAlchemyError as e:
+            self.db.rollback()
+            raise RepositoryError(f"Create failed: {str(e)}") from e
+    
+    def create_many(
+        self,
+        entities: List[ModelType],
+        audit_context: Optional[AuditContext] = None,
+        batch_size: int = 1000
+    ) -> List[ModelType]:
+        """
+        Bulk create with batch processing.
+        
+        Args:
+            entities: List of entities to create
+            audit_context: Audit information
+            batch_size: Number of entities per batch
+            
+        Returns:
+            List of created entities
+        """
+        created_entities = []
+        
+        try:
+            # Process in batches
+            for i in range(0, len(entities), batch_size):
+                batch = entities[i:i + batch_size]
+                
+                # Apply audit context to batch
+                if audit_context:
+                    for entity in batch:
+                        if hasattr(entity, 'created_by'):
+                            entity.created_by = audit_context.user_id
+                
+                # Bulk insert
+                self.db.bulk_save_objects(batch, return_defaults=True)
+                self.db.flush()
+                
+                created_entities.extend(batch)
+            
+            self.db.commit()
+            
+            # Invalidate cache
+            if self._cache:
+                self._cache.invalidate_pattern(f"{self.model.__tablename__}:*")
+            
+            logger.info(f"Bulk created {len(created_entities)} {self.model.__name__} entities")
+            return created_entities
+            
+        except SQLAlchemyError as e:
+            self.db.rollback()
+            raise RepositoryError(f"Bulk create failed: {str(e)}") from e
+    
+    # ==================== Read Operations ====================
+    
+    def find_by_id(
+        self,
+        id: Union[UUID, int],
+        include_deleted: bool = False
+    ) -> Optional[ModelType]:
+        """
+        Find entity by ID.
+        
+        Args:
+            id: Entity ID
+            include_deleted: Include soft-deleted entities
+            
+        Returns:
+            Entity or None
+        """
+        try:
+            query = self.db.query(self.model).filter(self.model.id == id)
+            
+            # Apply soft delete filter
+            if self._is_soft_delete and not include_deleted:
+                query = query.filter(self.model.is_deleted == False)
+            
+            return query.first()
+            
+        except SQLAlchemyError as e:
+            raise RepositoryError(f"Find by ID failed: {str(e)}") from e
+    
+    def get_by_id(
+        self,
+        id: Union[UUID, int],
+        include_deleted: bool = False
+    ) -> ModelType:
+        """
+        Get entity by ID or raise exception.
+        
+        Args:
+            id: Entity ID
+            include_deleted: Include soft-deleted entities
+            
+        Returns:
+            Entity
+            
+        Raises:
+            EntityNotFoundError: If entity not found
+        """
+        entity = self.find_by_id(id, include_deleted)
+        if not entity:
+            raise EntityNotFoundError(
+                f"{self.model.__name__} with id {id} not found"
+            )
+        return entity
+    
+    def find_all(
+        self,
+        skip: int = 0,
+        limit: int = 100,
+        include_deleted: bool = False
+    ) -> List[ModelType]:
+        """
+        Find all entities with pagination.
+        
+        Args:
+            skip: Number of records to skip
+            limit: Maximum number of records
+            include_deleted: Include soft-deleted entities
+            
+        Returns:
+            List of entities
+        """
+        try:
+            query = self.db.query(self.model)
+            
+            # Apply soft delete filter
+            if self._is_soft_delete and not include_deleted:
+                query = query.filter(self.model.is_deleted == False)
+            
+            return query.offset(skip).limit(limit).all()
+            
+        except SQLAlchemyError as e:
+            raise RepositoryError(f"Find all failed: {str(e)}") from e
+    
+    def find_by_criteria(
+        self,
+        criteria: Dict[str, Any],
+        skip: int = 0,
+        limit: int = 100,
+        order_by: Optional[List[str]] = None,
+        include_deleted: bool = False
+    ) -> List[ModelType]:
+        """
+        Find entities matching criteria.
+        
+        Args:
+            criteria: Filter criteria as key-value pairs
+            skip: Number of records to skip
+            limit: Maximum number of records
+            order_by: List of fields to order by (prefix with - for desc)
+            include_deleted: Include soft-deleted entities
+            
+        Returns:
+            List of matching entities
+        """
+        try:
+            query = self.db.query(self.model)
+            
+            # Apply criteria filters
+            for key, value in criteria.items():
+                if hasattr(self.model, key):
+                    column = getattr(self.model, key)
+                    if isinstance(value, (list, tuple)):
+                        query = query.filter(column.in_(value))
+                    else:
+                        query = query.filter(column == value)
+            
+            # Apply soft delete filter
+            if self._is_soft_delete and not include_deleted:
+                query = query.filter(self.model.is_deleted == False)
+            
+            # Apply ordering
+            if order_by:
+                for field in order_by:
+                    if field.startswith('-'):
+                        query = query.order_by(getattr(self.model, field[1:]).desc())
+                    else:
+                        query = query.order_by(getattr(self.model, field))
+            
+            return query.offset(skip).limit(limit).all()
+            
+        except SQLAlchemyError as e:
+            raise RepositoryError(f"Find by criteria failed: {str(e)}") from e
+    
+    def find_one_by_criteria(
+        self,
+        criteria: Dict[str, Any],
+        include_deleted: bool = False
+    ) -> Optional[ModelType]:
+        """
+        Find single entity matching criteria.
+        
+        Args:
+            criteria: Filter criteria
+            include_deleted: Include soft-deleted entities
+            
+        Returns:
+            Entity or None
+        """
+        results = self.find_by_criteria(criteria, limit=1, include_deleted=include_deleted)
+        return results[0] if results else None
+    
+    # ==================== Update Operations ====================
+    
+    def update(
+        self,
+        id: Union[UUID, int],
+        data: Dict[str, Any],
+        audit_context: Optional[AuditContext] = None,
+        version: Optional[int] = None,
+        commit: bool = True
+    ) -> ModelType:
+        """
+        Update entity with version control.
+        
+        Args:
+            id: Entity ID
+            data: Update data
+            audit_context: Audit information
+            version: Expected version for optimistic locking
+            commit: Whether to commit immediately
+            
+        Returns:
+            Updated entity
+            
+        Raises:
+            EntityNotFoundError: If entity not found
+            OptimisticLockError: If version mismatch
+        """
+        try:
+            entity = self.get_by_id(id)
+            
+            # Check version for optimistic locking
+            if version is not None and hasattr(entity, 'version'):
+                if entity.version != version:
+                    raise OptimisticLockError(
+                        f"Version mismatch: expected {version}, got {entity.version}"
+                    )
+            
+            # Apply updates
+            for key, value in data.items():
+                if hasattr(entity, key):
+                    setattr(entity, key, value)
+            
+            # Apply audit context
+            if audit_context and hasattr(entity, 'updated_by'):
+                entity.updated_by = audit_context.user_id
+            
+            # Increment version
+            if hasattr(entity, 'version'):
+                entity.version += 1
+            
+            if commit:
+                self.db.commit()
+                self.db.refresh(entity)
+                
+                # Invalidate cache
+                if self._cache:
+                    self._cache.invalidate_entity(self.model.__tablename__, id)
+            else:
+                self.db.flush()
+            
+            logger.info(f"Updated {self.model.__name__} with id: {id}")
+            return entity
+            
+        except SQLAlchemyError as e:
+            self.db.rollback()
+            raise RepositoryError(f"Update failed: {str(e)}") from e
+    
+    def update_many(
+        self,
+        criteria: Dict[str, Any],
+        data: Dict[str, Any],
+        audit_context: Optional[AuditContext] = None
+    ) -> int:
+        """
+        Bulk update entities matching criteria.
+        
+        Args:
+            criteria: Filter criteria
+            data: Update data
+            audit_context: Audit information
+            
+        Returns:
+            Number of updated entities
+        """
+        try:
+            query = self.db.query(self.model)
+            
+            # Apply criteria
+            for key, value in criteria.items():
+                if hasattr(self.model, key):
+                    query = query.filter(getattr(self.model, key) == value)
+            
+            # Apply soft delete filter
+            if self._is_soft_delete:
+                query = query.filter(self.model.is_deleted == False)
+            
+            # Add audit info to update data
+            update_data = data.copy()
+            if audit_context and hasattr(self.model, 'updated_by'):
+                update_data['updated_by'] = audit_context.user_id
+            if hasattr(self.model, 'updated_at'):
+                update_data['updated_at'] = datetime.utcnow()
+            
+            # Execute bulk update
+            count = query.update(update_data, synchronize_session='fetch')
+            self.db.commit()
+            
+            # Invalidate cache
+            if self._cache:
+                self._cache.invalidate_pattern(f"{self.model.__tablename__}:*")
+            
+            logger.info(f"Bulk updated {count} {self.model.__name__} entities")
+            return count
+            
+        except SQLAlchemyError as e:
+            self.db.rollback()
+            raise RepositoryError(f"Bulk update failed: {str(e)}") from e
+    
+    # ==================== Delete Operations ====================
+    
+    def delete(
+        self,
+        id: Union[UUID, int],
+        audit_context: Optional[AuditContext] = None,
+        commit: bool = True
+    ) -> bool:
+        """
+        Hard delete entity.
+        
+        Args:
+            id: Entity ID
+            audit_context: Audit information
+            commit: Whether to commit immediately
+            
+        Returns:
+            True if deleted, False if not found
+        """
+        try:
+            entity = self.find_by_id(id, include_deleted=True)
+            if not entity:
+                return False
+            
+            self.db.delete(entity)
+            
+            if commit:
+                self.db.commit()
+                
+                # Invalidate cache
+                if self._cache:
+                    self._cache.invalidate_entity(self.model.__tablename__, id)
+            else:
+                self.db.flush()
+            
+            logger.info(f"Deleted {self.model.__name__} with id: {id}")
+            return True
+            
+        except SQLAlchemyError as e:
+            self.db.rollback()
+            raise RepositoryError(f"Delete failed: {str(e)}") from e
+    
+    def soft_delete(
+        self,
+        id: Union[UUID, int],
+        audit_context: Optional[AuditContext] = None,
+        commit: bool = True
+    ) -> ModelType:
+        """
+        Soft delete entity with audit trail.
+        
+        Args:
+            id: Entity ID
+            audit_context: Audit information
+            commit: Whether to commit immediately
+            
+        Returns:
+            Soft-deleted entity
+            
+        Raises:
+            EntityNotFoundError: If entity not found
+            ValidationError: If model doesn't support soft delete
+        """
+        if not self._is_soft_delete:
+            raise ValidationError(
+                f"{self.model.__name__} doesn't support soft delete"
+            )
+        
+        try:
+            entity = self.get_by_id(id)
+            
+            entity.is_deleted = True
+            entity.deleted_at = datetime.utcnow()
+            if audit_context and hasattr(entity, 'deleted_by'):
+                entity.deleted_by = audit_context.user_id
+            
+            if commit:
+                self.db.commit()
+                self.db.refresh(entity)
+                
+                # Invalidate cache
+                if self._cache:
+                    self._cache.invalidate_entity(self.model.__tablename__, id)
+            else:
+                self.db.flush()
+            
+            logger.info(f"Soft deleted {self.model.__name__} with id: {id}")
+            return entity
+            
+        except SQLAlchemyError as e:
+            self.db.rollback()
+            raise RepositoryError(f"Soft delete failed: {str(e)}") from e
+    
+    def restore(
+        self,
+        id: Union[UUID, int],
+        audit_context: Optional[AuditContext] = None,
+        commit: bool = True
+    ) -> ModelType:
+        """
+        Restore soft-deleted entity.
+        
+        Args:
+            id: Entity ID
+            audit_context: Audit information
+            commit: Whether to commit immediately
+            
+        Returns:
+            Restored entity
+        """
+        if not self._is_soft_delete:
+            raise ValidationError(
+                f"{self.model.__name__} doesn't support soft delete"
+            )
+        
+        try:
+            entity = self.get_by_id(id, include_deleted=True)
+            
+            entity.is_deleted = False
+            entity.deleted_at = None
+            if hasattr(entity, 'deleted_by'):
+                entity.deleted_by = None
+            
+            if commit:
+                self.db.commit()
+                self.db.refresh(entity)
+                
+                # Invalidate cache
+                if self._cache:
+                    self._cache.invalidate_entity(self.model.__tablename__, id)
+            else:
+                self.db.flush()
+            
+            logger.info(f"Restored {self.model.__name__} with id: {id}")
+            return entity
+            
+        except SQLAlchemyError as e:
+            self.db.rollback()
+            raise RepositoryError(f"Restore failed: {str(e)}") from e
+    
+    # ==================== Count Operations ====================
+    
+    def count(
+        self,
+        criteria: Optional[Dict[str, Any]] = None,
+        include_deleted: bool = False
+    ) -> int:
+        """
+        Count entities matching criteria.
+        
+        Args:
+            criteria: Filter criteria
+            include_deleted: Include soft-deleted entities
+            
+        Returns:
+            Count of matching entities
+        """
+        try:
+            query = self.db.query(func.count(self.model.id))
+            
+            # Apply criteria
+            if criteria:
+                for key, value in criteria.items():
+                    if hasattr(self.model, key):
+                        column = getattr(self.model, key)
+                        if isinstance(value, (list, tuple)):
+                            query = query.filter(column.in_(value))
+                        else:
+                            query = query.filter(column == value)
+            
+            # Apply soft delete filter
+            if self._is_soft_delete and not include_deleted:
+                query = query.filter(self.model.is_deleted == False)
+            
+            return query.scalar()
+            
+        except SQLAlchemyError as e:
+            raise RepositoryError(f"Count failed: {str(e)}") from e
+    
+    def exists(
+        self,
+        criteria: Dict[str, Any],
+        include_deleted: bool = False
+    ) -> bool:
+        """
+        Check if entity exists matching criteria.
+        
+        Args:
+            criteria: Filter criteria
+            include_deleted: Include soft-deleted entities
+            
+        Returns:
+            True if exists, False otherwise
+        """
+        return self.count(criteria, include_deleted) > 0
+    
+    # ==================== Multi-Tenant Operations ====================
+    
+    def find_by_hostel(
+        self,
+        hostel_id: UUID,
+        skip: int = 0,
+        limit: int = 100,
+        include_deleted: bool = False
+    ) -> List[ModelType]:
+        """
+        Find entities by hostel (tenant).
+        
+        Args:
+            hostel_id: Hostel ID
+            skip: Number of records to skip
+            limit: Maximum number of records
+            include_deleted: Include soft-deleted entities
+            
+        Returns:
+            List of entities for hostel
+        """
+        if not self._is_tenant_model:
+            raise ValidationError(
+                f"{self.model.__name__} is not a tenant model"
+            )
+        
+        return self.find_by_criteria(
+            {"hostel_id": hostel_id},
+            skip=skip,
+            limit=limit,
+            include_deleted=include_deleted
+        )
+    
+    def count_by_hostel(
+        self,
+        hostel_id: UUID,
+        include_deleted: bool = False
+    ) -> int:
+        """
+        Count entities for hostel.
+        
+        Args:
+            hostel_id: Hostel ID
+            include_deleted: Include soft-deleted entities
+            
+        Returns:
+            Count of entities
+        """
+        if not self._is_tenant_model:
+            raise ValidationError(
+                f"{self.model.__name__} is not a tenant model"
+            )
+        
+        return self.count({"hostel_id": hostel_id}, include_deleted)
+    
+    # ==================== Utility Methods ====================
+    
+    def refresh(self, entity: ModelType) -> ModelType:
+        """
+        Refresh entity from database.
+        
+        Args:
+            entity: Entity to refresh
+            
+        Returns:
+            Refreshed entity
+        """
+        self.db.refresh(entity)
+        return entity
+    
+    def expunge(self, entity: ModelType) -> None:
+        """
+        Remove entity from session.
+        
+        Args:
+            entity: Entity to expunge
+        """
+        self.db.expunge(entity)
+    
+    def merge(self, entity: ModelType) -> ModelType:
+        """
+        Merge detached entity into session.
+        
+        Args:
+            entity: Entity to merge
+            
+        Returns:
+            Merged entity
+        """
+        return self.db.merge(entity)
+
+# --- File: C:\Hostel-Main\app\repositories\base\caching_repository.py ---
+"""
+Multi-layer caching repository with intelligent invalidation and performance monitoring.
+
+Provides L1 (in-memory), L2 (Redis), query cache, and result cache
+with automatic invalidation strategies.
+"""
+
+from typing import Any, Dict, List, Optional, Type, TypeVar, Callable, Union
+from datetime import datetime, timedelta
+from functools import wraps
+import hashlib
+import json
+import pickle
+from collections import OrderedDict
+
+from sqlalchemy.orm import Query, Session
+
+from app.models.base import BaseModel
+from app.repositories.base.base_repository import BaseRepository, AuditContext
+from app.core.logging import get_logger
+from app.core.cache import CacheManager, CacheBackend
+from app.core.exceptions import CacheError
+
+logger = get_logger(__name__)
+
+ModelType = TypeVar("ModelType", bound=BaseModel)
+
+
+class CacheStrategy:
+    """Cache strategy enumeration."""
+    
+    WRITE_THROUGH = "write_through"
+    WRITE_BEHIND = "write_behind"
+    CACHE_ASIDE = "cache_aside"
+    REFRESH_AHEAD = "refresh_ahead"
+
+
+class CacheLevel:
+    """Cache level enumeration."""
+    
+    L1 = "l1"  # In-memory
+    L2 = "l2"  # Redis/Memcached
+    L3 = "l3"  # Database
+
+
+class LRUCache:
+    """
+    Simple in-memory LRU cache implementation.
+    
+    Thread-safe Least Recently Used cache with TTL support.
+    """
+    
+    def __init__(self, max_size: int = 1000, default_ttl: int = 300):
+        """
+        Initialize LRU cache.
+        
+        Args:
+            max_size: Maximum number of items
+            default_ttl: Default time-to-live in seconds
+        """
+        self.max_size = max_size
+        self.default_ttl = default_ttl
+        self._cache: OrderedDict = OrderedDict()
+        self._timestamps: Dict[str, float] = {}
+        self._hits = 0
+        self._misses = 0
+    
+    def get(self, key: str) -> Optional[Any]:
+        """
+        Get value from cache.
+        
+        Args:
+            key: Cache key
+            
+        Returns:
+            Cached value or None
+        """
+        if key not in self._cache:
+            self._misses += 1
+            return None
+        
+        # Check TTL
+        if self._is_expired(key):
+            self.delete(key)
+            self._misses += 1
+            return None
+        
+        # Move to end (most recently used)
+        self._cache.move_to_end(key)
+        self._hits += 1
+        return self._cache[key]
+    
+    def set(self, key: str, value: Any, ttl: Optional[int] = None) -> None:
+        """
+        Set value in cache.
+        
+        Args:
+            key: Cache key
+            value: Value to cache
+            ttl: Time-to-live in seconds
+        """
+        # Remove oldest if at capacity
+        if key not in self._cache and len(self._cache) >= self.max_size:
+            self._cache.popitem(last=False)
+        
+        self._cache[key] = value
+        self._cache.move_to_end(key)
+        self._timestamps[key] = datetime.utcnow().timestamp()
+        
+        if ttl:
+            self._timestamps[f"{key}:ttl"] = ttl
+    
+    def delete(self, key: str) -> None:
+        """Delete key from cache."""
+        self._cache.pop(key, None)
+        self._timestamps.pop(key, None)
+        self._timestamps.pop(f"{key}:ttl", None)
+    
+    def clear(self) -> None:
+        """Clear entire cache."""
+        self._cache.clear()
+        self._timestamps.clear()
+    
+    def _is_expired(self, key: str) -> bool:
+        """Check if key has expired."""
+        if key not in self._timestamps:
+            return True
+        
+        ttl = self._timestamps.get(f"{key}:ttl", self.default_ttl)
+        age = datetime.utcnow().timestamp() - self._timestamps[key]
+        return age > ttl
+    
+    def get_stats(self) -> Dict[str, Any]:
+        """Get cache statistics."""
+        total_requests = self._hits + self._misses
+        hit_rate = self._hits / total_requests if total_requests > 0 else 0
+        
+        return {
+            "size": len(self._cache),
+            "max_size": self.max_size,
+            "hits": self._hits,
+            "misses": self._misses,
+            "hit_rate": hit_rate,
+            "total_requests": total_requests
+        }
+
+
+class CacheKeyGenerator:
+    """Generate cache keys for different operations."""
+    
+    @staticmethod
+    def generate_entity_key(
+        table_name: str,
+        entity_id: Any
+    ) -> str:
+        """
+        Generate key for single entity.
+        
+        Args:
+            table_name: Table/model name
+            entity_id: Entity ID
+            
+        Returns:
+            Cache key
+        """
+        return f"{table_name}:entity:{entity_id}"
+    
+    @staticmethod
+    def generate_query_key(
+        table_name: str,
+        query_hash: str
+    ) -> str:
+        """
+        Generate key for query result.
+        
+        Args:
+            table_name: Table/model name
+            query_hash: Query hash
+            
+        Returns:
+            Cache key
+        """
+        return f"{table_name}:query:{query_hash}"
+    
+    @staticmethod
+    def generate_list_key(
+        table_name: str,
+        criteria_hash: str
+    ) -> str:
+        """
+        Generate key for list query.
+        
+        Args:
+            table_name: Table/model name
+            criteria_hash: Criteria hash
+            
+        Returns:
+            Cache key
+        """
+        return f"{table_name}:list:{criteria_hash}"
+    
+    @staticmethod
+    def generate_count_key(
+        table_name: str,
+        criteria_hash: str
+    ) -> str:
+        """
+        Generate key for count query.
+        
+        Args:
+            table_name: Table/model name
+            criteria_hash: Criteria hash
+            
+        Returns:
+            Cache key
+        """
+        return f"{table_name}:count:{criteria_hash}"
+    
+    @staticmethod
+    def hash_criteria(criteria: Dict[str, Any]) -> str:
+        """
+        Generate hash from criteria.
+        
+        Args:
+            criteria: Filter criteria
+            
+        Returns:
+            Hash string
+        """
+        # Sort criteria for consistent hashing
+        criteria_str = json.dumps(criteria, sort_keys=True, default=str)
+        return hashlib.md5(criteria_str.encode()).hexdigest()
+    
+    @staticmethod
+    def hash_query(query: Query) -> str:
+        """
+        Generate hash from SQLAlchemy query.
+        
+        Args:
+            query: SQLAlchemy query
+            
+        Returns:
+            Hash string
+        """
+        query_str = str(query.statement.compile(
+            compile_kwargs={"literal_binds": True}
+        ))
+        return hashlib.md5(query_str.encode()).hexdigest()
+
+
+class CacheInvalidator:
+    """Handle cache invalidation strategies."""
+    
+    def __init__(self, cache_manager: Optional[CacheManager] = None):
+        self.cache_manager = cache_manager
+        self._invalidation_patterns: Dict[str, List[str]] = {}
+    
+    def register_pattern(
+        self,
+        entity_type: str,
+        patterns: List[str]
+    ) -> None:
+        """
+        Register invalidation patterns for entity type.
+        
+        Args:
+            entity_type: Entity type name
+            patterns: List of key patterns to invalidate
+        """
+        self._invalidation_patterns[entity_type] = patterns
+    
+    def invalidate_entity(
+        self,
+        table_name: str,
+        entity_id: Any
+    ) -> None:
+        """
+        Invalidate cache for specific entity.
+        
+        Args:
+            table_name: Table name
+            entity_id: Entity ID
+        """
+        if not self.cache_manager:
+            return
+        
+        # Invalidate entity cache
+        entity_key = CacheKeyGenerator.generate_entity_key(table_name, entity_id)
+        self.cache_manager.delete(entity_key)
+        
+        # Invalidate related patterns
+        patterns = self._invalidation_patterns.get(table_name, [])
+        for pattern in patterns:
+            self.cache_manager.delete_pattern(pattern.format(id=entity_id))
+        
+        logger.debug(f"Invalidated cache for {table_name}:{entity_id}")
+    
+    def invalidate_pattern(self, pattern: str) -> None:
+        """
+        Invalidate cache by pattern.
+        
+        Args:
+            pattern: Key pattern to invalidate
+        """
+        if self.cache_manager:
+            self.cache_manager.delete_pattern(pattern)
+            logger.debug(f"Invalidated cache pattern: {pattern}")
+    
+    def invalidate_table(self, table_name: str) -> None:
+        """
+        Invalidate all cache for table.
+        
+        Args:
+            table_name: Table name
+        """
+        self.invalidate_pattern(f"{table_name}:*")
+    
+    def tag_based_invalidation(
+        self,
+        tags: List[str]
+    ) -> None:
+        """
+        Invalidate cache by tags.
+        
+        Args:
+            tags: List of tags to invalidate
+        """
+        for tag in tags:
+            self.invalidate_pattern(f"tag:{tag}:*")
+
+
+class CachingRepository(BaseRepository[ModelType]):
+    """
+    Repository with multi-layer caching support.
+    
+    Wraps base repository with intelligent caching,
+    automatic invalidation, and performance monitoring.
+    """
+    
+    def __init__(
+        self,
+        repository: BaseRepository[ModelType],
+        cache_manager: Optional[CacheManager] = None,
+        ttl: int = 300,
+        strategy: str = CacheStrategy.WRITE_THROUGH,
+        enable_l1_cache: bool = True,
+        l1_max_size: int = 1000
+    ):
+        """
+        Initialize caching repository.
+        
+        Args:
+            repository: Base repository to wrap
+            cache_manager: Cache manager for L2 cache
+            ttl: Default time-to-live in seconds
+            strategy: Cache strategy
+            enable_l1_cache: Enable in-memory L1 cache
+            l1_max_size: L1 cache max size
+        """
+        self.repository = repository
+        self.cache_manager = cache_manager
+        self.ttl = ttl
+        self.strategy = strategy
+        self.enable_l1_cache = enable_l1_cache
+        
+        # Initialize L1 cache
+        self._l1_cache = LRUCache(max_size=l1_max_size, default_ttl=ttl) if enable_l1_cache else None
+        
+        # Initialize cache invalidator
+        self._invalidator = CacheInvalidator(cache_manager)
+        
+        # Initialize key generator
+        self._key_gen = CacheKeyGenerator()
+        
+        # Performance metrics
+        self._metrics = {
+            "l1_hits": 0,
+            "l1_misses": 0,
+            "l2_hits": 0,
+            "l2_misses": 0,
+            "db_queries": 0
+        }
+    
+    # ==================== Cache Operations ====================
+    
+    def _get_from_cache(
+        self,
+        key: str,
+        use_l1: bool = True
+    ) -> Optional[Any]:
+        """
+        Get value from cache (L1 then L2).
+        
+        Args:
+            key: Cache key
+            use_l1: Whether to check L1 cache
+            
+        Returns:
+            Cached value or None
+        """
+        # Try L1 cache first
+        if use_l1 and self._l1_cache:
+            value = self._l1_cache.get(key)
+            if value is not None:
+                self._metrics["l1_hits"] += 1
+                logger.debug(f"L1 cache hit: {key}")
+                return value
+            self._metrics["l1_misses"] += 1
+        
+        # Try L2 cache
+        if self.cache_manager:
+            value = self.cache_manager.get(key)
+            if value is not None:
+                self._metrics["l2_hits"] += 1
+                logger.debug(f"L2 cache hit: {key}")
+                
+                # Populate L1 cache
+                if use_l1 and self._l1_cache:
+                    self._l1_cache.set(key, value, self.ttl)
+                
+                return value
+            self._metrics["l2_misses"] += 1
+        
+        return None
+    
+    def _set_in_cache(
+        self,
+        key: str,
+        value: Any,
+        ttl: Optional[int] = None,
+        tags: Optional[List[str]] = None
+    ) -> None:
+        """
+        Set value in cache (both L1 and L2).
+        
+        Args:
+            key: Cache key
+            value: Value to cache
+            ttl: Time-to-live in seconds
+            tags: Cache tags for invalidation
+        """
+        ttl = ttl or self.ttl
+        
+        # Set in L1 cache
+        if self._l1_cache:
+            self._l1_cache.set(key, value, ttl)
+        
+        # Set in L2 cache
+        if self.cache_manager:
+            self.cache_manager.set(key, value, ttl, tags=tags)
+    
+    def _invalidate_cache(
+        self,
+        key: Optional[str] = None,
+        pattern: Optional[str] = None
+    ) -> None:
+        """
+        Invalidate cache.
+        
+        Args:
+            key: Specific key to invalidate
+            pattern: Pattern to invalidate
+        """
+        if key:
+            if self._l1_cache:
+                self._l1_cache.delete(key)
+            if self.cache_manager:
+                self.cache_manager.delete(key)
+        
+        if pattern:
+            # L1 cache doesn't support patterns, clear all
+            if self._l1_cache:
+                self._l1_cache.clear()
+            if self.cache_manager:
+                self.cache_manager.delete_pattern(pattern)
+    
+    # ==================== Cached Repository Methods ====================
+    
+    def find_by_id(
+        self,
+        id: Union[int, Any],
+        include_deleted: bool = False
+    ) -> Optional[ModelType]:
+        """
+        Find entity by ID with caching.
+        
+        Args:
+            id: Entity ID
+            include_deleted: Include soft-deleted entities
+            
+        Returns:
+            Entity or None
+        """
+        # Generate cache key
+        table_name = self.repository.model.__tablename__
+        cache_key = self._key_gen.generate_entity_key(table_name, id)
+        
+        # Try cache first
+        cached = self._get_from_cache(cache_key)
+        if cached is not None:
+            # Check if deleted flag matches request
+            if hasattr(cached, 'is_deleted'):
+                if not include_deleted and cached.is_deleted:
+                    return None
+            return cached
+        
+        # Query database
+        self._metrics["db_queries"] += 1
+        entity = self.repository.find_by_id(id, include_deleted)
+        
+        # Cache result
+        if entity:
+            tags = [table_name, f"{table_name}:entity"]
+            self._set_in_cache(cache_key, entity, tags=tags)
+        
+        return entity
+    
+    def find_by_criteria(
+        self,
+        criteria: Dict[str, Any],
+        skip: int = 0,
+        limit: int = 100,
+        order_by: Optional[List[str]] = None,
+        include_deleted: bool = False
+    ) -> List[ModelType]:
+        """
+        Find entities by criteria with caching.
+        
+        Args:
+            criteria: Filter criteria
+            skip: Offset
+            limit: Limit
+            order_by: Order by fields
+            include_deleted: Include deleted
+            
+        Returns:
+            List of entities
+        """
+        # Generate cache key
+        table_name = self.repository.model.__tablename__
+        criteria_with_params = {
+            **criteria,
+            "skip": skip,
+            "limit": limit,
+            "order_by": order_by,
+            "include_deleted": include_deleted
+        }
+        criteria_hash = self._key_gen.hash_criteria(criteria_with_params)
+        cache_key = self._key_gen.generate_list_key(table_name, criteria_hash)
+        
+        # Try cache
+        cached = self._get_from_cache(cache_key)
+        if cached is not None:
+            return cached
+        
+        # Query database
+        self._metrics["db_queries"] += 1
+        entities = self.repository.find_by_criteria(
+            criteria, skip, limit, order_by, include_deleted
+        )
+        
+        # Cache result
+        tags = [table_name, f"{table_name}:list"]
+        self._set_in_cache(cache_key, entities, tags=tags)
+        
+        return entities
+    
+    def count(
+        self,
+        criteria: Optional[Dict[str, Any]] = None,
+        include_deleted: bool = False
+    ) -> int:
+        """
+        Count entities with caching.
+        
+        Args:
+            criteria: Filter criteria
+            include_deleted: Include deleted
+            
+        Returns:
+            Count
+        """
+        # Generate cache key
+        table_name = self.repository.model.__tablename__
+        criteria_hash = self._key_gen.hash_criteria(criteria or {})
+        cache_key = self._key_gen.generate_count_key(table_name, criteria_hash)
+        
+        # Try cache
+        cached = self._get_from_cache(cache_key)
+        if cached is not None:
+            return cached
+        
+        # Query database
+        self._metrics["db_queries"] += 1
+        count = self.repository.count(criteria, include_deleted)
+        
+        # Cache result with shorter TTL (counts change frequently)
+        tags = [table_name, f"{table_name}:count"]
+        self._set_in_cache(cache_key, count, ttl=self.ttl // 2, tags=tags)
+        
+        return count
+    
+    # ==================== Write Operations (with invalidation) ====================
+    
+    def create(
+        self,
+        entity: ModelType,
+        audit_context: Optional[AuditContext] = None,
+        commit: bool = True
+    ) -> ModelType:
+        """
+        Create entity with cache invalidation.
+        
+        Args:
+            entity: Entity to create
+            audit_context: Audit context
+            commit: Commit immediately
+            
+        Returns:
+            Created entity
+        """
+        # Create in database
+        created = self.repository.create(entity, audit_context, commit)
+        
+        if commit:
+            # Invalidate list and count caches
+            table_name = self.repository.model.__tablename__
+            self._invalidator.invalidate_pattern(f"{table_name}:list:*")
+            self._invalidator.invalidate_pattern(f"{table_name}:count:*")
+            
+            # Cache new entity
+            if created.id:
+                cache_key = self._key_gen.generate_entity_key(table_name, created.id)
+                tags = [table_name, f"{table_name}:entity"]
+                self._set_in_cache(cache_key, created, tags=tags)
+        
+        return created
+    
+    def update(
+        self,
+        id: Union[int, Any],
+        data: Dict[str, Any],
+        audit_context: Optional[AuditContext] = None,
+        version: Optional[int] = None,
+        commit: bool = True
+    ) -> ModelType:
+        """
+        Update entity with cache invalidation.
+        
+        Args:
+            id: Entity ID
+            data: Update data
+            audit_context: Audit context
+            version: Version for optimistic locking
+            commit: Commit immediately
+            
+        Returns:
+            Updated entity
+        """
+        # Update in database
+        updated = self.repository.update(id, data, audit_context, version, commit)
+        
+        if commit:
+            # Invalidate entity cache
+            table_name = self.repository.model.__tablename__
+            self._invalidator.invalidate_entity(table_name, id)
+            
+            # Invalidate list and count caches
+            self._invalidator.invalidate_pattern(f"{table_name}:list:*")
+            self._invalidator.invalidate_pattern(f"{table_name}:count:*")
+            
+            # Cache updated entity
+            cache_key = self._key_gen.generate_entity_key(table_name, id)
+            tags = [table_name, f"{table_name}:entity"]
+            self._set_in_cache(cache_key, updated, tags=tags)
+        
+        return updated
+    
+    def delete(
+        self,
+        id: Union[int, Any],
+        audit_context: Optional[AuditContext] = None,
+        commit: bool = True
+    ) -> bool:
+        """
+        Delete entity with cache invalidation.
+        
+        Args:
+            id: Entity ID
+            audit_context: Audit context
+            commit: Commit immediately
+            
+        Returns:
+            Success flag
+        """
+        # Delete from database
+        deleted = self.repository.delete(id, audit_context, commit)
+        
+        if deleted and commit:
+            # Invalidate all caches for this entity
+            table_name = self.repository.model.__tablename__
+            self._invalidator.invalidate_entity(table_name, id)
+            self._invalidator.invalidate_pattern(f"{table_name}:list:*")
+            self._invalidator.invalidate_pattern(f"{table_name}:count:*")
+        
+        return deleted
+    
+    def soft_delete(
+        self,
+        id: Union[int, Any],
+        audit_context: Optional[AuditContext] = None,
+        commit: bool = True
+    ) -> ModelType:
+        """
+        Soft delete entity with cache invalidation.
+        
+        Args:
+            id: Entity ID
+            audit_context: Audit context
+            commit: Commit immediately
+            
+        Returns:
+            Soft-deleted entity
+        """
+        # Soft delete in database
+        deleted = self.repository.soft_delete(id, audit_context, commit)
+        
+        if commit:
+            # Invalidate entity cache
+            table_name = self.repository.model.__tablename__
+            self._invalidator.invalidate_entity(table_name, id)
+            
+            # Invalidate list and count caches
+            self._invalidator.invalidate_pattern(f"{table_name}:list:*")
+            self._invalidator.invalidate_pattern(f"{table_name}:count:*")
+        
+        return deleted
+    
+    # ==================== Cache Management ====================
+    
+    def clear_cache(self, pattern: Optional[str] = None) -> None:
+        """
+        Clear cache for repository.
+        
+        Args:
+            pattern: Optional pattern to clear
+        """
+        if pattern:
+            self._invalidate_cache(pattern=pattern)
+        else:
+            table_name = self.repository.model.__tablename__
+            self._invalidator.invalidate_table(table_name)
+    
+    def warm_cache(
+        self,
+        ids: List[Any],
+        batch_size: int = 100
+    ) -> None:
+        """
+        Warm cache by preloading entities.
+        
+        Args:
+            ids: List of entity IDs to preload
+            batch_size: Batch size for loading
+        """
+        table_name = self.repository.model.__tablename__
+        
+        for i in range(0, len(ids), batch_size):
+            batch_ids = ids[i:i + batch_size]
+            
+            # Query database
+            entities = self.repository.find_by_criteria(
+                {"id": batch_ids},
+                limit=batch_size
+            )
+            
+            # Cache entities
+            for entity in entities:
+                cache_key = self._key_gen.generate_entity_key(table_name, entity.id)
+                tags = [table_name, f"{table_name}:entity"]
+                self._set_in_cache(cache_key, entity, tags=tags)
+        
+        logger.info(f"Warmed cache for {len(ids)} entities")
+    
+    def get_cache_stats(self) -> Dict[str, Any]:
+        """
+        Get cache statistics.
+        
+        Returns:
+            Statistics dictionary
+        """
+        stats = {
+            "metrics": self._metrics.copy(),
+            "l1_stats": self._l1_cache.get_stats() if self._l1_cache else None,
+            "l2_stats": self.cache_manager.get_stats() if self.cache_manager else None
+        }
+        
+        # Calculate hit rates
+        total_l1 = self._metrics["l1_hits"] + self._metrics["l1_misses"]
+        total_l2 = self._metrics["l2_hits"] + self._metrics["l2_misses"]
+        
+        stats["l1_hit_rate"] = (
+            self._metrics["l1_hits"] / total_l1 if total_l1 > 0 else 0
+        )
+        stats["l2_hit_rate"] = (
+            self._metrics["l2_hits"] / total_l2 if total_l2 > 0 else 0
+        )
+        
+        return stats
+    
+    def reset_stats(self) -> None:
+        """Reset performance metrics."""
+        self._metrics = {
+            "l1_hits": 0,
+            "l1_misses": 0,
+            "l2_hits": 0,
+            "l2_misses": 0,
+            "db_queries": 0
+        }
+    
+    # ==================== Delegate to Base Repository ====================
+    
+    def __getattr__(self, name: str) -> Any:
+        """Delegate unknown attributes to base repository."""
+        return getattr(self.repository, name)
+
+
+def cached_method(
+    ttl: Optional[int] = None,
+    key_prefix: Optional[str] = None,
+    tags: Optional[List[str]] = None
+):
+    """
+    Decorator for caching repository methods.
+    
+    Args:
+        ttl: Time-to-live in seconds
+        key_prefix: Cache key prefix
+        tags: Cache tags
+        
+    Returns:
+        Decorated method
+    """
+    def decorator(func: Callable) -> Callable:
+        @wraps(func)
+        def wrapper(self, *args, **kwargs):
+            # Check if caching is enabled
+            if not hasattr(self, 'cache_manager') or not self.cache_manager:
+                return func(self, *args, **kwargs)
+            
+            # Generate cache key
+            key_gen = CacheKeyGenerator()
+            method_name = func.__name__
+            args_hash = key_gen.hash_criteria({
+                "args": args,
+                "kwargs": kwargs
+            })
+            cache_key = f"{key_prefix or method_name}:{args_hash}"
+            
+            # Try cache
+            cached = self._get_from_cache(cache_key)
+            if cached is not None:
+                return cached
+            
+            # Execute method
+            result = func(self, *args, **kwargs)
+            
+            # Cache result
+            self._set_in_cache(
+                cache_key,
+                result,
+                ttl=ttl or self.ttl,
+                tags=tags
+            )
+            
+            return result
+        
+        return wrapper
+    return decorator
+
+# --- File: C:\Hostel-Main\app\repositories\base\filtering.py ---
+"""
+Advanced filtering engine with dynamic criteria and search optimization.
+
+Provides sophisticated filtering with full-text search, fuzzy matching,
+and geospatial capabilities.
+"""
+
+from typing import Any, Dict, List, Optional, Type, Union, Callable
+from datetime import datetime, date
+from decimal import Decimal
+from enum import Enum
+import re
+
+from sqlalchemy import and_, or_, not_, func, cast, String, Date
+from sqlalchemy.orm import Query
+from sqlalchemy.sql.expression import ClauseElement
+
+from app.models.base import BaseModel
+from app.core.logging import get_logger
+
+logger = get_logger(__name__)
+
+
+class FilterOperator(str, Enum):
+    """Filter operation types."""
+    EQUALS = "eq"
+    NOT_EQUALS = "ne"
+    GREATER_THAN = "gt"
+    GREATER_THAN_EQUAL = "gte"
+    LESS_THAN = "lt"
+    LESS_THAN_EQUAL = "lte"
+    IN = "in"
+    NOT_IN = "not_in"
+    LIKE = "like"
+    ILIKE = "ilike"
+    NOT_LIKE = "not_like"
+    BETWEEN = "between"
+    IS_NULL = "is_null"
+    IS_NOT_NULL = "is_not_null"
+    CONTAINS = "contains"
+    STARTS_WITH = "starts_with"
+    ENDS_WITH = "ends_with"
+    REGEX = "regex"
+    FUZZY = "fuzzy"
+
+
+class FilterType(str, Enum):
+    """Filter value types."""
+    STRING = "string"
+    NUMBER = "number"
+    BOOLEAN = "boolean"
+    DATE = "date"
+    DATETIME = "datetime"
+    ARRAY = "array"
+    OBJECT = "object"
+
+
+class Filter:
+    """Single filter condition."""
+    
+    def __init__(
+        self,
+        field: str,
+        operator: FilterOperator,
+        value: Any,
+        filter_type: Optional[FilterType] = None,
+        case_sensitive: bool = False
+    ):
+        self.field = field
+        self.operator = operator
+        self.value = value
+        self.filter_type = filter_type
+        self.case_sensitive = case_sensitive
+    
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert to dictionary."""
+        return {
+            "field": self.field,
+            "operator": self.operator.value,
+            "value": self.value,
+            "type": self.filter_type.value if self.filter_type else None,
+            "case_sensitive": self.case_sensitive
+        }
+    
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> "Filter":
+        """Create from dictionary."""
+        return cls(
+            field=data["field"],
+            operator=FilterOperator(data["operator"]),
+            value=data["value"],
+            filter_type=FilterType(data["type"]) if data.get("type") else None,
+            case_sensitive=data.get("case_sensitive", False)
+        )
+
+
+class FilterGroup:
+    """Group of filters with AND/OR logic."""
+    
+    def __init__(
+        self,
+        filters: List[Union[Filter, "FilterGroup"]],
+        logic: str = "AND"
+    ):
+        self.filters = filters
+        self.logic = logic.upper()
+    
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert to dictionary."""
+        return {
+            "logic": self.logic,
+            "filters": [f.to_dict() for f in self.filters]
+        }
+
+
+class FilterEngine:
+    """
+    Advanced filtering engine with dynamic criteria.
+    
+    Supports complex filtering with multiple operators,
+    types, and search strategies.
+    """
+    
+    def __init__(self, model: Type[BaseModel]):
+        self.model = model
+        self._operator_map = {
+            FilterOperator.EQUALS: self._apply_equals,
+            FilterOperator.NOT_EQUALS: self._apply_not_equals,
+            FilterOperator.GREATER_THAN: self._apply_greater_than,
+            FilterOperator.GREATER_THAN_EQUAL: self._apply_greater_than_equal,
+            FilterOperator.LESS_THAN: self._apply_less_than,
+            FilterOperator.LESS_THAN_EQUAL: self._apply_less_than_equal,
+            FilterOperator.IN: self._apply_in,
+            FilterOperator.NOT_IN: self._apply_not_in,
+            FilterOperator.LIKE: self._apply_like,
+            FilterOperator.ILIKE: self._apply_ilike,
+            FilterOperator.NOT_LIKE: self._apply_not_like,
+            FilterOperator.BETWEEN: self._apply_between,
+            FilterOperator.IS_NULL: self._apply_is_null,
+            FilterOperator.IS_NOT_NULL: self._apply_is_not_null,
+            FilterOperator.CONTAINS: self._apply_contains,
+            FilterOperator.STARTS_WITH: self._apply_starts_with,
+            FilterOperator.ENDS_WITH: self._apply_ends_with,
+            FilterOperator.REGEX: self._apply_regex,
+            FilterOperator.FUZZY: self._apply_fuzzy,
+        }
+    
+    # ==================== Main Filter Application ====================
+    
+    def apply_filters(
+        self,
+        query: Query,
+        filters: List[Union[Filter, FilterGroup]]
+    ) -> Query:
+        """
+        Apply filters to query.
+        
+        Args:
+            query: Base query
+            filters: List of filters or filter groups
+            
+        Returns:
+            Filtered query
+        """
+        for filter_item in filters:
+            if isinstance(filter_item, Filter):
+                query = self._apply_single_filter(query, filter_item)
+            elif isinstance(filter_item, FilterGroup):
+                query = self._apply_filter_group(query, filter_item)
+        
+        return query
+    
+    def _apply_single_filter(self, query: Query, filter: Filter) -> Query:
+        """Apply single filter to query."""
+        if not hasattr(self.model, filter.field):
+            logger.warning(f"Field {filter.field} not found on {self.model.__name__}")
+            return query
+        
+        operator_func = self._operator_map.get(filter.operator)
+        if not operator_func:
+            logger.warning(f"Operator {filter.operator} not supported")
+            return query
+        
+        condition = operator_func(filter)
+        if condition is not None:
+            query = query.filter(condition)
+        
+        return query
+    
+    def _apply_filter_group(self, query: Query, group: FilterGroup) -> Query:
+        """Apply filter group to query."""
+        conditions = []
+        
+        for filter_item in group.filters:
+            if isinstance(filter_item, Filter):
+                operator_func = self._operator_map.get(filter_item.operator)
+                if operator_func:
+                    condition = operator_func(filter_item)
+                    if condition is not None:
+                        conditions.append(condition)
+            elif isinstance(filter_item, FilterGroup):
+                # Recursively handle nested groups
+                sub_conditions = []
+                for sub_filter in filter_item.filters:
+                    if isinstance(sub_filter, Filter):
+                        operator_func = self._operator_map.get(sub_filter.operator)
+                        if operator_func:
+                            condition = operator_func(sub_filter)
+                            if condition is not None:
+                                sub_conditions.append(condition)
+                
+                if sub_conditions:
+                    if filter_item.logic == "AND":
+                        conditions.append(and_(*sub_conditions))
+                    else:
+                        conditions.append(or_(*sub_conditions))
+        
+        if conditions:
+            if group.logic == "AND":
+                query = query.filter(and_(*conditions))
+            else:
+                query = query.filter(or_(*conditions))
+        
+        return query
+    
+    # ==================== Operator Implementations ====================
+    
+    def _apply_equals(self, filter: Filter) -> ClauseElement:
+        """Apply equals operator."""
+        column = getattr(self.model, filter.field)
+        return column == filter.value
+    
+    def _apply_not_equals(self, filter: Filter) -> ClauseElement:
+        """Apply not equals operator."""
+        column = getattr(self.model, filter.field)
+        return column != filter.value
+    
+    def _apply_greater_than(self, filter: Filter) -> ClauseElement:
+        """Apply greater than operator."""
+        column = getattr(self.model, filter.field)
+        return column > filter.value
+    
+    def _apply_greater_than_equal(self, filter: Filter) -> ClauseElement:
+        """Apply greater than or equal operator."""
+        column = getattr(self.model, filter.field)
+        return column >= filter.value
+    
+    def _apply_less_than(self, filter: Filter) -> ClauseElement:
+        """Apply less than operator."""
+        column = getattr(self.model, filter.field)
+        return column < filter.value
+    
+    def _apply_less_than_equal(self, filter: Filter) -> ClauseElement:
+        """Apply less than or equal operator."""
+        column = getattr(self.model, filter.field)
+        return column <= filter.value
+    
+    def _apply_in(self, filter: Filter) -> ClauseElement:
+        """Apply IN operator."""
+        column = getattr(self.model, filter.field)
+        if not isinstance(filter.value, (list, tuple)):
+            filter.value = [filter.value]
+        return column.in_(filter.value)
+    
+    def _apply_not_in(self, filter: Filter) -> ClauseElement:
+        """Apply NOT IN operator."""
+        column = getattr(self.model, filter.field)
+        if not isinstance(filter.value, (list, tuple)):
+            filter.value = [filter.value]
+        return ~column.in_(filter.value)
+    
+    def _apply_like(self, filter: Filter) -> ClauseElement:
+        """Apply LIKE operator."""
+        column = getattr(self.model, filter.field)
+        return column.like(filter.value)
+    
+    def _apply_ilike(self, filter: Filter) -> ClauseElement:
+        """Apply ILIKE operator (case-insensitive)."""
+        column = getattr(self.model, filter.field)
+        return column.ilike(filter.value)
+    
+    def _apply_not_like(self, filter: Filter) -> ClauseElement:
+        """Apply NOT LIKE operator."""
+        column = getattr(self.model, filter.field)
+        return ~column.like(filter.value)
+    
+    def _apply_between(self, filter: Filter) -> ClauseElement:
+        """Apply BETWEEN operator."""
+        if not isinstance(filter.value, (list, tuple)) or len(filter.value) != 2:
+            logger.error("BETWEEN requires array of 2 values")
+            return None
+        
+        column = getattr(self.model, filter.field)
+        return and_(column >= filter.value[0], column <= filter.value[1])
+    
+    def _apply_is_null(self, filter: Filter) -> ClauseElement:
+        """Apply IS NULL operator."""
+        column = getattr(self.model, filter.field)
+        return column.is_(None)
+    
+    def _apply_is_not_null(self, filter: Filter) -> ClauseElement:
+        """Apply IS NOT NULL operator."""
+        column = getattr(self.model, filter.field)
+        return column.isnot(None)
+    
+    def _apply_contains(self, filter: Filter) -> ClauseElement:
+        """Apply CONTAINS operator (substring search)."""
+        column = getattr(self.model, filter.field)
+        pattern = f"%{filter.value}%"
+        if filter.case_sensitive:
+            return column.like(pattern)
+        return column.ilike(pattern)
+    
+    def _apply_starts_with(self, filter: Filter) -> ClauseElement:
+        """Apply STARTS WITH operator."""
+        column = getattr(self.model, filter.field)
+        pattern = f"{filter.value}%"
+        if filter.case_sensitive:
+            return column.like(pattern)
+        return column.ilike(pattern)
+    
+    def _apply_ends_with(self, filter: Filter) -> ClauseElement:
+        """Apply ENDS WITH operator."""
+        column = getattr(self.model, filter.field)
+        pattern = f"%{filter.value}"
+        if filter.case_sensitive:
+            return column.like(pattern)
+        return column.ilike(pattern)
+    
+    def _apply_regex(self, filter: Filter) -> ClauseElement:
+        """Apply REGEX operator."""
+        column = getattr(self.model, filter.field)
+        # PostgreSQL regex operator
+        return column.op('~')(filter.value)
+    
+    def _apply_fuzzy(self, filter: Filter) -> ClauseElement:
+        """Apply fuzzy matching using Levenshtein distance."""
+        column = getattr(self.model, filter.field)
+        # This requires pg_trgm extension in PostgreSQL
+        # similarity(column, value) > threshold
+        threshold = 0.3  # Default threshold
+        return func.similarity(column, filter.value) > threshold
+    
+    # ==================== Search Methods ====================
+    
+    def full_text_search(
+        self,
+        query: Query,
+        search_term: str,
+        fields: List[str],
+        language: str = "english"
+    ) -> Query:
+        """
+        Full-text search across multiple fields.
+        
+        Args:
+            query: Base query
+            search_term: Search term
+            fields: Fields to search in
+            language: Language for text search
+            
+        Returns:
+            Filtered query with relevance ranking
+        """
+        # PostgreSQL full-text search
+        search_vectors = []
+        
+        for field in fields:
+            if hasattr(self.model, field):
+                column = getattr(self.model, field)
+                vector = func.to_tsvector(language, column)
+                search_vectors.append(vector)
+        
+        if not search_vectors:
+            return query
+        
+        # Combine search vectors
+        combined_vector = search_vectors[0]
+        for vector in search_vectors[1:]:
+            combined_vector = combined_vector.op('||')(vector)
+        
+        # Create search query
+        search_query = func.plainto_tsquery(language, search_term)
+        
+        # Apply filter and ranking
+        query = query.filter(combined_vector.op('@@')(search_query))
+        query = query.order_by(
+            func.ts_rank(combined_vector, search_query).desc()
+        )
+        
+        return query
+    
+    def fuzzy_search(
+        self,
+        query: Query,
+        search_term: str,
+        field: str,
+        threshold: float = 0.3
+    ) -> Query:
+        """
+        Fuzzy search using similarity.
+        
+        Args:
+            query: Base query
+            search_term: Search term
+            field: Field to search in
+            threshold: Similarity threshold (0-1)
+            
+        Returns:
+            Filtered query
+        """
+        if not hasattr(self.model, field):
+            return query
+        
+        column = getattr(self.model, field)
+        query = query.filter(func.similarity(column, search_term) > threshold)
+        query = query.order_by(func.similarity(column, search_term).desc())
+        
+        return query
+    
+    def range_filter(
+        self,
+        query: Query,
+        field: str,
+        min_value: Optional[Any] = None,
+        max_value: Optional[Any] = None,
+        inclusive: bool = True
+    ) -> Query:
+        """
+        Apply range filter.
+        
+        Args:
+            query: Base query
+            field: Field to filter
+            min_value: Minimum value
+            max_value: Maximum value
+            inclusive: Whether to include boundaries
+            
+        Returns:
+            Filtered query
+        """
+        if not hasattr(self.model, field):
+            return query
+        
+        column = getattr(self.model, field)
+        
+        if min_value is not None:
+            if inclusive:
+                query = query.filter(column >= min_value)
+            else:
+                query = query.filter(column > min_value)
+        
+        if max_value is not None:
+            if inclusive:
+                query = query.filter(column <= max_value)
+            else:
+                query = query.filter(column < max_value)
+        
+        return query
+    
+    def date_range_filter(
+        self,
+        query: Query,
+        field: str,
+        start_date: Optional[date] = None,
+        end_date: Optional[date] = None
+    ) -> Query:
+        """
+        Apply date range filter.
+        
+        Args:
+            query: Base query
+            field: Date field
+            start_date: Start date
+            end_date: End date
+            
+        Returns:
+            Filtered query
+        """
+        if not hasattr(self.model, field):
+            return query
+        
+        column = getattr(self.model, field)
+        
+        if start_date:
+            query = query.filter(func.date(column) >= start_date)
+        
+        if end_date:
+            query = query.filter(func.date(column) <= end_date)
+        
+        return query
+    
+    def geospatial_filter(
+        self,
+        query: Query,
+        latitude: float,
+        longitude: float,
+        radius_km: float,
+        lat_field: str = "latitude",
+        lon_field: str = "longitude"
+    ) -> Query:
+        """
+        Filter by geographic proximity.
+        
+        Args:
+            query: Base query
+            latitude: Center latitude
+            longitude: Center longitude
+            radius_km: Radius in kilometers
+            lat_field: Latitude field name
+            lon_field: Longitude field name
+            
+        Returns:
+            Filtered query
+        """
+        if not (hasattr(self.model, lat_field) and hasattr(self.model, lon_field)):
+            return query
+        
+        # Haversine formula
+        lat_col = getattr(self.model, lat_field)
+        lon_col = getattr(self.model, lon_field)
+        
+        distance = func.acos(
+            func.sin(func.radians(latitude)) * func.sin(func.radians(lat_col)) +
+            func.cos(func.radians(latitude)) * func.cos(func.radians(lat_col)) *
+            func.cos(func.radians(longitude) - func.radians(lon_col))
+        ) * 6371  # Earth radius in km
+        
+        query = query.filter(distance <= radius_km)
+        query = query.order_by(distance)
+        
+        return query
+
+
+class SearchQueryBuilder:
+    """Builder for complex search queries."""
+    
+    def __init__(self, model: Type[BaseModel]):
+        self.model = model
+        self.filter_engine = FilterEngine(model)
+        self._filters: List[Union[Filter, FilterGroup]] = []
+        self._search_term: Optional[str] = None
+        self._search_fields: List[str] = []
+        self._fuzzy_fields: Dict[str, float] = {}
+        self._geo_filter: Optional[Dict[str, Any]] = None
+    
+    def add_filter(
+        self,
+        field: str,
+        operator: FilterOperator,
+        value: Any
+    ) -> "SearchQueryBuilder":
+        """Add filter."""
+        self._filters.append(Filter(field, operator, value))
+        return self
+    
+    def add_text_search(
+        self,
+        search_term: str,
+        fields: List[str]
+    ) -> "SearchQueryBuilder":
+        """Add full-text search."""
+        self._search_term = search_term
+        self._search_fields = fields
+        return self
+    
+    def add_fuzzy_search(
+        self,
+        field: str,
+        threshold: float = 0.3
+    ) -> "SearchQueryBuilder":
+        """Add fuzzy search for field."""
+        self._fuzzy_fields[field] = threshold
+        return self
+    
+    def add_geo_filter(
+        self,
+        latitude: float,
+        longitude: float,
+        radius_km: float
+    ) -> "SearchQueryBuilder":
+        """Add geospatial filter."""
+        self._geo_filter = {
+            "latitude": latitude,
+            "longitude": longitude,
+            "radius_km": radius_km
+        }
+        return self
+    
+    def build(self, base_query: Query) -> Query:
+        """Build final query."""
+        query = base_query
+        
+        # Apply filters
+        if self._filters:
+            query = self.filter_engine.apply_filters(query, self._filters)
+        
+        # Apply text search
+        if self._search_term and self._search_fields:
+            query = self.filter_engine.full_text_search(
+                query,
+                self._search_term,
+                self._search_fields
+            )
+        
+        # Apply fuzzy search
+        for field, threshold in self._fuzzy_fields.items():
+            if self._search_term:
+                query = self.filter_engine.fuzzy_search(
+                    query,
+                    self._search_term,
+                    field,
+                    threshold
+                )
+        
+        # Apply geo filter
+        if self._geo_filter:
+            query = self.filter_engine.geospatial_filter(
+                query,
+                **self._geo_filter
+            )
+        
+        return query
+
+# --- File: C:\Hostel-Main\app\repositories\base\pagination.py ---
+"""
+Advanced pagination with multiple strategies and performance optimization.
+
+Provides offset-based, cursor-based, keyset-based, and hybrid
+pagination strategies.
+"""
+
+from typing import Any, Dict, Generic, List, Optional, Type, TypeVar, Callable
+from dataclasses import dataclass
+from datetime import datetime
+from enum import Enum
+import base64
+import json
+
+from sqlalchemy import asc, desc, func, or_, and_
+from sqlalchemy.orm import Query, Session
+from sqlalchemy.sql.expression import ColumnElement
+
+from app.models.base import BaseModel
+from app.core.logging import get_logger
+
+logger = get_logger(__name__)
+
+ModelType = TypeVar("ModelType", bound=BaseModel)
+
+
+class PaginationStrategy(str, Enum):
+    """Pagination strategy types."""
+    OFFSET = "offset"
+    CURSOR = "cursor"
+    KEYSET = "keyset"
+    HYBRID = "hybrid"
+
+
+@dataclass
+class PageInfo:
+    """Pagination metadata."""
+    
+    current_page: int
+    per_page: int
+    total_items: int
+    total_pages: int
+    has_next: bool
+    has_previous: bool
+    next_cursor: Optional[str] = None
+    previous_cursor: Optional[str] = None
+    
+    @property
+    def start_index(self) -> int:
+        """Get starting index for current page."""
+        return (self.current_page - 1) * self.per_page
+    
+    @property
+    def end_index(self) -> int:
+        """Get ending index for current page."""
+        return min(self.start_index + self.per_page, self.total_items)
+
+
+@dataclass
+class PaginatedResult(Generic[ModelType]):
+    """Paginated query result."""
+    
+    items: List[ModelType]
+    page_info: PageInfo
+    
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert to dictionary representation."""
+        return {
+            "items": [item.to_dict() if hasattr(item, 'to_dict') else item 
+                     for item in self.items],
+            "pagination": {
+                "current_page": self.page_info.current_page,
+                "per_page": self.page_info.per_page,
+                "total_items": self.page_info.total_items,
+                "total_pages": self.page_info.total_pages,
+                "has_next": self.page_info.has_next,
+                "has_previous": self.page_info.has_previous,
+                "next_cursor": self.page_info.next_cursor,
+                "previous_cursor": self.page_info.previous_cursor,
+            }
+        }
+
+
+class Cursor:
+    """Cursor for cursor-based pagination."""
+    
+    def __init__(
+        self,
+        value: Any,
+        field: str = "id",
+        direction: str = "next"
+    ):
+        self.value = value
+        self.field = field
+        self.direction = direction
+    
+    def encode(self) -> str:
+        """
+        Encode cursor to base64 string.
+        
+        Returns:
+            Base64 encoded cursor
+        """
+        data = {
+            "value": str(self.value),
+            "field": self.field,
+            "direction": self.direction,
+        }
+        json_str = json.dumps(data)
+        return base64.b64encode(json_str.encode()).decode()
+    
+    @classmethod
+    def decode(cls, encoded: str) -> "Cursor":
+        """
+        Decode cursor from base64 string.
+        
+        Args:
+            encoded: Base64 encoded cursor
+            
+        Returns:
+            Cursor instance
+        """
+        try:
+            json_str = base64.b64decode(encoded.encode()).decode()
+            data = json.loads(json_str)
+            return cls(
+                value=data["value"],
+                field=data["field"],
+                direction=data["direction"]
+            )
+        except Exception as e:
+            logger.error(f"Failed to decode cursor: {e}")
+            raise ValueError("Invalid cursor")
+
+
+class PaginationManager(Generic[ModelType]):
+    """
+    Advanced pagination manager with multiple strategies.
+    
+    Provides optimized pagination for different use cases
+    and dataset sizes.
+    """
+    
+    def __init__(
+        self,
+        query: Query,
+        model: Type[ModelType],
+        strategy: PaginationStrategy = PaginationStrategy.OFFSET,
+        default_page_size: int = 50,
+        max_page_size: int = 1000,
+        count_threshold: int = 10000,
+        enable_count_estimation: bool = True
+    ):
+        """
+        Initialize pagination manager.
+        
+        Args:
+            query: Base SQLAlchemy query
+            model: Model class
+            strategy: Pagination strategy to use
+            default_page_size: Default items per page
+            max_page_size: Maximum items per page
+            count_threshold: Threshold for count estimation
+            enable_count_estimation: Whether to estimate counts for large datasets
+        """
+        self.query = query
+        self.model = model
+        self.strategy = strategy
+        self.default_page_size = default_page_size
+        self.max_page_size = max_page_size
+        self.count_threshold = count_threshold
+        self.enable_count_estimation = enable_count_estimation
+    
+    # ==================== Offset-Based Pagination ====================
+    
+    def paginate_offset(
+        self,
+        page: int = 1,
+        per_page: Optional[int] = None,
+        count_items: bool = True
+    ) -> PaginatedResult[ModelType]:
+        """
+        Traditional offset-based pagination.
+        
+        Args:
+            page: Page number (1-indexed)
+            per_page: Items per page
+            count_items: Whether to count total items
+            
+        Returns:
+            Paginated result
+        """
+        # Validate and normalize parameters
+        page = max(1, page)
+        per_page = min(per_page or self.default_page_size, self.max_page_size)
+        
+        # Calculate offset
+        offset = (page - 1) * per_page
+        
+        # Get total count
+        if count_items:
+            total_items = self._get_total_count()
+        else:
+            # Estimate based on query
+            total_items = offset + per_page + 1
+        
+        # Execute paginated query
+        items = self.query.offset(offset).limit(per_page).all()
+        
+        # Calculate pagination info
+        total_pages = (total_items + per_page - 1) // per_page if count_items else 0
+        has_next = len(items) == per_page and (not count_items or page < total_pages)
+        has_previous = page > 1
+        
+        page_info = PageInfo(
+            current_page=page,
+            per_page=per_page,
+            total_items=total_items if count_items else -1,
+            total_pages=total_pages,
+            has_next=has_next,
+            has_previous=has_previous
+        )
+        
+        return PaginatedResult(items=items, page_info=page_info)
+    
+    # ==================== Cursor-Based Pagination ====================
+    
+    def paginate_cursor(
+        self,
+        cursor: Optional[str] = None,
+        per_page: Optional[int] = None,
+        order_by: str = "id",
+        order_direction: str = "asc"
+    ) -> PaginatedResult[ModelType]:
+        """
+        Cursor-based pagination for large datasets.
+        
+        Args:
+            cursor: Pagination cursor
+            per_page: Items per page
+            order_by: Field to order by
+            order_direction: Order direction (asc/desc)
+            
+        Returns:
+            Paginated result
+        """
+        per_page = min(per_page or self.default_page_size, self.max_page_size)
+        
+        # Decode cursor if provided
+        cursor_obj = None
+        if cursor:
+            cursor_obj = Cursor.decode(cursor)
+        
+        # Build query with cursor
+        query = self.query
+        if cursor_obj:
+            column = getattr(self.model, cursor_obj.field)
+            if cursor_obj.direction == "next":
+                if order_direction == "asc":
+                    query = query.filter(column > cursor_obj.value)
+                else:
+                    query = query.filter(column < cursor_obj.value)
+            else:  # previous
+                if order_direction == "asc":
+                    query = query.filter(column < cursor_obj.value)
+                else:
+                    query = query.filter(column > cursor_obj.value)
+        
+        # Apply ordering
+        order_column = getattr(self.model, order_by)
+        if order_direction == "asc":
+            query = query.order_by(asc(order_column))
+        else:
+            query = query.order_by(desc(order_column))
+        
+        # Fetch one extra to check if there's a next page
+        items = query.limit(per_page + 1).all()
+        
+        has_next = len(items) > per_page
+        if has_next:
+            items = items[:per_page]
+        
+        # Create next cursor
+        next_cursor = None
+        if has_next and items:
+            last_item = items[-1]
+            next_cursor = Cursor(
+                value=getattr(last_item, order_by),
+                field=order_by,
+                direction="next"
+            ).encode()
+        
+        # Create previous cursor
+        previous_cursor = None
+        if cursor_obj or (items and cursor):
+            first_item = items[0] if items else None
+            if first_item:
+                previous_cursor = Cursor(
+                    value=getattr(first_item, order_by),
+                    field=order_by,
+                    direction="previous"
+                ).encode()
+        
+        page_info = PageInfo(
+            current_page=1,  # Not applicable for cursor pagination
+            per_page=per_page,
+            total_items=-1,  # Unknown for cursor pagination
+            total_pages=-1,
+            has_next=has_next,
+            has_previous=cursor is not None,
+            next_cursor=next_cursor,
+            previous_cursor=previous_cursor
+        )
+        
+        return PaginatedResult(items=items, page_info=page_info)
+    
+    # ==================== Keyset-Based Pagination ====================
+    
+    def paginate_keyset(
+        self,
+        last_id: Optional[Any] = None,
+        last_value: Optional[Any] = None,
+        per_page: Optional[int] = None,
+        order_by: str = "created_at",
+        order_direction: str = "desc"
+    ) -> PaginatedResult[ModelType]:
+        """
+        Keyset pagination using indexed columns.
+        
+        More efficient than offset for large datasets.
+        
+        Args:
+            last_id: Last seen ID
+            last_value: Last seen value of order_by field
+            per_page: Items per page
+            order_by: Field to order by
+            order_direction: Order direction
+            
+        Returns:
+            Paginated result
+        """
+        per_page = min(per_page or self.default_page_size, self.max_page_size)
+        
+        query = self.query
+        
+        # Apply keyset filter
+        if last_id and last_value:
+            id_column = self.model.id
+            order_column = getattr(self.model, order_by)
+            
+            if order_direction == "asc":
+                query = query.filter(
+                    or_(
+                        order_column > last_value,
+                        and_(order_column == last_value, id_column > last_id)
+                    )
+                )
+            else:
+                query = query.filter(
+                    or_(
+                        order_column < last_value,
+                        and_(order_column == last_value, id_column > last_id)
+                    )
+                )
+        
+        # Apply ordering
+        order_column = getattr(self.model, order_by)
+        if order_direction == "asc":
+            query = query.order_by(asc(order_column), asc(self.model.id))
+        else:
+            query = query.order_by(desc(order_column), asc(self.model.id))
+        
+        # Fetch results
+        items = query.limit(per_page + 1).all()
+        
+        has_next = len(items) > per_page
+        if has_next:
+            items = items[:per_page]
+        
+        page_info = PageInfo(
+            current_page=1,
+            per_page=per_page,
+            total_items=-1,
+            total_pages=-1,
+            has_next=has_next,
+            has_previous=last_id is not None
+        )
+        
+        return PaginatedResult(items=items, page_info=page_info)
+    
+    # ==================== Hybrid Pagination ====================
+    
+    def paginate_hybrid(
+        self,
+        page: int = 1,
+        per_page: Optional[int] = None,
+        cursor: Optional[str] = None,
+        order_by: str = "id"
+    ) -> PaginatedResult[ModelType]:
+        """
+        Hybrid pagination combining offset and cursor strategies.
+        
+        Uses offset for small datasets and cursor for large ones.
+        
+        Args:
+            page: Page number
+            per_page: Items per page
+            cursor: Cursor for continuation
+            order_by: Field to order by
+            
+        Returns:
+            Paginated result
+        """
+        # Estimate total count
+        total_count = self._get_total_count(estimate=True)
+        
+        # Choose strategy based on dataset size
+        if total_count < self.count_threshold:
+            return self.paginate_offset(page, per_page, count_items=True)
+        else:
+            return self.paginate_cursor(cursor, per_page, order_by)
+    
+    # ==================== Smart Pagination ====================
+    
+    def paginate(
+        self,
+        page: int = 1,
+        per_page: Optional[int] = None,
+        cursor: Optional[str] = None,
+        **kwargs
+    ) -> PaginatedResult[ModelType]:
+        """
+        Smart pagination using configured strategy.
+        
+        Args:
+            page: Page number
+            per_page: Items per page
+            cursor: Cursor for cursor-based pagination
+            **kwargs: Additional strategy-specific arguments
+            
+        Returns:
+            Paginated result
+        """
+        if self.strategy == PaginationStrategy.OFFSET:
+            return self.paginate_offset(page, per_page)
+        elif self.strategy == PaginationStrategy.CURSOR:
+            return self.paginate_cursor(cursor, per_page, **kwargs)
+        elif self.strategy == PaginationStrategy.KEYSET:
+            return self.paginate_keyset(per_page=per_page, **kwargs)
+        elif self.strategy == PaginationStrategy.HYBRID:
+            return self.paginate_hybrid(page, per_page, cursor, **kwargs)
+        else:
+            return self.paginate_offset(page, per_page)
+    
+    # ==================== Utility Methods ====================
+    
+    def _get_total_count(self, estimate: bool = False) -> int:
+        """
+        Get total count of items.
+        
+        Args:
+            estimate: Whether to use estimation for large datasets
+            
+        Returns:
+            Total count or estimate
+        """
+        if estimate and self.enable_count_estimation:
+            # Try fast count first
+            count = self._fast_count()
+            if count > self.count_threshold:
+                return self._estimate_count()
+        
+        return self.query.count()
+    
+    def _fast_count(self) -> int:
+        """
+        Fast count using COUNT(*) without offset/limit.
+        
+        Returns:
+            Exact count
+        """
+        count_query = self.query.statement.with_only_columns([func.count()]).order_by(None)
+        return self.query.session.execute(count_query).scalar()
+    
+    def _estimate_count(self) -> int:
+        """
+        Estimate count for very large datasets.
+        
+        Uses database statistics for estimation.
+        
+        Returns:
+            Estimated count
+        """
+        # PostgreSQL: Use reltuples from pg_class
+        # MySQL: Use information_schema
+        # For now, return a large number
+        return 1000000  # Placeholder
+    
+    def prefetch_adjacent_pages(
+        self,
+        current_page: int,
+        per_page: int,
+        prefetch_count: int = 1
+    ) -> Dict[int, List[ModelType]]:
+        """
+        Prefetch adjacent pages for caching.
+        
+        Args:
+            current_page: Current page number
+            per_page: Items per page
+            prefetch_count: Number of pages to prefetch on each side
+            
+        Returns:
+            Dictionary mapping page numbers to items
+        """
+        pages = {}
+        
+        for i in range(-prefetch_count, prefetch_count + 1):
+            page_num = current_page + i
+            if page_num > 0:
+                offset = (page_num - 1) * per_page
+                items = self.query.offset(offset).limit(per_page).all()
+                pages[page_num] = items
+        
+        return pages
+    
+    def get_page_boundaries(
+        self,
+        total_items: int,
+        per_page: int
+    ) -> List[Dict[str, int]]:
+        """
+        Get boundaries for all pages.
+        
+        Args:
+            total_items: Total number of items
+            per_page: Items per page
+            
+        Returns:
+            List of page boundaries
+        """
+        boundaries = []
+        total_pages = (total_items + per_page - 1) // per_page
+        
+        for page in range(1, total_pages + 1):
+            start = (page - 1) * per_page
+            end = min(start + per_page, total_items)
+            boundaries.append({
+                "page": page,
+                "start": start,
+                "end": end,
+                "count": end - start
+            })
+        
+        return boundaries
+
+
+class PageSizeOptimizer:
+    """Optimizer for dynamic page size adjustment."""
+    
+    def __init__(
+        self,
+        min_size: int = 10,
+        max_size: int = 100,
+        default_size: int = 50
+    ):
+        self.min_size = min_size
+        self.max_size = max_size
+        self.default_size = default_size
+    
+    def optimize(
+        self,
+        total_items: int,
+        user_preference: Optional[int] = None,
+        device_type: Optional[str] = None
+    ) -> int:
+        """
+        Calculate optimal page size.
+        
+        Args:
+            total_items: Total number of items
+            user_preference: User's preferred page size
+            device_type: Device type (mobile, tablet, desktop)
+            
+        Returns:
+            Optimized page size
+        """
+        # Start with user preference or default
+        size = user_preference or self.default_size
+        
+        # Adjust for device type
+        if device_type == "mobile":
+            size = min(size, 20)
+        elif device_type == "tablet":
+            size = min(size, 50)
+        
+        # Adjust for total items
+        if total_items < size:
+            size = max(self.min_size, total_items)
+        
+        # Clamp to bounds
+        return max(self.min_size, min(size, self.max_size))
+
+
+class PaginationCache:
+    """Cache for paginated results."""
+    
+    def __init__(self, ttl: int = 300):
+        self.ttl = ttl
+        self._cache: Dict[str, Dict[str, Any]] = {}
+    
+    def get(self, key: str) -> Optional[PaginatedResult]:
+        """Get cached result."""
+        if key in self._cache:
+            cached = self._cache[key]
+            if datetime.utcnow().timestamp() - cached["timestamp"] < self.ttl:
+                return cached["result"]
+            else:
+                del self._cache[key]
+        return None
+    
+    def set(self, key: str, result: PaginatedResult) -> None:
+        """Cache result."""
+        self._cache[key] = {
+            "result": result,
+            "timestamp": datetime.utcnow().timestamp()
+        }
+    
+    def invalidate(self, pattern: Optional[str] = None) -> None:
+        """Invalidate cache entries."""
+        if pattern:
+            keys_to_delete = [k for k in self._cache.keys() if pattern in k]
+            for key in keys_to_delete:
+                del self._cache[key]
+        else:
+            self._cache.clear()
+    
+    def get_cache_key(
+        self,
+        query_hash: str,
+        page: int,
+        per_page: int,
+        **kwargs
+    ) -> str:
+        """Generate cache key."""
+        import hashlib
+        
+        key_data = f"{query_hash}:{page}:{per_page}:{sorted(kwargs.items())}"
+        return hashlib.md5(key_data.encode()).hexdigest()
+
+# --- File: C:\Hostel-Main\app\repositories\base\query_builder.py ---
+"""
+Fluent query builder with type-safe operations, join optimization, and performance analysis.
+
+Provides advanced query construction capabilities with automatic
+optimization and performance monitoring.
+"""
+
+from typing import Any, Callable, Dict, List, Optional, Type, TypeVar, Union
+from datetime import datetime
+from enum import Enum
+
+from sqlalchemy import and_, or_, not_, func, text, case
+from sqlalchemy.orm import Query, Session, joinedload, selectinload, subqueryload
+from sqlalchemy.sql import Select, ClauseElement
+from sqlalchemy.sql.expression import ColumnElement
+
+from app.models.base import BaseModel
+from app.core.logging import get_logger
+
+logger = get_logger(__name__)
+
+ModelType = TypeVar("ModelType", bound=BaseModel)
+
+
+class JoinType(str, Enum):
+    """SQL join types."""
+    INNER = "inner"
+    LEFT = "left"
+    RIGHT = "right"
+    OUTER = "outer"
+
+
+class OrderDirection(str, Enum):
+    """Order direction."""
+    ASC = "asc"
+    DESC = "desc"
+
+
+class QueryBuilder(Generic[ModelType]):
+    """
+    Fluent query builder with advanced features.
+    
+    Provides chainable methods for building complex queries
+    with automatic optimization.
+    """
+    
+    def __init__(self, model: Type[ModelType], db: Session):
+        """
+        Initialize query builder.
+        
+        Args:
+            model: SQLAlchemy model class
+            db: Database session
+        """
+        self.model = model
+        self.db = db
+        self._query: Optional[Query] = None
+        self._filters: List[ClauseElement] = []
+        self._joins: List[tuple] = []
+        self._order_by: List[tuple] = []
+        self._group_by: List[ColumnElement] = []
+        self._having: List[ClauseElement] = []
+        self._limit_value: Optional[int] = None
+        self._offset_value: Optional[int] = None
+        self._distinct_flag: bool = False
+        self._eager_loads: List[tuple] = []
+        self._subqueries: Dict[str, Query] = {}
+        self._performance_hints: List[str] = []
+    
+    # ==================== Filter Methods ====================
+    
+    def where(self, *conditions: ClauseElement) -> "QueryBuilder[ModelType]":
+        """
+        Add WHERE conditions.
+        
+        Args:
+            *conditions: Filter conditions
+            
+        Returns:
+            Self for chaining
+        """
+        self._filters.extend(conditions)
+        return self
+    
+    def filter(self, **kwargs) -> "QueryBuilder[ModelType]":
+        """
+        Add filters using keyword arguments.
+        
+        Args:
+            **kwargs: Field=value pairs
+            
+        Returns:
+            Self for chaining
+        """
+        for key, value in kwargs.items():
+            if hasattr(self.model, key):
+                column = getattr(self.model, key)
+                if isinstance(value, (list, tuple)):
+                    self._filters.append(column.in_(value))
+                elif value is None:
+                    self._filters.append(column.is_(None))
+                else:
+                    self._filters.append(column == value)
+        return self
+    
+    def filter_by_id(self, id: Any) -> "QueryBuilder[ModelType]":
+        """
+        Filter by primary key.
+        
+        Args:
+            id: Primary key value
+            
+        Returns:
+            Self for chaining
+        """
+        self._filters.append(self.model.id == id)
+        return self
+    
+    def filter_by_ids(self, ids: List[Any]) -> "QueryBuilder[ModelType]":
+        """
+        Filter by multiple IDs.
+        
+        Args:
+            ids: List of IDs
+            
+        Returns:
+            Self for chaining
+        """
+        self._filters.append(self.model.id.in_(ids))
+        return self
+    
+    def or_where(self, *conditions: ClauseElement) -> "QueryBuilder[ModelType]":
+        """
+        Add OR conditions.
+        
+        Args:
+            *conditions: OR conditions
+            
+        Returns:
+            Self for chaining
+        """
+        if conditions:
+            self._filters.append(or_(*conditions))
+        return self
+    
+    def not_where(self, condition: ClauseElement) -> "QueryBuilder[ModelType]":
+        """
+        Add NOT condition.
+        
+        Args:
+            condition: Condition to negate
+            
+        Returns:
+            Self for chaining
+        """
+        self._filters.append(not_(condition))
+        return self
+    
+    def where_null(self, field: str) -> "QueryBuilder[ModelType]":
+        """
+        Filter where field is NULL.
+        
+        Args:
+            field: Field name
+            
+        Returns:
+            Self for chaining
+        """
+        if hasattr(self.model, field):
+            self._filters.append(getattr(self.model, field).is_(None))
+        return self
+    
+    def where_not_null(self, field: str) -> "QueryBuilder[ModelType]":
+        """
+        Filter where field is NOT NULL.
+        
+        Args:
+            field: Field name
+            
+        Returns:
+            Self for chaining
+        """
+        if hasattr(self.model, field):
+            self._filters.append(getattr(self.model, field).isnot(None))
+        return self
+    
+    def where_in(self, field: str, values: List[Any]) -> "QueryBuilder[ModelType]":
+        """
+        Filter where field is IN list.
+        
+        Args:
+            field: Field name
+            values: List of values
+            
+        Returns:
+            Self for chaining
+        """
+        if hasattr(self.model, field):
+            self._filters.append(getattr(self.model, field).in_(values))
+        return self
+    
+    def where_not_in(self, field: str, values: List[Any]) -> "QueryBuilder[ModelType]":
+        """
+        Filter where field is NOT IN list.
+        
+        Args:
+            field: Field name
+            values: List of values
+            
+        Returns:
+            Self for chaining
+        """
+        if hasattr(self.model, field):
+            self._filters.append(~getattr(self.model, field).in_(values))
+        return self
+    
+    def where_between(
+        self,
+        field: str,
+        start: Any,
+        end: Any
+    ) -> "QueryBuilder[ModelType]":
+        """
+        Filter where field is BETWEEN values.
+        
+        Args:
+            field: Field name
+            start: Start value
+            end: End value
+            
+        Returns:
+            Self for chaining
+        """
+        if hasattr(self.model, field):
+            column = getattr(self.model, field)
+            self._filters.append(and_(column >= start, column <= end))
+        return self
+    
+    def where_like(self, field: str, pattern: str) -> "QueryBuilder[ModelType]":
+        """
+        Filter where field matches LIKE pattern.
+        
+        Args:
+            field: Field name
+            pattern: LIKE pattern
+            
+        Returns:
+            Self for chaining
+        """
+        if hasattr(self.model, field):
+            self._filters.append(getattr(self.model, field).like(pattern))
+        return self
+    
+    def where_ilike(self, field: str, pattern: str) -> "QueryBuilder[ModelType]":
+        """
+        Filter where field matches ILIKE pattern (case-insensitive).
+        
+        Args:
+            field: Field name
+            pattern: ILIKE pattern
+            
+        Returns:
+            Self for chaining
+        """
+        if hasattr(self.model, field):
+            self._filters.append(getattr(self.model, field).ilike(pattern))
+        return self
+    
+    def where_date(
+        self,
+        field: str,
+        date: datetime
+    ) -> "QueryBuilder[ModelType]":
+        """
+        Filter by date (ignoring time).
+        
+        Args:
+            field: Field name
+            date: Date to match
+            
+        Returns:
+            Self for chaining
+        """
+        if hasattr(self.model, field):
+            column = getattr(self.model, field)
+            self._filters.append(func.date(column) == date.date())
+        return self
+    
+    # ==================== Join Methods ====================
+    
+    def join(
+        self,
+        model: Type[BaseModel],
+        condition: Optional[ClauseElement] = None,
+        join_type: JoinType = JoinType.INNER,
+        aliased: bool = False
+    ) -> "QueryBuilder[ModelType]":
+        """
+        Add JOIN clause.
+        
+        Args:
+            model: Model to join
+            condition: Join condition
+            join_type: Type of join
+            aliased: Whether to create alias
+            
+        Returns:
+            Self for chaining
+        """
+        self._joins.append((model, condition, join_type, aliased))
+        return self
+    
+    def left_join(
+        self,
+        model: Type[BaseModel],
+        condition: Optional[ClauseElement] = None
+    ) -> "QueryBuilder[ModelType]":
+        """
+        Add LEFT JOIN clause.
+        
+        Args:
+            model: Model to join
+            condition: Join condition
+            
+        Returns:
+            Self for chaining
+        """
+        return self.join(model, condition, JoinType.LEFT)
+    
+    def right_join(
+        self,
+        model: Type[BaseModel],
+        condition: Optional[ClauseElement] = None
+    ) -> "QueryBuilder[ModelType]":
+        """
+        Add RIGHT JOIN clause.
+        
+        Args:
+            model: Model to join
+            condition: Join condition
+            
+        Returns:
+            Self for chaining
+        """
+        return self.join(model, condition, JoinType.RIGHT)
+    
+    def outer_join(
+        self,
+        model: Type[BaseModel],
+        condition: Optional[ClauseElement] = None
+    ) -> "QueryBuilder[ModelType]":
+        """
+        Add OUTER JOIN clause.
+        
+        Args:
+            model: Model to join
+            condition: Join condition
+            
+        Returns:
+            Self for chaining
+        """
+        return self.join(model, condition, JoinType.OUTER)
+    
+    # ==================== Eager Loading ====================
+    
+    def with_eager(self, *relationships: str) -> "QueryBuilder[ModelType]":
+        """
+        Eager load relationships using JOIN.
+        
+        Args:
+            *relationships: Relationship names
+            
+        Returns:
+            Self for chaining
+        """
+        for rel in relationships:
+            if hasattr(self.model, rel):
+                self._eager_loads.append((rel, 'joined'))
+        return self
+    
+    def with_subquery(self, *relationships: str) -> "QueryBuilder[ModelType]":
+        """
+        Eager load relationships using subquery.
+        
+        Args:
+            *relationships: Relationship names
+            
+        Returns:
+            Self for chaining
+        """
+        for rel in relationships:
+            if hasattr(self.model, rel):
+                self._eager_loads.append((rel, 'subquery'))
+        return self
+    
+    def with_selectin(self, *relationships: str) -> "QueryBuilder[ModelType]":
+        """
+        Eager load relationships using SELECT IN.
+        
+        Args:
+            *relationships: Relationship names
+            
+        Returns:
+            Self for chaining
+        """
+        for rel in relationships:
+            if hasattr(self.model, rel):
+                self._eager_loads.append((rel, 'selectin'))
+        return self
+    
+    # ==================== Ordering ====================
+    
+    def order_by(
+        self,
+        field: str,
+        direction: OrderDirection = OrderDirection.ASC
+    ) -> "QueryBuilder[ModelType]":
+        """
+        Add ORDER BY clause.
+        
+        Args:
+            field: Field name
+            direction: Order direction
+            
+        Returns:
+            Self for chaining
+        """
+        if hasattr(self.model, field):
+            self._order_by.append((field, direction))
+        return self
+    
+    def order_by_desc(self, field: str) -> "QueryBuilder[ModelType]":
+        """
+        Order by field descending.
+        
+        Args:
+            field: Field name
+            
+        Returns:
+            Self for chaining
+        """
+        return self.order_by(field, OrderDirection.DESC)
+    
+    def order_by_asc(self, field: str) -> "QueryBuilder[ModelType]":
+        """
+        Order by field ascending.
+        
+        Args:
+            field: Field name
+            
+        Returns:
+            Self for chaining
+        """
+        return self.order_by(field, OrderDirection.ASC)
+    
+    # ==================== Grouping ====================
+    
+    def group_by(self, *fields: str) -> "QueryBuilder[ModelType]":
+        """
+        Add GROUP BY clause.
+        
+        Args:
+            *fields: Field names
+            
+        Returns:
+            Self for chaining
+        """
+        for field in fields:
+            if hasattr(self.model, field):
+                self._group_by.append(getattr(self.model, field))
+        return self
+    
+    def having(self, *conditions: ClauseElement) -> "QueryBuilder[ModelType]":
+        """
+        Add HAVING clause.
+        
+        Args:
+            *conditions: Having conditions
+            
+        Returns:
+            Self for chaining
+        """
+        self._having.extend(conditions)
+        return self
+    
+    # ==================== Pagination ====================
+    
+    def limit(self, limit: int) -> "QueryBuilder[ModelType]":
+        """
+        Set LIMIT.
+        
+        Args:
+            limit: Maximum number of results
+            
+        Returns:
+            Self for chaining
+        """
+        self._limit_value = limit
+        return self
+    
+    def offset(self, offset: int) -> "QueryBuilder[ModelType]":
+        """
+        Set OFFSET.
+        
+        Args:
+            offset: Number of results to skip
+            
+        Returns:
+            Self for chaining
+        """
+        self._offset_value = offset
+        return self
+    
+    def paginate(self, page: int, per_page: int) -> "QueryBuilder[ModelType]":
+        """
+        Paginate results.
+        
+        Args:
+            page: Page number (1-indexed)
+            per_page: Results per page
+            
+        Returns:
+            Self for chaining
+        """
+        self._limit_value = per_page
+        self._offset_value = (page - 1) * per_page
+        return self
+    
+    # ==================== Distinct ====================
+    
+    def distinct(self, *fields: str) -> "QueryBuilder[ModelType]":
+        """
+        Add DISTINCT clause.
+        
+        Args:
+            *fields: Fields for DISTINCT ON (PostgreSQL)
+            
+        Returns:
+            Self for chaining
+        """
+        self._distinct_flag = True
+        return self
+    
+    # ==================== Subqueries ====================
+    
+    def with_subquery(
+        self,
+        name: str,
+        query: Query
+    ) -> "QueryBuilder[ModelType]":
+        """
+        Add named subquery (CTE).
+        
+        Args:
+            name: Subquery name
+            query: Subquery
+            
+        Returns:
+            Self for chaining
+        """
+        self._subqueries[name] = query
+        return self
+    
+    # ==================== Build & Execute ====================
+    
+    def build(self) -> Query:
+        """
+        Build final query.
+        
+        Returns:
+            SQLAlchemy Query object
+        """
+        # Start with base query
+        query = self.db.query(self.model)
+        
+        # Apply joins
+        for model, condition, join_type, aliased in self._joins:
+            if join_type == JoinType.INNER:
+                query = query.join(model, condition, isouter=False)
+            elif join_type == JoinType.LEFT:
+                query = query.join(model, condition, isouter=True)
+            # Add other join types as needed
+        
+        # Apply filters
+        if self._filters:
+            query = query.filter(and_(*self._filters))
+        
+        # Apply eager loading
+        for rel, strategy in self._eager_loads:
+            if strategy == 'joined':
+                query = query.options(joinedload(getattr(self.model, rel)))
+            elif strategy == 'subquery':
+                query = query.options(subqueryload(getattr(self.model, rel)))
+            elif strategy == 'selectin':
+                query = query.options(selectinload(getattr(self.model, rel)))
+        
+        # Apply ordering
+        for field, direction in self._order_by:
+            column = getattr(self.model, field)
+            if direction == OrderDirection.DESC:
+                query = query.order_by(column.desc())
+            else:
+                query = query.order_by(column.asc())
+        
+        # Apply grouping
+        if self._group_by:
+            query = query.group_by(*self._group_by)
+        
+        # Apply having
+        if self._having:
+            query = query.having(and_(*self._having))
+        
+        # Apply distinct
+        if self._distinct_flag:
+            query = query.distinct()
+        
+        # Apply pagination
+        if self._offset_value is not None:
+            query = query.offset(self._offset_value)
+        if self._limit_value is not None:
+            query = query.limit(self._limit_value)
+        
+        self._query = query
+        return query
+    
+    def all(self) -> List[ModelType]:
+        """
+        Execute query and return all results.
+        
+        Returns:
+            List of entities
+        """
+        query = self.build()
+        return query.all()
+    
+    def first(self) -> Optional[ModelType]:
+        """
+        Execute query and return first result.
+        
+        Returns:
+            First entity or None
+        """
+        query = self.build()
+        return query.first()
+    
+    def one(self) -> ModelType:
+        """
+        Execute query and return exactly one result.
+        
+        Returns:
+            Single entity
+            
+        Raises:
+            NoResultFound: If no results
+            MultipleResultsFound: If multiple results
+        """
+        query = self.build()
+        return query.one()
+    
+    def one_or_none(self) -> Optional[ModelType]:
+        """
+        Execute query and return one result or None.
+        
+        Returns:
+            Single entity or None
+        """
+        query = self.build()
+        return query.one_or_none()
+    
+    def count(self) -> int:
+        """
+        Count query results.
+        
+        Returns:
+            Result count
+        """
+        query = self.build()
+        return query.count()
+    
+    def exists(self) -> bool:
+        """
+        Check if query returns any results.
+        
+        Returns:
+            True if results exist
+        """
+        return self.count() > 0
+    
+    def explain(self) -> str:
+        """
+        Get query execution plan.
+        
+        Returns:
+            Execution plan as string
+        """
+        query = self.build()
+        return str(query.statement.compile(
+            compile_kwargs={"literal_binds": True}
+        ))
+    
+    def reset(self) -> "QueryBuilder[ModelType]":
+        """
+        Reset builder to initial state.
+        
+        Returns:
+            Self for chaining
+        """
+        self._query = None
+        self._filters = []
+        self._joins = []
+        self._order_by = []
+        self._group_by = []
+        self._having = []
+        self._limit_value = None
+        self._offset_value = None
+        self._distinct_flag = False
+        self._eager_loads = []
+        self._subqueries = {}
+        return self
+
+# --- File: C:\Hostel-Main\app\repositories\base\repository_factory.py ---
+"""
+Repository factory for centralized instantiation and dependency injection.
+
+Provides singleton pattern, configuration management, and
+lifecycle control for repositories.
+"""
+
+from typing import Any, Dict, Optional, Type, TypeVar, Generic
+from functools import lru_cache
+import importlib
+
+from sqlalchemy.orm import Session
+
+from app.models.base import BaseModel
+from app.repositories.base.base_repository import BaseRepository
+from app.repositories.base.caching_repository import CachingRepository
+from app.core.config import settings
+from app.core.logging import get_logger
+from app.core.cache import CacheManager
+
+logger = get_logger(__name__)
+
+ModelType = TypeVar("ModelType", bound=BaseModel)
+RepositoryType = TypeVar("RepositoryType", bound=BaseRepository)
+
+
+class RepositoryRegistry:
+    """Registry for repository classes."""
+    
+    _repositories: Dict[str, Type[BaseRepository]] = {}
+    
+    @classmethod
+    def register(cls, name: str, repository_class: Type[BaseRepository]) -> None:
+        """
+        Register repository class.
+        
+        Args:
+            name: Repository name
+            repository_class: Repository class
+        """
+        cls._repositories[name] = repository_class
+        logger.debug(f"Registered repository: {name}")
+    
+    @classmethod
+    def get(cls, name: str) -> Optional[Type[BaseRepository]]:
+        """
+        Get repository class by name.
+        
+        Args:
+            name: Repository name
+            
+        Returns:
+            Repository class or None
+        """
+        return cls._repositories.get(name)
+    
+    @classmethod
+    def list_all(cls) -> Dict[str, Type[BaseRepository]]:
+        """
+        Get all registered repositories.
+        
+        Returns:
+            Dictionary of repository classes
+        """
+        return cls._repositories.copy()
+
+
+class RepositoryFactory:
+    """
+    Factory for creating and managing repository instances.
+    
+    Provides centralized instantiation with dependency injection,
+    caching, and lifecycle management.
+    """
+    
+    def __init__(
+        self,
+        db: Session,
+        cache_manager: Optional[CacheManager] = None,
+        enable_caching: bool = True,
+        enable_performance_profiling: bool = False
+    ):
+        """
+        Initialize repository factory.
+        
+        Args:
+            db: Database session
+            cache_manager: Cache manager instance
+            enable_caching: Whether to enable caching
+            enable_performance_profiling: Whether to enable profiling
+        """
+        self.db = db
+        self.cache_manager = cache_manager
+        self.enable_caching = enable_caching
+        self.enable_performance_profiling = enable_performance_profiling
+        self._instances: Dict[str, BaseRepository] = {}
+        self._config = self._load_config()
+    
+    def _load_config(self) -> Dict[str, Any]:
+        """
+        Load repository configuration.
+        
+        Returns:
+            Configuration dictionary
+        """
+        return {
+            "default_page_size": getattr(settings, "DEFAULT_PAGE_SIZE", 50),
+            "max_page_size": getattr(settings, "MAX_PAGE_SIZE", 1000),
+            "cache_ttl": getattr(settings, "CACHE_TTL", 300),
+            "enable_query_logging": getattr(settings, "ENABLE_QUERY_LOGGING", False),
+        }
+    
+    def create(
+        self,
+        repository_class: Type[RepositoryType],
+        model: Type[ModelType],
+        singleton: bool = True,
+        **kwargs
+    ) -> RepositoryType:
+        """
+        Create repository instance.
+        
+        Args:
+            repository_class: Repository class to instantiate
+            model: Model class
+            singleton: Whether to use singleton pattern
+            **kwargs: Additional arguments for repository
+            
+        Returns:
+            Repository instance
+        """
+        # Generate instance key
+        key = f"{repository_class.__name__}:{model.__name__}"
+        
+        # Return existing instance if singleton
+        if singleton and key in self._instances:
+            return self._instances[key]
+        
+        # Create base repository
+        repository = repository_class(model=model, db=self.db, **kwargs)
+        
+        # Wrap with caching if enabled
+        if self.enable_caching and self.cache_manager:
+            repository = CachingRepository(
+                repository=repository,
+                cache_manager=self.cache_manager,
+                ttl=self._config["cache_ttl"]
+            )
+        
+        # Store instance if singleton
+        if singleton:
+            self._instances[key] = repository
+        
+        logger.debug(f"Created repository: {key}")
+        return repository
+    
+    def create_by_name(
+        self,
+        name: str,
+        model: Type[ModelType],
+        singleton: bool = True,
+        **kwargs
+    ) -> BaseRepository:
+        """
+        Create repository by registered name.
+        
+        Args:
+            name: Repository name
+            model: Model class
+            singleton: Whether to use singleton pattern
+            **kwargs: Additional arguments
+            
+        Returns:
+            Repository instance
+            
+        Raises:
+            ValueError: If repository not found
+        """
+        repository_class = RepositoryRegistry.get(name)
+        if not repository_class:
+            raise ValueError(f"Repository not found: {name}")
+        
+        return self.create(repository_class, model, singleton, **kwargs)
+    
+    def create_base(
+        self,
+        model: Type[ModelType],
+        singleton: bool = True
+    ) -> BaseRepository[ModelType]:
+        """
+        Create base repository for model.
+        
+        Args:
+            model: Model class
+            singleton: Whether to use singleton pattern
+            
+        Returns:
+            Base repository instance
+        """
+        return self.create(BaseRepository, model, singleton)
+    
+    def get_or_create(
+        self,
+        repository_class: Type[RepositoryType],
+        model: Type[ModelType],
+        **kwargs
+    ) -> RepositoryType:
+        """
+        Get existing or create new repository instance.
+        
+        Args:
+            repository_class: Repository class
+            model: Model class
+            **kwargs: Additional arguments
+            
+        Returns:
+            Repository instance
+        """
+        return self.create(repository_class, model, singleton=True, **kwargs)
+    
+    def clear_cache(self, repository_name: Optional[str] = None) -> None:
+        """
+        Clear repository caches.
+        
+        Args:
+            repository_name: Specific repository to clear, or all if None
+        """
+        if repository_name:
+            if repository_name in self._instances:
+                repo = self._instances[repository_name]
+                if hasattr(repo, 'clear_cache'):
+                    repo.clear_cache()
+        else:
+            for repo in self._instances.values():
+                if hasattr(repo, 'clear_cache'):
+                    repo.clear_cache()
+        
+        logger.info(f"Cleared cache for: {repository_name or 'all repositories'}")
+    
+    def reset(self) -> None:
+        """Reset factory and clear all instances."""
+        self._instances.clear()
+        logger.info("Repository factory reset")
+    
+    def get_statistics(self) -> Dict[str, Any]:
+        """
+        Get factory statistics.
+        
+        Returns:
+            Statistics dictionary
+        """
+        return {
+            "total_instances": len(self._instances),
+            "repositories": list(self._instances.keys()),
+            "caching_enabled": self.enable_caching,
+            "profiling_enabled": self.enable_performance_profiling,
+        }
+    
+    def auto_discover_repositories(self, package: str = "app.repositories") -> None:
+        """
+        Auto-discover and register repositories from package.
+        
+        Args:
+            package: Package to scan for repositories
+        """
+        try:
+            module = importlib.import_module(package)
+            # Scan for repository classes and register them
+            # Implementation depends on project structure
+            logger.info(f"Auto-discovered repositories from: {package}")
+        except ImportError as e:
+            logger.error(f"Failed to auto-discover repositories: {e}")
+
+
+class RepositoryDecorator:
+    """Base decorator for repository enhancements."""
+    
+    def __init__(self, repository: BaseRepository):
+        self.repository = repository
+        self._wrap_methods()
+    
+    def _wrap_methods(self) -> None:
+        """Wrap repository methods with decorator logic."""
+        # Get all public methods from repository
+        for attr_name in dir(self.repository):
+            if not attr_name.startswith('_'):
+                attr = getattr(self.repository, attr_name)
+                if callable(attr):
+                    wrapped = self._wrap_method(attr)
+                    setattr(self, attr_name, wrapped)
+    
+    def _wrap_method(self, method):
+        """Wrap single method."""
+        def wrapper(*args, **kwargs):
+            return self._before_call(method, *args, **kwargs)
+        return wrapper
+    
+    def _before_call(self, method, *args, **kwargs):
+        """Hook before method call."""
+        return method(*args, **kwargs)
+    
+    def __getattr__(self, name):
+        """Delegate attribute access to repository."""
+        return getattr(self.repository, name)
+
+
+class PerformanceProfilingDecorator(RepositoryDecorator):
+    """Decorator for repository performance profiling."""
+    
+    def __init__(self, repository: BaseRepository):
+        super().__init__(repository)
+        self._call_stats: Dict[str, Dict[str, Any]] = {}
+    
+    def _before_call(self, method, *args, **kwargs):
+        """Profile method execution."""
+        import time
+        
+        method_name = method.__name__
+        start_time = time.time()
+        
+        try:
+            result = method(*args, **kwargs)
+            execution_time = time.time() - start_time
+            
+            # Update statistics
+            if method_name not in self._call_stats:
+                self._call_stats[method_name] = {
+                    "count": 0,
+                    "total_time": 0,
+                    "min_time": float('inf'),
+                    "max_time": 0,
+                }
+            
+            stats = self._call_stats[method_name]
+            stats["count"] += 1
+            stats["total_time"] += execution_time
+            stats["min_time"] = min(stats["min_time"], execution_time)
+            stats["max_time"] = max(stats["max_time"], execution_time)
+            
+            logger.debug(
+                f"{method_name} executed in {execution_time:.4f}s"
+            )
+            
+            return result
+            
+        except Exception as e:
+            execution_time = time.time() - start_time
+            logger.error(
+                f"{method_name} failed after {execution_time:.4f}s: {e}"
+            )
+            raise
+    
+    def get_statistics(self) -> Dict[str, Any]:
+        """Get profiling statistics."""
+        stats = {}
+        for method_name, data in self._call_stats.items():
+            stats[method_name] = {
+                "calls": data["count"],
+                "total_time": round(data["total_time"], 4),
+                "avg_time": round(data["total_time"] / data["count"], 4),
+                "min_time": round(data["min_time"], 4),
+                "max_time": round(data["max_time"], 4),
+            }
+        return stats
+
+
+class TransactionDecorator(RepositoryDecorator):
+    """Decorator for automatic transaction management."""
+    
+    def __init__(
+        self,
+        repository: BaseRepository,
+        auto_commit: bool = True
+    ):
+        self.auto_commit = auto_commit
+        super().__init__(repository)
+    
+    def _before_call(self, method, *args, **kwargs):
+        """Wrap method in transaction."""
+        # Only wrap mutating operations
+        mutating_methods = [
+            'create', 'update', 'delete', 'soft_delete',
+            'create_many', 'update_many'
+        ]
+        
+        if method.__name__ in mutating_methods:
+            with self.repository.transaction():
+                return method(*args, **kwargs)
+        
+        return method(*args, **kwargs)
+
+
+# Global factory instance
+_global_factory: Optional[RepositoryFactory] = None
+
+
+def get_repository_factory(db: Session) -> RepositoryFactory:
+    """
+    Get global repository factory instance.
+    
+    Args:
+        db: Database session
+        
+    Returns:
+        Repository factory instance
+    """
+    global _global_factory
+    if _global_factory is None:
+        _global_factory = RepositoryFactory(db=db)
+    return _global_factory
+
+
+def reset_factory() -> None:
+    """Reset global factory instance."""
+    global _global_factory
+    if _global_factory:
+        _global_factory.reset()
+    _global_factory = None
+
+# --- File: C:\Hostel-Main\app\repositories\base\specifications.py ---
+"""
+Specification pattern for encapsulating business rules and query logic.
+
+Provides reusable, composable, and testable query conditions
+for complex business rules.
+"""
+
+from abc import ABC, abstractmethod
+from typing import Any, Generic, List, Optional, Type, TypeVar
+from datetime import datetime, date, timedelta
+from decimal import Decimal
+
+from sqlalchemy import and_, or_, not_, func
+from sqlalchemy.orm import Query
+from sqlalchemy.sql.expression import ClauseElement
+
+from app.models.base import BaseModel
+from app.models.base.enums import (
+    BookingStatus,
+    PaymentStatus,
+    ComplaintStatus,
+    ComplaintPriority,
+    MaintenanceStatus,
+    RoomStatus,
+    BedStatus,
+    LeaveStatus,
+    AttendanceStatus,
+)
+
+ModelType = TypeVar("ModelType", bound=BaseModel)
+
+
+class Specification(ABC, Generic[ModelType]):
+    """
+    Abstract specification for query conditions.
+    
+    Implements the Specification pattern for building
+    reusable and composable query logic.
+    """
+    
+    @abstractmethod
+    def to_expression(self, model: Type[ModelType]) -> ClauseElement:
+        """
+        Convert specification to SQLAlchemy expression.
+        
+        Args:
+            model: Model class
+            
+        Returns:
+            SQLAlchemy clause element
+        """
+        pass
+    
+    def apply(self, query: Query) -> Query:
+        """
+        Apply specification to query.
+        
+        Args:
+            query: SQLAlchemy query
+            
+        Returns:
+            Modified query
+        """
+        return query.filter(self.to_expression(query.column_descriptions[0]['type']))
+    
+    def __and__(self, other: "Specification[ModelType]") -> "AndSpecification[ModelType]":
+        """Combine specifications with AND."""
+        return AndSpecification(self, other)
+    
+    def __or__(self, other: "Specification[ModelType]") -> "OrSpecification[ModelType]":
+        """Combine specifications with OR."""
+        return OrSpecification(self, other)
+    
+    def __invert__(self) -> "NotSpecification[ModelType]":
+        """Negate specification."""
+        return NotSpecification(self)
+
+
+class AndSpecification(Specification[ModelType]):
+    """AND combination of specifications."""
+    
+    def __init__(self, *specs: Specification[ModelType]):
+        self.specs = specs
+    
+    def to_expression(self, model: Type[ModelType]) -> ClauseElement:
+        return and_(*[spec.to_expression(model) for spec in self.specs])
+
+
+class OrSpecification(Specification[ModelType]):
+    """OR combination of specifications."""
+    
+    def __init__(self, *specs: Specification[ModelType]):
+        self.specs = specs
+    
+    def to_expression(self, model: Type[ModelType]) -> ClauseElement:
+        return or_(*[spec.to_expression(model) for spec in self.specs])
+
+
+class NotSpecification(Specification[ModelType]):
+    """NOT negation of specification."""
+    
+    def __init__(self, spec: Specification[ModelType]):
+        self.spec = spec
+    
+    def to_expression(self, model: Type[ModelType]) -> ClauseElement:
+        return not_(self.spec.to_expression(model))
+
+
+# ==================== Generic Specifications ====================
+
+
+class FieldEqualsSpecification(Specification[ModelType]):
+    """Specification for field equality."""
+    
+    def __init__(self, field_name: str, value: Any):
+        self.field_name = field_name
+        self.value = value
+    
+    def to_expression(self, model: Type[ModelType]) -> ClauseElement:
+        return getattr(model, self.field_name) == self.value
+
+
+class FieldInSpecification(Specification[ModelType]):
+    """Specification for field IN list."""
+    
+    def __init__(self, field_name: str, values: List[Any]):
+        self.field_name = field_name
+        self.values = values
+    
+    def to_expression(self, model: Type[ModelType]) -> ClauseElement:
+        return getattr(model, self.field_name).in_(self.values)
+
+
+class FieldBetweenSpecification(Specification[ModelType]):
+    """Specification for field BETWEEN values."""
+    
+    def __init__(self, field_name: str, start: Any, end: Any):
+        self.field_name = field_name
+        self.start = start
+        self.end = end
+    
+    def to_expression(self, model: Type[ModelType]) -> ClauseElement:
+        field = getattr(model, self.field_name)
+        return and_(field >= self.start, field <= self.end)
+
+
+class FieldLikeSpecification(Specification[ModelType]):
+    """Specification for field LIKE pattern."""
+    
+    def __init__(self, field_name: str, pattern: str, case_sensitive: bool = False):
+        self.field_name = field_name
+        self.pattern = pattern
+        self.case_sensitive = case_sensitive
+    
+    def to_expression(self, model: Type[ModelType]) -> ClauseElement:
+        field = getattr(model, self.field_name)
+        if self.case_sensitive:
+            return field.like(self.pattern)
+        return field.ilike(self.pattern)
+
+
+class DateRangeSpecification(Specification[ModelType]):
+    """Specification for date range filtering."""
+    
+    def __init__(
+        self,
+        field_name: str,
+        start_date: Optional[date] = None,
+        end_date: Optional[date] = None
+    ):
+        self.field_name = field_name
+        self.start_date = start_date
+        self.end_date = end_date
+    
+    def to_expression(self, model: Type[ModelType]) -> ClauseElement:
+        field = getattr(model, self.field_name)
+        conditions = []
+        
+        if self.start_date:
+            conditions.append(func.date(field) >= self.start_date)
+        if self.end_date:
+            conditions.append(func.date(field) <= self.end_date)
+        
+        return and_(*conditions) if conditions else True
+
+
+# ==================== Student Specifications ====================
+
+
+class ActiveStudentsSpecification(Specification):
+    """Students with active status and valid enrollment."""
+    
+    def to_expression(self, model: Type[ModelType]) -> ClauseElement:
+        from app.models.student import Student
+        
+        return and_(
+            model.status == "active",
+            model.is_deleted == False,
+            model.enrollment_date <= datetime.utcnow(),
+            or_(
+                model.expected_checkout_date.is_(None),
+                model.expected_checkout_date > datetime.utcnow()
+            )
+        )
+
+
+class StudentsEnrolledInPeriodSpecification(Specification):
+    """Students enrolled within a specific period."""
+    
+    def __init__(self, start_date: date, end_date: date):
+        self.start_date = start_date
+        self.end_date = end_date
+    
+    def to_expression(self, model: Type[ModelType]) -> ClauseElement:
+        return and_(
+            func.date(model.enrollment_date) >= self.start_date,
+            func.date(model.enrollment_date) <= self.end_date
+        )
+
+
+class StudentsWithOverdueDocumentsSpecification(Specification):
+    """Students with documents approaching expiration."""
+    
+    def __init__(self, days_before: int = 30):
+        self.threshold_date = datetime.utcnow() + timedelta(days=days_before)
+    
+    def to_expression(self, model: Type[ModelType]) -> ClauseElement:
+        # This would typically join with documents table
+        return model.id.in_(
+            # Subquery for students with expiring documents
+            # Implementation depends on document model structure
+        )
+
+
+# ==================== Booking Specifications ====================
+
+
+class PendingBookingsSpecification(Specification):
+    """Bookings pending confirmation."""
+    
+    def to_expression(self, model: Type[ModelType]) -> ClauseElement:
+        return and_(
+            model.status == BookingStatus.PENDING,
+            model.is_deleted == False
+        )
+
+
+class ConfirmedBookingsSpecification(Specification):
+    """Confirmed bookings."""
+    
+    def to_expression(self, model: Type[ModelType]) -> ClauseElement:
+        return and_(
+            model.status == BookingStatus.CONFIRMED,
+            model.is_deleted == False
+        )
+
+
+class BookingsForDateRangeSpecification(Specification):
+    """Bookings within a date range."""
+    
+    def __init__(self, start_date: date, end_date: date):
+        self.start_date = start_date
+        self.end_date = end_date
+    
+    def to_expression(self, model: Type[ModelType]) -> ClauseElement:
+        return and_(
+            or_(
+                and_(
+                    model.check_in_date >= self.start_date,
+                    model.check_in_date <= self.end_date
+                ),
+                and_(
+                    model.check_out_date >= self.start_date,
+                    model.check_out_date <= self.end_date
+                ),
+                and_(
+                    model.check_in_date <= self.start_date,
+                    model.check_out_date >= self.end_date
+                )
+            ),
+            model.is_deleted == False
+        )
+
+
+class ExpiredBookingsSpecification(Specification):
+    """Bookings that have expired without confirmation."""
+    
+    def __init__(self, expiry_hours: int = 24):
+        self.expiry_threshold = datetime.utcnow() - timedelta(hours=expiry_hours)
+    
+    def to_expression(self, model: Type[ModelType]) -> ClauseElement:
+        return and_(
+            model.status == BookingStatus.PENDING,
+            model.created_at < self.expiry_threshold,
+            model.is_deleted == False
+        )
+
+
+# ==================== Room & Bed Specifications ====================
+
+
+class AvailableRoomsSpecification(Specification):
+    """Rooms available for booking in date range."""
+    
+    def __init__(
+        self,
+        start_date: date,
+        end_date: date,
+        hostel_id: Optional[Any] = None,
+        room_type: Optional[str] = None
+    ):
+        self.start_date = start_date
+        self.end_date = end_date
+        self.hostel_id = hostel_id
+        self.room_type = room_type
+    
+    def to_expression(self, model: Type[ModelType]) -> ClauseElement:
+        conditions = [
+            model.status == RoomStatus.AVAILABLE,
+            model.is_deleted == False,
+            model.available_beds > 0
+        ]
+        
+        if self.hostel_id:
+            conditions.append(model.hostel_id == self.hostel_id)
+        
+        if self.room_type:
+            conditions.append(model.room_type == self.room_type)
+        
+        # Check for no conflicting bookings
+        # This would typically involve a subquery
+        
+        return and_(*conditions)
+
+
+class AvailableBedsSpecification(Specification):
+    """Beds available for assignment."""
+    
+    def __init__(self, room_id: Optional[Any] = None):
+        self.room_id = room_id
+    
+    def to_expression(self, model: Type[ModelType]) -> ClauseElement:
+        conditions = [
+            model.status == BedStatus.AVAILABLE,
+            model.is_deleted == False
+        ]
+        
+        if self.room_id:
+            conditions.append(model.room_id == self.room_id)
+        
+        return and_(*conditions)
+
+
+class RoomsRequiringMaintenanceSpecification(Specification):
+    """Rooms requiring maintenance based on last maintenance date."""
+    
+    def __init__(self, days_since_maintenance: int = 90):
+        self.threshold_date = datetime.utcnow() - timedelta(days=days_since_maintenance)
+    
+    def to_expression(self, model: Type[ModelType]) -> ClauseElement:
+        return or_(
+            model.last_maintenance_date.is_(None),
+            model.last_maintenance_date < self.threshold_date
+        )
+
+
+# ==================== Payment Specifications ====================
+
+
+class OverduePaymentsSpecification(Specification):
+    """Payments past due date with grace period."""
+    
+    def __init__(self, grace_period_days: int = 0):
+        self.due_date_threshold = datetime.utcnow().date() - timedelta(days=grace_period_days)
+    
+    def to_expression(self, model: Type[ModelType]) -> ClauseElement:
+        return and_(
+            model.status.in_([PaymentStatus.PENDING, PaymentStatus.FAILED]),
+            func.date(model.due_date) < self.due_date_threshold,
+            model.is_deleted == False
+        )
+
+
+class PendingPaymentsSpecification(Specification):
+    """Payments pending processing."""
+    
+    def to_expression(self, model: Type[ModelType]) -> ClauseElement:
+        return and_(
+            model.status == PaymentStatus.PENDING,
+            model.is_deleted == False
+        )
+
+
+class PaymentsInDateRangeSpecification(Specification):
+    """Payments within date range."""
+    
+    def __init__(self, start_date: date, end_date: date):
+        self.start_date = start_date
+        self.end_date = end_date
+    
+    def to_expression(self, model: Type[ModelType]) -> ClauseElement:
+        return and_(
+            func.date(model.payment_date) >= self.start_date,
+            func.date(model.payment_date) <= self.end_date,
+            model.is_deleted == False
+        )
+
+
+class FailedPaymentsSpecification(Specification):
+    """Failed payments requiring retry."""
+    
+    def __init__(self, max_attempts: int = 3):
+        self.max_attempts = max_attempts
+    
+    def to_expression(self, model: Type[ModelType]) -> ClauseElement:
+        return and_(
+            model.status == PaymentStatus.FAILED,
+            model.retry_count < self.max_attempts,
+            model.is_deleted == False
+        )
+
+
+# ==================== Complaint Specifications ====================
+
+
+class OpenComplaintsSpecification(Specification):
+    """Open complaints requiring attention."""
+    
+    def to_expression(self, model: Type[ModelType]) -> ClauseElement:
+        return and_(
+            model.status.in_([ComplaintStatus.OPEN, ComplaintStatus.IN_PROGRESS]),
+            model.is_deleted == False
+        )
+
+
+class HighPriorityComplaintsSpecification(Specification):
+    """High priority and urgent complaints."""
+    
+    def to_expression(self, model: Type[ModelType]) -> ClauseElement:
+        return and_(
+            model.priority.in_([ComplaintPriority.HIGH, ComplaintPriority.URGENT]),
+            model.status != ComplaintStatus.CLOSED,
+            model.is_deleted == False
+        )
+
+
+class EscalatedComplaintsSpecification(Specification):
+    """Escalated complaints."""
+    
+    def to_expression(self, model: Type[ModelType]) -> ClauseElement:
+        return and_(
+            model.status == ComplaintStatus.ESCALATED,
+            model.is_deleted == False
+        )
+
+
+class OverdueComplaintsSpecification(Specification):
+    """Complaints past SLA deadline."""
+    
+    def __init__(self, sla_hours: int = 48):
+        self.sla_threshold = datetime.utcnow() - timedelta(hours=sla_hours)
+    
+    def to_expression(self, model: Type[ModelType]) -> ClauseElement:
+        return and_(
+            model.status.in_([ComplaintStatus.OPEN, ComplaintStatus.IN_PROGRESS]),
+            model.created_at < self.sla_threshold,
+            model.is_deleted == False
+        )
+
+
+class ComplaintsByCategorySpecification(Specification):
+    """Complaints by specific category."""
+    
+    def __init__(self, category: str):
+        self.category = category
+    
+    def to_expression(self, model: Type[ModelType]) -> ClauseElement:
+        return and_(
+            model.category == self.category,
+            model.is_deleted == False
+        )
+
+
+# ==================== Maintenance Specifications ====================
+
+
+class PendingMaintenanceSpecification(Specification):
+    """Maintenance requests pending assignment."""
+    
+    def to_expression(self, model: Type[ModelType]) -> ClauseElement:
+        return and_(
+            model.status == MaintenanceStatus.REQUESTED,
+            model.is_deleted == False
+        )
+
+
+class InProgressMaintenanceSpecification(Specification):
+    """Maintenance tasks in progress."""
+    
+    def to_expression(self, model: Type[ModelType]) -> ClauseElement:
+        return and_(
+            model.status.in_([
+                MaintenanceStatus.ASSIGNED,
+                MaintenanceStatus.IN_PROGRESS
+            ]),
+            model.is_deleted == False
+        )
+
+
+class OverdueMaintenanceSpecification(Specification):
+    """Maintenance past expected completion date."""
+    
+    def to_expression(self, model: Type[ModelType]) -> ClauseElement:
+        return and_(
+            model.status.in_([
+                MaintenanceStatus.ASSIGNED,
+                MaintenanceStatus.IN_PROGRESS
+            ]),
+            model.expected_completion_date < datetime.utcnow(),
+            model.is_deleted == False
+        )
+
+
+class MaintenanceRequiringVerificationSpecification(Specification):
+    """Completed maintenance requiring verification."""
+    
+    def to_expression(self, model: Type[ModelType]) -> ClauseElement:
+        return and_(
+            model.status == MaintenanceStatus.COMPLETED,
+            model.verified_at.is_(None),
+            model.is_deleted == False
+        )
+
+
+class PreventiveMaintenanceSpecification(Specification):
+    """Equipment requiring preventive maintenance."""
+    
+    def __init__(self, maintenance_interval_days: int = 90):
+        self.threshold_date = datetime.utcnow() - timedelta(days=maintenance_interval_days)
+    
+    def to_expression(self, model: Type[ModelType]) -> ClauseElement:
+        return and_(
+            or_(
+                model.last_maintenance_date.is_(None),
+                model.last_maintenance_date < self.threshold_date
+            ),
+            model.is_deleted == False
+        )
+
+
+# ==================== Attendance Specifications ====================
+
+
+class PresentTodaySpecification(Specification):
+    """Students marked present today."""
+    
+    def to_expression(self, model: Type[ModelType]) -> ClauseElement:
+        today = datetime.utcnow().date()
+        return and_(
+            func.date(model.attendance_date) == today,
+            model.status == AttendanceStatus.PRESENT,
+            model.is_deleted == False
+        )
+
+
+class AbsentTodaySpecification(Specification):
+    """Students marked absent today."""
+    
+    def to_expression(self, model: Type[ModelType]) -> ClauseElement:
+        today = datetime.utcnow().date()
+        return and_(
+            func.date(model.attendance_date) == today,
+            model.status == AttendanceStatus.ABSENT,
+            model.is_deleted == False
+        )
+
+
+class LowAttendanceSpecification(Specification):
+    """Students with low attendance percentage."""
+    
+    def __init__(self, threshold_percentage: float = 75.0, days: int = 30):
+        self.threshold = threshold_percentage
+        self.start_date = datetime.utcnow() - timedelta(days=days)
+    
+    def to_expression(self, model: Type[ModelType]) -> ClauseElement:
+        # This would typically involve aggregation
+        # Implementation depends on attendance tracking structure
+        return True  # Placeholder
+
+
+# ==================== Leave Specifications ====================
+
+
+class PendingLeaveRequestsSpecification(Specification):
+    """Leave requests pending approval."""
+    
+    def to_expression(self, model: Type[ModelType]) -> ClauseElement:
+        return and_(
+            model.status == LeaveStatus.PENDING,
+            model.is_deleted == False
+        )
+
+
+class ApprovedLeaveSpecification(Specification):
+    """Approved leave requests."""
+    
+    def to_expression(self, model: Type[ModelType]) -> ClauseElement:
+        return and_(
+            model.status == LeaveStatus.APPROVED,
+            model.is_deleted == False
+        )
+
+
+class ActiveLeaveSpecification(Specification):
+    """Currently active leave (student on leave today)."""
+    
+    def to_expression(self, model: Type[ModelType]) -> ClauseElement:
+        today = datetime.utcnow().date()
+        return and_(
+            model.status == LeaveStatus.APPROVED,
+            model.start_date <= today,
+            model.end_date >= today,
+            model.is_deleted == False
+        )
+
+
+# ==================== Document Specifications ====================
+
+
+class ExpiredDocumentsSpecification(Specification):
+    """Documents that have expired."""
+    
+    def to_expression(self, model: Type[ModelType]) -> ClauseElement:
+        today = datetime.utcnow().date()
+        return and_(
+            model.expiry_date < today,
+            model.is_deleted == False
+        )
+
+
+class ExpiringDocumentsSpecification(Specification):
+    """Documents expiring within specified days."""
+    
+    def __init__(self, days: int = 30):
+        self.threshold_date = datetime.utcnow().date() + timedelta(days=days)
+    
+    def to_expression(self, model: Type[ModelType]) -> ClauseElement:
+        today = datetime.utcnow().date()
+        return and_(
+            model.expiry_date.isnot(None),
+            model.expiry_date > today,
+            model.expiry_date <= self.threshold_date,
+            model.is_deleted == False
+        )
+
+
+class UnverifiedDocumentsSpecification(Specification):
+    """Documents pending verification."""
+    
+    def to_expression(self, model: Type[ModelType]) -> ClauseElement:
+        return and_(
+            model.verified_at.is_(None),
+            model.is_deleted == False
+        )
+
+
+# ==================== Announcement Specifications ====================
+
+
+class PublishedAnnouncementsSpecification(Specification):
+    """Currently published announcements."""
+    
+    def to_expression(self, model: Type[ModelType]) -> ClauseElement:
+        from app.models.base.enums import AnnouncementStatus
+        
+        now = datetime.utcnow()
+        return and_(
+            model.status == AnnouncementStatus.PUBLISHED,
+            or_(
+                model.published_at.is_(None),
+                model.published_at <= now
+            ),
+            or_(
+                model.expires_at.is_(None),
+                model.expires_at > now
+            ),
+            model.is_deleted == False
+        )
+
+
+class UrgentAnnouncementsSpecification(Specification):
+    """Urgent/emergency announcements."""
+    
+    def to_expression(self, model: Type[ModelType]) -> ClauseElement:
+        from app.models.base.enums import AnnouncementPriority
+        
+        return and_(
+            model.priority == AnnouncementPriority.URGENT,
+            model.is_deleted == False
+        )
+
+
+class TargetedAnnouncementsSpecification(Specification):
+    """Announcements targeted to specific user."""
+    
+    def __init__(self, user_id: Any, user_role: str):
+        self.user_id = user_id
+        self.user_role = user_role
+    
+    def to_expression(self, model: Type[ModelType]) -> ClauseElement:
+        # Implementation depends on targeting mechanism
+        return True  # Placeholder
+
+
+# ==================== Hostel Specifications ====================
+
+
+class ActiveHostelsSpecification(Specification):
+    """Active and operational hostels."""
+    
+    def to_expression(self, model: Type[ModelType]) -> ClauseElement:
+        from app.models.base.enums import HostelStatus
+        
+        return and_(
+            model.status == HostelStatus.ACTIVE,
+            model.is_deleted == False
+        )
+
+
+class HostelsWithAvailabilitySpecification(Specification):
+    """Hostels with available beds."""
+    
+    def to_expression(self, model: Type[ModelType]) -> ClauseElement:
+        return and_(
+            model.available_beds > 0,
+            model.is_deleted == False
+        )
+
+
+class HostelsByLocationSpecification(Specification):
+    """Hostels within geographic radius."""
+    
+    def __init__(self, latitude: float, longitude: float, radius_km: float):
+        self.latitude = latitude
+        self.longitude = longitude
+        self.radius_km = radius_km
+    
+    def to_expression(self, model: Type[ModelType]) -> ClauseElement:
+        # Haversine formula for distance calculation
+        # This is a simplified version
+        return True  # Placeholder - requires PostGIS or similar
+
+
+# ==================== Utility Specifications ====================
+
+
+class SoftDeletedSpecification(Specification):
+    """Soft-deleted entities."""
+    
+    def to_expression(self, model: Type[ModelType]) -> ClauseElement:
+        return model.is_deleted == True
+
+
+class NotDeletedSpecification(Specification):
+    """Non-deleted entities."""
+    
+    def to_expression(self, model: Type[ModelType]) -> ClauseElement:
+        return model.is_deleted == False
+
+
+class CreatedInLastDaysSpecification(Specification):
+    """Entities created within last N days."""
+    
+    def __init__(self, days: int):
+        self.threshold_date = datetime.utcnow() - timedelta(days=days)
+    
+    def to_expression(self, model: Type[ModelType]) -> ClauseElement:
+        return model.created_at >= self.threshold_date
+
+
+class UpdatedInLastDaysSpecification(Specification):
+    """Entities updated within last N days."""
+    
+    def __init__(self, days: int):
+        self.threshold_date = datetime.utcnow() - timedelta(days=days)
+    
+    def to_expression(self, model: Type[ModelType]) -> ClauseElement:
+        return model.updated_at >= self.threshold_date
+
+
+class ByHostelSpecification(Specification):
+    """Entities belonging to specific hostel (multi-tenant)."""
+    
+    def __init__(self, hostel_id: Any):
+        self.hostel_id = hostel_id
+    
+    def to_expression(self, model: Type[ModelType]) -> ClauseElement:
+        return model.hostel_id == self.hostel_id
+
+
+class ByUserSpecification(Specification):
+    """Entities created by specific user."""
+    
+    def __init__(self, user_id: Any):
+        self.user_id = user_id
+    
+    def to_expression(self, model: Type[ModelType]) -> ClauseElement:
+        return model.created_by == self.user_id
+
+# --- File: C:\Hostel-Main\app\repositories\base\__init__.py ---
+"""
+Base repositories package.
+
+Provides base repository infrastructure, query builders,
+specifications, pagination, filtering, and caching.
+"""
+
+from app.repositories.base.base_repository import (
+    BaseRepository,
+    AuditContext,
+)
+
+from app.repositories.base.query_builder import (
+    QueryBuilder,
+    JoinType,
+    OrderDirection,
+)
+
+from app.repositories.base.specifications import (
+    Specification,
+    AndSpecification,
+    OrSpecification,
+    NotSpecification,
+    FieldEqualsSpecification,
+    FieldInSpecification,
+    FieldBetweenSpecification,
+    FieldLikeSpecification,
+    DateRangeSpecification,
+    # Student specs
+    ActiveStudentsSpecification,
+    StudentsEnrolledInPeriodSpecification,
+    StudentsWithOverdueDocumentsSpecification,
+    # Booking specs
+    PendingBookingsSpecification,
+    ConfirmedBookingsSpecification,
+    BookingsForDateRangeSpecification,
+    ExpiredBookingsSpecification,
+    # Room & Bed specs
+    AvailableRoomsSpecification,
+    AvailableBedsSpecification,
+    RoomsRequiringMaintenanceSpecification,
+    # Payment specs
+    OverduePaymentsSpecification,
+    PendingPaymentsSpecification,
+    PaymentsInDateRangeSpecification,
+    FailedPaymentsSpecification,
+    # Complaint specs
+    OpenComplaintsSpecification,
+    HighPriorityComplaintsSpecification,
+    EscalatedComplaintsSpecification,
+    OverdueComplaintsSpecification,
+    ComplaintsByCategorySpecification,
+    # Maintenance specs
+    PendingMaintenanceSpecification,
+    InProgressMaintenanceSpecification,
+    OverdueMaintenanceSpecification,
+    MaintenanceRequiringVerificationSpecification,
+    PreventiveMaintenanceSpecification,
+    # Attendance specs
+    PresentTodaySpecification,
+    AbsentTodaySpecification,
+    LowAttendanceSpecification,
+    # Leave specs
+    PendingLeaveRequestsSpecification,
+    ApprovedLeaveSpecification,
+    ActiveLeaveSpecification,
+    # Document specs
+    ExpiredDocumentsSpecification,
+    ExpiringDocumentsSpecification,
+    UnverifiedDocumentsSpecification,
+    # Announcement specs
+    PublishedAnnouncementsSpecification,
+    UrgentAnnouncementsSpecification,
+    TargetedAnnouncementsSpecification,
+    # Hostel specs
+    ActiveHostelsSpecification,
+    HostelsWithAvailabilitySpecification,
+    HostelsByLocationSpecification,
+    # Utility specs
+    SoftDeletedSpecification,
+    NotDeletedSpecification,
+    CreatedInLastDaysSpecification,
+    UpdatedInLastDaysSpecification,
+    ByHostelSpecification,
+    ByUserSpecification,
+)
+
+from app.repositories.base.repository_factory import (
+    RepositoryFactory,
+    RepositoryRegistry,
+    RepositoryDecorator,
+    PerformanceProfilingDecorator,
+    TransactionDecorator,
+    get_repository_factory,
+    reset_factory,
+)
+
+from app.repositories.base.pagination import (
+    PaginationManager,
+    PaginationStrategy,
+    PageInfo,
+    PaginatedResult,
+    Cursor,
+    PageSizeOptimizer,
+    PaginationCache,
+)
+
+from app.repositories.base.filtering import (
+    FilterEngine,
+    Filter,
+    FilterGroup,
+    FilterOperator,
+    FilterType,
+    SearchQueryBuilder,
+)
+
+from app.repositories.base.caching_repository import (
+    CachingRepository,
+    CacheStrategy,
+    CacheLevel,
+    LRUCache,
+    CacheKeyGenerator,
+    CacheInvalidator,
+    cached_method,
+)
+
+__all__ = [
+    # Base repository
+    "BaseRepository",
+    "AuditContext",
+    
+    # Query builder
+    "QueryBuilder",
+    "JoinType",
+    "OrderDirection",
+    
+    # Specifications
+    "Specification",
+    "AndSpecification",
+    "OrSpecification",
+    "NotSpecification",
+    "FieldEqualsSpecification",
+    "FieldInSpecification",
+    "FieldBetweenSpecification",
+    "FieldLikeSpecification",
+    "DateRangeSpecification",
+    # Student
+    "ActiveStudentsSpecification",
+    "StudentsEnrolledInPeriodSpecification",
+    "StudentsWithOverdueDocumentsSpecification",
+    # Booking
+    "PendingBookingsSpecification",
+    "ConfirmedBookingsSpecification",
+    "BookingsForDateRangeSpecification",
+    "ExpiredBookingsSpecification",
+    # Room & Bed
+    "AvailableRoomsSpecification",
+    "AvailableBedsSpecification",
+    "RoomsRequiringMaintenanceSpecification",
+    # Payment
+    "OverduePaymentsSpecification",
+    "PendingPaymentsSpecification",
+    "PaymentsInDateRangeSpecification",
+    "FailedPaymentsSpecification",
+    # Complaint
+    "OpenComplaintsSpecification",
+    "HighPriorityComplaintsSpecification",
+    "EscalatedComplaintsSpecification",
+    "OverdueComplaintsSpecification",
+    "ComplaintsByCategorySpecification",
+    # Maintenance
+    "PendingMaintenanceSpecification",
+    "InProgressMaintenanceSpecification",
+    "OverdueMaintenanceSpecification",
+    "MaintenanceRequiringVerificationSpecification",
+    "PreventiveMaintenanceSpecification",
+    # Attendance
+    "PresentTodaySpecification",
+    "AbsentTodaySpecification",
+    "LowAttendanceSpecification",
+    # Leave
+    "PendingLeaveRequestsSpecification",
+    "ApprovedLeaveSpecification",
+    "ActiveLeaveSpecification",
+    # Document
+    "ExpiredDocumentsSpecification",
+    "ExpiringDocumentsSpecification",
+    "UnverifiedDocumentsSpecification",
+    # Announcement
+    "PublishedAnnouncementsSpecification",
+    "UrgentAnnouncementsSpecification",
+    "TargetedAnnouncementsSpecification",
+    # Hostel
+    "ActiveHostelsSpecification",
+    "HostelsWithAvailabilitySpecification",
+    "HostelsByLocationSpecification",
+    # Utility
+    "SoftDeletedSpecification",
+    "NotDeletedSpecification",
+    "CreatedInLastDaysSpecification",
+    "UpdatedInLastDaysSpecification",
+    "ByHostelSpecification",
+    "ByUserSpecification",
+    
+    # Repository factory
+    "RepositoryFactory",
+    "RepositoryRegistry",
+    "RepositoryDecorator",
+    "PerformanceProfilingDecorator",
+    "TransactionDecorator",
+    "get_repository_factory",
+    "reset_factory",
+    
+    # Pagination
+    "PaginationManager",
+    "PaginationStrategy",
+    "PageInfo",
+    "PaginatedResult",
+    "Cursor",
+    "PageSizeOptimizer",
+    "PaginationCache",
+    
+    # Filtering
+    "FilterEngine",
+    "Filter",
+    "FilterGroup",
+    "FilterOperator",
+    "FilterType",
+    "SearchQueryBuilder",
+    
+    # Caching
+    "CachingRepository",
+    "CacheStrategy",
+    "CacheLevel",
+    "LRUCache",
+    "CacheKeyGenerator",
+    "CacheInvalidator",
+    "cached_method",
+]
+
+
+# Version
+__version__ = "1.0.0"
+
+# Package metadata
+__author__ = "Hostel Management System Team"
+__description__ = "Base repository infrastructure with advanced features"
