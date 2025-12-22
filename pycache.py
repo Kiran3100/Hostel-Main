@@ -270,7 +270,7 @@ def main() -> None:
 
     # 🔧 CONFIGURATION
 
-    root_directory = Path(r"C:\Hostel-Main\app").resolve()  # Change this to your target directory
+    root_directory = Path(r"D:\Last Github Push\Last\Hostel-Main\app").resolve()  # Change this to your target directory
 
    
 

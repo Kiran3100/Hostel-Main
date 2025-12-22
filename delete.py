@@ -3,7 +3,7 @@ from pathlib import Path
 from typing import List, Tuple
 
 # Configuration
-ROOT_FOLDER = r"C:\Hostel-Main\app"  # Change this to your actual path
+ROOT_FOLDER = r"D:\Last Github Push\Last\Hostel-Main\app"  # Change this to your actual path
 TARGET_FILENAME = "all_folders_files_content.txt"
 
 def delete_target_files(root_folder: str, dry_run: bool = False) -> Tuple[int, int]:
