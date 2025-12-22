@@ -1,331 +1,1462 @@
-services/
+app/
 ├── __init__.py
-├── base/
+├── main.py                                    # Application entry point
+├── config/
 │   ├── __init__.py
-│   ├── base_service.py                    # Abstract base service with common patterns
-│   ├── service_factory.py                 # Centralized service instantiation & DI
-│   ├── transaction_manager.py             # Cross-service transaction coordination
-│   ├── event_dispatcher.py                # Domain event publishing & handling
-│   ├── validation_service.py              # Cross-cutting validation logic
-│   ├── authorization_service.py           # Permission & access control checks
-│   ├── audit_service.py                   # Audit logging & compliance tracking
-│   ├── cache_service.py                   # Service-level caching abstraction
-│   ├── notification_dispatcher.py         # Cross-module notification triggering
-│   └── error_handler.py                   # Standardized error handling & recovery
+│   ├── settings.py                            # Environment configuration
+│   ├── database.py                            # Database connection settings
+│   ├── redis.py                               # Redis/Cache configuration
+│   ├── logging.py                             # Logging configuration
+│   ├── security.py                            # Security settings (JWT, encryption)
+│   └── integrations.py                        # Third-party integration configs
 │
-├── admin/
+├── core/
 │   ├── __init__.py
-│   ├── admin_user_service.py              # Admin user lifecycle & management
-│   ├── admin_authentication_service.py    # Admin-specific auth & session management
-│   ├── admin_permission_service.py        # Permission assignment & validation
-│   ├── admin_role_service.py              # Role management & hierarchy
-│   ├── hostel_assignment_service.py       # Multi-hostel assignment & transfers
-│   ├── admin_override_service.py          # Override decisions & approval workflows
-│   ├── hostel_context_service.py          # Context switching & session management
-│   ├── hostel_selector_service.py         # Hostel selection & quick access
-│   ├── multi_hostel_dashboard_service.py  # Aggregated dashboard & comparisons
-│   └── admin_activity_service.py          # Admin activity tracking & logging
+│   ├── dependencies.py                        # FastAPI dependencies
+│   ├── exceptions.py                          # Custom exception classes
+│   ├── middleware/
+│   │   ├── __init__.py
+│   │   ├── authentication.py                  # Auth middleware
+│   │   ├── authorization.py                   # Permission middleware
+│   │   ├── tenant_context.py                  # Multi-tenancy middleware
+│   │   ├── rate_limiting.py                   # Rate limiting
+│   │   ├── request_logging.py                 # Request/response logging
+│   │   └── error_handling.py                  # Global error handling
+│   ├── security/
+│   │   ├── __init__.py
+│   │   ├── jwt_handler.py                     # JWT operations
+│   │   ├── password_hasher.py                 # Password hashing
+│   │   ├── encryption.py                      # Data encryption utilities
+│   │   └── permissions.py                     # Permission decorators
+│   └── events/
+│       ├── __init__.py
+│       ├── event_bus.py                       # Event dispatcher
+│       ├── handlers.py                        # Event handlers registry
+│       └── domain_events.py                   # Domain event definitions
 │
-├── analytics/
+├── schemas/
 │   ├── __init__.py
-│   ├── analytics_engine_service.py        # Core analytics processing engine
-│   ├── booking_analytics_service.py       # Booking KPIs, trends, forecasting
-│   ├── financial_analytics_service.py     # Revenue, expense, P&L analytics
-│   ├── occupancy_analytics_service.py     # Occupancy rates, demand forecasting
-│   ├── complaint_analytics_service.py     # Complaint metrics, SLA compliance
-│   ├── supervisor_analytics_service.py    # Supervisor performance analytics
-│   ├── visitor_analytics_service.py       # Visitor funnel, conversion analytics
-│   ├── platform_analytics_service.py      # Platform-wide metrics & benchmarks
-│   ├── dashboard_analytics_service.py     # Real-time dashboard data aggregation
-│   ├── report_generation_service.py       # Automated report generation
-│   ├── predictive_analytics_service.py    # ML-based predictions & forecasting
-│   └── analytics_export_service.py        # Data export & external integrations
+│   │
+│   ├── common/                                # ━━━ SHARED/BASE SCHEMAS ━━━
+│   │   ├── __init__.py
+│   │   ├── base.py                            # BaseSchema, BaseDBSchema, mixins
+│   │   ├── enums.py                           # All centralized enums
+│   │   ├── mixins.py                          # Address, Contact, Location, Media, Audit, Approval, SEO mixins
+│   │   ├── pagination.py                      # PaginationParams, PaginatedResponse, CursorPagination
+│   │   ├── response.py                        # SuccessResponse, ErrorResponse, BulkOperationResponse
+│   │   └── filters.py                         # DateRange, PriceRange, SearchFilter, SortOptions
+│   │
+│   ├── auth/                                  # ━━━ AUTHENTICATION ━━━
+│   │   ├── __init__.py
+│   │   ├── login.py                           # LoginRequest, LoginResponse, TokenData
+│   │   ├── register.py                        # RegisterRequest, RegisterResponse, Verification
+│   │   ├── token.py                           # Token, TokenPayload, RefreshToken, Revocation
+│   │   ├── password.py                        # PasswordReset, PasswordChange, PasswordStrength
+│   │   ├── otp.py                             # OTPGenerate, OTPVerify, ResendOTP
+│   │   └── social_auth.py                     # SocialAuthRequest, OAuth responses
+│   │
+│   ├── user/                                  # ━━━ USER MANAGEMENT ━━━
+│   │   ├── __init__.py
+│   │   ├── user_base.py                       # UserBase, UserCreate, UserUpdate
+│   │   ├── user_response.py                   # UserResponse, UserDetail, UserProfile
+│   │   ├── user_profile.py                    # ProfileUpdate, ContactInfo, NotificationPreferences
+│   │   └── user_session.py                    # UserSession, SessionInfo, RevokeSession
+│   │
+│   ├── admin/                                 # ━━━ ADMIN MANAGEMENT ━━━
+│   │   ├── __init__.py
+│   │   ├── admin_hostel_assignment.py         # Assignment CRUD, BulkAssignment, Revocation
+│   │   ├── admin_permissions.py               # AdminPermissions, PermissionMatrix, RolePermissions
+│   │   ├── admin_override.py                  # OverrideRequest, OverrideLog, OverrideStats
+│   │   ├── hostel_context.py                  # HostelContext, ContextSwitch, ContextHistory
+│   │   ├── hostel_selector.py                 # HostelSelector, RecentHostels, Favorites
+│   │   └── multi_hostel_dashboard.py          # MultiHostelDashboard, AggregatedStats, Comparisons
+│   │
+│   ├── supervisor/                            # ━━━ SUPERVISOR MANAGEMENT ━━━
+│   │   ├── __init__.py
+│   │   ├── supervisor_base.py                 # SupervisorBase, Create, Update, StatusUpdate
+│   │   ├── supervisor_response.py             # SupervisorResponse, Detail, ListItem
+│   │   ├── supervisor_profile.py              # SupervisorProfile, Employment, PerformanceSummary
+│   │   ├── supervisor_permissions.py          # Permissions, PermissionUpdate, Templates
+│   │   ├── supervisor_assignment.py           # Assignment, Transfer, Revocation
+│   │   ├── supervisor_activity.py             # ActivityLog, ActivityDetail, ActivitySummary
+│   │   ├── supervisor_dashboard.py            # Dashboard, Metrics, TaskSummary, Alerts
+│   │   └── supervisor_performance.py          # PerformanceMetrics, Review, Goals, Comparison
+│   │
+│   ├── student/                               # ━━━ STUDENT MANAGEMENT ━━━
+│   │   ├── __init__.py
+│   │   ├── student_base.py                    # StudentBase, Create, Update
+│   │   ├── student_response.py                # StudentResponse, Detail, Profile, FinancialInfo
+│   │   ├── student_profile.py                 # ProfileCreate, Documents, Preferences
+│   │   ├── student_room_history.py            # RoomHistory, TransferRequest, Approval
+│   │   ├── student_dashboard.py               # Dashboard, FinancialSummary, AttendanceSummary
+│   │   └── student_filters.py                 # FilterParams, SearchRequest, ExportRequest
+│   │
+│   ├── visitor/                               # ━━━ VISITOR MANAGEMENT ━━━
+│   │   ├── __init__.py
+│   │   ├── visitor_base.py                    # VisitorBase, Create, Update
+│   │   ├── visitor_response.py                # VisitorResponse, Profile, Detail
+│   │   ├── visitor_preferences.py             # Preferences, SavedSearch, PreferenceUpdate
+│   │   ├── visitor_dashboard.py               # Dashboard, SavedHostels, BookingHistory, Alerts
+│   │   └── visitor_favorites.py               # FavoriteRequest, FavoritesList, Comparison
+│   │
+│   ├── hostel/                                # ━━━ HOSTEL MANAGEMENT ━━━
+│   │   ├── __init__.py
+│   │   ├── hostel_base.py                     # HostelBase, Create, Update, MediaUpdate
+│   │   ├── hostel_response.py                 # HostelResponse, Detail, ListItem, Stats
+│   │   ├── hostel_public.py                   # PublicHostelCard, PublicProfile, PublicRoomType
+│   │   ├── hostel_admin.py                    # AdminView, Settings, Visibility, Capacity
+│   │   ├── hostel_search.py                   # SearchRequest, SearchResponse, Facets
+│   │   ├── hostel_filter.py                   # FilterParams, SortOptions, AdvancedFilters
+│   │   ├── hostel_analytics.py                # Analytics, OccupancyStats, RevenueStats
+│   │   └── hostel_comparison.py               # ComparisonRequest, ComparisonResult, Summary
+│   │
+│   ├── room/                                  # ━━━ ROOM & BED MANAGEMENT ━━━
+│   │   ├── __init__.py
+│   │   ├── room_base.py                       # RoomBase, Create, Update, BulkCreate
+│   │   ├── room_response.py                   # RoomResponse, Detail, WithBeds, OccupancyStats
+│   │   ├── bed_base.py                        # BedBase, Create, Update, AssignmentRequest
+│   │   ├── bed_response.py                    # BedResponse, Availability, AssignmentHistory
+│   │   └── room_availability.py               # AvailabilityRequest, Calendar, DayAvailability
+│   │
+│   ├── booking/                               # ━━━ BOOKING MANAGEMENT ━━━
+│   │   ├── __init__.py
+│   │   ├── booking_base.py                    # BookingBase, Create, Update
+│   │   ├── booking_response.py                # BookingResponse, Detail, Confirmation
+│   │   ├── booking_request.py                 # GuestInformation, BookingRequest, QuickBooking
+│   │   ├── booking_approval.py                # ApprovalRequest, RejectionRequest, AutoApproval
+│   │   ├── booking_assignment.py              # RoomAssignment, BedAssignment, Reassignment
+│   │   ├── booking_calendar.py                # CalendarView, DayBookings, AvailabilityCalendar
+│   │   ├── booking_cancellation.py            # CancellationRequest, RefundCalculation, Policy
+│   │   ├── booking_modification.py            # ModificationRequest, DateChange, RoomTypeChange
+│   │   ├── booking_conversion.py              # ConvertToStudent, Checklist, BulkConversion
+│   │   ├── booking_waitlist.py                # WaitlistRequest, Status, Notification, Conversion
+│   │   └── booking_filters.py                 # FilterParams, SearchRequest, ExportRequest
+│   │
+│   ├── inquiry/                               # ━━━ INQUIRY MANAGEMENT ━━━
+│   │   ├── __init__.py
+│   │   ├── inquiry_base.py                    # InquiryBase, Create
+│   │   ├── inquiry_response.py                # InquiryResponse, Detail, ListItem
+│   │   └── inquiry_status.py                  # StatusUpdate, Assignment, Timeline
+│   │
+│   ├── payment/                               # ━━━ PAYMENT MANAGEMENT ━━━
+│   │   ├── __init__.py
+│   │   ├── payment_base.py                    # PaymentBase, Create, Update
+│   │   ├── payment_response.py                # PaymentResponse, Detail, Receipt, Summary
+│   │   ├── payment_request.py                 # PaymentRequest, Initiation, ManualPayment
+│   │   ├── payment_gateway.py                 # GatewayRequest, Response, Webhook, Callback
+│   │   ├── payment_refund.py                  # RefundRequest, Response, Status, Approval
+│   │   ├── payment_ledger.py                  # LedgerEntry, Summary, Statement, Adjustment
+│   │   ├── payment_reminder.py                # ReminderConfig, Log, Batch, Stats
+│   │   ├── payment_schedule.py                # Schedule, Create, Generation, Suspension
+│   │   └── payment_filters.py                 # FilterParams, ReportRequest, ExportRequest
+│   │
+│   ├── fee_structure/                         # ━━━ FEE STRUCTURE ━━━
+│   │   ├── __init__.py
+│   │   ├── fee_base.py                        # FeeStructureBase, Create, Update
+│   │   ├── fee_response.py                    # FeeStructureResponse, Detail, List
+│   │   └── fee_config.py                      # ChargesBreakdown, FeeConfiguration
+│   │
+│   ├── complaint/                             # ━━━ COMPLAINT MANAGEMENT ━━━
+│   │   ├── __init__.py
+│   │   ├── complaint_base.py                  # ComplaintBase, Create, Update, StatusUpdate
+│   │   ├── complaint_response.py              # ComplaintResponse, Detail, Summary
+│   │   ├── complaint_assignment.py            # AssignmentRequest, Reassignment, BulkAssignment
+│   │   ├── complaint_resolution.py            # ResolutionRequest, Response, ReopenRequest
+│   │   ├── complaint_escalation.py            # EscalationRequest, History, AutoEscalationRule
+│   │   ├── complaint_feedback.py              # FeedbackRequest, Response, Summary, Analysis
+│   │   ├── complaint_comments.py              # CommentCreate, Response, MentionNotification
+│   │   ├── complaint_filters.py               # FilterParams, SearchRequest, ExportRequest
+│   │   └── complaint_analytics.py             # Analytics, ResolutionMetrics, StaffPerformance
+│   │
+│   ├── maintenance/                           # ━━━ MAINTENANCE MANAGEMENT ━━━
+│   │   ├── __init__.py
+│   │   ├── maintenance_base.py                # MaintenanceBase, Create, Update, StatusUpdate
+│   │   ├── maintenance_response.py            # Response, Detail, Summary
+│   │   ├── maintenance_request.py             # Request, Submission, EmergencyRequest
+│   │   ├── maintenance_assignment.py          # TaskAssignment, VendorAssignment, History
+│   │   ├── maintenance_approval.py            # ApprovalRequest, ThresholdConfig, Workflow
+│   │   ├── maintenance_completion.py          # CompletionRequest, QualityCheck, Certificate
+│   │   ├── maintenance_cost.py                # CostTracking, BudgetAllocation, VendorInvoice
+│   │   ├── maintenance_schedule.py            # PreventiveSchedule, Execution, History
+│   │   ├── maintenance_filters.py             # FilterParams, SearchRequest, ExportRequest
+│   │   └── maintenance_analytics.py           # Analytics, TrendPoint, VendorPerformance
+│   │
+│   ├── attendance/                            # ━━━ ATTENDANCE MANAGEMENT ━━━
+│   │   ├── __init__.py
+│   │   ├── attendance_base.py                 # AttendanceBase, Create, Update, BulkCreate
+│   │   ├── attendance_response.py             # Response, Detail, DailySummary
+│   │   ├── attendance_record.py               # RecordRequest, BulkRequest, Correction
+│   │   ├── attendance_policy.py               # Policy, PolicyConfig, PolicyViolation
+│   │   ├── attendance_alert.py                # Alert, AlertConfig, Acknowledgment
+│   │   ├── attendance_report.py               # Report, Summary, TrendAnalysis, Comparison
+│   │   └── attendance_filters.py              # FilterParams, DateRange, ExportRequest
+│   │
+│   ├── leave/                                 # ━━━ LEAVE MANAGEMENT ━━━
+│   │   ├── __init__.py
+│   │   ├── leave_base.py                      # LeaveBase, Create, Update
+│   │   ├── leave_response.py                  # LeaveResponse, Detail, ListItem
+│   │   ├── leave_application.py               # ApplicationRequest, CancellationRequest
+│   │   ├── leave_approval.py                  # ApprovalRequest, Response
+│   │   └── leave_balance.py                   # LeaveBalance, BalanceSummary
+│   │
+│   ├── mess/                                  # ━━━ MESS/MENU MANAGEMENT ━━━
+│   │   ├── __init__.py
+│   │   ├── mess_menu_base.py                  # MessMenuBase, Create, Update
+│   │   ├── mess_menu_response.py              # MenuResponse, Detail, WeeklyMenu, TodayMenu
+│   │   ├── meal_items.py                      # MealItems, MenuItem, DietaryOptions, NutritionalInfo
+│   │   ├── menu_planning.py                   # MenuPlanRequest, WeeklyPlan, SpecialMenu
+│   │   ├── menu_approval.py                   # ApprovalRequest, Workflow, BulkApproval
+│   │   ├── menu_feedback.py                   # FeedbackRequest, RatingsSummary, QualityMetrics
+│   │   └── menu_duplication.py                # DuplicateRequest, BulkCreate, CrossHostel
+│   │
+│   ├── announcement/                          # ━━━ ANNOUNCEMENT MANAGEMENT ━━━
+│   │   ├── __init__.py
+│   │   ├── announcement_base.py               # AnnouncementBase, Create, Update
+│   │   ├── announcement_response.py           # Response, Detail, List
+│   │   ├── announcement_targeting.py          # TargetingConfig, AudienceSelection, BulkTargeting
+│   │   ├── announcement_scheduling.py         # ScheduleRequest, RecurringAnnouncement
+│   │   ├── announcement_approval.py           # ApprovalRequest, Workflow, BulkApproval
+│   │   ├── announcement_delivery.py           # DeliveryConfig, Status, Report, RetryDelivery
+│   │   ├── announcement_tracking.py           # ReadReceipt, Acknowledgment, EngagementMetrics
+│   │   └── announcement_filters.py            # FilterParams, SearchRequest, ExportRequest
+│   │
+│   ├── notification/                          # ━━━ NOTIFICATION MANAGEMENT ━━━
+│   │   ├── __init__.py
+│   │   ├── notification_base.py               # NotificationBase, Create, Update, MarkAsRead
+│   │   ├── notification_response.py           # Response, Detail, List, UnreadCount
+│   │   ├── notification_template.py           # TemplateCreate, Variables, Localization
+│   │   ├── email_notification.py              # EmailRequest, Config, Tracking, Template
+│   │   ├── sms_notification.py                # SMSRequest, Config, DeliveryStatus
+│   │   ├── push_notification.py               # PushRequest, DeviceToken, Registration
+│   │   ├── notification_queue.py              # QueueStatus, BatchProcessing, QueueStats
+│   │   ├── notification_preferences.py        # UserPreferences, ChannelPreferences, Unsubscribe
+│   │   └── notification_routing.py            # RoutingConfig, Rules, EscalationRouting
+│   │
+│   ├── review/                                # ━━━ REVIEW MANAGEMENT ━━━
+│   │   ├── __init__.py
+│   │   ├── review_base.py                     # ReviewBase, Create, Update
+│   │   ├── review_response.py                 # ReviewResponse, Detail, Summary
+│   │   ├── review_submission.py               # SubmissionRequest, DetailedRatings, Guidelines
+│   │   ├── review_moderation.py               # ModerationRequest, Queue, BulkModeration
+│   │   ├── review_voting.py                   # VoteRequest, HelpfulnessScore, VoteHistory
+│   │   ├── review_response_schema.py          # HostelResponseCreate, ResponseGuidelines
+│   │   ├── review_filters.py                  # FilterParams, SearchRequest, ExportRequest
+│   │   └── review_analytics.py                # Analytics, SentimentAnalysis, TrendAnalysis
+│   │
+│   ├── subscription/                          # ━━━ SUBSCRIPTION MANAGEMENT ━━━
+│   │   ├── __init__.py
+│   │   ├── subscription_plan_base.py          # PlanBase, Create, Update
+│   │   ├── subscription_plan_response.py      # PlanResponse, Features, Comparison
+│   │   ├── subscription_base.py               # SubscriptionBase, Create, Update
+│   │   ├── subscription_response.py           # SubscriptionResponse, BillingHistory
+│   │   ├── subscription_billing.py            # BillingCycleInfo, InvoiceRequest
+│   │   ├── subscription_upgrade.py            # UpgradeRequest, Preview, Downgrade
+│   │   ├── subscription_cancellation.py       # CancellationRequest, Response
+│   │   └── commission.py                      # CommissionConfig, Response, Summary
+│   │
+│   ├── referral/                              # ━━━ REFERRAL MANAGEMENT ━━━
+│   │   ├── __init__.py
+│   │   ├── referral_program_base.py           # ProgramBase, Create, Update
+│   │   ├── referral_program_response.py       # ProgramResponse, List
+│   │   ├── referral_base.py                   # ReferralBase, Create
+│   │   ├── referral_response.py               # ReferralResponse, Stats
+│   │   ├── referral_code.py                   # CodeGenerate, Validation
+│   │   └── referral_rewards.py                # RewardConfig, Tracking, PayoutRequest
+│   │
+│   ├── audit/                                 # ━━━ AUDIT & LOGGING ━━━
+│   │   ├── __init__.py
+│   │   ├── audit_log_base.py                  # AuditLogBase, Create
+│   │   ├── audit_log_response.py              # Response, Detail
+│   │   ├── supervisor_activity_log.py         # ActivityBase, Create, Response, Summary
+│   │   ├── admin_override_log.py              # OverrideBase, Create, Response, Timeline
+│   │   ├── audit_filters.py                   # FilterParams
+│   │   └── audit_reports.py                   # Summary, EntityChangeHistory, Report
+│   │
+│   ├── analytics/                             # ━━━ ANALYTICS & REPORTING ━━━
+│   │   ├── __init__.py
+│   │   ├── dashboard_analytics.py             # KPIResponse, QuickStats, DashboardMetrics
+│   │   ├── booking_analytics.py               # BookingKPI, Trend, Funnel, Cancellation
+│   │   ├── financial_analytics.py             # RevenueBreakdown, P&L, CashFlow
+│   │   ├── occupancy_analytics.py             # OccupancyKPI, Forecast, ByRoomType
+│   │   ├── complaint_analytics.py             # ComplaintKPI, Trend, CategoryBreakdown
+│   │   ├── supervisor_analytics.py            # SupervisorKPI, Comparison, Dashboard
+│   │   ├── visitor_analytics.py               # VisitorFunnel, TrafficSource, Behavior
+│   │   ├── platform_analytics.py              # PlatformMetrics, Growth, Usage
+│   │   └── custom_reports.py                  # CustomReportRequest, Definition, Result
+│   │
+│   ├── search/                                # ━━━ SEARCH ━━━
+│   │   ├── __init__.py
+│   │   ├── search_request.py                  # BasicSearch, AdvancedSearch
+│   │   ├── search_response.py                 # SearchResultItem, FacetedResponse
+│   │   ├── search_filters.py                  # PriceFilter, RatingFilter, AmenityFilter
+│   │   ├── search_sort.py                     # SortCriteria
+│   │   ├── search_autocomplete.py             # AutocompleteRequest, Suggestion
+│   │   └── search_analytics.py                # SearchTermStats, Analytics
+│   │
+│   └── file/                                  # ━━━ FILE MANAGEMENT ━━━
+│       ├── __init__.py
+│       ├── file_upload.py                     # UploadInitRequest, CompleteRequest
+│       ├── file_response.py                   # FileMetadata, FileInfo, FileURL
+│       ├── image_upload.py                    # ImageUploadInit, Variants, Processing
+│       └── document_upload.py                 # DocumentUploadInit, Validation, Info
 │
-├── announcement/
+├── models/
 │   ├── __init__.py
-│   ├── announcement_service.py            # Core announcement CRUD & lifecycle
-│   ├── announcement_targeting_service.py  # Audience segmentation & targeting
-│   ├── announcement_scheduling_service.py # Scheduling & recurring announcements
-│   ├── announcement_approval_service.py   # Approval workflows & moderation
-│   ├── announcement_delivery_service.py   # Multi-channel delivery execution
-│   ├── announcement_tracking_service.py   # Engagement tracking & analytics
-│   └── announcement_template_service.py   # Template management & personalization
+│   │
+│   ├── base/                                  # ━━━ BASE MODELS & INFRASTRUCTURE ━━━
+│   │   ├── __init__.py
+│   │   ├── base_model.py                      # BaseModel, TimestampModel, SoftDeleteModel, TenantModel
+│   │   ├── mixins.py                          # All SQLAlchemy mixins (Timestamp, SoftDelete, UUID, Address, etc.)
+│   │   ├── enums.py                           # Database-level enums (mirroring schemas)
+│   │   ├── types.py                           # Custom types (Encrypted, JSON, Phone, Email, Money, Coordinate)
+│   │   └── validators.py                      # Database constraints, cross-field validators
+│   │
+│   ├── auth/                                  # ━━━ AUTHENTICATION MODELS ━━━
+│   │   ├── __init__.py
+│   │   ├── user_session.py                    # UserSession, SessionToken, RefreshToken, LoginAttempt
+│   │   ├── otp_token.py                       # OTPToken, Template, Delivery, Throttling
+│   │   ├── password_reset.py                  # PasswordReset, History, Policy, Attempt
+│   │   ├── social_auth_token.py               # SocialAuthProvider, Token, Profile, Link
+│   │   └── token_blacklist.py                 # BlacklistedToken, Revocation, SecurityEvent
+│   │
+│   ├── user/                                  # ━━━ USER MODELS ━━━
+│   │   ├── __init__.py
+│   │   ├── user.py                            # User, Role, Status, Verification, Security
+│   │   ├── user_profile.py                    # UserProfile, Completeness, Visibility, History
+│   │   ├── user_address.py                    # UserAddress, Type, Verification, Geolocation
+│   │   ├── user_session.py                    # Session, Device, Security, Analytics
+│   │   └── emergency_contact.py               # EmergencyContact, Relationship, Priority
+│   │
+│   ├── admin/                                 # ━━━ ADMIN MODELS ━━━
+│   │   ├── __init__.py
+│   │   ├── admin_user.py                      # AdminUser, Role, Profile
+│   │   ├── admin_permissions.py               # Permission, Group, RolePermission, Audit
+│   │   ├── admin_hostel_assignment.py         # Assignment, Permission, Primary, History
+│   │   ├── admin_override.py                  # Override, Reason, Approval, Impact
+│   │   ├── hostel_context.py                  # Context, Switch, Preferences
+│   │   ├── hostel_selector.py                 # Selector, Recent, Favorite, QuickStats
+│   │   └── multi_hostel_dashboard.py          # Dashboard, CrossHostelMetric, Ranking, Widget
+│   │
+│   ├── supervisor/                            # ━━━ SUPERVISOR MODELS ━━━
+│   │   ├── __init__.py
+│   │   ├── supervisor.py                      # Supervisor, Role, Employment, Hierarchy
+│   │   ├── supervisor_permissions.py          # Permission, Template, Threshold, Audit
+│   │   ├── supervisor_assignment.py           # Assignment, Workload, Rotation, Coverage
+│   │   ├── supervisor_activity.py             # Activity, Category, Efficiency, Schedule
+│   │   ├── supervisor_performance.py          # Performance, Goal, Review, Metric
+│   │   └── supervisor_dashboard.py            # Dashboard, Widget, Alert, Metric
+│   │
+│   ├── student/                               # ━━━ STUDENT MODELS ━━━
+│   │   ├── __init__.py
+│   │   ├── student.py                         # Student, Status, Financial, Mess
+│   │   ├── student_profile.py                 # Profile, Institution, Employment, Emergency
+│   │   ├── student_document.py                # Document, Verification, Type, Expiry
+│   │   ├── guardian_contact.py                # Guardian, Relationship, Communication, Consent
+│   │   ├── room_transfer_history.py           # Transfer, Request, Approval, Impact
+│   │   └── student_preferences.py             # Preference, Notification, Privacy, Communication
+│   │
+│   ├── visitor/                               # ━━━ VISITOR MODELS ━━━
+│   │   ├── __init__.py
+│   │   ├── visitor.py                         # Visitor, Session, Journey, Segmentation
+│   │   ├── visitor_preferences.py             # Preference, History, Prediction, Matching
+│   │   ├── visitor_favorite.py                # Favorite, Category, Sharing, Analytics
+│   │   ├── visitor_dashboard.py               # Dashboard, Personalization, Recommendation
+│   │   └── saved_search.py                    # SavedSearch, Alert, Refinement, History
+│   │
+│   ├── hostel/                                # ━━━ HOSTEL MODELS ━━━
+│   │   ├── __init__.py
+│   │   ├── hostel.py                          # Hostel, Type, Capacity, Location, Hours
+│   │   ├── hostel_amenity.py                  # Amenity, Category, Availability, Booking
+│   │   ├── hostel_media.py                    # Media, Category, Order, Approval, Analytics
+│   │   ├── hostel_policy.py                   # Policy, Category, Version, Acknowledgment
+│   │   ├── hostel_settings.py                 # Settings (Booking, Payment, Notification, Integration)
+│   │   ├── hostel_analytics.py                # Analytic, OccupancyTrend, RevenueTrend, Score
+│   │   └── hostel_comparison.py               # Comparison, Metric, Report, Benchmark
+│   │
+│   ├── room/                                  # ━━━ ROOM & BED MODELS ━━━
+│   │   ├── __init__.py
+│   │   ├── room.py                            # Room, Specification, PricingHistory, Maintenance
+│   │   ├── room_type.py                       # RoomType, Feature, Pricing, Availability
+│   │   ├── room_amenity.py                    # Amenity, Condition, Maintenance, Usage
+│   │   ├── bed.py                             # Bed, Condition, Configuration, Accessibility
+│   │   ├── bed_assignment.py                  # Assignment, Rule, Conflict, Optimization
+│   │   └── room_availability.py               # Availability, Window, Rule, Forecast
+│   │
+│   ├── booking/                               # ━━━ BOOKING MODELS ━━━
+│   │   ├── __init__.py
+│   │   ├── booking.py                         # Booking, Source, StatusHistory, Note
+│   │   ├── booking_guest.py                   # Guest, Contact, Document, Preference
+│   │   ├── booking_assignment.py              # Assignment, History, Rule, Conflict
+│   │   ├── booking_approval.py                # Approval, Criteria, AutoApproval, ManualReview
+│   │   ├── booking_calendar.py                # Calendar, AvailabilitySlot, Conflict, Block
+│   │   ├── booking_cancellation.py            # Cancellation, Policy, RefundCalculation, Fee
+│   │   ├── booking_conversion.py              # Conversion, Checklist, Validation, Failure
+│   │   ├── booking_modification.py            # Modification, Impact, History, Rule
+│   │   └── booking_waitlist.py                # Waitlist, Priority, Notification, Conversion
+│   │
+│   ├── inquiry/                               # ━━━ INQUIRY MODELS ━━━
+│   │   ├── __init__.py
+│   │   ├── inquiry.py                         # Inquiry, Source, Status, Priority, Assignment
+│   │   └── inquiry_follow_up.py               # FollowUp, Template, Schedule, Outcome
+│   │
+│   ├── payment/                               # ━━━ PAYMENT MODELS ━━━
+│   │   ├── __init__.py
+│   │   ├── payment.py                         # Payment, Type, Allocation, Receipt
+│   │   ├── payment_gateway.py                 # Gateway, Transaction, Webhook, Reconciliation
+│   │   ├── payment_refund.py                  # Refund, Policy, Approval, Processing
+│   │   ├── payment_ledger.py                  # Ledger, Entry, AccountBalance, Reconciliation
+│   │   ├── payment_reminder.py                # Reminder, Template, Delivery, Escalation
+│   │   ├── payment_schedule.py                # Schedule, ScheduledPayment, Generation, Modification
+│   │   └── gateway_transaction.py             # Transaction, Status, Fee, Error
+│   │
+│   ├── fee_structure/                         # ━━━ FEE STRUCTURE MODELS ━━━
+│   │   ├── __init__.py
+│   │   ├── fee_structure.py                   # FeeStructure, Component, Rule, Version
+│   │   ├── charge_component.py                # Component, Rule, Tax, Discount, Adjustment
+│   │   └── fee_calculation.py                 # CalculationEngine, History, Proration, Projection
+│   │
+│   ├── complaint/                             # ━━━ COMPLAINT MODELS ━━━
+│   │   ├── __init__.py
+│   │   ├── complaint.py                       # Complaint, Category, Priority, Location, Attachment
+│   │   ├── complaint_assignment.py            # Assignment, Rule, History, Workload
+│   │   ├── complaint_resolution.py            # Resolution, Action, Validation, Approval
+│   │   ├── complaint_escalation.py            # Escalation, Rule, Path, Notification
+│   │   ├── complaint_feedback.py              # Feedback, Question, Rating, Analysis
+│   │   ├── complaint_comment.py               # Comment, Mention, Attachment, History
+│   │   └── complaint_analytics.py             # Analytic, ResolutionMetric, StaffPerformance
+│   │
+│   ├── maintenance/                           # ━━━ MAINTENANCE MODELS ━━━
+│   │   ├── __init__.py
+│   │   ├── maintenance_request.py             # Request, IssueType, Urgency, Location, Photo
+│   │   ├── maintenance_assignment.py          # Assignment, SkillMatrix, Workload, Performance
+│   │   ├── maintenance_approval.py            # Approval, Threshold, Matrix, Budget
+│   │   ├── maintenance_completion.py          # Completion, Certificate, MaterialUsage, Labor
+│   │   ├── maintenance_cost.py                # Cost, Category, Estimate, Budget
+│   │   ├── maintenance_schedule.py            # Schedule, Template, Execution, Optimization
+│   │   ├── maintenance_vendor.py              # Vendor, Contract, Performance, Invoice
+│   │   └── maintenance_analytics.py           # Analytic, CostTrend, AssetHealth, ROI
+│   │
+│   ├── attendance/                            # ━━━ ATTENDANCE MODELS ━━━
+│   │   ├── __init__.py
+│   │   ├── attendance_record.py               # Record, Mode, Correction, BulkAttendance
+│   │   ├── attendance_policy.py               # Policy, Rule, Violation, Exception
+│   │   ├── attendance_alert.py                # Alert, Rule, Notification, Escalation
+│   │   └── attendance_report.py               # Report, Summary, Trend, Comparison
+│   │
+│   ├── leave/                                 # ━━━ LEAVE MODELS ━━━
+│   │   ├── __init__.py
+│   │   ├── leave_application.py               # Application, Reason, Document, Contact
+│   │   ├── leave_type.py                      # Type, Entitlement, Rule, Calendar
+│   │   ├── leave_balance.py                   # Balance, History, Adjustment, Carryover
+│   │   └── leave_approval.py                  # Approval, Hierarchy, Rule, Notification
+│   │
+│   ├── mess/                                  # ━━━ MESS/MENU MODELS ━━━
+│   │   ├── __init__.py
+│   │   ├── mess_menu.py                       # Menu, Cycle, Version, Publishing
+│   │   ├── meal_item.py                       # Item, Recipe, Ingredient, Category
+│   │   ├── dietary_option.py                  # Option, Category, Restriction, Profile
+│   │   ├── menu_approval.py                   # Approval, NutritionalValidation, Standard
+│   │   ├── menu_feedback.py                   # Feedback, Rating, Analysis, Report
+│   │   ├── menu_planning.py                   # Plan, SeasonalMenu, SpecialEvent, Cost
+│   │   └── nutritional_info.py                # Info, NutrientProfile, DietaryValue
+│   │
+│   ├── announcement/                          # ━━━ ANNOUNCEMENT MODELS ━━━
+│   │   ├── __init__.py
+│   │   ├── announcement.py                    # Announcement, Attachment, Version, Category
+│   │   ├── announcement_targeting.py          # Target, Rule, Audience, BulkTargeting
+│   │   ├── announcement_scheduling.py         # Schedule, Recurring, Execution, Queue
+│   │   ├── announcement_approval.py           # Approval, Workflow, History, Rule
+│   │   ├── announcement_delivery.py           # Delivery, Channel, Batch, Failure
+│   │   └── announcement_tracking.py           # View, ReadReceipt, Engagement, Acknowledgment
+│   │
+│   ├── notification/                          # ━━━ NOTIFICATION MODELS ━━━
+│   │   ├── __init__.py
+│   │   ├── notification.py                    # Notification, Priority, Category, Metadata
+│   │   ├── notification_template.py           # Template, Variable, Localization, Version
+│   │   ├── email_notification.py              # Email, Template, Delivery, Analytics
+│   │   ├── sms_notification.py                # SMS, Template, Provider, Delivery
+│   │   ├── push_notification.py               # Push, Token, Template, Delivery
+│   │   ├── notification_queue.py              # Queue, Priority, Batch, Retry
+│   │   ├── notification_preferences.py        # Preference, Channel, Frequency, OptOut
+│   │   ├── notification_routing.py            # Route, Rule, Escalation, Failover
+│   │   └── device_token.py                    # Token, Validation, Device, Rotation
+│   │
+│   ├── review/                                # ━━━ REVIEW MODELS ━━━
+│   │   ├── __init__.py
+│   │   ├── review.py                          # Review, Aspect, Media, Helpfulness, Verification
+│   │   ├── review_moderation.py               # Moderation, Rule, Queue, Filter
+│   │   ├── review_voting.py                   # Vote, Validation, Weight, Analytics
+│   │   ├── review_response.py                 # Response, Template, Approval, Analytics
+│   │   ├── review_media.py                    # Media, Moderation, Processing, Compliance
+│   │   └── review_analytics.py                # Analytic, Sentiment, Trend, Competitor
+│   │
+│   ├── subscription/                          # ━━━ SUBSCRIPTION MODELS ━━━
+│   │   ├── __init__.py
+│   │   ├── subscription_plan.py               # Plan, Feature, Pricing, UpgradePath
+│   │   ├── subscription.py                    # Subscription, Usage, Metric, Renewal
+│   │   ├── subscription_billing.py            # Billing, Schedule, Adjustment, Failure
+│   │   ├── subscription_invoice.py            # Invoice, LineItem, Tax, Payment
+│   │   ├── booking_commission.py              # Commission, Tier, Rule, Payout
+│   │   └── subscription_feature.py            # Feature, Usage, Limit, Toggle
+│   │
+│   ├── referral/                              # ━━━ REFERRAL MODELS ━━━
+│   │   ├── __init__.py
+│   │   ├── referral_program.py                # Program, RewardType, Threshold, Validity
+│   │   ├── referral.py                        # Referral, Code, Status
+│   │   ├── referral_code.py                   # Code, Validation, Usage
+│   │   └── referral_reward.py                 # Reward, Tracking, Payout
+│   │
+│   ├── audit/                                 # ━━━ AUDIT MODELS ━━━
+│   │   ├── __init__.py
+│   │   ├── audit_log.py                       # AuditLog, Action, Category, Entity
+│   │   ├── admin_override_log.py              # OverrideLog, Impact, Approval
+│   │   ├── supervisor_activity_log.py         # ActivityLog, Category, Efficiency
+│   │   └── entity_change_log.py               # ChangeLog, OldValue, NewValue
+│   │
+│   ├── analytics/                             # ━━━ ANALYTICS MODELS ━━━
+│   │   ├── __init__.py
+│   │   ├── dashboard_analytics.py             # DashboardKPI, Target, Snapshot, Trend
+│   │   ├── booking_analytics.py               # BookingKPI, Trend, Funnel, Cancellation
+│   │   ├── financial_analytics.py             # FinancialMetric, Revenue, Expense, CashFlow
+│   │   ├── occupancy_analytics.py             # OccupancyMetric, Trend, Forecast
+│   │   ├── complaint_analytics.py             # ComplaintKPI, Trend, Sentiment
+│   │   ├── platform_analytics.py              # PlatformMetric, Tenant, System, Growth
+│   │   ├── supervisor_analytics.py            # SupervisorKPI, Comparison, Workload
+│   │   └── visitor_analytics.py               # VisitorFunnel, Traffic, Behavior, Conversion
+│   │
+│   ├── search/                                # ━━━ SEARCH MODELS ━━━
+│   │   ├── __init__.py
+│   │   ├── search_query_log.py                # QueryLog, Analysis, Session, Suggestion
+│   │   ├── search_analytics.py                # Analytic, Conversion, Popular, ZeroResult
+│   │   └── search_autocomplete.py             # Autocomplete, Source, Ranking, Cache
+│   │
+│   ├── file_management/                       # ━━━ FILE MANAGEMENT MODELS ━━━
+│   │   ├── __init__.py
+│   │   ├── file_upload.py                     # Upload, Session, Validation, Progress
+│   │   ├── image_upload.py                    # Image, Variant, Processing, Optimization
+│   │   ├── document_upload.py                 # Document, Type, Validation, OCR
+│   │   └── file_metadata.py                   # Metadata, Tag, Access, Version
+│   │
+│   └── integrations/                          # ━━━ INTEGRATION MODELS ━━━
+│       ├── __init__.py
+│       ├── third_party_integration.py         # Provider, Credential, Log, Status
+│       ├── api_integration.py                 # Endpoint, Request, Response, Quota
+│       ├── workflow_engine.py                 # Definition, Instance, Step, Decision
+│       ├── approval_workflow.py               # Workflow, Step, Rule, Delegate
+│       └── communication_log.py               # Log, Channel, Template, Queue
 │
-├── attendance/
+├── repositories/
 │   ├── __init__.py
-│   ├── attendance_service.py              # Core attendance recording & management
-│   ├── attendance_policy_service.py       # Policy configuration & enforcement
-│   ├── attendance_alert_service.py        # Alert generation & escalation
-│   ├── attendance_report_service.py       # Report generation & summaries
-│   ├── check_in_service.py                # QR, biometric, RFID check-in handling
-│   └── attendance_correction_service.py   # Manual corrections & approvals
+│   │
+│   ├── base/                                  # ━━━ BASE REPOSITORY INFRASTRUCTURE ━━━
+│   │   ├── __init__.py
+│   │   ├── base_repository.py                 # BaseRepository with CRUD, audit, transactions
+│   │   ├── query_builder.py                   # QueryBuilder with fluent API, optimization
+│   │   ├── specifications.py                  # Specification pattern for business rules
+│   │   ├── repository_factory.py              # Factory with DI, lifecycle management
+│   │   ├── pagination.py                      # Offset, cursor, keyset pagination
+│   │   ├── filtering.py                       # FilteringEngine with multiple filter types
+│   │   └── caching_repository.py              # Multi-layer caching with invalidation
+│   │
+│   ├── auth/                                  # ━━━ AUTH REPOSITORIES ━━━
+│   │   ├── __init__.py
+│   │   ├── user_session_repository.py
+│   │   ├── otp_token_repository.py
+│   │   ├── password_reset_repository.py
+│   │   ├── social_auth_token_repository.py
+│   │   ├── token_blacklist_repository.py
+│   │   └── auth_aggregate_repository.py
+│   │
+│   ├── user/                                  # ━━━ USER REPOSITORIES ━━━
+│   │   ├── __init__.py
+│   │   ├── user_repository.py
+│   │   ├── user_profile_repository.py
+│   │   ├── user_address_repository.py
+│   │   ├── user_session_repository.py
+│   │   ├── emergency_contact_repository.py
+│   │   └── user_aggregate_repository.py
+│   │
+│   ├── admin/                                 # ━━━ ADMIN REPOSITORIES ━━━
+│   │   ├── __init__.py
+│   │   ├── admin_user_repository.py
+│   │   ├── admin_permissions_repository.py
+│   │   ├── admin_hostel_assignment_repository.py
+│   │   ├── admin_override_repository.py
+│   │   ├── hostel_context_repository.py
+│   │   ├── hostel_selector_repository.py
+│   │   └── multi_hostel_dashboard_repository.py
+│   │
+│   ├── supervisor/                            # ━━━ SUPERVISOR REPOSITORIES ━━━
+│   │   ├── __init__.py
+│   │   ├── supervisor_repository.py
+│   │   ├── supervisor_permissions_repository.py
+│   │   ├── supervisor_assignment_repository.py
+│   │   ├── supervisor_activity_repository.py
+│   │   ├── supervisor_performance_repository.py
+│   │   ├── supervisor_dashboard_repository.py
+│   │   └── supervisor_aggregate_repository.py
+│   │
+│   ├── student/                               # ━━━ STUDENT REPOSITORIES ━━━
+│   │   ├── __init__.py
+│   │   ├── student_repository.py
+│   │   ├── student_profile_repository.py
+│   │   ├── student_document_repository.py
+│   │   ├── guardian_contact_repository.py
+│   │   ├── room_transfer_history_repository.py
+│   │   ├── student_preferences_repository.py
+│   │   └── student_aggregate_repository.py
+│   │
+│   ├── visitor/                               # ━━━ VISITOR REPOSITORIES ━━━
+│   │   ├── __init__.py
+│   │   ├── visitor_repository.py
+│   │   ├── visitor_preferences_repository.py
+│   │   ├── visitor_favorite_repository.py
+│   │   ├── visitor_dashboard_repository.py
+│   │   ├── saved_search_repository.py
+│   │   └── visitor_aggregate_repository.py
+│   │
+│   ├── hostel/                                # ━━━ HOSTEL REPOSITORIES ━━━
+│   │   ├── __init__.py
+│   │   ├── hostel_repository.py
+│   │   ├── hostel_amenity_repository.py
+│   │   ├── hostel_media_repository.py
+│   │   ├── hostel_policy_repository.py
+│   │   ├── hostel_settings_repository.py
+│   │   ├── hostel_analytics_repository.py
+│   │   ├── hostel_comparison_repository.py
+│   │   └── hostel_aggregate_repository.py
+│   │
+│   ├── room/                                  # ━━━ ROOM REPOSITORIES ━━━
+│   │   ├── __init__.py
+│   │   ├── room_repository.py
+│   │   ├── room_type_repository.py
+│   │   ├── room_amenity_repository.py
+│   │   ├── bed_repository.py
+│   │   ├── bed_assignment_repository.py
+│   │   ├── room_availability_repository.py
+│   │   └── room_aggregate_repository.py
+│   │
+│   ├── booking/                               # ━━━ BOOKING REPOSITORIES ━━━
+│   │   ├── __init__.py
+│   │   ├── booking_repository.py
+│   │   ├── booking_guest_repository.py
+│   │   ├── booking_assignment_repository.py
+│   │   ├── booking_approval_repository.py
+│   │   ├── booking_calendar_repository.py
+│   │   ├── booking_cancellation_repository.py
+│   │   ├── booking_conversion_repository.py
+│   │   ├── booking_modification_repository.py
+│   │   ├── booking_waitlist_repository.py
+│   │   └── booking_aggregate_repository.py
+│   │
+│   ├── inquiry/                               # ━━━ INQUIRY REPOSITORIES ━━━
+│   │   ├── __init__.py
+│   │   ├── inquiry_repository.py
+│   │   ├── inquiry_follow_up_repository.py
+│   │   └── inquiry_aggregate_repository.py
+│   │
+│   ├── payment/                               # ━━━ PAYMENT REPOSITORIES ━━━
+│   │   ├── __init__.py
+│   │   ├── payment_repository.py
+│   │   ├── payment_gateway_repository.py
+│   │   ├── payment_refund_repository.py
+│   │   ├── payment_ledger_repository.py
+│   │   ├── payment_reminder_repository.py
+│   │   ├── payment_schedule_repository.py
+│   │   ├── gateway_transaction_repository.py
+│   │   └── payment_aggregate_repository.py
+│   │
+│   ├── fee_structure/                         # ━━━ FEE STRUCTURE REPOSITORIES ━━━
+│   │   ├── __init__.py
+│   │   ├── fee_structure_repository.py
+│   │   ├── charge_component_repository.py
+│   │   ├── fee_calculation_repository.py
+│   │   └── fee_aggregate_repository.py
+│   │
+│   ├── complaint/                             # ━━━ COMPLAINT REPOSITORIES ━━━
+│   │   ├── __init__.py
+│   │   ├── complaint_repository.py
+│   │   ├── complaint_assignment_repository.py
+│   │   ├── complaint_resolution_repository.py
+│   │   ├── complaint_escalation_repository.py
+│   │   ├── complaint_feedback_repository.py
+│   │   ├── complaint_comment_repository.py
+│   │   ├── complaint_analytics_repository.py
+│   │   └── complaint_aggregate_repository.py
+│   │
+│   ├── maintenance/                           # ━━━ MAINTENANCE REPOSITORIES ━━━
+│   │   ├── __init__.py
+│   │   ├── maintenance_request_repository.py
+│   │   ├── maintenance_assignment_repository.py
+│   │   ├── maintenance_approval_repository.py
+│   │   ├── maintenance_completion_repository.py
+│   │   ├── maintenance_cost_repository.py
+│   │   ├── maintenance_schedule_repository.py
+│   │   ├── maintenance_vendor_repository.py
+│   │   ├── maintenance_analytics_repository.py
+│   │   └── maintenance_aggregate_repository.py
+│   │
+│   ├── attendance/                            # ━━━ ATTENDANCE REPOSITORIES ━━━
+│   │   ├── __init__.py
+│   │   ├── attendance_record_repository.py
+│   │   ├── attendance_policy_repository.py
+│   │   ├── attendance_alert_repository.py
+│   │   ├── attendance_report_repository.py
+│   │   └── attendance_aggregate_repository.py
+│   │
+│   ├── leave/                                 # ━━━ LEAVE REPOSITORIES ━━━
+│   │   ├── __init__.py
+│   │   ├── leave_application_repository.py
+│   │   ├── leave_type_repository.py
+│   │   ├── leave_balance_repository.py
+│   │   ├── leave_approval_repository.py
+│   │   └── leave_aggregate_repository.py
+│   │
+│   ├── mess/                                  # ━━━ MESS REPOSITORIES ━━━
+│   │   ├── __init__.py
+│   │   ├── mess_menu_repository.py
+│   │   ├── meal_item_repository.py
+│   │   ├── dietary_option_repository.py
+│   │   ├── menu_approval_repository.py
+│   │   ├── menu_feedback_repository.py
+│   │   ├── menu_planning_repository.py
+│   │   ├── nutritional_info_repository.py
+│   │   └── mess_aggregate_repository.py
+│   │
+│   ├── announcement/                          # ━━━ ANNOUNCEMENT REPOSITORIES ━━━
+│   │   ├── __init__.py
+│   │   ├── announcement_repository.py
+│   │   ├── announcement_targeting_repository.py
+│   │   ├── announcement_scheduling_repository.py
+│   │   ├── announcement_approval_repository.py
+│   │   ├── announcement_delivery_repository.py
+│   │   ├── announcement_tracking_repository.py
+│   │   └── announcement_aggregate_repository.py
+│   │
+│   ├── notification/                          # ━━━ NOTIFICATION REPOSITORIES ━━━
+│   │   ├── __init__.py
+│   │   ├── notification_repository.py
+│   │   ├── notification_template_repository.py
+│   │   ├── email_notification_repository.py
+│   │   ├── sms_notification_repository.py
+│   │   ├── push_notification_repository.py
+│   │   ├── notification_queue_repository.py
+│   │   ├── notification_preferences_repository.py
+│   │   ├── notification_routing_repository.py
+│   │   ├── device_token_repository.py
+│   │   └── notification_aggregate_repository.py
+│   │
+│   ├── review/                                # ━━━ REVIEW REPOSITORIES ━━━
+│   │   ├── __init__.py
+│   │   ├── review_repository.py
+│   │   ├── review_moderation_repository.py
+│   │   ├── review_voting_repository.py
+│   │   ├── review_response_repository.py
+│   │   ├── review_media_repository.py
+│   │   ├── review_analytics_repository.py
+│   │   └── review_aggregate_repository.py
+│   │
+│   ├── subscription/                          # ━━━ SUBSCRIPTION REPOSITORIES ━━━
+│   │   ├── __init__.py
+│   │   ├── subscription_plan_repository.py
+│   │   ├── subscription_repository.py
+│   │   ├── subscription_billing_repository.py
+│   │   ├── subscription_invoice_repository.py
+│   │   ├── booking_commission_repository.py
+│   │   ├── subscription_feature_repository.py
+│   │   └── subscription_aggregate_repository.py
+│   │
+│   ├── referral/                              # ━━━ REFERRAL REPOSITORIES ━━━
+│   │   ├── __init__.py
+│   │   ├── referral_program_repository.py
+│   │   ├── referral_repository.py
+│   │   ├── referral_code_repository.py
+│   │   ├── referral_reward_repository.py
+│   │   └── referral_aggregate_repository.py
+│   │
+│   ├── audit/                                 # ━━━ AUDIT REPOSITORIES ━━━
+│   │   ├── __init__.py
+│   │   ├── audit_log_repository.py
+│   │   ├── admin_override_log_repository.py
+│   │   ├── supervisor_activity_log_repository.py
+│   │   ├── entity_change_log_repository.py
+│   │   └── audit_aggregate_repository.py
+│   │
+│   ├── analytics/                             # ━━━ ANALYTICS REPOSITORIES ━━━
+│   │   ├── __init__.py
+│   │   ├── booking_analytics_repository.py
+│   │   ├── complaint_analytics_repository.py
+│   │   ├── custom_reports_repository.py
+│   │   ├── dashboard_analytics_repository.py
+│   │   ├── financial_analytics_repository.py
+│   │   ├── occupancy_analytics_repository.py
+│   │   ├── platform_analytics_repository.py
+│   │   ├── supervisor_analytics_repository.py
+│   │   ├── visitor_analytics_repository.py
+│   │   └── analytics_aggregate_repository.py
+│   │
+│   ├── search/                                # ━━━ SEARCH REPOSITORIES ━━━
+│   │   ├── __init__.py
+│   │   ├── search_query_log_repository.py
+│   │   ├── search_analytics_repository.py
+│   │   ├── search_autocomplete_repository.py
+│   │   └── search_aggregate_repository.py
+│   │
+│   ├── file_management/                       # ━━━ FILE MANAGEMENT REPOSITORIES ━━━
+│   │   ├── __init__.py
+│   │   ├── file_upload_repository.py
+│   │   ├── image_upload_repository.py
+│   │   ├── document_upload_repository.py
+│   │   ├── file_metadata_repository.py
+│   │   └── file_aggregate_repository.py
+│   │
+│   └── integrations/                          # ━━━ INTEGRATION REPOSITORIES ━━━
+│       ├── __init__.py
+│       ├── third_party_repository.py
+│       ├── api_integration_repository.py
+│       ├── workflow_repository.py
+│       ├── communication_repository.py
+│       └── integration_aggregate_repository.py
 │
-├── auth/
+├── services/
 │   ├── __init__.py
-│   ├── authentication_service.py          # Core authentication & login
-│   ├── session_service.py                 # Session management & tracking
-│   ├── token_service.py                   # JWT generation, validation, refresh
-│   ├── otp_service.py                     # OTP generation, delivery, verification
-│   ├── password_service.py                # Password reset, policy enforcement
-│   ├── social_auth_service.py             # OAuth provider integration
-│   ├── mfa_service.py                     # Multi-factor authentication
-│   ├── token_blacklist_service.py         # Token revocation & blacklisting
-│   └── security_monitoring_service.py     # Login monitoring & threat detection
+│   │
+│   ├── base/                                  # ━━━ BASE SERVICE INFRASTRUCTURE ━━━
+│   │   ├── __init__.py
+│   │   ├── base_service.py                    # BaseService, ServiceConfig, ServiceContext
+│   │   ├── service_factory.py                 # ServiceFactory, Registry, DI Container
+│   │   ├── transaction_manager.py             # TransactionManager, Distributed Transactions
+│   │   ├── event_dispatcher.py                # EventDispatcher, DomainEvents, Handlers
+│   │   ├── validation_service.py              # ValidationService, Rules, Chains
+│   │   ├── authorization_service.py           # AuthorizationService, PermissionChecker
+│   │   ├── audit_service.py                   # AuditService, ComplianceTracker
+│   │   ├── cache_service.py                   # CacheService, Strategies, Invalidation
+│   │   ├── notification_dispatcher.py         # NotificationDispatcher, Router, Queue
+│   │   └── error_handler.py                   # ErrorHandler, Recovery, Fallback
+│   │
+│   ├── auth/                                  # ━━━ AUTHENTICATION SERVICES ━━━
+│   │   ├── __init__.py
+│   │   ├── authentication_service.py          # Login, Credential Validation
+│   │   ├── session_service.py                 # Session Management
+│   │   ├── token_service.py                   # JWT Generation, Validation
+│   │   ├── otp_service.py                     # OTP Generation, Verification
+│   │   ├── password_service.py                # Password Reset, Policy Enforcement
+│   │   ├── social_auth_service.py             # OAuth Integration
+│   │   ├── mfa_service.py                     # Multi-Factor Authentication
+│   │   ├── token_blacklist_service.py         # Token Revocation
+│   │   └── security_monitoring_service.py     # Threat Detection, Anomaly Detection
+│   │
+│   ├── user/                                  # ━━━ USER SERVICES ━━━
+│   │   ├── __init__.py
+│   │   ├── user_service.py                    # User CRUD, Role Management
+│   │   ├── user_profile_service.py            # Profile Management
+│   │   ├── user_address_service.py            # Address Management
+│   │   ├── user_session_service.py            # Session Tracking
+│   │   ├── user_verification_service.py       # Identity Verification
+│   │   ├── user_preference_service.py         # Preference Management
+│   │   ├── emergency_contact_service.py       # Emergency Contacts
+│   │   └── user_data_export_service.py        # GDPR Export/Deletion
+│   │
+│   ├── admin/                                 # ━━━ ADMIN SERVICES ━━━
+│   │   ├── __init__.py
+│   │   ├── admin_user_service.py              # Admin Lifecycle
+│   │   ├── admin_authentication_service.py    # Admin Auth, MFA
+│   │   ├── admin_permission_service.py        # Permission Assignment
+│   │   ├── admin_role_service.py              # Role Management
+│   │   ├── hostel_assignment_service.py       # Multi-Hostel Assignment
+│   │   ├── admin_override_service.py          # Override Workflows
+│   │   ├── hostel_context_service.py          # Context Switching
+│   │   ├── hostel_selector_service.py         # Hostel Selection
+│   │   ├── multi_hostel_dashboard_service.py  # Aggregated Dashboard
+│   │   └── admin_activity_service.py          # Activity Tracking
+│   │
+│   ├── supervisor/                            # ━━━ SUPERVISOR SERVICES ━━━
+│   │   ├── __init__.py
+│   │   ├── supervisor_service.py              # Supervisor Lifecycle
+│   │   ├── supervisor_permission_service.py   # Permission Management
+│   │   ├── supervisor_assignment_service.py   # Hostel Assignment
+│   │   ├── supervisor_activity_service.py     # Activity Tracking
+│   │   ├── supervisor_performance_service.py  # Performance Tracking
+│   │   ├── supervisor_dashboard_service.py    # Dashboard
+│   │   ├── supervisor_scheduling_service.py   # Shift Management
+│   │   └── supervisor_training_service.py     # Training Tracking
+│   │
+│   ├── student/                               # ━━━ STUDENT SERVICES ━━━
+│   │   ├── __init__.py
+│   │   ├── student_service.py                 # Student Lifecycle
+│   │   ├── student_profile_service.py         # Profile Management
+│   │   ├── student_document_service.py        # Document Management
+│   │   ├── guardian_contact_service.py        # Guardian Management
+│   │   ├── room_transfer_service.py           # Room Transfers
+│   │   ├── student_preference_service.py      # Preferences
+│   │   ├── student_onboarding_service.py      # Onboarding Workflow
+│   │   ├── student_checkout_service.py        # Checkout Process
+│   │   └── student_communication_service.py   # Communications
+│   │
+│   ├── visitor/                               # ━━━ VISITOR SERVICES ━━━
+│   │   ├── __init__.py
+│   │   ├── visitor_service.py                 # Visitor Management
+│   │   ├── visitor_tracking_service.py        # Journey Tracking
+│   │   ├── visitor_preference_service.py      # Preference Learning
+│   │   ├── visitor_favorite_service.py        # Favorites Management
+│   │   ├── visitor_dashboard_service.py       # Dashboard
+│   │   ├── saved_search_service.py            # Saved Searches
+│   │   ├── visitor_recommendation_service.py  # ML Recommendations
+│   │   └── visitor_conversion_service.py      # Conversion Optimization
+│   │
+│   ├── hostel/                                # ━━━ HOSTEL SERVICES ━━━
+│   │   ├── __init__.py
+│   │   ├── hostel_service.py                  # Hostel CRUD
+│   │   ├── hostel_amenity_service.py          # Amenity Management
+│   │   ├── hostel_media_service.py            # Media Management
+│   │   ├── hostel_policy_service.py           # Policy Management
+│   │   ├── hostel_settings_service.py         # Settings
+│   │   ├── hostel_analytics_service.py        # Analytics
+│   │   ├── hostel_comparison_service.py       # Comparison
+│   │   └── hostel_onboarding_service.py       # Onboarding
+│   │
+│   ├── room/                                  # ━━━ ROOM SERVICES ━━━
+│   │   ├── __init__.py
+│   │   ├── room_service.py                    # Room CRUD
+│   │   ├── room_type_service.py               # Room Types
+│   │   ├── room_amenity_service.py            # Room Amenities
+│   │   ├── bed_service.py                     # Bed Management
+│   │   ├── bed_assignment_service.py          # Bed Assignment
+│   │   ├── room_availability_service.py       # Availability
+│   │   ├── room_pricing_service.py            # Dynamic Pricing
+│   │   ├── room_maintenance_service.py        # Maintenance Status
+│   │   └── room_allocation_service.py         # Allocation Optimization
+│   │
+│   ├── booking/                               # ━━━ BOOKING SERVICES ━━━
+│   │   ├── __init__.py
+│   │   ├── booking_service.py                 # Booking Lifecycle
+│   │   ├── booking_search_service.py          # Availability Search
+│   │   ├── booking_pricing_service.py         # Dynamic Pricing
+│   │   ├── booking_assignment_service.py      # Room/Bed Assignment
+│   │   ├── booking_approval_service.py        # Approval Workflows
+│   │   ├── booking_calendar_service.py        # Calendar Management
+│   │   ├── booking_cancellation_service.py    # Cancellation Processing
+│   │   ├── booking_modification_service.py    # Modifications
+│   │   ├── booking_conversion_service.py      # Booking to Student
+│   │   ├── booking_waitlist_service.py        # Waitlist Management
+│   │   ├── booking_guest_service.py           # Guest Information
+│   │   └── booking_notification_service.py    # Notifications
+│   │
+│   ├── inquiry/                               # ━━━ INQUIRY SERVICES ━━━
+│   │   ├── __init__.py
+│   │   ├── inquiry_service.py                 # Inquiry Management
+│   │   ├── inquiry_assignment_service.py      # Staff Assignment
+│   │   ├── inquiry_follow_up_service.py       # Follow-Up
+│   │   ├── inquiry_conversion_service.py      # Conversion
+│   │   └── inquiry_analytics_service.py       # Funnel Analytics
+│   │
+│   ├── payment/                               # ━━━ PAYMENT SERVICES ━━━
+│   │   ├── __init__.py
+│   │   ├── payment_service.py                 # Payment Processing
+│   │   ├── payment_gateway_service.py         # Gateway Integration
+│   │   ├── payment_refund_service.py          # Refund Processing
+│   │   ├── payment_ledger_service.py          # Double-Entry Bookkeeping
+│   │   ├── payment_reminder_service.py        # Reminders
+│   │   ├── payment_schedule_service.py        # Recurring Payments
+│   │   ├── payment_reconciliation_service.py  # Bank Reconciliation
+│   │   ├── payment_fraud_service.py           # Fraud Detection
+│   │   └── payment_reporting_service.py       # Financial Reporting
+│   │
+│   ├── fee_structure/                         # ━━━ FEE STRUCTURE SERVICES ━━━
+│   │   ├── __init__.py
+│   │   ├── fee_structure_service.py           # Fee Configuration
+│   │   ├── fee_calculation_service.py         # Fee Calculation
+│   │   ├── charge_component_service.py        # Charge Management
+│   │   ├── fee_approval_service.py            # Fee Approval
+│   │   ├── proration_service.py               # Proration Logic
+│   │   └── fee_projection_service.py          # Future Projections
+│   │
+│   ├── complaint/                             # ━━━ COMPLAINT SERVICES ━━━
+│   │   ├── __init__.py
+│   │   ├── complaint_service.py               # Complaint Lifecycle
+│   │   ├── complaint_assignment_service.py    # Staff Assignment
+│   │   ├── complaint_resolution_service.py    # Resolution
+│   │   ├── complaint_escalation_service.py    # Escalation
+│   │   ├── complaint_feedback_service.py      # Feedback
+│   │   ├── complaint_comment_service.py       # Comments
+│   │   ├── complaint_sla_service.py           # SLA Tracking
+│   │   └── complaint_analytics_service.py     # Analytics
+│   │
+│   ├── maintenance/                           # ━━━ MAINTENANCE SERVICES ━━━
+│   │   ├── __init__.py
+│   │   ├── maintenance_request_service.py     # Request Management
+│   │   ├── maintenance_assignment_service.py  # Assignment
+│   │   ├── maintenance_approval_service.py    # Cost Approval
+│   │   ├── maintenance_completion_service.py  # Completion
+│   │   ├── maintenance_cost_service.py        # Cost Tracking
+│   │   ├── maintenance_schedule_service.py    # Preventive Scheduling
+│   │   ├── maintenance_vendor_service.py      # Vendor Management
+│   │   ├── maintenance_analytics_service.py   # Analytics
+│   │   └── predictive_maintenance_service.py  # ML Predictions
+│   │
+│   ├── attendance/                            # ━━━ ATTENDANCE SERVICES ━━━
+│   │   ├── __init__.py
+│   │   ├── attendance_service.py              # Attendance Recording
+│   │   ├── attendance_policy_service.py       # Policy Enforcement
+│   │   ├── attendance_alert_service.py        # Alert Generation
+│   │   ├── attendance_report_service.py       # Reporting
+│   │   ├── check_in_service.py                # QR/Biometric Check-In
+│   │   └── attendance_correction_service.py   # Corrections
+│   │
+│   ├── leave/                                 # ━━━ LEAVE SERVICES ━━━
+│   │   ├── __init__.py
+│   │   ├── leave_application_service.py       # Leave Requests
+│   │   ├── leave_type_service.py              # Leave Types
+│   │   ├── leave_balance_service.py           # Balance Tracking
+│   │   ├── leave_approval_service.py          # Approval Workflow
+│   │   ├── leave_calendar_service.py          # Leave Calendar
+│   │   └── leave_notification_service.py      # Notifications
+│   │
+│   ├── mess/                                  # ━━━ MESS SERVICES ━━━
+│   │   ├── __init__.py
+│   │   ├── mess_menu_service.py               # Menu Management
+│   │   ├── meal_item_service.py               # Food Items
+│   │   ├── dietary_option_service.py          # Dietary Options
+│   │   ├── menu_approval_service.py           # Menu Approval
+│   │   ├── menu_feedback_service.py           # Feedback
+│   │   ├── menu_planning_service.py           # Menu Planning
+│   │   ├── nutritional_info_service.py        # Nutritional Analysis
+│   │   └── mess_inventory_service.py          # Inventory
+│   │
+│   ├── announcement/                          # ━━━ ANNOUNCEMENT SERVICES ━━━
+│   │   ├── __init__.py
+│   │   ├── announcement_service.py            # Announcement CRUD
+│   │   ├── announcement_targeting_service.py  # Targeting
+│   │   ├── announcement_scheduling_service.py # Scheduling
+│   │   ├── announcement_approval_service.py   # Approval
+│   │   ├── announcement_delivery_service.py   # Delivery
+│   │   ├── announcement_tracking_service.py   # Tracking
+│   │   └── announcement_template_service.py   # Templates
+│   │
+│   ├── notification/                          # ━━━ NOTIFICATION SERVICES ━━━
+│   │   ├── __init__.py
+│   │   ├── notification_service.py            # Core Notifications
+│   │   ├── notification_template_service.py   # Templates
+│   │   ├── email_notification_service.py      # Email
+│   │   ├── sms_notification_service.py        # SMS
+│   │   ├── push_notification_service.py       # Push
+│   │   ├── in_app_notification_service.py     # In-App
+│   │   ├── notification_queue_service.py      # Queue Processing
+│   │   ├── notification_preference_service.py # Preferences
+│   │   ├── notification_routing_service.py    # Intelligent Routing
+│   │   └── device_token_service.py            # Device Tokens
+│   │
+│   ├── review/                                # ━━━ REVIEW SERVICES ━━━
+│   │   ├── __init__.py
+│   │   ├── review_service.py                  # Review Management
+│   │   ├── review_moderation_service.py       # Content Moderation
+│   │   ├── review_voting_service.py           # Voting
+│   │   ├── review_response_service.py         # Owner Responses
+│   │   ├── review_media_service.py            # Media
+│   │   ├── review_analytics_service.py        # Sentiment Analysis
+│   │   └── review_incentive_service.py        # Incentives
+│   │
+│   ├── subscription/                          # ━━━ SUBSCRIPTION SERVICES ━━━
+│   │   ├── __init__.py
+│   │   ├── subscription_plan_service.py       # Plan Management
+│   │   ├── subscription_service.py            # Subscription Lifecycle
+│   │   ├── subscription_billing_service.py    # Billing
+│   │   ├── subscription_invoice_service.py    # Invoicing
+│   │   ├── subscription_usage_service.py      # Usage Tracking
+│   │   ├── booking_commission_service.py      # Commissions
+│   │   └── subscription_upgrade_service.py    # Upgrades/Downgrades
+│   │
+│   ├── referral/                              # ━━━ REFERRAL SERVICES ━━━
+│   │   ├── __init__.py
+│   │   ├── referral_program_service.py        # Program Management
+│   │   ├── referral_service.py                # Referral Tracking
+│   │   ├── referral_code_service.py           # Code Generation
+│   │   └── referral_reward_service.py         # Reward Processing
+│   │
+│   ├── analytics/                             # ━━━ ANALYTICS SERVICES ━━━
+│   │   ├── __init__.py
+│   │   ├── analytics_engine_service.py        # Core Analytics Engine
+│   │   ├── booking_analytics_service.py       # Booking KPIs
+│   │   ├── financial_analytics_service.py     # Financial Analytics
+│   │   ├── occupancy_analytics_service.py     # Occupancy Analytics
+│   │   ├── complaint_analytics_service.py     # Complaint Analytics
+│   │   ├── supervisor_analytics_service.py    # Supervisor Analytics
+│   │   ├── visitor_analytics_service.py       # Visitor Analytics
+│   │   ├── platform_analytics_service.py      # Platform Analytics
+│   │   ├── dashboard_analytics_service.py     # Dashboard Aggregation
+│   │   ├── report_generation_service.py       # Report Generation
+│   │   ├── predictive_analytics_service.py    # ML Predictions
+│   │   └── analytics_export_service.py        # Data Export
+│   │
+│   ├── search/                                # ━━━ SEARCH SERVICES ━━━
+│   │   ├── __init__.py
+│   │   ├── search_service.py                  # Core Search
+│   │   ├── search_indexing_service.py         # Index Management
+│   │   ├── search_autocomplete_service.py     # Autocomplete
+│   │   ├── search_analytics_service.py        # Search Analytics
+│   │   ├── search_personalization_service.py  # Personalization
+│   │   └── search_optimization_service.py     # Query Optimization
+│   │
+│   ├── file_management/                       # ━━━ FILE MANAGEMENT SERVICES ━━━
+│   │   ├── __init__.py
+│   │   ├── file_upload_service.py             # File Upload
+│   │   ├── image_processing_service.py        # Image Processing
+│   │   ├── document_processing_service.py     # Document Processing/OCR
+│   │   ├── file_storage_service.py            # Storage (S3, Local, CDN)
+│   │   ├── file_validation_service.py         # Validation/Security
+│   │   ├── file_metadata_service.py           # Metadata Management
+│   │   └── file_cleanup_service.py            # Cleanup/Archival
+│   │
+│   ├── integrations/                          # ━━━ INTEGRATION SERVICES ━━━
+│   │   ├── __init__.py
+│   │   ├── integration_service.py             # Core Integration
+│   │   ├── api_integration_service.py         # External APIs
+│   │   ├── webhook_service.py                 # Webhook Processing
+│   │   ├── calendar_sync_service.py           # Calendar Sync
+│   │   ├── payment_gateway_integration.py     # Payment Gateways
+│   │   ├── sms_provider_service.py            # SMS Providers
+│   │   ├── email_provider_service.py          # Email Providers
+│   │   ├── push_provider_service.py           # Push Providers
+│   │   └── third_party_sync_service.py        # Third-Party Sync
+│   │
+│   ├── workflows/                             # ━━━ WORKFLOW SERVICES ━━━
+│   │   ├── __init__.py
+│   │   ├── workflow_engine_service.py         # Workflow Engine
+│   │   ├── approval_workflow_service.py       # Approval Workflows
+│   │   ├── onboarding_workflow_service.py     # Onboarding
+│   │   ├── checkout_workflow_service.py       # Checkout
+│   │   ├── escalation_workflow_service.py     # Escalation
+│   │   ├── notification_workflow_service.py   # Notification Sequences
+│   │   └── scheduled_task_service.py          # Scheduled Jobs
+│   │
+│   ├── communication/                         # ━━━ COMMUNICATION SERVICES ━━━
+│   │   ├── __init__.py
+│   │   ├── communication_service.py           # Core Communication
+│   │   ├── email_service.py                   # Email Composition
+│   │   ├── sms_service.py                     # SMS Composition
+│   │   ├── chat_service.py                    # Real-time Chat
+│   │   ├── chatbot_service.py                 # Chatbot/AI
+│   │   ├── broadcast_service.py               # Mass Communication
+│   │   └── communication_analytics_service.py # Communication Analytics
+│   │
+│   ├── reporting/                             # ━━━ REPORTING SERVICES ━━━
+│   │   ├── __init__.py
+│   │   ├── report_service.py                  # Core Reporting
+│   │   ├── financial_report_service.py        # Financial Reports
+│   │   ├── operational_report_service.py      # Operational Reports
+│   │   ├── compliance_report_service.py       # Compliance Reports
+│   │   ├── custom_report_service.py           # Custom Report Builder
+│   │   ├── report_scheduling_service.py       # Scheduled Reports
+│   │   └── report_export_service.py           # Export (PDF, Excel)
+│   │
+│   └── background/                            # ━━━ BACKGROUND SERVICES ━━━
+│       ├── __init__.py
+│       ├── task_scheduler_service.py          # Task Scheduling
+│       ├── queue_processor_service.py         # Queue Processing
+│       ├── data_sync_service.py               # Data Synchronization
+│       ├── cleanup_service.py                 # Data Cleanup
+│       ├── health_check_service.py            # Health Monitoring
+│       └── metrics_collection_service.py      # Metrics Collection
 │
-├── booking/
+├── api/                                       # ━━━ API LAYER (CONTROLLERS/ROUTERS) ━━━
 │   ├── __init__.py
-│   ├── booking_service.py                 # Core booking lifecycle management
-│   ├── booking_search_service.py          # Availability search & filtering
-│   ├── booking_pricing_service.py         # Dynamic pricing & calculations
-│   ├── booking_assignment_service.py      # Room/bed assignment logic
-│   ├── booking_approval_service.py        # Approval workflows & auto-approval
-│   ├── booking_calendar_service.py        # Calendar management & availability
-│   ├── booking_cancellation_service.py    # Cancellation processing & refunds
-│   ├── booking_modification_service.py    # Modification requests & impact
-│   ├── booking_conversion_service.py      # Booking to student conversion
-│   ├── booking_waitlist_service.py        # Waitlist management & notifications
-│   ├── booking_guest_service.py           # Guest information management
-│   └── booking_notification_service.py    # Booking-related notifications
+│   ├── deps.py                                # Common dependencies
+│   │
+│   ├── v1/                                    # API Version 1
+│   │   ├── __init__.py
+│   │   ├── router.py                          # Main v1 router aggregator
+│   │   │
+│   │   ├── auth/                              # ━━━ AUTH ENDPOINTS ━━━
+│   │   │   ├── __init__.py
+│   │   │   ├── login.py                       # POST /auth/login
+│   │   │   ├── register.py                    # POST /auth/register
+│   │   │   ├── logout.py                      # POST /auth/logout
+│   │   │   ├── token.py                       # POST /auth/token/refresh
+│   │   │   ├── password.py                    # POST /auth/password/reset, /change
+│   │   │   ├── otp.py                         # POST /auth/otp/generate, /verify
+│   │   │   ├── social.py                      # POST /auth/social/{provider}
+│   │   │   └── mfa.py                         # POST /auth/mfa/setup, /verify
+│   │   │
+│   │   ├── users/                             # ━━━ USER ENDPOINTS ━━━
+│   │   │   ├── __init__.py
+│   │   │   ├── users.py                       # CRUD /users
+│   │   │   ├── profile.py                     # GET/PUT /users/me/profile
+│   │   │   ├── sessions.py                    # GET/DELETE /users/me/sessions
+│   │   │   ├── preferences.py                 # GET/PUT /users/me/preferences
+│   │   │   └── data_export.py                 # POST /users/me/export
+│   │   │
+│   │   ├── admin/                             # ━━━ ADMIN ENDPOINTS ━━━
+│   │   │   ├── __init__.py
+│   │   │   ├── admins.py                      # CRUD /admin/users
+│   │   │   ├── permissions.py                 # /admin/permissions
+│   │   │   ├── hostel_assignments.py          # /admin/hostel-assignments
+│   │   │   ├── overrides.py                   # /admin/overrides
+│   │   │   ├── context.py                     # /admin/context
+│   │   │   └── dashboard.py                   # /admin/dashboard
+│   │   │
+│   │   ├── supervisors/                       # ━━━ SUPERVISOR ENDPOINTS ━━━
+│   │   │   ├── __init__.py
+│   │   │   ├── supervisors.py                 # CRUD /supervisors
+│   │   │   ├── permissions.py                 # /supervisors/{id}/permissions
+│   │   │   ├── assignments.py                 # /supervisors/{id}/assignments
+│   │   │   ├── activity.py                    # /supervisors/{id}/activity
+│   │   │   ├── performance.py                 # /supervisors/{id}/performance
+│   │   │   └── dashboard.py                   # /supervisors/dashboard
+│   │   │
+│   │   ├── students/                          # ━━━ STUDENT ENDPOINTS ━━━
+│   │   │   ├── __init__.py
+│   │   │   ├── students.py                    # CRUD /students
+│   │   │   ├── profile.py                     # /students/{id}/profile
+│   │   │   ├── documents.py                   # /students/{id}/documents
+│   │   │   ├── room_transfers.py              # /students/{id}/room-transfers
+│   │   │   ├── attendance.py                  # /students/{id}/attendance
+│   │   │   ├── leaves.py                      # /students/{id}/leaves
+│   │   │   ├── payments.py                    # /students/{id}/payments
+│   │   │   ├── complaints.py                  # /students/{id}/complaints
+│   │   │   └── dashboard.py                   # /students/dashboard
+│   │   │
+│   │   ├── visitors/                          # ━━━ VISITOR ENDPOINTS ━━━
+│   │   │   ├── __init__.py
+│   │   │   ├── visitors.py                    # CRUD /visitors
+│   │   │   ├── preferences.py                 # /visitors/{id}/preferences
+│   │   │   ├── favorites.py                   # /visitors/{id}/favorites
+│   │   │   ├── saved_searches.py              # /visitors/{id}/saved-searches
+│   │   │   ├── recommendations.py             # /visitors/{id}/recommendations
+│   │   │   └── dashboard.py                   # /visitors/dashboard
+│   │   │
+│   │   ├── hostels/                           # ━━━ HOSTEL ENDPOINTS ━━━
+│   │   │   ├── __init__.py
+│   │   │   ├── hostels.py                     # CRUD /hostels
+│   │   │   ├── public.py                      # GET /hostels/public (visitor-facing)
+│   │   │   ├── amenities.py                   # /hostels/{id}/amenities
+│   │   │   ├── media.py                       # /hostels/{id}/media
+│   │   │   ├── policies.py                    # /hostels/{id}/policies
+│   │   │   ├── settings.py                    # /hostels/{id}/settings
+│   │   │   ├── rooms.py                       # /hostels/{id}/rooms
+│   │   │   ├── analytics.py                   # /hostels/{id}/analytics
+│   │   │   └── comparison.py                  # /hostels/compare
+│   │   │
+│   │   ├── rooms/                             # ━━━ ROOM ENDPOINTS ━━━
+│   │   │   ├── __init__.py
+│   │   │   ├── rooms.py                       # CRUD /rooms
+│   │   │   ├── types.py                       # /rooms/types
+│   │   │   ├── beds.py                        # /rooms/{id}/beds
+│   │   │   ├── availability.py                # /rooms/availability
+│   │   │   └── pricing.py                     # /rooms/{id}/pricing
+│   │   │
+│   │   ├── bookings/                          # ━━━ BOOKING ENDPOINTS ━━━
+│   │   │   ├── __init__.py
+│   │   │   ├── bookings.py                    # CRUD /bookings
+│   │   │   ├── search.py                      # GET /bookings/search
+│   │   │   ├── approval.py                    # POST /bookings/{id}/approve, /reject
+│   │   │   ├── assignment.py                  # POST /bookings/{id}/assign
+│   │   │   ├── cancellation.py                # POST /bookings/{id}/cancel
+│   │   │   ├── modification.py                # PUT /bookings/{id}/modify
+│   │   │   ├── conversion.py                  # POST /bookings/{id}/convert
+│   │   │   ├── waitlist.py                    # /bookings/waitlist
+│   │   │   └── calendar.py                    # /bookings/calendar
+│   │   │
+│   │   ├── inquiries/                         # ━━━ INQUIRY ENDPOINTS ━━━
+│   │   │   ├── __init__.py
+│   │   │   ├── inquiries.py                   # CRUD /inquiries
+│   │   │   └── follow_ups.py                  # /inquiries/{id}/follow-ups
+│   │   │
+│   │   ├── payments/                          # ━━━ PAYMENT ENDPOINTS ━━━
+│   │   │   ├── __init__.py
+│   │   │   ├── payments.py                    # CRUD /payments
+│   │   │   ├── initiate.py                    # POST /payments/initiate
+│   │   │   ├── webhook.py                     # POST /payments/webhook
+│   │   │   ├── refunds.py                     # /payments/{id}/refund
+│   │   │   ├── ledger.py                      # /payments/ledger
+│   │   │   ├── schedules.py                   # /payments/schedules
+│   │   │   └── reminders.py                   # /payments/reminders
+│   │   │
+│   │   ├── fee_structures/                    # ━━━ FEE STRUCTURE ENDPOINTS ━━━
+│   │   │   ├── __init__.py
+│   │   │   ├── fee_structures.py              # CRUD /fee-structures
+│   │   │   └── calculate.py                   # POST /fee-structures/calculate
+│   │   │
+│   │   ├── complaints/                        # ━━━ COMPLAINT ENDPOINTS ━━━
+│   │   │   ├── __init__.py
+│   │   │   ├── complaints.py                  # CRUD /complaints
+│   │   │   ├── assignment.py                  # /complaints/{id}/assign
+│   │   │   ├── resolution.py                  # /complaints/{id}/resolve
+│   │   │   ├── escalation.py                  # /complaints/{id}/escalate
+│   │   │   ├── feedback.py                    # /complaints/{id}/feedback
+│   │   │   └── comments.py                    # /complaints/{id}/comments
+│   │   │
+│   │   ├── maintenance/                       # ━━━ MAINTENANCE ENDPOINTS ━━━
+│   │   │   ├── __init__.py
+│   │   │   ├── requests.py                    # CRUD /maintenance
+│   │   │   ├── assignment.py                  # /maintenance/{id}/assign
+│   │   │   ├── approval.py                    # /maintenance/{id}/approve
+│   │   │   ├── completion.py                  # /maintenance/{id}/complete
+│   │   │   ├── schedules.py                   # /maintenance/schedules
+│   │   │   └── vendors.py                     # /maintenance/vendors
+│   │   │
+│   │   ├── attendance/                        # ━━━ ATTENDANCE ENDPOINTS ━━━
+│   │   │   ├── __init__.py
+│   │   │   ├── attendance.py                  # CRUD /attendance
+│   │   │   ├── check_in.py                    # POST /attendance/check-in
+│   │   │   ├── policies.py                    # /attendance/policies
+│   │   │   ├── reports.py                     # /attendance/reports
+│   │   │   └── alerts.py                      # /attendance/alerts
+│   │   │
+│   │   ├── leaves/                            # ━━━ LEAVE ENDPOINTS ━━━
+│   │   │   ├── __init__.py
+│   │   │   ├── leaves.py                      # CRUD /leaves
+│   │   │   ├── approval.py                    # /leaves/{id}/approve, /reject
+│   │   │   ├── balance.py                     # /leaves/balance
+│   │   │   └── calendar.py                    # /leaves/calendar
+│   │   │
+│   │   ├── mess/                              # ━━━ MESS/MENU ENDPOINTS ━━━
+│   │   │   ├── __init__.py
+│   │   │   ├── menus.py                       # CRUD /mess/menus
+│   │   │   ├── items.py                       # /mess/items
+│   │   │   ├── dietary.py                     # /mess/dietary-options
+│   │   │   ├── approval.py                    # /mess/menus/{id}/approve
+│   │   │   ├── feedback.py                    # /mess/menus/{id}/feedback
+│   │   │   └── planning.py                    # /mess/planning
+│   │   │
+│   │   ├── announcements/                     # ━━━ ANNOUNCEMENT ENDPOINTS ━━━
+│   │   │   ├── __init__.py
+│   │   │   ├── announcements.py               # CRUD /announcements
+│   │   │   ├── targeting.py                   # /announcements/{id}/targeting
+│   │   │   ├── scheduling.py                  # /announcements/{id}/schedule
+│   │   │   ├── approval.py                    # /announcements/{id}/approve
+│   │   │   └── tracking.py                    # /announcements/{id}/tracking
+│   │   │
+│   │   ├── notifications/                     # ━━━ NOTIFICATION ENDPOINTS ━━━
+│   │   │   ├── __init__.py
+│   │   │   ├── notifications.py               # CRUD /notifications
+│   │   │   ├── templates.py                   # /notifications/templates
+│   │   │   ├── preferences.py                 # /notifications/preferences
+│   │   │   └── devices.py                     # /notifications/devices
+│   │   │
+│   │   ├── reviews/                           # ━━━ REVIEW ENDPOINTS ━━━
+│   │   │   ├── __init__.py
+│   │   │   ├── reviews.py                     # CRUD /reviews
+│   │   │   ├── moderation.py                  # /reviews/{id}/moderate
+│   │   │   ├── voting.py                      # /reviews/{id}/vote
+│   │   │   └── responses.py                   # /reviews/{id}/response
+│   │   │
+│   │   ├── subscriptions/                     # ━━━ SUBSCRIPTION ENDPOINTS ━━━
+│   │   │   ├── __init__.py
+│   │   │   ├── plans.py                       # /subscriptions/plans
+│   │   │   ├── subscriptions.py               # CRUD /subscriptions
+│   │   │   ├── billing.py                     # /subscriptions/{id}/billing
+│   │   │   ├── invoices.py                    # /subscriptions/{id}/invoices
+│   │   │   └── upgrade.py                     # /subscriptions/{id}/upgrade
+│   │   │
+│   │   ├── referrals/                         # ━━━ REFERRAL ENDPOINTS ━━━
+│   │   │   ├── __init__.py
+│   │   │   ├── programs.py                    # /referrals/programs
+│   │   │   ├── referrals.py                   # CRUD /referrals
+│   │   │   ├── codes.py                       # /referrals/codes
+│   │   │   └── rewards.py                     # /referrals/rewards
+│   │   │
+│   │   ├── analytics/                         # ━━━ ANALYTICS ENDPOINTS ━━━
+│   │   │   ├── __init__.py
+│   │   │   ├── dashboard.py                   # /analytics/dashboard
+│   │   │   ├── bookings.py                    # /analytics/bookings
+│   │   │   ├── financial.py                   # /analytics/financial
+│   │   │   ├── occupancy.py                   # /analytics/occupancy
+│   │   │   ├── complaints.py                  # /analytics/complaints
+│   │   │   ├── platform.py                    # /analytics/platform
+│   │   │   └── reports.py                     # /analytics/reports
+│   │   │
+│   │   ├── search/                            # ━━━ SEARCH ENDPOINTS ━━━
+│   │   │   ├── __init__.py
+│   │   │   ├── search.py                      # GET /search
+│   │   │   └── autocomplete.py                # GET /search/autocomplete
+│   │   │
+│   │   ├── files/                             # ━━━ FILE ENDPOINTS ━━━
+│   │   │   ├── __init__.py
+│   │   │   ├── upload.py                      # POST /files/upload
+│   │   │   ├── images.py                      # /files/images
+│   │   │   └── documents.py                   # /files/documents
+│   │   │
+│   │   └── webhooks/                          # ━━━ WEBHOOK ENDPOINTS ━━━
+│   │       ├── __init__.py
+│   │       ├── payment.py                     # POST /webhooks/payment/{provider}
+│   │       └── calendar.py                    # POST /webhooks/calendar
+│   │
+│   └── v2/                                    # API Version 2 (Future)
+│       └── __init__.py
 │
-├── complaint/
+├── workers/                                   # ━━━ BACKGROUND WORKERS ━━━
 │   ├── __init__.py
-│   ├── complaint_service.py               # Core complaint lifecycle management
-│   ├── complaint_assignment_service.py    # Staff assignment & workload balancing
-│   ├── complaint_resolution_service.py    # Resolution workflows & validation
-│   ├── complaint_escalation_service.py    # Escalation rules & execution
-│   ├── complaint_feedback_service.py      # Post-resolution feedback collection
-│   ├── complaint_comment_service.py       # Communication thread management
-│   ├── complaint_sla_service.py           # SLA tracking & compliance
-│   └── complaint_analytics_service.py     # Complaint-specific analytics
+│   ├── celery_app.py                          # Celery application configuration
+│   ├── beat_schedule.py                       # Periodic task schedule
+│   │
+│   ├── tasks/
+│   │   ├── __init__.py
+│   │   │
+│   │   ├── notification_tasks.py              # Email, SMS, Push sending
+│   │   ├── payment_tasks.py                   # Payment processing, reminders
+│   │   ├── report_tasks.py                    # Report generation
+│   │   ├── cleanup_tasks.py                   # Data cleanup, archival
+│   │   ├── sync_tasks.py                      # External system sync
+│   │   ├── analytics_tasks.py                 # Analytics calculation
+│   │   ├── maintenance_tasks.py               # Predictive maintenance
+│   │   └── search_tasks.py                    # Search index updates
+│   │
+│   └── handlers/
+│       ├── __init__.py
+│       ├── event_handlers.py                  # Domain event handlers
+│       └── webhook_handlers.py                # Webhook processing
 │
-├── fee_structure/
+├── utils/                                     # ━━━ UTILITIES ━━━
 │   ├── __init__.py
-│   ├── fee_structure_service.py           # Fee configuration & management
-│   ├── fee_calculation_service.py         # Dynamic fee calculation engine
-│   ├── charge_component_service.py        # Individual charge management
-│   ├── fee_approval_service.py            # Fee change approval workflows
-│   ├── proration_service.py               # Proration logic for partial periods
-│   └── fee_projection_service.py          # Future fee projections
+│   ├── datetime_utils.py                      # Date/time helpers
+│   ├── string_utils.py                        # String manipulation
+│   ├── validators.py                          # Common validators
+│   ├── formatters.py                          # Data formatters
+│   ├── encryption.py                          # Encryption utilities
+│   ├── hashing.py                             # Hashing utilities
+│   ├── file_utils.py                          # File handling
+│   ├── image_utils.py                         # Image processing
+│   ├── pdf_utils.py                           # PDF generation
+│   ├── excel_utils.py                         # Excel generation
+│   ├── email_utils.py                         # Email utilities
+│   ├── sms_utils.py                           # SMS utilities
+│   ├── geo_utils.py                           # Geolocation utilities
+│   ├── slug_utils.py                          # Slug generation
+│   ├── pagination_utils.py                    # Pagination helpers
+│   └── constants.py                           # Application constants
 │
-├── file_management/
-│   ├── __init__.py
-│   ├── file_upload_service.py             # Core file upload handling
-│   ├── image_processing_service.py        # Image optimization & variants
-│   ├── document_processing_service.py     # Document validation & OCR
-│   ├── file_storage_service.py            # Storage abstraction (S3, local, etc.)
-│   ├── file_validation_service.py         # File type, size, content validation
-│   ├── file_metadata_service.py           # Metadata extraction & indexing
-│   └── file_cleanup_service.py            # Orphan file cleanup & quota management
+├── migrations/                                # ━━━ DATABASE MIGRATIONS ━━━
+│   ├── README
+│   ├── env.py                                 # Alembic environment
+│   ├── script.py.mako                         # Migration template
+│   └── versions/                              # Migration versions
+│       └── .gitkeep
 │
-├── hostel/
-│   ├── __init__.py
-│   ├── hostel_service.py                  # Core hostel CRUD & management
-│   ├── hostel_amenity_service.py          # Amenity management & availability
-│   ├── hostel_media_service.py            # Media management & optimization
-│   ├── hostel_policy_service.py           # Policy configuration & enforcement
-│   ├── hostel_settings_service.py         # Operational settings management
-│   ├── hostel_analytics_service.py        # Hostel-specific analytics
-│   ├── hostel_comparison_service.py       # Multi-hostel comparison & benchmarking
-│   └── hostel_onboarding_service.py       # New hostel setup & configuration
-│
-├── inquiry/
-│   ├── __init__.py
-│   ├── inquiry_service.py                 # Core inquiry management
-│   ├── inquiry_assignment_service.py      # Staff assignment for inquiries
-│   ├── inquiry_follow_up_service.py       # Follow-up scheduling & tracking
-│   ├── inquiry_conversion_service.py      # Inquiry to booking conversion
-│   └── inquiry_analytics_service.py       # Inquiry funnel analytics
-│
-├── leave/
-│   ├── __init__.py
-│   ├── leave_application_service.py       # Leave request management
-│   ├── leave_type_service.py              # Leave type configuration
-│   ├── leave_balance_service.py           # Balance tracking & adjustments
-│   ├── leave_approval_service.py          # Approval workflows & delegation
-│   ├── leave_calendar_service.py          # Leave calendar & blackout dates
-│   └── leave_notification_service.py      # Leave-related notifications
-│
-├── maintenance/
-│   ├── __init__.py
-│   ├── maintenance_request_service.py     # Core request management
-│   ├── maintenance_assignment_service.py  # Staff/vendor assignment
-│   ├── maintenance_approval_service.py    # Cost & scope approvals
-│   ├── maintenance_completion_service.py  # Completion & quality validation
-│   ├── maintenance_cost_service.py        # Cost tracking & budget management
-│   ├── maintenance_schedule_service.py    # Preventive maintenance scheduling
-│   ├── maintenance_vendor_service.py      # Vendor management & performance
-│   ├── maintenance_analytics_service.py   # Maintenance analytics & insights
-│   └── predictive_maintenance_service.py  # ML-based predictive maintenance
-│
-├── mess/
-│   ├── __init__.py
-│   ├── mess_menu_service.py               # Menu management & publishing
-│   ├── meal_item_service.py               # Food item & recipe management
-│   ├── dietary_option_service.py          # Dietary preferences & restrictions
-│   ├── menu_approval_service.py           # Nutritional validation & approval
-│   ├── menu_feedback_service.py           # Feedback collection & analysis
-│   ├── menu_planning_service.py           # Strategic menu planning
-│   ├── nutritional_info_service.py        # Nutritional analysis & reporting
-│   └── mess_inventory_service.py          # Inventory planning & management
-│
-├── notification/
-│   ├── __init__.py
-│   ├── notification_service.py            # Core notification management
-│   ├── notification_template_service.py   # Template management & localization
-│   ├── email_notification_service.py      # Email delivery & tracking
-│   ├── sms_notification_service.py        # SMS delivery & tracking
-│   ├── push_notification_service.py       # Push notification delivery
-│   ├── in_app_notification_service.py     # In-app notification management
-│   ├── notification_queue_service.py      # Queue processing & batching
-│   ├── notification_preference_service.py # User preference management
-│   ├── notification_routing_service.py    # Intelligent channel routing
-│   └── device_token_service.py            # Device token management
-│
-├── payment/
-│   ├── __init__.py
-│   ├── payment_service.py                 # Core payment processing
-│   ├── payment_gateway_service.py         # Gateway integration & routing
-│   ├── payment_refund_service.py          # Refund processing & tracking
-│   ├── payment_ledger_service.py          # Double-entry bookkeeping
-│   ├── payment_reminder_service.py        # Payment reminder scheduling
-│   ├── payment_schedule_service.py        # Recurring payment management
-│   ├── payment_reconciliation_service.py  # Bank reconciliation & matching
-│   ├── payment_fraud_service.py           # Fraud detection & prevention
-│   └── payment_reporting_service.py       # Financial reporting & exports
-│
-├── review/
-│   ├── __init__.py
-│   ├── review_service.py                  # Core review management
-│   ├── review_moderation_service.py       # Content moderation & filtering
-│   ├── review_voting_service.py           # Helpfulness voting system
-│   ├── review_response_service.py         # Owner response management
-│   ├── review_media_service.py            # Review media handling
-│   ├── review_analytics_service.py        # Sentiment analysis & insights
-│   └── review_incentive_service.py        # Review collection incentives
-│
-├── room/
-│   ├── __init__.py
-│   ├── room_service.py                    # Core room management
-│   ├── room_type_service.py               # Room type configuration
-│   ├── room_amenity_service.py            # Room amenity management
-│   ├── bed_service.py                     # Bed management & configuration
-│   ├── bed_assignment_service.py          # Bed assignment & optimization
-│   ├── room_availability_service.py       # Real-time availability tracking
-│   ├── room_pricing_service.py            # Dynamic room pricing
-│   ├── room_maintenance_service.py        # Room maintenance status
-│   └── room_allocation_service.py         # Optimal room allocation algorithms
-│
-├── search/
-│   ├── __init__.py
-│   ├── search_service.py                  # Core search functionality
-│   ├── search_indexing_service.py         # Search index management
-│   ├── search_autocomplete_service.py     # Autocomplete & suggestions
-│   ├── search_analytics_service.py        # Search performance analytics
-│   ├── search_personalization_service.py  # Personalized search results
-│   └── search_optimization_service.py     # Query optimization & caching
-│
-├── student/
-│   ├── __init__.py
-│   ├── student_service.py                 # Core student lifecycle management
-│   ├── student_profile_service.py         # Profile management & verification
-│   ├── student_document_service.py        # Document lifecycle & compliance
-│   ├── guardian_contact_service.py        # Guardian relationship management
-│   ├── room_transfer_service.py           # Room transfer workflows
-│   ├── student_preference_service.py      # Preference management
-│   ├── student_onboarding_service.py      # Onboarding workflows
-│   ├── student_checkout_service.py        # Checkout & clearance process
-│   └── student_communication_service.py   # Student-specific communications
-│
-├── subscription/
-│   ├── __init__.py
-│   ├── subscription_plan_service.py       # Plan configuration & management
-│   ├── subscription_service.py            # Subscription lifecycle management
-│   ├── subscription_billing_service.py    # Billing cycle & processing
-│   ├── subscription_invoice_service.py    # Invoice generation & delivery
-│   ├── subscription_usage_service.py      # Usage tracking & limits
-│   ├── booking_commission_service.py      # Commission calculation & payouts
-│   └── subscription_upgrade_service.py    # Plan upgrades & downgrades
-│
-├── supervisor/
-│   ├── __init__.py
-│   ├── supervisor_service.py              # Core supervisor management
-│   ├── supervisor_permission_service.py   # Permission management
-│   ├── supervisor_assignment_service.py   # Hostel/area assignments
-│   ├── supervisor_activity_service.py     # Activity tracking & logging
-│   ├── supervisor_performance_service.py  # Performance tracking & reviews
-│   ├── supervisor_dashboard_service.py    # Dashboard data & configuration
-│   ├── supervisor_scheduling_service.py   # Work schedule management
-│   └── supervisor_training_service.py     # Training & certification tracking
-│
-├── user/
-│   ├── __init__.py
-│   ├── user_service.py                    # Core user management
-│   ├── user_profile_service.py            # Profile management & privacy
-│   ├── user_address_service.py            # Address management
-│   ├── user_session_service.py            # Session management & security
-│   ├── user_verification_service.py       # Identity verification
-│   ├── user_preference_service.py         # User preferences & settings
-│   ├── emergency_contact_service.py       # Emergency contact management
-│   └── user_data_export_service.py        # GDPR data export & deletion
-│
-├── visitor/
-│   ├── __init__.py
-│   ├── visitor_service.py                 # Core visitor management
-│   ├── visitor_tracking_service.py        # Journey tracking & analytics
-│   ├── visitor_preference_service.py      # Preference learning & management
-│   ├── visitor_favorite_service.py        # Favorites & wishlist management
-│   ├── visitor_dashboard_service.py       # Personalized dashboard
-│   ├── saved_search_service.py            # Saved searches & alerts
-│   ├── visitor_recommendation_service.py  # ML-based recommendations
-│   └── visitor_conversion_service.py      # Conversion optimization
-│
-├── integrations/
-│   ├── __init__.py
-│   ├── integration_service.py             # Core integration management
-│   ├── api_integration_service.py         # External API integrations
-│   ├── webhook_service.py                 # Webhook processing & delivery
-│   ├── calendar_sync_service.py           # External calendar synchronization
-│   ├── payment_gateway_integration.py     # Payment provider integrations
-│   ├── sms_provider_service.py            # SMS provider integrations
-│   ├── email_provider_service.py          # Email provider integrations
-│   ├── push_provider_service.py           # Push notification providers
-│   └── third_party_sync_service.py        # Data sync with external systems
-│
-├── workflows/
-│   ├── __init__.py
-│   ├── workflow_engine_service.py         # Core workflow execution engine
-│   ├── approval_workflow_service.py       # Generic approval workflows
-│   ├── onboarding_workflow_service.py     # Student/hostel onboarding
-│   ├── checkout_workflow_service.py       # Student checkout workflows
-│   ├── escalation_workflow_service.py     # Escalation handling
-│   ├── notification_workflow_service.py   # Automated notification sequences
-│   └── scheduled_task_service.py          # Scheduled job management
-│
-├── communication/
-│   ├── __init__.py
-│   ├── communication_service.py           # Core communication management
-│   ├── email_service.py                   # Email composition & sending
-│   ├── sms_service.py                     # SMS composition & sending
-│   ├── chat_service.py                    # Real-time chat functionality
-│   ├── chatbot_service.py                 # Automated chat responses
-│   ├── broadcast_service.py               # Mass communication management
-│   └── communication_analytics_service.py # Communication effectiveness
-│
-├── reporting/
-│   ├── __init__.py
-│   ├── report_service.py                  # Core report generation
-│   ├── financial_report_service.py        # Financial statements & reports
-│   ├── operational_report_service.py      # Operational metrics reports
-│   ├── compliance_report_service.py       # Regulatory compliance reports
-│   ├── custom_report_service.py           # Custom report builder
-│   ├── report_scheduling_service.py       # Automated report scheduling
-│   └── report_export_service.py           # Multi-format export (PDF, Excel)
-│
-└── background/
+└── tests/                                     # ━━━ TEST SUITE ━━━
     ├── __init__.py
-    ├── task_scheduler_service.py          # Background task scheduling
-    ├── queue_processor_service.py         # Message queue processing
-    ├── data_sync_service.py               # Background data synchronization
-    ├── cleanup_service.py                 # Data cleanup & archival
-    ├── health_check_service.py            # System health monitoring
-    └── metrics_collection_service.py      # Background metrics collection
+    ├── conftest.py                            # Pytest fixtures
+    │
+    ├── unit/                                  # Unit tests
+    │   ├── __init__.py
+    │   ├── schemas/                           # Schema validation tests
+    │   ├── models/                            # Model tests
+    │   ├── repositories/                      # Repository tests
+    │   ├── services/                          # Service tests
+    │   └── utils/                             # Utility tests
+    │
+    ├── integration/                           # Integration tests
+    │   ├── __init__.py
+    │   ├── api/                               # API endpoint tests
+    │   ├── database/                          # Database integration tests
+    │   └── external/                          # External service tests
+    │
+    ├── e2e/                                   # End-to-end tests
+    │   ├── __init__.py
+    │   └── scenarios/                         # User scenario tests
+    │
+    └── fixtures/                              # Test data fixtures
+        ├── __init__.py
+        ├── users.py
+        ├── hostels.py
+        ├── bookings.py
+        └── payments.py
