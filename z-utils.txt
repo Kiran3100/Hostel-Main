@@ -1,0 +1,183 @@
+Comprehensive Overview of Utility Classes
+Based on the files you've shared, here's a complete breakdown of what classes should be in each utility file:
+
+1. constants.py
+This file contains application constants organized by category:
+
+System constants (APP_NAME, APP_VERSION, etc.)
+Database constants (pagination, string lengths)
+User roles and permissions (UserRoles class)
+Hostel constants (HostelTypes, HostelStatus, RoomTypes, RoomStatus, BedStatus)
+Booking constants (BookingStatus, BookingSource)
+Payment constants (PaymentStatus, PaymentMethod, PaymentType)
+Student constants (StudentStatus)
+Attendance constants (AttendanceStatus, AttendanceMode)
+Leave constants (LeaveStatus, LeaveType)
+Complaint constants (ComplaintStatus, ComplaintCategory, ComplaintPriority)
+Maintenance constants (MaintenanceStatus, MaintenanceCategory, MaintenancePriority)
+Notification constants (NotificationStatus, NotificationChannel, NotificationType)
+Announcement constants (AnnouncementStatus, AnnouncementCategory, AnnouncementPriority)
+Review constants (ReviewStatus)
+Subscription constants (SubscriptionStatus, SubscriptionType)
+File upload constants (allowed extensions, MIME types)
+Time and date constants (formats, timezones)
+Currency and pricing constants
+Security constants (password requirements, session settings)
+Communication constants (email, SMS)
+API constants (rate limiting)
+Analytics constants
+Search and filtering constants
+Cache constants
+Validation constants (patterns)
+Error and success messages
+Feature flags
+System limits
+Contact information
+2. datetime_utils.py
+DateTimeHelper: General date/time manipulation utilities
+TimezoneConverter: Timezone conversion and management
+DateRangeCalculator: Date range calculation and validation
+BusinessHoursChecker: Business hours validation and calculation
+AgeCalculator: Age calculation utilities
+ScheduleHelper: Scheduling and recurring event utilities
+AttendanceDateHelper: Attendance-specific date utilities
+LeaveCalculator: Leave calculation and validation
+DateTimeValidator: Date and time validation
+DateTimeFormatter: Advanced date/time formatting
+3. email_utils.py
+EmailConfig: Email configuration dataclass
+EmailAddress: Email address with optional name dataclass
+EmailHelper: Main email sending utilities
+TemplateRenderer: Email template rendering utilities
+AttachmentHandler: Email attachment handling utilities
+EmailValidator: Email validation utilities
+EmailAnalytics: Email analytics and tracking utilities
+EmailQueueManager: Email queue management for batch processing
+EmailTemplateManager: Advanced email template management
+4. encryption.py
+EncryptionHelper: Main encryption utility class
+FieldEncryption: Database field encryption utilities
+FileEncryption: File encryption with metadata handling
+PIIEncryption: Personally Identifiable Information encryption
+TokenEncryption: Token encryption for secure token storage
+KeyManager: Encryption key management utilities
+EncryptionKeyRotation: Encryption key rotation manager
+5. excel_utils.py
+ExcelGenerator: Main Excel generation utilities
+ExcelReader: Excel reading and parsing utilities
+WorksheetManager: Worksheet management utilities
+ChartGenerator: Chart generation utilities
+ExcelDataProcessor: Data processing utilities for Excel operations
+ExcelReportGenerator: Specialized Excel report generation
+ExcelTemplateManager: Excel template management utilities
+6. file_utils.py
+FileHelper: General file manipulation utilities
+DirectoryManager: Directory management utilities
+FileTypeDetector: File type detection utilities
+FileValidator: File validation utilities
+TempFileManager: Temporary file management utilities
+ArchiveManager: Archive file management utilities
+FileDownloader: File download utilities
+7. formatters.py
+CurrencyFormatter: Currency formatting utilities
+DateTimeFormatter: Date and time formatting utilities
+NumberFormatter: Number formatting utilities
+AddressFormatter: Address formatting utilities
+ContactFormatter: Contact information formatting utilities
+TableFormatter: Table and list formatting utilities
+ReportFormatter: Report formatting utilities
+DataExportFormatter: Data export formatting utilities
+StudentFormatter: Student-specific formatting utilities
+BookingFormatter: Booking-specific formatting utilities
+PaymentFormatter: Payment-specific formatting utilities
+NotificationFormatter: Notification formatting utilities
+TemplateFormatter: Template variable formatting utilities
+ValidationMessageFormatter: Validation message formatting utilities
+8. geo_utils.py
+GeoPoint: Geographic point with latitude and longitude dataclass
+Address: Structured address information dataclass
+GeocodeResult: Geocoding result dataclass
+GeoLocationHelper: Main geolocation utilities
+DistanceCalculator: Advanced distance calculation utilities
+AddressGeocoder: Address geocoding utilities
+RegionDetector: Region and timezone detection utilities
+GeoFencing: Geofencing utilities for location-based features
+LocationAnalytics: Location analytics and insights utilities
+9. hashing.py
+HashingHelper: General purpose hashing utilities
+PasswordHasher: Secure password hashing utilities
+TokenHasher: Token hashing for secure token storage
+ChecksumCalculator: File and data integrity checking utilities
+HMACHelper: HMAC utilities for message authentication
+SessionHasher: Session token hashing utilities
+DigitalSignature: Digital signature utilities
+PasswordHistory: Password history tracking
+10. image_utils.py
+ImageProcessor: Main image processing utilities
+ThumbnailGenerator: Thumbnail generation utilities
+ImageOptimizer: Image optimization utilities
+ImageValidator: Image validation utilities
+WatermarkManager: Image watermarking utilities
+ImageConverter: Image format conversion utilities
+Base64ImageHandler: Base64 image encoding/decoding utilities
+11. pagination_utils.py
+PaginationParams: Pagination parameters dataclass
+PaginationInfo: Pagination information dataclass
+PaginatedResponse: Paginated response wrapper
+PaginationHelper: Main pagination utilities
+CursorPaginator: Cursor-based pagination for large datasets
+OffsetPaginator: Traditional offset-based pagination
+PageCalculator: Page calculation utilities
+PaginationAnalytics: Analytics for pagination usage
+PaginationOptimizer: Optimization utilities for pagination performance
+12. pdf_utils.py
+PDFGenerator: Main PDF generation utilities
+PDFMerger: PDF merging and splitting utilities
+PDFSigner: PDF digital signature utilities
+PDFValidator: PDF validation utilities
+PDFTextExtractor: PDF text extraction utilities
+PDFImageExtractor: PDF image extraction utilities
+PDFReportGenerator: Specialized report generation utilities
+13. slug_utils.py
+SlugHelper: Main slug generation utilities
+URLSafeSlugger: Advanced URL-safe slug generation
+UniqueSlugGenerator: Generate unique slugs with conflict resolution
+SlugValidator: Slug validation utilities
+HostelSlugGenerator: Specialized slug generator for hostel entities
+SlugBatch: Batch slug generation utilities
+14. sms_utils.py
+SMSConfig: SMS configuration dataclass
+SMSMessage: SMS message dataclass
+SMSHelper: Main SMS sending utilities
+MessageOptimizer: SMS message optimization utilities
+NumberValidator: Phone number validation utilities
+DeliveryTracker: SMS delivery tracking and status monitoring
+SMSTemplateManager: SMS template management utilities
+SMSAnalytics: SMS analytics and reporting utilities
+15. string_utils.py
+StringHelper: General string manipulation utilities
+TextCleaner: Text cleaning and sanitization utilities
+NameFormatter: Name formatting and validation utilities
+PhoneNumberFormatter: Phone number formatting utilities
+AddressFormatter: Address formatting utilities
+PasswordGenerator: Password generation utilities
+SearchHelper: Search and matching utilities
+ValidationHelper: String validation utilities
+16. validators.py
+ValidationResult: Validation result container
+EmailValidator: Email validation utilities
+PhoneValidator: Phone number validation utilities
+URLValidator: URL validation utilities
+FileValidator: File validation utilities
+BusinessRuleValidator: Business rule validation utilities
+SecurityValidator: Security validation utilities
+DataValidator: Generic data validation utilities
+StudentValidator: Student-specific validation utilities
+HostelValidator: Hostel-specific validation utilities
+PaymentValidator: Payment-specific validation utilities
+CompositeValidator: Composite validator for complex validation scenarios
+CustomValidator: Custom validation rule builder
+17. __init__.py
+This file imports and exports all the utility classes to make them available when importing from the utils package. It organizes the imports by category and defines __all__ to control what's exported.
+
+This comprehensive utility package provides a robust foundation for the hostel management system, covering everything from data validation to file handling, security, communication, and UI-related utilities.
