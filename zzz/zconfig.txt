@@ -1,0 +1,39 @@
+# Classes in Configuration Files
+
+Here's a comprehensive breakdown of all classes that should be present in each configuration file:
+
+## database.py
+1. **DatabaseStats** - Collects database statistics (query counts, slow queries, errors)
+2. **DatabaseHealthCheck** - Provides health check utilities for database connections
+
+## integrations.py
+1. **IntegrationType** (Enum) - Defines supported integration types (payment, email, SMS, etc.)
+2. **IntegrationConfig** (dataclass) - Stores configuration for an integration
+3. **IntegrationRegistry** - Manages all integrations and their clients
+4. **WebhookManager** - Handles incoming and outgoing webhooks
+5. **PaymentGatewayClient** - Client for payment gateway operations
+6. **EmailClient** - Client for email operations
+7. **SMSClient** - Client for SMS operations
+8. **StorageClient** - Client for storage operations
+
+## logging.py
+1. **CustomJsonFormatter** - JSON formatter with additional fields for structured logging
+2. **LoggingContext** - Context manager for adding extra fields to logs
+3. **LogAggregator** - Aggregates and searches logs with filtering capabilities
+
+## redis.py
+1. **RedisManager** - Handles advanced Redis operations
+2. **RedisHealthCheck** - Provides health check utilities for Redis
+3. **RateLimiter** - Implements rate limiting using Redis
+4. **CacheService** - Multi-level caching service (Redis + local memory)
+
+## security.py
+1. **SecurityConfig** - Core security configuration and utilities (JWT, encryption, etc.)
+2. **PasswordPolicy** - Password requirement enforcement and validation
+3. **TwoFactorAuthentication** - Handles 2FA (TOTP and recovery codes)
+4. **SecurityHeaders** - Manages HTTP security headers
+
+## settings.py
+1. **Settings** - Application settings with environment variable support using Pydantic
+
+These classes form the configuration layer of your application, providing essential services for database connectivity, caching, security, integrations with third-party services, and more.
