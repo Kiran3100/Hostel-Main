@@ -2732,3 +2732,348 @@ If you want, I can next:
 
 - Verify for any duplication/overlap (e.g., `SearchPreferences` vs `SavedSearch`) and suggest consolidation, or  
 - Propose a refactor plan (e.g., splitting “core entities” vs “analytics/dashboard” into separate subpackages).
+
+
+
+============================================================================================================================================================================
+
+Here’s exactly what belongs in each of the `app.models.base` files based on what you’ve shown, and how they’re conceptually divided.
+
+---
+
+## 1. `base_model.py`
+
+This file is the foundation of all ORM models. It should contain:
+
+### a) SQLAlchemy declarative base
+
+- `Base`
+  - Created via `declarative_base()`.
+  - All concrete models in your app ultimately inherit from this (directly or via `BaseModel` / its subclasses).
+
+### b) Core abstract model base
+
+- `class BaseModel(Base)`
+  - `__abstract__ = True`
+  - Responsibilities:
+    - Provide a **convention-based `__tablename__`** (CamelCase → snake_case plural).
+    - Utility methods:
+      - `to_dict(exclude: Optional[List[str]] = None) -> Dict[str, Any]`
+      - `get_by_id(cls, db: Session, id: Any) -> Optional[ModelType]`
+      - `get_all(cls, db: Session, skip: int = 0, limit: int = 100) -> List[ModelType]`
+      - `count(cls, db: Session) -> int`
+      - `save(self, db: Session, commit: bool = True) -> BaseModel`
+      - `delete(self, db: Session, commit: bool = True) -> None`
+      - `update(self, db: Session, **kwargs) -> BaseModel`
+    - `__repr__` showing class name and `id`.
+
+> Actual business models should typically inherit from one of the subclasses below rather than directly from `BaseModel`.
+
+### c) Timestamped base
+
+- `class TimestampModel(BaseModel)`
+  - `__abstract__ = True`
+  - Adds automatic timestamps:
+    - `created_at: DateTime(timezone=True)` with `server_default=func.now()`
+    - `updated_at: DateTime(timezone=True)` with `server_default=func.now(), onupdate=func.now()`
+
+### d) Soft-delete base
+
+- `class SoftDeleteModel(TimestampModel)`
+  - `__abstract__ = True`
+  - Adds soft-delete fields:
+    - `is_deleted: Boolean` (default `False`, indexed)
+    - `deleted_at: DateTime(timezone=True)`
+  - Methods:
+    - `soft_delete(self, db: Session, commit: bool = True) -> SoftDeleteModel`
+    - `restore(self, db: Session, commit: bool = True) -> SoftDeleteModel`
+    - `get_active(cls, db: Session, skip: int = 0, limit: int = 100) -> List[ModelType]`  
+      (filters by `is_deleted == False`)
+
+### e) Tenant-aware base
+
+- `class TenantModel(SoftDeleteModel)`
+  - `__abstract__ = True`
+  - Adds multi-tenancy support:
+    - `hostel_id: PG_UUID(as_uuid=True)` (indexed, non-null)
+  - Tenant-specific class methods:
+    - `get_by_hostel(cls, db: Session, hostel_id, skip=0, limit=100) -> List[ModelType]`
+      - Filters by `hostel_id` and `is_deleted == False`.
+    - `count_by_hostel(cls, db: Session, hostel_id) -> int`
+
+### f) Event listeners
+
+Not classes, but part of this file:
+
+- `@event.listens_for(TimestampModel, 'before_update', propagate=True)`
+  - `receive_before_update(...)` sets `updated_at = datetime.utcnow()` before update.
+
+- `@event.listens_for(SoftDeleteModel, 'before_update', propagate=True)`
+  - `receive_before_soft_delete(...)` sets `deleted_at` when `is_deleted` becomes `True` and `deleted_at` is empty.
+
+**No additional model classes are needed in this file beyond these.**  
+All domain models (Hostel, Room, Student, etc.) should live in other modules and typically subclass `TenantModel` and/or use mixins from `mixins.py`.
+
+---
+
+## 2. `enums.py`
+
+This file is **only for Python `enum.Enum` classes** that mirror your Pydantic/schema enums and database enums.
+
+It should contain exactly these enum classes:
+
+- `UserRole`
+  - `SUPER_ADMIN`, `ADMIN`, `SUPERVISOR`, `STUDENT`, `VISITOR`
+
+- `Gender`
+  - `MALE`, `FEMALE`, `OTHER`, `PREFER_NOT_TO_SAY`
+
+- `HostelStatus`
+  - `ACTIVE`, `INACTIVE`, `SUSPENDED`, `UNDER_MAINTENANCE`
+
+- `RoomStatus`
+  - `AVAILABLE`, `OCCUPIED`, `MAINTENANCE`, `OUT_OF_ORDER`
+
+- `BedStatus`
+  - `AVAILABLE`, `OCCUPIED`, `RESERVED`, `MAINTENANCE`
+
+- `BookingStatus`
+  - `PENDING`, `CONFIRMED`, `CANCELLED`, `COMPLETED`, `NO_SHOW`
+
+- `PaymentStatus`
+  - `PENDING`, `PROCESSING`, `COMPLETED`, `FAILED`, `REFUNDED`
+
+- `PaymentType`
+  - `ADVANCE`, `MONTHLY_RENT`, `MESS_FEE`, `SECURITY_DEPOSIT`, `LATE_FEE`, `UTILITY_CHARGE`, `OTHER`
+
+- `PaymentMethod`
+  - `CASH`, `CARD`, `BANK_TRANSFER`, `UPI`, `CHEQUE`, `ONLINE`
+
+- `ComplaintStatus`
+  - `OPEN`, `IN_PROGRESS`, `RESOLVED`, `CLOSED`, `ESCALATED`
+
+- `ComplaintCategory`
+  - `MAINTENANCE`, `CLEANLINESS`, `FOOD`, `NOISE`, `SECURITY`, `STAFF_BEHAVIOR`, `FACILITIES`, `OTHER`
+
+- `ComplaintPriority`
+  - `LOW`, `MEDIUM`, `HIGH`, `URGENT`
+
+- `MaintenanceStatus`
+  - `REQUESTED`, `ASSIGNED`, `IN_PROGRESS`, `COMPLETED`, `CANCELLED`, `VERIFIED`
+
+- `MaintenanceCategory`
+  - `ELECTRICAL`, `PLUMBING`, `CARPENTRY`, `PAINTING`, `CLEANING`, `HVAC`, `APPLIANCE`, `OTHER`
+
+- `AttendanceStatus`
+  - `PRESENT`, `ABSENT`, `LATE`, `ON_LEAVE`
+
+- `AttendanceMode`
+  - `MANUAL`, `QR_CODE`, `BIOMETRIC`, `RFID`
+
+- `LeaveStatus`
+  - `PENDING`, `APPROVED`, `REJECTED`, `CANCELLED`
+
+- `LeaveType`
+  - `CASUAL`, `SICK`, `EMERGENCY`, `VACATION`, `OTHER`
+
+- `AnnouncementStatus`
+  - `DRAFT`, `PENDING_APPROVAL`, `APPROVED`, `PUBLISHED`, `ARCHIVED`
+
+- `AnnouncementCategory`
+  - `GENERAL`, `EMERGENCY`, `EVENT`, `POLICY`, `MAINTENANCE`, `ACADEMIC`
+
+- `AnnouncementPriority`
+  - `LOW`, `MEDIUM`, `HIGH`, `URGENT`
+
+- `NotificationStatus`
+  - `PENDING`, `SENT`, `DELIVERED`, `FAILED`, `READ`
+
+- `NotificationChannel`
+  - `EMAIL`, `SMS`, `PUSH`, `IN_APP`
+
+- `NotificationType`
+  - `ALERT`, `REMINDER`, `INFO`, `WARNING`, `ERROR`
+
+- `ReviewStatus`
+  - `DRAFT`, `SUBMITTED`, `MODERATED`, `PUBLISHED`, `REJECTED`
+
+- `SubscriptionStatus`
+  - `ACTIVE`, `EXPIRED`, `CANCELLED`, `SUSPENDED`, `TRIAL`
+
+- `SubscriptionType`
+  - `BASIC`, `STANDARD`, `PREMIUM`, `ENTERPRISE`
+
+- `ReferralStatus`
+  - `PENDING`, `COMPLETED`, `EXPIRED`, `CANCELLED`
+
+- `InquiryStatus`
+  - `NEW`, `CONTACTED`, `QUALIFIED`, `CONVERTED`, `LOST`
+
+- `AuditActionCategory`
+  - `AUTHENTICATION`, `AUTHORIZATION`, `USER_MANAGEMENT`, `HOSTEL_MANAGEMENT`,  
+    `BOOKING`, `PAYMENT`, `COMPLAINT`, `ATTENDANCE`, `MAINTENANCE`, `ANNOUNCEMENT`,  
+    `STUDENT_MANAGEMENT`, `SUPERVISOR_MANAGEMENT`, `CONFIGURATION`, `DATA_EXPORT`, `OTHER`
+
+**Nothing else (no SQLAlchemy models or mixins) should be in this file.**
+
+---
+
+## 3. `mixins.py`
+
+This file holds **reusable column / behavior mixins** to be mixed into models.
+
+It should contain these mixin classes:
+
+- `class TimestampMixin`
+  - `created_at`, `updated_at` columns with `server_default=func.now()`.
+
+- `class SoftDeleteMixin`
+  - `is_deleted`, `deleted_at`, `deleted_by` columns.
+
+- `class UUIDMixin`
+  - `id: PG_UUID(as_uuid=True)` as primary key with `default=uuid4`.
+
+- `class AddressMixin`
+  - `address_line1`, `address_line2`, `city`, `state`, `country`, `postal_code`.
+  - `validate_postal_code` validator.
+
+- `class ContactMixin`
+  - `phone`, `alternate_phone`, `email`.
+  - `validate_email` and `validate_phone` validators.
+
+- `class LocationMixin`
+  - `latitude`, `longitude`, `geohash`.
+  - `validate_latitude` and `validate_longitude` validators.
+
+- `class MediaMixin`
+  - `image_url`, `thumbnail_url`, `video_url`, `document_url`.
+
+- `class EmergencyContactMixin`
+  - `emergency_contact_name`, `emergency_contact_relationship`,
+    `emergency_contact_phone`, `emergency_contact_email`.
+  - `validate_emergency_phone` validator.
+
+- `class AuditMixin`
+  - `created_by`, `updated_by`, `ip_address`.
+
+- `class ApprovalMixin`
+  - `approval_status`, `approved_by`, `approved_at`, `rejection_reason`.
+  - `validate_approval_status` validator (`pending`, `approved`, `rejected`, `cancelled`).
+
+- `class SEOMixin`
+  - `meta_title`, `meta_description`, `meta_keywords`, `slug`.
+  - `validate_slug` to normalize slugs.
+
+- `class VersionMixin`
+  - `version`, `is_current_version`, `version_notes`.  
+  - Note: this requires `Integer` import from `sqlalchemy` (currently missing).
+
+- `class PriorityMixin`
+  - `priority_level`, `urgency`.
+  - `validate_priority` validator (values: `low`, `medium`, `high`, `urgent`, `critical`).
+
+- `class StatusMixin`
+  - `status`, `status_changed_at`, `status_changed_by`.
+
+**No actual tables here**—only mixins to be inherited alongside your base models, e.g.:
+
+```python
+class Hostel(TenantModel, UUIDMixin, AddressMixin, ContactMixin):
+    __tablename__ = "hostels"
+    # hostel-specific columns...
+```
+
+---
+
+## 4. `types.py`
+
+This file defines **custom SQLAlchemy column types** using `TypeDecorator`.
+
+It should contain these classes:
+
+- `class EncryptedType(TypeDecorator)`
+  - `impl = Text`
+  - Handles encryption/decryption for sensitive strings (currently placeholder).
+
+- `class JSONType(TypeDecorator)`
+  - `impl = JSONB`
+  - Ensures bound values are `dict` or `list`; passes them through for PostgreSQL JSONB.
+
+- `class MoneyType(TypeDecorator)`
+  - `impl = Numeric(15, 2)`
+  - Normalizes to `Decimal` and quantizes to 2 decimal places.
+
+- `class PhoneNumberType(TypeDecorator)`
+  - `impl = String(20)`
+  - Strips non-digits, enforces minimum length, stores normalized numbers.
+
+- `class EmailType(TypeDecorator)`
+  - `impl = String(255)`
+  - Lowercases and validates email format.
+
+- `class URLType(TypeDecorator)`
+  - `impl = String(500)`
+  - Validates URL format.
+
+- `class SlugType(TypeDecorator)`
+  - `impl = String(255)`
+  - Lowercases, strips, and converts arbitrary text to slug-form.
+
+- `class CoordinateType(TypeDecorator)`
+  - `impl = Numeric(10, 7)`
+  - Initialized with `coord_type='latitude'` or `'longitude'`.
+  - Validates numeric range accordingly.
+
+**No ORM model classes should be here—only type decorators.**
+
+---
+
+## 5. `validators.py`
+
+This file is **only for plain Python validation / normalization functions**, not classes.
+
+It should contain the following functions (no classes expected):
+
+- `validate_email(email: str) -> bool`
+- `validate_phone(phone: str) -> bool`
+- `validate_postal_code(postal_code: str, country: Optional[str] = None) -> bool`
+- `validate_url(url: str) -> bool`
+- `validate_coordinate(value: Decimal, coord_type: str) -> bool`
+- `validate_date_range(start_date: date, end_date: date) -> bool`
+- `validate_amount(amount: Decimal, min_value: Decimal = Decimal('0')) -> bool`
+- `validate_percentage(value: Decimal) -> bool`
+- `validate_slug(slug: str) -> bool`
+- `validate_json_structure(data: dict, required_keys: List[str]) -> bool`
+
+And normalizers:
+
+- `normalize_phone(phone: str) -> str`
+- `normalize_email(email: str) -> str`
+- `normalize_slug(text: str) -> str`
+
+---
+
+## 6. `__init__.py`
+
+This file should **not define new classes**.  
+It should only:
+
+- Import and re-export:
+
+  - Base models:
+    - `Base`, `BaseModel`, `TimestampModel`, `SoftDeleteModel`, `TenantModel`
+  - Mixins:
+    - `TimestampMixin`, `SoftDeleteMixin`, `UUIDMixin`, `AddressMixin`, `ContactMixin`,
+      `LocationMixin`, `MediaMixin`, `EmergencyContactMixin`, `AuditMixin`,
+      `ApprovalMixin`, `SEOMixin`, `VersionMixin`, `PriorityMixin`, `StatusMixin`
+  - Enums:
+    - All enums from `enums.py`
+  - Custom types:
+    - `EncryptedType`, `JSONType`, `MoneyType`, `PhoneNumberType`,
+      `EmailType`, `URLType`, `SlugType`, `CoordinateType`
+  - Validators module:
+    - as `validators`
+
+- Populate `__all__` with the public API of the `app.models.base` package.
+
+---

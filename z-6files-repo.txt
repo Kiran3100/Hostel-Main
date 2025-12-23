@@ -1,3 +1,1671 @@
+Here’s a clean map of what classes belong in each repository file you shared, grouped by module. I’ll list only the classes that should be defined in each file (not the models they import).
+
+---
+
+## 1. Admin Repositories (`app/repositories/admin`)
+
+### `admin_hostel_assignment_repository.py`
+Should define:
+
+- `AdminHostelAssignmentRepository(BaseRepository[AdminHostelAssignment])`  
+  Repository for multi‑hostel admin assignments, transfers, workload balancing, coverage analysis, and assignment analytics.
+
+_No other classes should be defined here._
+
+---
+
+### `admin_override_repository.py`
+Should define:
+
+- `AdminOverrideRepository(BaseRepository[AdminOverride])`  
+  Repository for admin overrides of supervisor decisions, approvals, and impact analysis.
+
+---
+
+### `admin_permissions_repository.py`
+Should define:
+
+- `AdminPermissionsRepository(BaseRepository[AdminPermission])`  
+  Repository for granular admin permissions (per hostel & global), templates, validation, conflict detection, and auditing.
+
+---
+
+### `admin_user_repository.py`
+Should define:
+
+- `AdminUserRepository(BaseRepository[AdminUser])`  
+  Repository for admin user management: creation, search, hierarchy, permissions (at a high level), sessions, security, status, and analytics.
+
+---
+
+### `hostel_context_repository.py`
+Should define:
+
+- `HostelContextRepository(BaseRepository[HostelContext])`  
+  Repository for per‑admin hostel context (active hostel, context switches, stats caching, context preferences, snapshots, cleanup, recommendations).
+
+---
+
+### `hostel_selector_repository.py`
+Should define:
+
+- `HostelSelectorRepository(BaseRepository[RecentHostel])`  
+  Repository for managing hostel selection UI: recent hostels, favorites, hostel quick stats, selector cache, and analytics.
+
+---
+
+### `multi_hostel_dashboard_repository.py`
+Should define:
+
+- `MultiHostelDashboardRepository(BaseRepository[MultiHostelDashboard])`  
+  Repository for multi‑hostel dashboards: aggregated metrics, cross‑hostel comparisons, performance rankings, widgets, snapshots, and portfolio summary.
+
+---
+
+### `__init__.py` (admin)
+Should define:
+
+- Imports/exports:
+  - `AdminUserRepository`
+  - `AdminPermissionsRepository`
+  - `AdminHostelAssignmentRepository`
+  - `AdminOverrideRepository`
+  - `HostelContextRepository`
+  - `HostelSelectorRepository`
+  - `MultiHostelDashboardRepository`
+
+- `class AdminRepositoryFactory:`  
+  Factory providing methods:
+  - `get_admin_user_repository`
+  - `get_admin_permissions_repository`
+  - `get_admin_assignment_repository`
+  - `get_admin_override_repository`
+  - `get_hostel_context_repository`
+  - `get_hostel_selector_repository`
+  - `get_dashboard_repository`
+  - `clear_cache`
+
+- `def get_admin_repository_factory(db_session) -> AdminRepositoryFactory`
+
+_No additional repository classes should be defined here._
+
+---
+
+## 2. Analytics Repositories (`app/repositories/analytics`)
+
+### `analytics_aggregate_repository.py`
+Should define:
+
+- `AnalyticsAggregateRepository(BaseRepository)`  
+  Aggregate analytics repository: unified dashboard metrics, platform‑wide metrics, comparative analysis, trends, and export.
+
+---
+
+### `booking_analytics_repository.py`
+Should define:
+
+- `BookingAnalyticsRepository(BaseRepository)`  
+  Repository for booking KPIs, trends, funnels, cancellations, source performance, forecasts, summaries, and optimization insights.
+
+---
+
+### `complaint_analytics_repository.py`
+Should define:
+
+- `ComplaintAnalyticsRepository(BaseRepository)`  
+  Repository for complaint KPIs, SLA metrics, trends, category/priority breakdowns, dashboards, efficiency scores, comparisons, and forecasts.
+
+---
+
+### `custom_reports_repository.py`
+Should define:
+
+- `CustomReportsRepository(BaseRepository)`  
+  Repository for custom report definitions, sharing, scheduling, execution history, caching, and statistics.
+
+---
+
+### `dashboard_analytics_repository.py`
+Should define:
+
+- `DashboardAnalyticsRepository(BaseRepository)`  
+  Repository for generic dashboard KPIs, timeseries metrics, widgets, alerts, quick stats, and role‑specific dashboards.
+
+---
+
+### `financial_analytics_repository.py`
+Should define:
+
+- `FinancialAnalyticsRepository(BaseRepository)`  
+  Repository for revenue/expense breakdowns, ratios, P&L statements, cashflow, budgets vs actuals, tax summary, and financial reports.
+
+---
+
+### `occupancy_analytics_repository.py`
+Should define:
+
+- `OccupancyAnalyticsRepository(BaseRepository)`  
+  Repository for occupancy KPIs, trends, room/floor breakdowns, seasonal patterns, forecasting, and occupancy reports.
+
+---
+
+### `platform_analytics_repository.py`
+Should define:
+
+- `PlatformAnalyticsRepository(BaseRepository)`  
+  Repository for multi‑tenant/platform‑wide metrics: tenant health & churn, platform metrics, growth, churn analysis, system health, usage analytics, and revenue metrics.
+
+---
+
+### `supervisor_analytics_repository.py`
+Should define:
+
+- `SupervisorAnalyticsRepository(BaseRepository)`  
+  Repository for supervisor KPIs, workload, performance ratings, trend points, comparative rankings, and team analytics.
+
+---
+
+### `visitor_analytics_repository.py`
+Should define:
+
+- `VisitorAnalyticsRepository(BaseRepository)`  
+  Repository for visitor funnel, traffic source metrics, search behaviour, engagement, visitor behaviour analytics, and traffic source analytics.
+
+---
+
+### `__init__.py` (analytics)
+Should define:
+
+- Exports:
+  - `AnalyticsAggregateRepository`
+  - `BookingAnalyticsRepository`
+  - `ComplaintAnalyticsRepository`
+  - `CustomReportsRepository`
+  - `DashboardAnalyticsRepository`
+  - `FinancialAnalyticsRepository`
+  - `OccupancyAnalyticsRepository`
+  - `PlatformAnalyticsRepository`
+  - `SupervisorAnalyticsRepository`
+  - `VisitorAnalyticsRepository`
+
+_No extra classes beyond imports/exports._
+
+---
+
+## 3. Announcement Repositories (`app/repositories/announcement`)
+
+### `announcement_aggregate_repository.py`
+Should define:
+
+- `AnnouncementAggregateRepository`  
+  Orchestrator across all announcement sub‑repositories:
+  - `create_complete_announcement`
+  - `process_approval_and_publish`
+  - `initialize_delivery`
+  - `process_scheduled_publications`
+  - `process_recurring_announcements`
+  - `generate_comprehensive_report`
+  - `get_hostel_dashboard_metrics`
+  - `cleanup_expired_announcements`
+  - `recalculate_all_metrics`
+
+And private helpers like `_create_recipient_records`, `_analyze_channel_performance`, `_analyze_category_performance`.
+
+---
+
+### `announcement_approval_repository.py`
+Should define:
+
+- `AnnouncementApprovalRepository(BaseRepository[AnnouncementApproval])`  
+  Repository for approval workflow:
+  - Create/approve/reject/resubmit approvals
+  - Assign/escalate approvals
+  - Auto‑approval & approval rules
+  - SLA monitoring and breaches
+  - Approval workflows
+  - Approval history and statistics
+
+_No other concrete repository class here._
+
+---
+
+### `announcement_delivery_repository.py`
+Should define:
+
+- `AnnouncementDeliveryRepository(BaseRepository[AnnouncementDelivery])`  
+  Repository for delivery execution and management:
+  - Create single/bulk deliveries
+  - Execute & mark delivered/failed
+  - Batching (DeliveryBatch)
+  - Channel selection & configuration
+  - Pending/failed queries
+  - Delivery statistics
+
+Private helpers:
+- `_record_failure`
+- `_schedule_retry`
+- `_get_channel_performance`
+
+---
+
+### `announcement_repository.py`
+Should define:
+
+- `class ActiveAnnouncementsSpec(Specification)`  
+  Specification for “active” announcements (published, not archived/deleted, not expired).
+
+- `class UrgentAnnouncementsSpec(Specification)`  
+  Specification for urgent announcements.
+
+- `class RequiresAcknowledgmentSpec(Specification)`  
+  Specification for announcements that require acknowledgment.
+
+- `class AnnouncementRepository(BaseRepository[Announcement])`  
+  Core announcement repository responsible for:
+  - Creating drafts / from template
+  - Querying by id/hostel/status/search
+  - Publishing/unpublishing/pinning/urgent flags
+  - Updating content with versioning
+  - Archiving/unarchiving/bulk archive
+  - Statistics & performance metrics
+  - Top‑performing announcements
+
+And internal helpers:
+- `_create_version`
+- `_apply_filters`
+- `_count_active`
+- `_count_urgent`
+- `_count_pending_acknowledgment`
+
+---
+
+### `announcement_scheduling_repository.py`
+Should define:
+
+- `AnnouncementSchedulingRepository(BaseRepository[AnnouncementSchedule])`  
+  Repository for announcement scheduling:
+  - One‑time and recurring schedules
+  - Recurring announcement templates
+  - Publish queue (PublishQueue) management
+  - Execution tracking (ScheduleExecution)
+  - SLA breaches
+  - Upcoming schedules / recurring templates
+
+And helpers:
+- `_add_to_publish_queue`
+- `_update_publish_queue`
+- `_remove_from_publish_queue`
+- `_calculate_next_occurrence`
+- `_should_continue_recurrence`
+- `_should_continue_schedule`
+- `_create_from_recurring_template`
+- `_calculate_retry_delay`
+
+---
+
+### `announcement_targeting_repository.py`
+Should define:
+
+- `AnnouncementTargetingRepository(BaseRepository[AnnouncementTarget])`  
+  Repository for audience targeting:
+  - Build single or multi‑criteria segments
+  - Calculate target reach & breakdowns
+  - Optimize delivery timing
+  - Personalization context per student
+  - Targeting effectiveness tracking
+  - Audience preferences
+  - Over‑messaging prevention
+  - Bulk targeting rules
+  - Audience cache handling
+
+And internal helpers:
+- `_calculate_target_audience`
+- `_build_rule_filter`
+- `_get_audience_breakdown`
+- `_update_audience_cache`
+- `_validate_targeting`
+- `_get_target_by_announcement`
+- `_get_notification_preferences`
+- `_get_engagement_history`
+- `_calculate_estimation_accuracy`
+- `_calculate_effectiveness_score`
+
+---
+
+### `announcement_tracking_repository.py`
+Should define:
+
+- `AnnouncementTrackingRepository(BaseRepository[AnnouncementView])`  
+  Repository for engagement tracking:
+  - Views, reading metrics, engagement actions
+  - Read receipts (mark/bulk mark as read)
+  - Acknowledgments & verification
+  - EngagementMetric calculations
+  - ReadingTimeAnalytic calculations
+  - Per‑student profiles, pending/overdue acks
+  - Announcement engagement timeline
+  - Cross‑announcement performance comparison
+  - Low‑engagement student detection
+
+And internal helper:
+- `_calculate_engagement_score`
+
+---
+
+### `__init__.py` (announcement)
+Should define:
+
+- Exports:
+  - `AnnouncementRepository`
+  - `AnnouncementTargetingRepository`
+  - `AnnouncementSchedulingRepository`
+  - `AnnouncementApprovalRepository`
+  - `AnnouncementDeliveryRepository`
+  - `AnnouncementTrackingRepository`
+  - `AnnouncementAggregateRepository`
+  - `ActiveAnnouncementsSpec`
+  - `UrgentAnnouncementsSpec`
+  - `RequiresAcknowledgmentSpec`
+
+- Repository registry / factory:
+  - `REPOSITORY_REGISTRY` (name → class map)
+  - `get_repository(repository_name: str, session)`
+
+---
+
+If you want, I can next:
+
+- Flag any **missing** classes (e.g., if you plan to regenerate files and want a checklist), or  
+- Propose a directory‑level “contract” (what each repository is responsible for vs what should stay in services/use‑cases).
+
+
+Here’s a precise map of what classes are expected in each of the repository files you shared, plus which model/enums they depend on. This should let you verify whether anything is missing or mis‑placed.
+
+---
+
+## 1. Attendance Repositories (`app/repositories/attendance`)
+
+### `attendance_aggregate_repository.py`
+
+**Repository / service class in this file:**
+
+- `AttendanceAggregateRepository`
+  - Not a `BaseRepository` subclass; it’s an aggregate/service layer over multiple attendance models.
+  - Takes a `Session` in `__init__`.
+
+**Model / enum dependencies (must exist elsewhere):**
+
+- From `app.models.attendance.attendance_record`:
+  - `AttendanceRecord`
+- From `app.models.attendance.attendance_policy`:
+  - `AttendancePolicy`
+  - `PolicyViolation`
+  - `PolicyException`
+- From `app.models.attendance.attendance_alert`:
+  - `AttendanceAlert`
+  - `AlertConfiguration`
+- From `app.models.attendance.attendance_report`:
+  - `AttendanceSummary`
+  - `AttendanceTrend`
+- From `app.models.base.enums`:
+  - `AttendanceStatus`
+
+---
+
+### `attendance_alert_repository.py`
+
+**Repository class in this file:**
+
+- `AttendanceAlertRepository(BaseRepository[AttendanceAlert])`
+
+**Model dependencies:**
+
+- From `app.models.attendance.attendance_alert`:
+  - `AttendanceAlert`
+  - `AlertConfiguration`
+  - `AlertNotification`
+
+---
+
+### `attendance_policy_repository.py`
+
+**Repository class in this file:**
+
+- `AttendancePolicyRepository(BaseRepository[AttendancePolicy])`
+
+**Model dependencies:**
+
+- From `app.models.attendance.attendance_policy`:
+  - `AttendancePolicy`
+  - `PolicyViolation`
+  - `PolicyException`
+
+---
+
+### `attendance_record_repository.py`
+
+**Repository class in this file:**
+
+- `AttendanceRecordRepository(BaseRepository[AttendanceRecord])`
+
+**Model / enum dependencies:**
+
+- From `app.models.attendance.attendance_record`:
+  - `AttendanceRecord`
+  - `AttendanceCorrection`
+  - `BulkAttendanceLog`
+- From `app.models.base.enums`:
+  - `AttendanceStatus`
+  - `AttendanceMode`
+
+---
+
+### `attendance_report_repository.py`
+
+**Repository class in this file:**
+
+- `AttendanceReportRepository(BaseRepository[AttendanceReport])`
+
+**Model / enum dependencies:**
+
+- From `app.models.attendance.attendance_report`:
+  - `AttendanceReport`
+  - `AttendanceSummary`
+  - `AttendanceTrend`
+- From `app.models.base.enums`:
+  - `AttendanceStatus` (used in type hints/imports even if not heavily referenced here)
+
+---
+
+### `attendance/__init__.py`
+
+This file should only:
+
+- Import and re‑export repository classes:
+
+  - `AttendanceRecordRepository`
+  - `AttendancePolicyRepository`
+  - `AttendanceAlertRepository`
+  - `AttendanceReportRepository`
+  - `AttendanceAggregateRepository`
+
+- Define `__all__` with those names.
+
+No additional classes should be defined here.
+
+---
+
+## 2. Audit Repositories (`app/repositories/audit`)
+
+### `admin_override_log_repository.py`
+
+**Repository class:**
+
+- `AdminOverrideLogRepository(BaseRepository)`
+  - BaseRepository is used in the reversed order here (`super().__init__(session, AdminOverrideLog)`), but effectively it’s a repository over `AdminOverrideLog`.
+
+**Model dependency:**
+
+- From `app.models.audit`:
+  - `AdminOverrideLog`
+
+---
+
+### `audit_aggregate_repository.py`
+
+**Repository / service class:**
+
+- `AuditAggregateRepository(BaseRepository)`
+  - Uses `AuditLog` as its BaseRepository model (`super().__init__(session, AuditLog)`).
+  - Functions as an aggregate analytics service across multiple audit models.
+
+**Model dependencies:**
+
+- From `app.models.audit`:
+  - `AuditLog`
+  - `EntityChangeLog`
+  - `SupervisorActivityLog`
+  - `AdminOverrideLog`
+- From `app.schemas.common.enums`:
+  - `AuditActionCategory`
+
+---
+
+### `audit_log_repository.py`
+
+**Repository class:**
+
+- `AuditLogRepository(BaseRepository)`
+
+**Model / enum dependencies:**
+
+- From `app.models.audit`:
+  - `AuditLog`
+- From `app.schemas.common.enums`:
+  - `AuditActionCategory`
+
+---
+
+### `entity_change_log_repository.py`
+
+**Repository classes (two in this file):**
+
+- `EntityChangeLogRepository(BaseRepository)`
+  - For fine‑grained field‑level changes.
+- `EntityChangeHistoryRepository(BaseRepository)`
+  - For snapshot / version history.
+
+**Model dependencies:**
+
+- From `app.models.audit`:
+  - `EntityChangeLog`
+  - `EntityChangeHistory`
+
+---
+
+### `supervisor_activity_log_repository.py`
+
+**Repository class:**
+
+- `SupervisorActivityLogRepository(BaseRepository)`
+
+**Model / enum dependencies:**
+
+- From `app.models.audit`:
+  - `SupervisorActivityLog`
+- From `app.schemas.audit.supervisor_activity_log`:
+  - `SupervisorActionCategory`
+
+---
+
+### `audit/__init__.py`
+
+Should only:
+
+- Import and re‑export:
+
+  - `AuditLogRepository`
+  - `EntityChangeLogRepository`
+  - `EntityChangeHistoryRepository`
+  - `SupervisorActivityLogRepository`
+  - `AdminOverrideLogRepository`
+  - `AuditAggregateRepository`
+
+- Define `__all__` with those names.
+
+No additional classes here.
+
+---
+
+## 3. Auth Repositories (`app/repositories/auth`)
+
+### `auth_aggregate_repository.py`
+
+**Aggregate / facade class:**
+
+- `AuthAggregateRepository`
+  - Not a `BaseRepository` subclass.
+  - Composes many other repositories:
+    - `UserSessionRepository`
+    - `SessionTokenRepository`
+    - `RefreshTokenRepository`
+    - `LoginAttemptRepository`
+    - `OTPTokenRepository`
+    - `OTPTemplateRepository`
+    - `OTPDeliveryRepository`
+    - `OTPThrottlingRepository`
+    - `PasswordResetRepository`
+    - `PasswordHistoryRepository`
+    - `PasswordPolicyRepository`
+    - `PasswordAttemptRepository`
+    - `SocialAuthProviderRepository`
+    - `SocialAuthTokenRepository`
+    - `SocialAuthProfileRepository`
+    - `SocialAuthLinkRepository`
+    - `BlacklistedTokenRepository`
+    - `TokenRevocationRepository`
+    - `SecurityEventRepository`
+
+**Enum dependency:**
+
+- From `app.schemas.common.enums`:
+  - `OTPType`
+
+---
+
+### `otp_token_repository.py`
+
+**Repository classes in this file:**
+
+- `OTPTokenRepository(BaseRepository[OTPToken])`
+- `OTPTemplateRepository(BaseRepository[OTPTemplate])`
+- `OTPDeliveryRepository(BaseRepository[OTPDelivery])`
+- `OTPThrottlingRepository(BaseRepository[OTPThrottling])`
+
+**Model dependencies:**
+
+- From `app.models.auth`:
+  - `OTPToken`
+  - `OTPTemplate`
+  - `OTPDelivery`
+  - `OTPThrottling`
+- From `app.schemas.common.enums`:
+  - `OTPType`
+
+---
+
+### `password_reset_repository.py`
+
+**Repository classes in this file:**
+
+- `PasswordResetRepository(BaseRepository[PasswordReset])`
+- `PasswordHistoryRepository(BaseRepository[PasswordHistory])`
+- `PasswordPolicyRepository(BaseRepository[PasswordPolicy])`
+- `PasswordAttemptRepository(BaseRepository[PasswordAttempt])`
+
+**Model dependencies:**
+
+- From `app.models.auth`:
+  - `PasswordReset`
+  - `PasswordHistory`
+  - `PasswordPolicy`
+  - `PasswordAttempt`
+
+---
+
+### `social_auth_token_repository.py`
+
+**Repository classes in this file:**
+
+- `SocialAuthProviderRepository(BaseRepository[SocialAuthProvider])`
+- `SocialAuthTokenRepository(BaseRepository[SocialAuthToken])`
+- `SocialAuthProfileRepository(BaseRepository[SocialAuthProfile])`
+- `SocialAuthLinkRepository(BaseRepository[SocialAuthLink])`
+
+**Model dependencies:**
+
+- From `app.models.auth`:
+  - `SocialAuthProvider`
+  - `SocialAuthToken`
+  - `SocialAuthProfile`
+  - `SocialAuthLink`
+
+---
+
+### `token_blacklist_repository.py`
+
+**Repository classes in this file:**
+
+- `BlacklistedTokenRepository(BaseRepository[BlacklistedToken])`
+- `TokenRevocationRepository(BaseRepository[TokenRevocation])`
+- `SecurityEventRepository(BaseRepository[SecurityEvent])`
+
+**Model dependencies:**
+
+- From `app.models.auth`:
+  - `BlacklistedToken`
+  - `TokenRevocation`
+  - `SecurityEvent`
+
+---
+
+### `user_session_repository.py`
+
+**Repository classes in this file:**
+
+- `UserSessionRepository(BaseRepository[UserSession])`
+- `SessionTokenRepository(BaseRepository[SessionToken])`
+- `RefreshTokenRepository(BaseRepository[RefreshToken])`
+- `LoginAttemptRepository(BaseRepository[LoginAttempt])`
+
+**Model / enum dependencies:**
+
+- From `app.models.auth`:
+  - `UserSession`
+  - `SessionToken`
+  - `RefreshToken`
+  - `LoginAttempt`
+- From `app.schemas.common.enums`:
+  - `DeviceType` (used in type hints / device categorization)
+
+---
+
+### `auth/__init__.py`
+
+Should only:
+
+- Import and re‑export all auth repository classes:
+
+  - `UserSessionRepository`
+  - `SessionTokenRepository`
+  - `RefreshTokenRepository`
+  - `LoginAttemptRepository`
+  - `OTPTokenRepository`
+  - `OTPTemplateRepository`
+  - `OTPDeliveryRepository`
+  - `OTPThrottlingRepository`
+  - `PasswordResetRepository`
+  - `PasswordHistoryRepository`
+  - `PasswordPolicyRepository`
+  - `PasswordAttemptRepository`
+  - `SocialAuthProviderRepository`
+  - `SocialAuthTokenRepository`
+  - `SocialAuthProfileRepository`
+  - `SocialAuthLinkRepository`
+  - `BlacklistedTokenRepository`
+  - `TokenRevocationRepository`
+  - `SecurityEventRepository`
+  - `AuthAggregateRepository`
+
+- Define `__all__` with those names.
+
+No new repository or model classes defined here.
+
+---
+
+## 4. Shared Infrastructure (implicit, but required)
+
+All of the above repositories expect these infrastructure pieces to exist:
+
+- `app.repositories.base.base_repository.BaseRepository`
+- Optionally used/shared (some imported but not always used):
+  - `QueryBuilder`
+  - `PaginationManager`
+  - `FilteringEngine`
+  - `Specification`
+
+And the various enums referenced:
+
+- `app.schemas.common.enums`:
+  - `OTPType`
+  - `AuditActionCategory`
+- `app.schemas.audit.supervisor_activity_log`:
+  - `SupervisorActionCategory`
+- `app.models.base.enums`:
+  - `AttendanceStatus`
+  - `AttendanceMode`
+  - `DeviceType`
+
+---
+
+If you want, I can next give you a checklist: for each `app.models.*` module, exactly which model classes it should define so these repositories compile.
+
+
+Below is a **file → class roster** for the repositories you shared, plus the **two places where your current code clearly violates that roster** (so you can fix structure and avoid circular imports / duplicate definitions).
+
+I’m treating “should be in these files” as: **one obvious home for each class**, minimal mixing of unrelated repositories, and no accidental overwrites.
+
+---
+
+## app/repositories/base
+
+These files are the reusable infrastructure layer. They should not contain domain-specific repositories (booking/complaint/fees).
+
+| File | Classes that should be in it |
+|---|---|
+| `base_repository.py` | `AuditContext`, `BaseRepository` |
+| `caching_repository.py` | `CacheStrategy`, `CacheLevel`, `LRUCache`, `CacheKeyGenerator`, `CacheInvalidator`, `CachingRepository`, `cached_method` |
+| `filtering.py` | `FilterOperator`, `FilterType`, `Filter`, `FilterGroup`, `FilterEngine`, `SearchQueryBuilder` |
+| `pagination.py` | `PaginationStrategy`, `PageInfo`, `PaginatedResult`, `Cursor`, `PaginationManager`, `PageSizeOptimizer`, `PaginationCache` |
+| `query_builder.py` | `JoinType`, `OrderDirection`, `QueryBuilder` |
+| `specifications.py` | `Specification`, `AndSpecification`, `OrSpecification`, `NotSpecification`, and all the `*Specification` concrete classes |
+| `repository_factory.py` | `RepositoryRegistry`, `RepositoryFactory`, `RepositoryDecorator`, `PerformanceProfilingDecorator`, `TransactionDecorator` (+ module-level `get_repository_factory`, `reset_factory`) |
+| `__init__.py` | **No new classes.** Only exports (`__all__`) re-exporting the above. |
+
+### One important structural bug to fix in `query_builder.py`
+You currently define **two methods with the same name** `with_subquery`:
+- one as an eager-loading helper (`with_subquery(self, *relationships: str)`)
+- one as “add named subquery” (`with_subquery(self, name: str, query: Query)`)
+
+In Python, the second definition overwrites the first. So you effectively lose one feature.  
+**What should be done:** keep one name for eager loading (e.g. `with_subqueryload`) and one for CTE/subqueries (e.g. `with_cte` or `add_subquery`).
+
+---
+
+## app/repositories/booking
+
+These files should each own repositories for a single booking sub-domain (approval, assignment, etc.). Aggregate repositories are fine as “service-style” classes.
+
+| File | Classes that should be in it |
+|---|---|
+| `booking_repository.py` | `BookingSearchCriteria`, `BookingStatistics`, `BookingRepository` |
+| `booking_approval_repository.py` | `BookingApprovalRepository`, `ApprovalSettingsRepository`, `RejectionRecordRepository` |
+| `booking_assignment_repository.py` | `BookingAssignmentRepository` |
+| `booking_calendar_repository.py` | `BookingCalendarEventRepository`, `DayAvailabilityRepository`, `CalendarBlockRepository` |
+| `booking_cancellation_repository.py` | `BookingCancellationRepository`, `CancellationPolicyRepository`, `RefundTransactionRepository` |
+| `booking_conversion_repository.py` | `BookingConversionRepository`, `ConversionChecklistRepository` |
+| `booking_guest_repository.py` | `BookingGuestRepository`, `GuestDocumentRepository` |
+| `booking_modification_repository.py` | `BookingModificationRepository`, `ModificationApprovalRecordRepository` |
+| `booking_waitlist_repository.py` | `BookingWaitlistRepository`, `WaitlistNotificationRepository` |
+| `booking_aggregate_repository.py` | `BookingAggregateRepository` |
+| `__init__.py` | **No new classes.** Only exports. |
+
+### One critical violation in what you pasted
+Your “`booking_waitlist_repository.py`” paste contains **two different modules concatenated**:
+
+- It includes **the entire `BookingModificationRepository` + `ModificationApprovalRecordRepository`** (which belong in `booking_modification_repository.py`)
+- Then later it includes the real waitlist repository.
+
+**What it should be:** `booking_waitlist_repository.py` must contain **only**
+- `BookingWaitlistRepository`
+- `WaitlistNotificationRepository`
+
+and nothing from booking modification.
+
+---
+
+## app/repositories/complaint
+
+Complaint is already cleanly separated by responsibility. Here is the canonical mapping.
+
+| File | Classes that should be in it |
+|---|---|
+| `complaint_repository.py` | `ComplaintRepository` |
+| `complaint_assignment_repository.py` | `ComplaintAssignmentRepository` |
+| `complaint_comment_repository.py` | `ComplaintCommentRepository` |
+| `complaint_escalation_repository.py` | `ComplaintEscalationRepository`, `AutoEscalationRuleRepository` |
+| `complaint_feedback_repository.py` | `ComplaintFeedbackRepository` |
+| `complaint_resolution_repository.py` | `ComplaintResolutionRepository` |
+| `complaint_analytics_repository.py` | `ComplaintAnalyticSnapshotRepository`, `ComplaintCategoryMetricRepository`, `ComplaintStaffPerformanceRepository` |
+| `complaint_aggregate_repository.py` | `ComplaintAggregateRepository` |
+| `__init__.py` | **No new classes.** Only exports. |
+
+(As a side note: your `complaint_aggregate_repository.py` uses `or_()` but doesn’t import it in the snippet shown; that’s a correctness issue, not a “class placement” issue.)
+
+---
+
+## app/repositories/fee_structure
+
+You have two valid options here. I’ll give you both; pick one and stick to it.
+
+### Option A (Recommended): one file per repository type
+This is the cleanest and matches how booking/complaint are organized.
+
+| File | Classes that should be in it |
+|---|---|
+| `fee_structure_repository.py` | `FeeStructureRepository` |
+| `fee_calculation_repository.py` | `FeeCalculationRepository`, `FeeProjectionRepository` |
+| `fee_aggregate_repository.py` | `FeeAggregateRepository` |
+| `charge_component_repository.py` | `ChargeComponentRepository` |
+| `charge_rule_repository.py` | `ChargeRuleRepository` |
+| `discount_configuration_repository.py` | `DiscountConfigurationRepository` |
+| `__init__.py` | exports only |
+
+### Option B (Acceptable): keep “charge_component_repository.py” as a combined file
+If you insist on one file for “component + rules + discounts”, then your current structure is okay *as a deliberate design*, and the roster is:
+
+| File | Classes that should be in it |
+|---|---|
+| `charge_component_repository.py` | `ChargeComponentRepository`, `ChargeRuleRepository`, `DiscountConfigurationRepository` |
+| `fee_structure_repository.py` | `FeeStructureRepository` |
+| `fee_calculation_repository.py` | `FeeCalculationRepository`, `FeeProjectionRepository` |
+| `fee_aggregate_repository.py` | `FeeAggregateRepository` |
+| `__init__.py` | exports only |
+
+If you choose Option B, the file name becomes misleading, but it’s still coherent.
+
+---
+
+## One more structural consistency rule (important)
+Your base repository’s constructor is:
+
+```python
+BaseRepository(model: Type[ModelType], db: Session)
+```
+
+So every domain repository that subclasses it should call:
+
+```python
+super().__init__(ModelClass, session)
+```
+
+Several booking repositories in your snippets call:
+
+```python
+super().__init__(session, ModelClass)
+```
+
+That’s the wrong order for the base you shared. If the project truly uses the base version you pasted, then **all** subclass constructors should follow:
+
+- `super().__init__(Booking, session)`
+- `super().__init__(BookingApproval, session)`
+- etc.
+
+This isn’t about class placement, but it directly affects whether these classes can even be instantiated.
+
+---
+
+Below is a “what-classes-belong-where” map for the files you shared, plus the key architectural clarification that will remove the ambiguity you’re seeing (especially in `integrations/*`).
+
+## 1) File management repositories (`app/repositories/file_management/*`)
+
+These files are already structured like true ORM repositories (SQLAlchemy models + queries). The class list should be:
+
+### `document_upload_repository.py`
+**Should contain**
+- `class DocumentUploadRepository(BaseRepository[DocumentUpload])`
+
+**Should not contain**
+- Cross-domain analytics (belongs in `file_aggregate_repository.py`)
+- General file upload logic (belongs in `file_upload_repository.py`)
+
+---
+
+### `file_upload_repository.py`
+**Should contain**
+- `class FileUploadRepository(BaseRepository[FileUpload])`
+- `class QuotaExceededException(Exception)`
+
+**Notes on correctness (class placement is fine, implementation has a bug)**
+- `create_upload_session()` currently does `return self.db_session.add(session)` — `Session.add()` returns `None` in SQLAlchemy, so this will never return the session object. The class belongs here, but that return statement is wrong.  
+  (Ref: SQLAlchemy Session.add docs: https://docs.sqlalchemy.org/en/20/orm/session_api.html#sqlalchemy.orm.Session.add)
+
+---
+
+### `image_upload_repository.py`
+**Should contain**
+- `class ImageUploadRepository(BaseRepository[ImageUpload])`
+
+---
+
+### `file_metadata_repository.py`
+**Should contain**
+- `class FileMetadataRepository(BaseRepository[FileTag])`
+
+(And only metadata-related operations: tags, access control, versions, analytics, access logs, favorites.)
+
+---
+
+### `file_aggregate_repository.py`
+**Should contain**
+- `class FileAggregateRepository(BaseRepository[FileUpload])`
+
+(Only cross-cutting dashboard/analytics across files/images/documents/metadata.)
+
+---
+
+### `__init__.py`
+**Should contain**
+- No classes.
+- Only imports + `__all__`.
+
+---
+
+## 2) Hostel repositories (`app/repositories/hostel/*`)
+
+These are mostly “true repositories” + some specification helper classes.
+
+### `hostel_repository.py`
+**Should contain**
+- Specification helpers:
+  - `class ActiveHostelsSpecification(Specification[Hostel])`
+  - `class AvailableHostelsSpecification(Specification[Hostel])`
+  - `class LocationBasedSpecification(Specification[Hostel])`
+  - `class PriceRangeSpecification(Specification[Hostel])`
+- Repository:
+  - `class HostelRepository(BaseRepository[Hostel])`
+
+---
+
+### `hostel_settings_repository.py`
+**Should contain**
+- `class HostelSettingsRepository(BaseRepository[HostelSettings])`
+
+---
+
+### `hostel_aggregate_repository.py`
+**Should contain**
+- `class HostelAggregateRepository(BaseRepository[Hostel])`
+
+(Only cross-model “aggregate” operations: dashboard, multi-entity joins, bulk metrics.)
+
+---
+
+### `hostel_amenity_repository.py`
+**Should contain**
+- Specification helpers:
+  - `class AvailableAmenitiesSpecification(Specification[HostelAmenity])`
+  - `class BookableAmenitiesSpecification(Specification[HostelAmenity])`
+- Repositories:
+  - `class HostelAmenityRepository(BaseRepository[HostelAmenity])`
+  - `class AmenityCategoryRepository(BaseRepository[AmenityCategory])`
+  - `class AmenityBookingRepository(BaseRepository[AmenityBooking])`
+
+---
+
+### `hostel_analytics_repository.py`
+**Should contain**
+- `class HostelAnalyticsRepository(BaseRepository[HostelAnalytic])`
+- `class OccupancyTrendRepository(BaseRepository[OccupancyTrend])`
+- `class RevenueTrendRepository(BaseRepository[RevenueTrend])`
+
+---
+
+### `hostel_comparison_repository.py`
+**Should contain**
+- `class HostelComparisonRepository(BaseRepository[HostelComparison])`
+- `class BenchmarkDataRepository(BaseRepository[BenchmarkData])`
+- `class CompetitorAnalysisRepository(BaseRepository[CompetitorAnalysis])`
+
+---
+
+### `hostel_media_repository.py`
+**Should contain**
+- Specification helpers:
+  - `class ActiveMediaSpecification(Specification[HostelMedia])`
+  - `class MediaByCategorySpecification(Specification[HostelMedia])`
+- Repositories:
+  - `class HostelMediaRepository(BaseRepository[HostelMedia])`
+  - `class MediaCategoryRepository(BaseRepository[MediaCategory])`
+
+---
+
+### `hostel_policy_repository.py`
+**Should contain**
+- Specification helpers:
+  - `class ActivePoliciesSpecification(Specification[HostelPolicy])`
+  - `class MandatoryPoliciesSpecification(Specification[HostelPolicy])`
+- Repositories:
+  - `class HostelPolicyRepository(BaseRepository[HostelPolicy])`
+  - `class PolicyAcknowledgmentRepository(BaseRepository[PolicyAcknowledgment])`
+  - `class PolicyViolationRepository(BaseRepository[PolicyViolation])`
+
+---
+
+### `__init__.py`
+**Should contain**
+- No classes.
+- Only imports + `__all__`.
+
+---
+
+## 3) Inquiry repositories (`app/repositories/inquiry/*`)
+
+These are also true repositories except the aggregate class is a “query service” (still OK to keep under repositories if it only queries).
+
+### `inquiry_repository.py`
+**Should contain**
+- `class InquiryRepository(BaseRepository[Inquiry])`
+
+### `inquiry_follow_up_repository.py`
+**Should contain**
+- `class InquiryFollowUpRepository(BaseRepository[InquiryFollowUp])`
+
+### `inquiry_aggregate_repository.py`
+**Should contain**
+- `class InquiryAggregateRepository`  
+  (This one does not need to inherit `BaseRepository`—and currently doesn’t—which is appropriate because it’s not “CRUD for one model”, it’s analytics across multiple models.)
+
+### `__init__.py`
+- No classes; exports only.
+
+---
+
+## 4) Integrations (`app/repositories/integrations/*`) — the big ambiguity
+
+Right now these files are **not real repositories** in the ORM sense. They mostly:
+- return plain dictionaries,
+- have “placeholder implementation” comments,
+- don’t declare a SQLAlchemy model,
+- and several `class XRepository(BaseRepository)` don’t pass a model to `BaseRepository`.
+
+So you need to choose one of these two clean outcomes.
+
+### Option A (recommended if you truly want “repositories”): make them ORM-backed repositories
+If these are meant to persist integrations/messages/workflows in your DB, each file should contain:
+1) **SQLAlchemy models** (in `app/models/integrations/...`) such as:
+   - `APIIntegration`, `APIIntegrationHealthCheck`, `APICallLog`, `Webhook`
+   - `CommunicationMessage`, `CommunicationTemplate`, `RecipientPreference`, `OptOut`
+   - `ThirdPartyProviderConfig`, `SyncJob`, `PaymentTransaction`, `StorageObject`
+   - `WorkflowDefinition`, `WorkflowExecution`, `TaskExecution`, `ApprovalRequest`, `ScheduledTask`
+2) **Repository classes** that manage those models.
+
+Under that approach, the class lists in the repository files should be:
+
+#### `api_integration_repository.py`
+**Should contain**
+- `class IntegrationStatus(str, Enum)`
+- `class IntegrationType(str, Enum)`
+- `class APIIntegrationRepository(BaseRepository[APIIntegration])`
+
+(And the methods should return `APIIntegration` objects or DTOs derived from them—not ad-hoc dicts.)
+
+#### `communication_repository.py`
+**Should contain**
+- `class CommunicationChannel(str, Enum)`
+- `class CommunicationStatus(str, Enum)`
+- `class CommunicationPriority(str, Enum)`
+- `class CommunicationType(str, Enum)`
+- `class CommunicationRepository(BaseRepository[CommunicationMessage])`
+
+#### `third_party_repository.py`
+**Should contain**
+- `class ThirdPartyProvider(str, Enum)`
+- `class SyncDirection(str, Enum)`
+- `class SyncStatus(str, Enum)`
+- `class ThirdPartyRepository(BaseRepository[ThirdPartyProviderConfig])`
+
+#### `workflow_repository.py`
+**Should contain**
+- `class WorkflowStatus(str, Enum)`
+- `class WorkflowTriggerType(str, Enum)`
+- `class TaskStatus(str, Enum)`
+- `class TaskType(str, Enum)`
+- `class ApprovalStatus(str, Enum)`
+- `class WorkflowRepository(BaseRepository[WorkflowDefinition])`
+
+#### `integration_aggregate_repository.py`
+**Should contain**
+- `class IntegrationAggregateRepository`
+  (Aggregate/query service across the integration tables—typically *not* BaseRepository.)
+
+#### `__init__.py`
+- No classes; exports only.
+
+---
+
+
+
+Below is the “what belongs where” map for the repository layer you shared. I’m describing the *classes that should live in each file* (i.e., the intended modular boundaries), and I’m also calling out where your current files already match that vs where you’ve packed multiple repositories into one module (which is OK if that’s your style, but then it should be deliberate and consistent).
+
+---
+
+## Leave repositories
+
+### `leave_aggregate_repository.py`
+**Should contain**
+- `LeaveAggregateRepository` (only)
+
+**Why**: This is an orchestrator/analytics layer spanning multiple entities.
+
+---
+
+### `leave_application_repository.py`
+**Should contain**
+- `LeaveApplicationRepository` (only)
+
+**Why**: Core CRUD + workflow-ish operations for `LeaveApplication` and its immediate child entities (documents, emergency contacts, status history) are appropriately grouped here.
+
+---
+
+### `leave_approval_repository.py`
+Two valid “correct” options:
+
+**Option A (keep grouped as you have now) – should contain**
+- `LeaveApprovalRepository`
+- `LeaveApprovalWorkflowRepository`
+
+**Option B (recommended for clarity) – split into**
+- `leave_approval_repository.py` → `LeaveApprovalRepository`
+- `leave_approval_workflow_repository.py` → `LeaveApprovalWorkflowRepository`
+
+**Why**: One repository is runtime approval decisions; the other is workflow configuration + steps. They are related but separable.
+
+---
+
+### `leave_balance_repository.py`
+**Should contain**
+- `LeaveBalanceRepository` (only)
+
+**Why**: Balance/quota/usage/carry-forward/adjustments are one cohesive domain boundary.
+
+---
+
+### `leave_type_repository.py`
+Two valid options:
+
+**Option A (keep grouped) – should contain**
+- `LeaveTypeRepository`
+- `LeavePolicyRepository`
+- `LeaveBlackoutDateRepository`
+
+**Option B (recommended split)**
+- `leave_type_repository.py` → `LeaveTypeRepository`
+- `leave_policy_repository.py` → `LeavePolicyRepository`
+- `leave_blackout_date_repository.py` → `LeaveBlackoutDateRepository`
+
+**Why**: All are “policy/config” objects. Keeping them together is fine if you treat this file as “leave configuration repositories”.
+
+---
+
+### `__init__.py`
+**Should contain**
+- No repository implementations.
+- Only imports + `__all__`.
+
+---
+
+## Maintenance repositories
+
+### `maintenance_aggregate_repository.py`
+**Should contain**
+- `MaintenanceAggregateRepository` (only)
+
+---
+
+### `maintenance_analytics_repository.py`
+**Should contain**
+- `MaintenanceAnalyticsRepository` (only)
+
+(Models like `CategoryPerformanceMetric` are fine to reference; repositories for them should either be inside this file only if you intentionally treat them as “analytics sub-repos”, or live elsewhere.)
+
+---
+
+### `maintenance_approval_repository.py`
+**Should contain**
+- `MaintenanceApprovalRepository` (only)
+
+If you later want dedicated repos for:
+- `ApprovalThreshold`
+- `ApprovalWorkflow`
+
+…you can create:
+- `maintenance_threshold_repository.py`
+- `maintenance_workflow_repository.py`
+
+But it’s also fine if `MaintenanceApprovalRepository` owns those operations since they’re tightly coupled to approvals.
+
+---
+
+### `maintenance_assignment_repository.py`
+Two valid options:
+
+**Option A (keep grouped) – should contain**
+- `MaintenanceAssignmentRepository`
+- `VendorAssignmentRepository`
+
+**Option B (recommended split)**
+- `maintenance_assignment_repository.py` → `MaintenanceAssignmentRepository`
+- `vendor_assignment_repository.py` → `VendorAssignmentRepository`
+
+**Why**: Staff assignments and vendor assignments are distinct domains. Keeping both is okay if you explicitly treat this module as “assignment repositories”.
+
+---
+
+### `maintenance_completion_repository.py`
+**Should contain**
+- `MaintenanceCompletionRepository` (only)
+
+(Managing `MaintenanceMaterial`, `MaintenanceQualityCheck`, `MaintenanceCertificate` from inside this repository is coherent.)
+
+---
+
+### `maintenance_cost_repository.py`
+**Should contain**
+- `MaintenanceCostRepository` (only)
+
+If you later want explicit repos for finance sub-entities (optional):
+- `budget_allocation_repository.py` (BudgetAllocation/CategoryBudget)
+- `vendor_invoice_repository.py` (VendorInvoice)
+- `expense_report_repository.py` (ExpenseReport)
+
+But again: keeping them behind `MaintenanceCostRepository` is reasonable if cost is the “finance aggregate”.
+
+---
+
+### `maintenance_request_repository.py`
+**Should contain**
+- `MaintenanceRequestRepository` (only)
+
+---
+
+### `maintenance_schedule_repository.py`
+**Should contain**
+- `MaintenanceScheduleRepository` (only)
+
+(If you later want a dedicated repository for `ScheduleExecution`, that can be split out, but not necessary.)
+
+---
+
+### `maintenance_vendor_repository.py`
+**Should contain**
+- `MaintenanceVendorRepository` (only)
+
+If you later want separations:
+- `vendor_contract_repository.py`
+- `vendor_performance_review_repository.py`
+
+…but one vendor repo owning contract + review lifecycle is acceptable.
+
+---
+
+### `__init__.py`
+**Should contain**
+- Only imports + `__all__`.
+
+---
+
+## Mess repositories
+
+This module is currently following a pattern of “one file per *domain area*” rather than “one file per repository”. That’s fine—just keep it consistent.
+
+### `dietary_option_repository.py`
+**Should contain (as a dietary domain bundle)**
+- `DietaryOptionRepository`
+- `StudentDietaryPreferenceRepository`
+- `AllergenProfileRepository`
+- `DietaryRestrictionRepository`
+- `MealCustomizationRepository`
+
+**Alternative (split-per-repo)**
+- `dietary_option_repository.py` → `DietaryOptionRepository`
+- `student_dietary_preference_repository.py` → `StudentDietaryPreferenceRepository`
+- `allergen_profile_repository.py` → `AllergenProfileRepository`
+- `dietary_restriction_repository.py` → `DietaryRestrictionRepository`
+- `meal_customization_repository.py` → `MealCustomizationRepository`
+
+---
+
+### `meal_item_repository.py`
+**Should contain (as a meal item domain bundle)**
+- `MealItemRepository`
+- `RecipeRepository`
+- `IngredientMasterRepository`
+- `ItemCategoryRepository`
+- `ItemAllergenRepository`
+- `ItemPopularityRepository`
+
+---
+
+### `menu_approval_repository.py`
+**Should contain (as an approval domain bundle)**
+- `MenuApprovalRepository`
+- `MenuApprovalRequestRepository`
+- `ApprovalWorkflowRepository`
+- `ApprovalHistoryRepository`
+- `ApprovalAttemptRepository`
+- `ApprovalRuleRepository`
+- `BulkApprovalRepository`
+
+---
+
+### `menu_feedback_repository.py`
+**Should contain (as a feedback/insights domain bundle)**
+- `MenuFeedbackRepository`
+- `ItemRatingRepository`
+- `RatingsSummaryRepository`
+- `QualityMetricsRepository`
+- `SentimentAnalysisRepository`
+- `FeedbackAnalysisRepository`
+- `FeedbackCommentRepository`
+- `FeedbackHelpfulnessRepository`
+
+---
+
+### `menu_planning_repository.py`
+**Should contain (as a planning domain bundle)**
+- `MenuTemplateRepository`
+- `WeeklyMenuPlanRepository`
+- `MonthlyMenuPlanRepository`
+- `DailyMenuPlanRepository`
+- `SpecialOccasionMenuRepository`
+- `MenuSuggestionRepository`
+- `MenuPlanningRuleRepository`
+- `SeasonalMenuRepository`
+
+---
+
+### `mess_aggregate_repository.py`
+**Should contain**
+- `MessAggregateRepository` (only)
+
+---
+
+### `mess_menu_repository.py`
+Two valid options:
+
+**Option A (keep grouped as menu operational bundle) – should contain**
+- `MessMenuRepository`
+- `MenuCycleRepository`
+- `MenuVersionRepository`
+- `MenuPublishingRepository`
+- `MenuAvailabilityRepository`
+
+**Option B (split)**
+- `mess_menu_repository.py` → `MessMenuRepository`
+- `menu_cycle_repository.py` → `MenuCycleRepository`
+- `menu_version_repository.py` → `MenuVersionRepository`
+- `menu_publishing_repository.py` → `MenuPublishingRepository`
+- `menu_availability_repository.py` → `MenuAvailabilityRepository`
+
+---
+
+### `nutritional_info_repository.py`
+**Should contain (as nutrition domain bundle)**
+- `NutritionalInfoRepository`
+- `NutrientProfileRepository`
+- `DietaryValueRepository`
+- `NutritionalReportRepository`
+
+---
+
+### `__init__.py`
+**Should contain**
+- Only imports + `__all__`.
+- Optional grouping lists like you already have (that’s fine).
+
+---
+
+Below is the “should contain” class inventory for each file you shared, organized so you can treat it as the canonical contract for what belongs where. I’m also calling out a couple of *structural* choices (like the two gateway repos) so you have clarity on intent, not just names.
+
+## Notification repositories
+
+### `device_token_repository.py`
+**Should contain**
+- `ActiveDeviceTokensSpec` (Specification helper)
+- `RecentlyUsedDevicesSpec` (Specification helper)
+- `DeviceTokenRepository` (the repository)
+
+**Should not contain**
+- Any model definitions (`DeviceToken`, `User`, etc.) or enums (only imports).
+- Business-service orchestration (send push, call providers, etc.). Only persistence/query logic.
+
+---
+
+### `email_notification_repository.py`
+**Should contain**
+- `HighEngagementEmailsSpec`
+- `BouncedEmailsSpec`
+- `EmailNotificationRepository`
+
+**Should not contain**
+- Email provider integration (SES/Sendgrid/etc.); store provider IDs/responses only.
+
+---
+
+### `notification_repository.py`
+**Should contain**
+- `PendingNotificationsSpec`
+- `UnreadNotificationsSpec`
+- `NotificationRepository`
+
+**Scope expectation**
+- “Core lifecycle persistence”: create notification, status updates, read receipts, basic analytics on `Notification` rows.
+
+---
+
+### `notification_queue_repository.py`
+**Should contain**
+- `PendingQueueItemsSpec`
+- `RetryEligibleSpec`
+- `NotificationQueueRepository`
+
+**Scope expectation**
+- Queue semantics only: enqueue/dequeue/mark processing complete, stalled detection, batch progress, queue monitoring.
+
+---
+
+### `notification_preferences_repository.py`
+**Should contain**
+- `ActivePreferencesSpec`
+- `QuietHoursEnabledSpec`
+- `NotificationPreferencesRepository`
+
+**Scope expectation**
+- User preference persistence, unsubscribe token persistence, quiet hours checks, digest eligibility queries.
+
+---
+
+### `notification_routing_repository.py`
+**Should contain**
+- `ActiveRoutingRulesSpec`
+- `PendingEscalationsSpec`
+- `NotificationRoutingRepository`
+
+**Scope expectation**
+- Routing rules persistence + evaluation + route record creation.
+- Escalation path persistence + escalation state machine persistence.
+
+---
+
+### `notification_template_repository.py`
+**Should contain**
+- `ActiveTemplatesSpec`
+- `PopularTemplatesSpec`
+- `NotificationTemplateRepository`
+
+**Scope expectation**
+- Template CRUD + versioning + variable extraction/validation + rendering (string substitution).
+- Usage tracking.
+
+---
+
+### `push_notification_repository.py`
+**Should contain**
+- `DeliveredPushSpec`
+- `HighEngagementPushSpec`
+- `PushNotificationRepository`
+
+**Scope expectation**
+- Push-notification row persistence + device targeting relations + delivery/tap tracking + push analytics.
+- Badge count persistence on `DeviceToken`.
+
+---
+
+### `sms_notification_repository.py`
+**Should contain**
+- `DeliveredSMSSpec`
+- `HighCostSMSSpec`
+- `SMSNotificationRepository`
+
+**Scope expectation**
+- SMS row persistence + delivery status updates + segment cost analytics + compliance reporting helpers.
+
+---
+
+### `notification_aggregate_repository.py`
+**Should contain**
+- `NotificationAggregateRepository` (aggregate/query-only “read model” repository)
+
+**Important boundary**
+- This file should *not* subclass `BaseRepository`. It’s intentionally an “aggregate analytics” query layer spanning multiple tables.
+
+---
+
+### `__init__.py` (notification)
+**Should contain**
+- No classes.
+- Only imports/re-exports and `__all__`.
+
+---
+
+## Payment repositories
+
+### `gateway_transaction_repository.py`
+**Should contain**
+- `GatewayTransactionRepository`
+
+**Scope expectation**
+- The “full” multi-gateway, strongly-typed gateway transaction repository using:
+  - `GatewayProvider`
+  - `GatewayTransactionStatus`
+  - `GatewayTransactionType`
+
+This is your **primary** gateway transaction persistence layer if you want typed enums, richer lifecycle fields, and more complete analytics.
+
+---
+
+### `payment_gateway_repository.py`
+**Should contain**
+- `PaymentGatewayRepository`
+
+**Scope expectation**
+- The “lightweight/legacy/simplified” gateway tracking repository that uses string statuses/types and a different model (`app.models.payment.payment_gateway.GatewayTransaction`).
+
+**Architectural clarity**
+- Keeping both is fine *only if it’s deliberate*:
+  - **Use `GatewayTransactionRepository`** for the modern/typed system.
+  - **Use `PaymentGatewayRepository`** for compatibility with older schema or a simpler table.
+- If you don’t truly have two gateway-transaction tables/models in production, you should converge to one repository/model pair to avoid confusion.
+
+---
+
+### `payment_repository.py`
+**Should contain**
+- `PaymentRepository`
+
+**Scope expectation**
+- Core payment record lifecycle: create, mark processing/completed/failed, refund bookkeeping fields, reminder counters, bulk overdue marking, and payment-level analytics.
+
+---
+
+### `payment_ledger_repository.py`
+**Should contain**
+- `PaymentLedgerRepository`
+
+**Scope expectation**
+- Ledger entry creation, double-entry helper, reversal, reconciliation marking, balance queries, reconciliation routines, discrepancy detection.
+
+---
+
+### `payment_refund_repository.py`
+**Should contain**
+- `PaymentRefundRepository`
+
+**Scope expectation**
+- Refund request lifecycle: create, approve/reject, processing/completed/failed/cancelled, plus refund analytics.
+
+---
+
+### `payment_reminder_repository.py`
+**Should contain**
+- `PaymentReminderRepository`
+
+**Scope expectation**
+- Reminder creation + send/delivery/failure tracking + engagement tracking + retry increments + reminder analytics.
+
+---
+
+### `payment_schedule_repository.py`
+**Should contain**
+- `PaymentScheduleRepository`
+
+**Scope expectation**
+- Recurring schedule lifecycle + due/overdue/expiring/suspended queries + schedule analytics + revenue projection.
+
+---
+
+### `payment_aggregate_repository.py`
+**Should contain**
+- `PaymentAggregateRepository` (aggregate analytics/query-only repository)
+
+**Boundary**
+- Like the notification aggregate repo: this should stay a non-`BaseRepository` “read model” spanning multiple payment tables.
+
+---
+
+### `__init__.py` (payment)
+**Should contain**
+- No classes.
+- Only imports/re-exports and `__all__`.
+
+---
+
+
+
+========================================================================================================================================================================================
+
+
 Here’s a clear mapping of what repository classes belong in each file, and what each is responsible for.
 
 ---
