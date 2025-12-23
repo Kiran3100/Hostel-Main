@@ -1,0 +1,2549 @@
+Here’s a clear mapping of what repository classes belong in each file, and what each is responsible for.
+
+---
+
+## `saved_search_repository.py`
+
+Should contain repositories around **saved searches and their lifecycle**:
+
+1. **`SavedSearchRepository`**
+   - For `SavedSearch` model.
+   - Core CRUD and business logic:
+     - Create/update/pause/resume/activate searches.
+     - Determine which searches should be executed next.
+     - Update execution metadata (match counts, average execution time, next_check_at).
+     - Mark notifications sent.
+     - Per-search stats and per-visitor saved-search summary.
+
+2. **`SavedSearchExecutionRepository`**
+   - For `SavedSearchExecution` model.
+   - Handles:
+     - Creating execution records (success/failure, timing, counts, criteria snapshot).
+     - Retrieving execution history.
+     - Execution performance metrics.
+
+3. **`SavedSearchMatchRepository`**
+   - For `SavedSearchMatch` model.
+   - Handles:
+     - Creating match records when hostels match a saved search.
+     - Querying matches (optionally “new only”) with pagination.
+     - Marking matches as notified or viewed.
+     - Verifying whether a hostel still matches and soft-deleting if not.
+
+4. **`SavedSearchNotificationRepository`**
+   - For `SavedSearchNotification` model.
+   - Handles:
+     - Creating notification records (subject, message, channels, match IDs).
+     - Updating delivery status.
+     - Marking notifications opened and tracking link clicks.
+     - Notification performance metrics (delivery/open/click rates).
+
+---
+
+## `visitor_aggregate_repository.py`
+
+Should contain **cross-entity / analytics repository**:
+
+1. **`VisitorAggregateRepository`**
+   - No BaseRepository generic here (it works across multiple models).
+   - Aggregates data from:
+     - `Visitor`, `VisitorEngagement`, `VisitorSession`
+     - `VisitorFavorite`
+     - `SavedSearch`
+     - Dashboard models (`RecentlyViewedHostel`, `RecommendedHostel`, `PriceDropAlert`, `AvailabilityAlert`)
+   - Provides:
+     - Visitor dashboard summary (counts, matches, alerts).
+     - Activity timeline (per-day engagement).
+     - Preference analysis (viewing/favorite patterns).
+     - Engagement trends over time.
+     - Conversion probability for a visitor.
+     - Platform-wide visitor metrics.
+
+---
+
+## `visitor_dashboard_repository.py`
+
+Should contain repositories for **dashboard-related entities**:
+
+1. **`RecentSearchRepository`**
+   - For `RecentSearch` model.
+   - Responsibilities:
+     - Save recent searches, including filters and result IDs.
+     - List recent searches.
+     - Track re-execution count.
+     - Find “popular” searches (re-executed often).
+     - Cleanup old recent searches.
+
+2. **`RecentlyViewedHostelRepository`**
+   - For `RecentlyViewedHostel` model.
+   - Responsibilities:
+     - Track hostel views (create or update an existing record).
+     - Merge sections viewed; update counters and timestamps.
+     - Get recently viewed and most viewed hostels.
+     - Mark actions taken (favorite/inquiry/booking).
+
+3. **`RecommendedHostelRepository`**
+   - For `RecommendedHostel` model.
+   - Responsibilities:
+     - Create recommendation records.
+     - Get active recommendations for a visitor.
+     - Mark recommendations viewed, clicked, converted.
+     - Recommendation performance metrics.
+
+4. **`PriceDropAlertRepository`**
+   - For `PriceDropAlert` model.
+   - Responsibilities:
+     - Create price drop alerts (compute discount).
+     - Get unread alerts.
+     - Mark alerts as read.
+     - Mark notifications sent per channel.
+
+5. **`AvailabilityAlertRepository`**
+   - For `AvailabilityAlert` model.
+   - Responsibilities:
+     - Create availability alerts.
+     - Get unread alerts.
+     - Mark alerts as read.
+     - Mark notifications sent per channel.
+
+6. **`VisitorActivityRepository`**
+   - For `VisitorActivity` model.
+   - Responsibilities:
+     - Log arbitrary visitor activities.
+     - Retrieve recent activities (with optional type filter).
+     - Aggregate activity summary by type and category.
+
+---
+
+## `visitor_favorite_repository.py`
+
+Should contain repositories for **favorites, comparisons, and price tracking**:
+
+1. **`VisitorFavoriteRepository`**
+   - For `VisitorFavorite` model.
+   - Core responsibilities:
+     - Add/remove favorites (with soft delete + restore).
+     - Find a specific favorite and list all favorites (with pagination).
+     - Check if a hostel is favorited; count favorites.
+   - Price & availability:
+     - Update favorite price and flags/percentages for drops.
+     - Update availability and `has_availability`.
+     - Get favorites with price drops or without availability.
+   - Personalization & analytics:
+     - Update notes.
+     - Track favorite views.
+     - Update alert preferences (price drop / availability).
+     - Compute per-visitor favorite statistics.
+     - Distribution by city.
+     - Highly viewed favorites.
+   - Bulk:
+     - Bulk update prices.
+     - Bulk update availability.
+   - Includes a private helper:
+     - `_create_price_history_record(...)` (creates `FavoritePriceHistory`).
+
+2. **`FavoriteComparisonRepository`**
+   - For `FavoriteComparison` model.
+   - Responsibilities:
+     - Create comparison sessions between favorites.
+     - Complete a comparison (selected favorite, duration).
+     - Get comparison history.
+
+3. **`FavoritePriceHistoryRepository`**
+   - For `FavoritePriceHistory` model.
+   - Responsibilities:
+     - Get price history for a favorite.
+     - Analyze price trends (average, min/max, volatility, trend direction).
+
+---
+
+## `visitor_preferences_repository.py`
+
+Should contain repositories for **preferences and notification settings**:
+
+1. **`VisitorPreferencesRepository`**
+   - For `VisitorPreferences` model.
+   - Responsibilities:
+     - Create core visitor preferences.
+     - Find preferences by visitor ID.
+     - Update:
+       - Budget preferences.
+       - Location preferences (cities/areas, max distance).
+       - Amenity preferences.
+       - Facility requirements (parking/gym/laundry/mess).
+       - Notification preferences (email/sms/push + triggers like price drop, availability, new listings).
+     - Internally track which fields were updated via `_track_preference_update(...)`.
+
+2. **`SearchPreferencesRepository`**
+   - For `SearchPreferences` model.
+   - Responsibilities:
+     - Create saved “search preference” (similar to a simpler saved search).
+     - Find active search preferences for a visitor.
+     - Update search results (total matches/new matches).
+     - Mark notifications sent for those search preferences.
+
+3. **`NotificationPreferencesRepository`**
+   - For `NotificationPreferences` model.
+   - Responsibilities:
+     - Create notification preferences.
+     - Find by visitor ID.
+     - Update:
+       - Channel preferences (email/sms/push/in-app).
+       - Quiet hours (enabled + start/end).
+
+---
+
+## `visitor_repository.py`
+
+Should contain repositories for **core visitor entities**:
+
+1. **`VisitorRepository`**
+   - For `Visitor` model.
+   - Core CRUD:
+     - Create visitor.
+     - Find by user_id, email, phone.
+     - Get full profile with relationships eager-loaded.
+   - Intelligence & tracking:
+     - Track activity (search/view/inquiry/booking) and recompute engagement score.
+     - Explicit engagement score updates.
+     - Update conversion likelihood.
+     - Assign visitor segment.
+   - Search & filtering:
+     - Find active visitors.
+     - Find high-intent visitors.
+     - Find by segment.
+     - Find visitors with various criteria (cities, budget, bookings, engagement).
+   - Analytics:
+     - Global visitor statistics.
+     - Engagement distribution.
+     - Conversion funnel metrics.
+     - Top visitors by activity type.
+   - Simple preferences on `Visitor` itself:
+     - Budget, location, amenity, notification preferences (duplicated at visitor level).
+   - Sessions:
+     - Create sessions (`VisitorSession`) via helper.
+     - Get sessions list.
+   - Bulk:
+     - Bulk update engagement scores.
+     - Bulk assign segments based on rule dict.
+
+2. **`VisitorSessionRepository`**
+   - For `VisitorSession` model.
+   - Responsibilities:
+     - Update session activity (page views, searches, etc.).
+     - End session (set booking flags, duration).
+
+3. **`VisitorEngagementRepository`**
+   - For `VisitorEngagement` model.
+   - Responsibilities:
+     - Create or update per-day engagement record.
+     - Compute a per-day engagement score with `_calculate_daily_score(...)`.
+
+---
+
+## `__init__.py` (package initializer)
+
+Should not define new classes; it should just **re-export** the repository classes for convenient imports:
+
+- From `visitor_repository`:
+  - `VisitorRepository`
+  - `VisitorSessionRepository`
+  - `VisitorEngagementRepository`
+
+- From `visitor_preferences_repository`:
+  - `VisitorPreferencesRepository`
+  - `SearchPreferencesRepository`
+  - `NotificationPreferencesRepository`
+
+- From `visitor_favorite_repository`:
+  - `VisitorFavoriteRepository`
+  - `FavoriteComparisonRepository`
+  - `FavoritePriceHistoryRepository`
+
+- From `visitor_dashboard_repository`:
+  - `RecentSearchRepository`
+  - `RecentlyViewedHostelRepository`
+  - `RecommendedHostelRepository`
+  - `PriceDropAlertRepository`
+  - `AvailabilityAlertRepository`
+  - `VisitorActivityRepository`
+
+- From `saved_search_repository`:
+  - `SavedSearchRepository`
+  - `SavedSearchExecutionRepository`
+  - `SavedSearchMatchRepository`
+  - `SavedSearchNotificationRepository`
+
+- From `visitor_aggregate_repository`:
+  - `VisitorAggregateRepository`
+
+========================================================================================================================================================================================
+
+
+
+Here’s the clear picture of what classes belong in each of the repository files you shared.
+
+---
+
+## 1. `emergency_contact_repository.py`
+
+**Should contain exactly one repository class:**
+
+- `EmergencyContactRepository(BaseRepository[EmergencyContact])`  
+  - Purpose: CRUD + domain logic for `EmergencyContact` (priority, verification, consent, communication tracking, stats).
+  - It correctly extends `BaseRepository[EmergencyContact]` because it operates on a single ORM model.
+
+Nothing else needs to be defined as a class in this file.
+
+---
+
+## 2. `user_address_repository.py`
+
+**Should contain exactly one repository class:**
+
+- `UserAddressRepository(BaseRepository[UserAddress])`  
+  - Purpose: CRUD + domain logic for `UserAddress` (primary address, verification, geolocation, spatial queries, validity, stats).
+  - Correctly extends `BaseRepository[UserAddress]`.
+
+No other classes are needed in this file.
+
+---
+
+## 3. `user_aggregate_repository.py`
+
+**Should contain exactly one repository class:**
+
+- `UserAggregateRepository`  
+  - Purpose: Complex, cross-entity queries and analytics:
+    - Aggregated user data (`User`, `UserProfile`, `UserAddress`, `EmergencyContact`, `UserSession`, `LoginHistory`, `PasswordHistory`).
+    - Advanced search, platform overview, growth & engagement metrics, security overview, completeness analysis, bulk operations, cleanup.
+  - It **does not** and **should not** subclass `BaseRepository` because:
+    - It isn’t tied to a single model.
+    - It orchestrates multiple entities and returns rich composite results (dicts, tuples), not just individual ORM entities.
+
+This file should only define `UserAggregateRepository`.
+
+---
+
+## 4. `user_profile_repository.py`
+
+**Should contain exactly one repository class:**
+
+- `UserProfileRepository(BaseRepository[UserProfile])`  
+  - Purpose: CRUD + profile-specific logic for `UserProfile`:
+    - Profile completion calculation & updates.
+    - Demographics queries (gender, age range, nationality).
+    - Preferences & privacy updates.
+    - Social/media info, localization, analytics, recently updated profiles.
+  - Correctly extends `BaseRepository[UserProfile]`.
+
+⚠️ Note:  
+`UserProfileRepository.get_by_user_id` raises `EntityNotFoundError` but that exception is not imported here.  
+You likely need:
+
+```python
+from app.core.exceptions import EntityNotFoundError
+```
+
+No additional classes should be defined in this file.
+
+---
+
+## 5. `user_repository.py`
+
+**Should contain exactly one repository class:**
+
+- `UserRepository(BaseRepository[User])`  
+  - Purpose: Core user/account repository for `User`:
+    - Lookup by email/phone, existence checks.
+    - Role-based queries & counts.
+    - Account status management (active/inactive, locked, deactivated).
+    - Security-related operations: failed logins, lockouts, password updates, password expiration.
+    - Email/phone verification.
+    - Terms/privacy acceptance.
+    - User statistics & registration trends.
+    - Basic search.
+
+It correctly extends `BaseRepository[User]`.
+
+No other repository classes are expected in this file.
+
+---
+
+## 6. `user_security_repository.py`
+
+**Should contain exactly one repository class:**
+
+- `UserSecurityRepository`  
+  - Purpose: Security-related data that does **not** fit neatly into a single-entity, generic repository:
+    - Manages both `LoginHistory` and `PasswordHistory`.
+    - Creates and queries login attempts (success/failed/suspicious).
+    - Brute-force detection.
+    - Password history tracking, reuse checks, cleanup.
+    - Combined security analytics (comprehensive user security report).
+
+It’s appropriate that this does **not** subclass `BaseRepository`, because:
+- It simultaneously manages multiple models.
+- Methods frequently return aggregated data and dictionaries, not just one model entity type.
+
+No extra classes should be defined here.
+
+---
+
+## 7. `user_session_repository.py`
+
+**Should contain exactly one repository class:**
+
+- `UserSessionRepository(BaseRepository[UserSession])`  
+  - Purpose: Session lifecycle & security for `UserSession`:
+    - Create sessions, update activity, revoke sessions.
+    - Cleanup expired sessions.
+    - Suspicious session flagging and detection patterns (multiple IPs, concurrent sessions).
+    - Device-based queries and unique device listing.
+    - Session statistics and duration metrics.
+
+It correctly extends `BaseRepository[UserSession]`.
+
+No other classes belong in this file.
+
+---
+
+## 8. `__init__.py` (package initializer)
+
+**Should not define new classes.**  
+It should only:
+
+- Import and re-export repository classes for convenient usage:
+
+  ```python
+  from app.repositories.user.user_repository import UserRepository
+  from app.repositories.user.user_profile_repository import UserProfileRepository
+  from app.repositories.user.user_address_repository import UserAddressRepository
+  from app.repositories.user.emergency_contact_repository import EmergencyContactRepository
+  from app.repositories.user.user_session_repository import UserSessionRepository
+  from app.repositories.user.user_aggregate_repository import UserAggregateRepository
+  from app.repositories.user.user_security_repository import UserSecurityRepository
+  ```
+
+- Set `__all__` to control what gets exposed:
+
+  ```python
+  __all__ = [
+      "UserRepository",
+      "UserProfileRepository",
+      "UserAddressRepository",
+      "EmergencyContactRepository",
+      "UserSessionRepository",
+      "UserAggregateRepository",
+      "UserSecurityRepository",
+  ]
+  ```
+
+This file is acting as a **facade** / convenience import layer and is already structured correctly.
+
+---
+
+========================================================================================================================================================================================
+
+Here’s a clear mapping of what *repository classes* belong in each of the files you shared, and which ORM models each repository is responsible for. This should give you a precise picture of “what classes should be in these files”.
+
+---
+
+## 1. `supervisor_repository.py`
+
+**Purpose:** Core lifecycle and profile management for supervisors (hiring → status changes → soft delete/recovery), plus some statistics and notes.
+
+**Repository class that should be here:**
+
+- `SupervisorRepository(BaseRepository[Supervisor])`  
+  Single, central repository for supervisor entities.
+
+**ORM models it is responsible for:**
+
+- Primary model:
+  - `Supervisor`
+- Related models it legitimately manipulates:
+  - `SupervisorEmployment` (employment history)
+  - `SupervisorStatusHistory` (status change history)
+  - `SupervisorNote` (administrative notes)
+  - It also joins/relates to:
+    - `SupervisorPermission` (but core CRUD remains in `SupervisorPermissionsRepository`)
+    - `SupervisorAssignment` (but core CRUD in `SupervisorAssignmentRepository`)
+    - `Hostel`
+    - `User`
+
+**No other repository classes** need to be in this file. Helper methods are correctly implemented as instance methods on `SupervisorRepository`.
+
+---
+
+## 2. `supervisor_permissions_repository.py`
+
+**Purpose:** Fine-grained permission management and audit logging for supervisors, plus template handling and analytics over permissions.
+
+**Repository class that should be here:**
+
+- `SupervisorPermissionsRepository(BaseRepository[SupervisorPermission])`  
+  Single repository dedicated to permissions and related audit/templates.
+
+**ORM models it is responsible for:**
+
+- Primary model:
+  - `SupervisorPermission`
+- Related models it legitimately manages:
+  - `PermissionTemplate` (create/update/deactivate templates)
+  - `PermissionAuditLog` (create and query audit logs)
+- It optionally joins:
+  - `Supervisor` (for hostel scoping and statistics)
+
+**No additional repository classes** are needed in this file. All permission-related operations (core CRUD, templates, audits, analytics, bulk ops) belong here.
+
+---
+
+## 3. `supervisor_assignment_repository.py`
+
+**Purpose:** Assignment of supervisors to hostels, transfers, coverage, and workload balancing.
+
+**Repository class that should be here:**
+
+- `SupervisorAssignmentRepository(BaseRepository[SupervisorAssignment])`  
+  Single repository for assignment and related workload/coverage concepts.
+
+**ORM models it is responsible for:**
+
+- Primary model:
+  - `SupervisorAssignment`
+- Related models it legitimately manages:
+  - `AssignmentTransfer` (transfer requests/approval/execution)
+  - `AssignmentCoverage` (coverage records per hostel/date/shift)
+  - `WorkloadMetric` (per-supervisor workload metrics)
+- It also uses:
+  - `Supervisor`
+  - `Hostel`
+
+All of those (Assignment, Transfer, Coverage, Workload) are part of the same bounded context (“assignments & load”), so they are correctly grouped in this one repository. No extra repository classes are required in this file.
+
+---
+
+## 4. `supervisor_activity_repository.py`
+
+**Purpose:** Activity logging, session management, behavior analytics, summaries, and metrics for supervisors.
+
+**Repository class that should be here:**
+
+- `SupervisorActivityRepository(BaseRepository[SupervisorActivity])`  
+  Single repository for activity and session tracking.
+
+**ORM models it is responsible for:**
+
+- Primary model:
+  - `SupervisorActivity`
+- Related models it legitimately manages:
+  - `SupervisorSession` (login sessions, suspicious sessions)
+  - `ActivitySummary` (aggregated summaries of actions)
+  - `ActivityMetric` (higher-level metrics per day/period)
+- It also uses:
+  - `Supervisor` (for some checks/joins)
+
+All the logic here—logging, retrieving activities, session lifecycle, computing summaries and metrics, productivity comparisons—is coherent under “activity tracking”, so they belong to `SupervisorActivityRepository`. No second repository class is needed in this module.
+
+---
+
+## 5. `supervisor_dashboard_repository.py`
+
+**Purpose:** Data for the supervisor dashboard: real-time metrics, alerts, quick actions, schedule, and performance indicators.
+
+**Repository class that should be here:**
+
+- `SupervisorDashboardRepository(BaseRepository[DashboardMetrics])`  
+  Single repository for dashboard-related data.
+
+**ORM models it is responsible for:**
+
+- Primary model:
+  - `DashboardMetrics`
+- Related models it legitimately manages:
+  - `DashboardAlert`
+  - `QuickAction`
+  - `TodaySchedule`
+  - `PerformanceIndicator`
+- It also uses:
+  - `Supervisor` (for relations/joins when needed)
+
+These five models are all “dashboard-facing” and are correctly centralized in this repository. No extra top-level repository classes are expected here.
+
+---
+
+## 6. `supervisor_performance_repository.py`
+
+**Purpose:** Performance tracking and development: periodic performance records, formal reviews, goals, time-series metrics, and peer comparisons.
+
+**Repository class that should be here:**
+
+- `SupervisorPerformanceRepository(BaseRepository[SupervisorPerformance])`  
+  Single repository for performance data and evaluation.
+
+**ORM models it is responsible for:**
+
+- Primary model:
+  - `SupervisorPerformance`
+- Related models it legitimately manages:
+  - `PerformanceReview` (formal qualitative reviews)
+  - `PerformanceGoal` (SMART goals)
+  - `PerformanceMetric` (time-series metric points)
+  - `PeerComparison` (ranking and comparison to peers)
+- It also uses:
+  - `Supervisor` (for joins/enrichment)
+
+All performance-related records are appropriately encapsulated here. No additional repository classes are required in this file.
+
+---
+
+## 7. `supervisor_aggregate_repository.py`
+
+**Purpose:** Cross-cutting, read-only style analytics and reports *across* supervisor-related subsystems.
+
+**Repository class that should be here:**
+
+- `SupervisorAggregateRepository`  
+  A non-generic, “read-model” style repository that **does not own** a single model but queries many models together for reporting.
+
+**ORM models it queries across:**
+
+- `Supervisor`
+- `SupervisorAssignment`
+- `SupervisorActivity`
+- `SupervisorPerformance`
+- `SupervisorPermission`
+- `Hostel`
+
+This is intentionally an “aggregate analytics” repository, not a CRUD repository for a specific model, so it makes sense as a standalone class here. You should not introduce more repository classes into this file; this one is the “multi-entity reports” hub.
+
+---
+
+## 8. `__init__.py` (package-level)
+
+**Purpose:** Public API for the `app.repositories.supervisor` package.
+
+**Classes that should be exported here:**
+
+From your code, this is correct and sufficient:
+
+- `SupervisorRepository`
+- `SupervisorPermissionsRepository`
+- `SupervisorAssignmentRepository`
+- `SupervisorActivityRepository`
+- `SupervisorDashboardRepository`
+- `SupervisorPerformanceRepository`
+- `SupervisorAggregateRepository`
+
+This file should only contain imports and `__all__`—no repository classes or models of its own.
+
+---
+
+========================================================================================================================================================================
+
+Here’s the clear picture of what classes belong in each of the repository files you’ve shared and how they’re scoped.
+
+---
+
+## File‑by‑file breakdown
+
+### 1. `booking_commission_repository.py`
+
+**Should contain:**
+
+- `BookingCommissionRepository`
+
+**Responsibility:**
+
+Repository for the `BookingCommission` model only:
+
+- Create commission records (generic + from a booking).
+- Read by id, booking, hostel, subscription, status, etc.
+- Update commission fields and status (processing, paid, cancelled, refunded, extend due date).
+- Delete (hard delete) cancelled commissions.
+- Analytics:
+  - Per‑hostel and overall commission statistics.
+  - Period statistics.
+  - Outstanding summary by hostel.
+- Batch operations (batch mark paid, batch extend due date).
+- Search with multiple filters.
+
+**No other classes** (models such as `BookingCommission` live in `app.models.subscription.booking_commission`).
+
+---
+
+### 2. `subscription_aggregate_repository.py`
+
+**Should contain:**
+
+- `SubscriptionAggregateRepository`
+
+**Responsibility:**
+
+Cross‑entity, read‑only aggregation across multiple subscription domain tables:
+
+- `Subscription`
+- `SubscriptionPlan`
+- `SubscriptionBillingCycle`
+- `SubscriptionInvoice`
+- `SubscriptionFeatureUsage`
+- `SubscriptionLimit`
+- `BookingCommission`
+
+Functional areas:
+
+- Dashboard metrics (`get_subscription_dashboard`).
+- Hostel overview with plan, billing cycle, invoices, commissions.
+- Revenue analytics (MRR/ARR, collected revenue, commissions paid, net revenue).
+- Plan performance metrics.
+- Subscription health (warnings/critical issues).
+- Feature usage analytics.
+- Retention metrics.
+
+This class should be the only one in this file, and it should not own CRUD for individual models (that belongs to the specific repositories).
+
+---
+
+### 3. `subscription_billing_repository.py`
+
+**Should contain:**
+
+- `SubscriptionBillingRepository`
+
+**Responsibility:**
+
+Repository for `SubscriptionBillingCycle`:
+
+- Create:
+  - Single billing cycle.
+  - All cycles for a subscription period (`create_billing_cycles_for_subscription`).
+- Read:
+  - By id.
+  - By subscription (all, current, upcoming, past).
+  - By hostel (active/all).
+  - Due for billing today or within N days.
+  - Trial cycles.
+  - Unbilled cycles.
+- Update:
+  - Generic updates.
+  - Mark as billed.
+  - Update days until billing.
+  - Trial days, end trial.
+  - Auto‑renew flag across cycles of a subscription.
+- Delete:
+  - Single cycle.
+  - All cycles for subscription.
+  - Future unbilled cycles.
+- Analytics:
+  - Billing statistics.
+  - Revenue forecast (by upcoming billing cycles).
+  - Billing summary per hostel.
+- Batch:
+  - Batch update days until billing.
+  - Batch mark as billed.
+
+No additional repository classes in this file.
+
+---
+
+### 4. `subscription_feature_repository.py`
+
+**Should contain:**
+
+- `SubscriptionFeatureRepository`
+
+**Responsibility:**
+
+Repository for two related models:
+
+- `SubscriptionFeatureUsage`
+- `SubscriptionLimit`
+
+It is correct that both live in this single repository, because they are both “feature/limit” concepts tied to a subscription.
+
+Functional areas:
+
+1. **Feature usage (`SubscriptionFeatureUsage`):**
+   - Create/init usage records.
+   - Read by id, by (subscription, feature_key), list by subscription (all, enabled, exceeded, near limit).
+   - Update:
+     - Generic field updates.
+     - Increment/decrement usage.
+     - Reset usage.
+     - Update usage limit.
+     - Enable/disable feature.
+   - Delete usage record.
+   - Validation:
+     - `can_use_feature` for a given amount.
+   - Analytics:
+     - Feature usage summary.
+   - Batch:
+     - Batch reset usage.
+     - Batch update limits (via limit side).
+
+2. **Subscription limits (`SubscriptionLimit`):**
+   - Create/init limit records.
+   - Read by id, by (subscription, limit_type), list all, exceeded, near threshold, enforced.
+   - Update:
+     - Generic updates.
+     - Increment/decrement current value.
+     - Update limit and warning threshold.
+     - Mark warning as sent.
+     - Toggle enforcement.
+   - Delete limit record.
+   - Validation:
+     - `can_add_to_limit` for a given amount.
+     - `validate_limits` across all limits.
+
+No separate `SubscriptionLimitRepository` is strictly necessary because this repository already encapsulates both sides of “feature usage and limits.” If you ever want stricter separation, you could split these two, but with current design they’re intentionally together.
+
+---
+
+### 5. `subscription_invoice_repository.py`
+
+**Should contain:**
+
+- `SubscriptionInvoiceRepository`
+
+**Responsibility:**
+
+Repository for `SubscriptionInvoice`:
+
+- Create:
+  - Low‑level `create_invoice`.
+  - Generate invoice number (`generate_invoice_number`).
+  - High‑level `create_subscription_invoice` (calculates totals and due dates).
+- Read:
+  - By id.
+  - By invoice number.
+  - By subscription (optionally by status).
+  - By hostel (optionally by status/limit).
+  - By status.
+  - Overdue invoices.
+  - Due soon.
+  - Unpaid invoices (optionally by hostel).
+  - Paid invoices (optionally by hostel and date interval).
+  - Partially paid invoices.
+  - Draft invoices.
+- Update:
+  - Generic update.
+  - Status changes (sent, paid, overdue, cancelled, void).
+  - Payment operations (full payment, partial payment).
+  - Apply discount.
+  - Update URLs.
+  - Extend due date with notes.
+- Delete:
+  - Hard delete, but only for draft invoices.
+- Analytics:
+  - Overall invoice statistics.
+  - Revenue by period.
+  - Outstanding by hostel.
+  - Payment collection metrics (issued vs paid, collection rate, days to payment).
+- Batch:
+  - Batch mark overdue.
+  - Batch mark as sent.
+- Search & filtering:
+  - Powerful `search_invoices` by search term, status, subscription, hostel, date/amount ranges, etc.
+  - `count_invoices` with filters.
+
+No other classes should be here.
+
+---
+
+### 6. `subscription_plan_repository.py`
+
+**Should contain:**
+
+- `SubscriptionPlanRepository`
+
+**Responsibility:**
+
+Repository for:
+
+- `SubscriptionPlan`
+- `PlanFeature` (plan‑level feature definitions)
+
+Functional areas:
+
+1. **Plan CRUD & management (SubscriptionPlan):**
+   - Create plan (with optional `created_by` user).
+   - Read by:
+     - id (optionally with features),
+     - name,
+     - type (enum),
+     - various filters (active, public, trial, price range, etc.).
+   - Read collections:
+     - All active plans (optionally public only).
+     - Public plans.
+     - Featured plan.
+     - Plans in price range by billing cycle.
+     - Plans with trial.
+   - Update:
+     - Generic plan update.
+     - Pricing.
+     - Limits (max hostels, rooms, students, admins).
+     - Activate/deactivate.
+     - Public visibility.
+     - Set as featured (and unset others).
+     - Sort order (single and bulk).
+   - Delete:
+     - Hard delete plan.
+   - Analytics:
+     - Plan statistics (counts).
+     - Pricing summary.
+     - Compare plans (pricing, limits, features).
+     - Upgrade/downgrade options relative to a plan.
+   - Search:
+     - `search_plans` over name/description, type, price range, trial, visibility, etc.
+   - Validation:
+     - `validate_plan_limits` for hostels/rooms/students/admins.
+     - `check_plan_availability`.
+   - Bulk:
+     - Bulk activate/deactivate.
+
+2. **Plan features (`PlanFeature`):**
+   - Create single feature for plan.
+   - Bulk create multiple features.
+   - Read:
+     - All features for plan.
+     - Feature by key.
+     - Plans that include a given feature (optionally only enabled).
+   - Update plan feature by feature id.
+   - Delete plan feature.
+
+No separate `PlanFeatureRepository` needed because these are tightly coupled to plans and logically centralised here.
+
+---
+
+### 7. `subscription_repository.py`
+
+**Should contain:**
+
+- `SubscriptionRepository`
+
+**Responsibility:**
+
+Repository for:
+
+- `Subscription` (main subscription record)
+- `SubscriptionHistory` (audit of changes)
+- `SubscriptionCancellation` (cancellation details)
+
+Functional areas:
+
+1. **Subscription CRUD & lifecycle:**
+   - Create subscription.
+   - Read:
+     - By id (optionally include deleted).
+     - By reference.
+     - Active by hostel.
+     - All by hostel (optionally include deleted).
+     - By status.
+     - Expiring soon.
+     - Expired.
+     - Trial subscriptions / trial ending soon.
+     - Auto‑renewable subscriptions.
+     - By plan (optionally active only).
+   - Update:
+     - Generic update.
+     - Status updates with history (`update_status`, plus helpers: `activate_subscription`, `suspend_subscription`, `expire_subscription`).
+     - Cancel subscription (immediate vs end of term) and create cancellation record.
+     - Renew subscription (calculate new period & billing date, update amount).
+     - Update payment info (last payment).
+     - Toggle auto‑renew (with history).
+     - Change plan (with history).
+     - End trial period (with history).
+     - Update cancellation record.
+   - Delete:
+     - Soft delete subscription (with history).
+     - Restore soft‑deleted subscription (with history).
+
+2. **History & cancellation:**
+   - `create_subscription_history` (generic helper used by many operations).
+   - `create_cancellation_record`.
+   - `get_subscription_history` (filterable).
+   - `get_cancellation_record`.
+   - `update_cancellation_record`.
+
+3. **Analytics & reporting:**
+   - Subscription statistics (counts per status, auto‑renew).
+   - Revenue summary (MRR/ARR).
+   - Churn statistics (based on cancelled in period vs active at period start).
+   - Renewal statistics (renewals vs expired in last 30 days).
+   - Trial conversion rate.
+
+4. **Search & count:**
+   - `search_subscriptions` by reference, status, plan, billing cycle, trial, auto‑renew, date ranges.
+   - `count_subscriptions` with filters.
+
+5. **Batch operations:**
+   - Batch expire subscriptions.
+   - Batch update status (with optional reason).
+
+No additional repository or domain classes belong in this file; the actual ORM models live under `app.models.subscription`.
+
+---
+
+### 8. `__init__.py` (package init)
+
+**Should contain:**
+
+- Import/re‑export of repository classes only:
+
+  ```python
+  from app.repositories.subscription.booking_commission_repository import (
+      BookingCommissionRepository,
+  )
+  from app.repositories.subscription.subscription_aggregate_repository import (
+      SubscriptionAggregateRepository,
+  )
+  from app.repositories.subscription.subscription_billing_repository import (
+      SubscriptionBillingRepository,
+  )
+  from app.repositories.subscription.subscription_feature_repository import (
+      SubscriptionFeatureRepository,
+  )
+  from app.repositories.subscription.subscription_invoice_repository import (
+      SubscriptionInvoiceRepository,
+  )
+  from app.repositories.subscription.subscription_plan_repository import (
+      SubscriptionPlanRepository,
+  )
+  from app.repositories.subscription.subscription_repository import (
+      SubscriptionRepository,
+  )
+
+  __all__ = [
+      "SubscriptionPlanRepository",
+      "SubscriptionRepository",
+      "SubscriptionBillingRepository",
+      "SubscriptionInvoiceRepository",
+      "SubscriptionFeatureRepository",
+      "BookingCommissionRepository",
+      "SubscriptionAggregateRepository",
+  ]
+  ```
+
+This file should not define any classes itself; it just exposes the repository API of the `subscription` package.
+
+---
+
+========================================================================================================================================================================
+
+Here’s the clear, file‑by‑file breakdown of what classes belong in this `app.repositories.student` package based on the code you’ve shared.
+
+---
+
+## 1. `guardian_contact_repository.py`
+
+**Should contain:**
+
+- `GuardianContactRepository`
+
+**Purpose:**  
+Repository for `GuardianContact` model (guardian/parent contact records for a student).
+
+**What *should not* be here:**
+
+- No model classes (`GuardianContact`, `Student`) – they correctly live in `app.models.student.*`.
+- No unrelated repositories.
+
+---
+
+## 2. `room_transfer_history_repository.py`
+
+**Should contain:**
+
+- `RoomTransferHistoryRepository`
+
+**Purpose:**  
+Repository for `RoomTransferHistory` model (room assignment/transfer history and workflow).
+
+**What *should not* be here:**
+
+- No room/hostel model definitions (`Room`, `Hostel`, `Student`) – those stay in `app.models.*`.
+- No student core repository logic – that stays in `student_repository.py`.
+
+---
+
+## 3. `student_aggregate_repository.py`
+
+**Should contain:**
+
+- `StudentAggregateRepository`
+
+**Purpose:**  
+Cross‑entity / aggregate repository that reads across:
+
+- `Student`
+- `StudentProfile`
+- `StudentDocument`
+- `StudentPreferences`
+- `GuardianContact`
+- `RoomTransferHistory`
+- `User`
+- `Hostel`
+- `Room`
+
+It is **read/analytics focused**, not basic CRUD for each entity.
+
+**What *should not* be here:**
+
+- No primary CRUD repositories (no `StudentRepository`, `StudentProfileRepository`, etc.).
+- No model classes.
+
+---
+
+## 4. `student_document_repository.py`
+
+**Should contain:**
+
+- `StudentDocumentRepository`
+
+**Purpose:**  
+Repository for `StudentDocument` (upload, verification, expiry, compliance, stats).
+
+**What *should not* be here:**
+
+- No general student CRUD logic.
+- No `Student` model definition (only imports it for joins).
+
+---
+
+## 5. `student_preferences_repository.py`
+
+**Should contain:**
+
+- `StudentPreferencesRepository`
+
+**Purpose:**  
+Repository for `StudentPreferences` (notification, privacy, meal, lifestyle, UI, language prefs).
+
+**What *should not* be here:**
+
+- No profile fields, documents, or guardian logic.
+- No `StudentPreferences` model definition.
+
+---
+
+## 6. `student_profile_repository.py`
+
+**Should contain:**
+
+- `StudentProfileRepository`
+
+**Purpose:**  
+Repository for `StudentProfile` (extended profile data, completeness, demographic/medical info, referrals).
+
+**What *should not* be here:**
+
+- No preferences / notification logic.
+- No `Student` core lifecycle methods (check‑in/out, status).
+
+---
+
+## 7. `student_repository.py`
+
+**Should contain:**
+
+- `StudentRepository`
+
+**Purpose:**  
+Primary repository for the `Student` entity:
+
+- Core CRUD for `Student`
+- Lifecycle (check‑in, check‑out, notice period, suspend/reactivate)
+- Document verification flags on `Student` (id_proof/institutional_id/company_id, documents_verified)
+- Financial tracking related to the student record (security deposit fields that live on `Student`)
+- Student‑level search and filtering
+- Hostel‑level stats derived directly from `Student` table
+- Bulk update operations for `Student` rows
+- Validation/business rules directly tied to the `Student` record (can_check_in, can_check_out, uniqueness checks)
+
+**What *should not* be here:**
+
+- No separate models (User, Room, Bed, Hostel, etc.).
+- No repository logic that is fundamentally about documents, guardians, preferences, etc. (those are already isolated in their own files).
+
+---
+
+## 8. `__init__.py` (in `app/repositories/student/`)
+
+**Should contain:**
+
+- Imports of all repository classes:
+
+  ```python
+  from app.repositories.student.student_repository import StudentRepository
+  from app.repositories.student.student_profile_repository import StudentProfileRepository
+  from app.repositories.student.student_document_repository import StudentDocumentRepository
+  from app.repositories.student.student_preferences_repository import StudentPreferencesRepository
+  from app.repositories.student.guardian_contact_repository import GuardianContactRepository
+  from app.repositories.student.room_transfer_history_repository import RoomTransferHistoryRepository
+  from app.repositories.student.student_aggregate_repository import StudentAggregateRepository
+  ```
+
+- An `__all__` list exposing these repository classes:
+
+  ```python
+  __all__ = [
+      "StudentRepository",
+      "StudentProfileRepository",
+      "StudentDocumentRepository",
+      "StudentPreferencesRepository",
+      "GuardianContactRepository",
+      "RoomTransferHistoryRepository",
+      "StudentAggregateRepository",
+  ]
+  ```
+
+**Purpose:**  
+Make it easy to import all student‑related repositories from `app.repositories.student`.
+
+**What *should not* be here:**
+
+- No model classes.
+- No repository implementations themselves (only imports and re‑exports).
+
+---
+
+========================================================================================================================================================================
+
+Here’s how the repository layer is logically organized, and which classes belong in which file, based on the code you shared.
+
+---
+
+## 1. `search_query_log_repository.py`
+
+**Purpose of this module:**  
+Everything related to *raw search activity* and *user/session-level tracking*:
+
+- Individual search events
+- User search sessions
+- User-saved searches and alerts
+
+**Classes that should be here:**
+
+1. **`SearchQueryLogRepository`**
+   - Repository for the `SearchQueryLog` model.
+   - Responsibilities:
+     - Create/search logs (`create_query_log`, `bulk_create_query_logs`).
+     - Fetch logs:
+       - By ID (`get_by_id`)
+       - User history (`get_user_search_history`)
+       - Session queries (`get_session_queries`)
+       - Zero-result queries (`get_zero_result_queries`)
+     - Compute analytics derived directly from raw logs:
+       - `get_search_statistics` (counts, CTR, conversion, etc.)
+       - `get_popular_search_terms`
+       - `get_search_filters_usage`
+       - `get_performance_metrics` (exec time, cache, errors)
+     - Update log-level interaction info:
+       - `update_click_interaction`
+       - `update_conversion`
+     - Internal helpers:
+       - `_generate_session_id`
+       - `_get_grouped_statistics`
+
+2. **`SearchSessionRepository`**
+   - Repository for the `SearchSession` model.
+   - Responsibilities:
+     - Session lifecycle:
+       - `create_session`
+       - `get_by_session_id`
+       - `get_active_session`
+       - `update_session_activity`
+       - `end_session`
+     - Session-level analytics:
+       - `get_user_sessions`
+       - `get_session_statistics`
+     - Maintenance:
+       - `cleanup_inactive_sessions`
+
+3. **`SavedSearchRepository`**
+   - Repository for the `SavedSearch` model.
+   - Responsibilities:
+     - CRUD-like ops:
+       - `create_saved_search`
+       - `update_saved_search`
+     - Retrieval:
+       - `get_user_saved_searches`
+       - `get_searches_for_alerts`
+     - Execution & alert tracking:
+       - `record_execution`
+       - `update_alert_status`
+     - Toggles:
+       - `toggle_favorite`
+       - `toggle_alerts`
+     - Internal helpers:
+       - `_extract_quick_fields`
+       - `_calculate_next_alert`
+
+👉 Conceptually: this file should contain **repositories for “online” activity logs and sessions**: query logs, sessions, saved searches.
+
+---
+
+## 2. `search_analytics_repository.py`
+
+**Purpose of this module:**  
+Everything related to *aggregated / analytical* data derived from search logs:
+
+- Term-level stats
+- System-level metrics
+- Popular/trending terms
+- Zero-result terms
+- Stored analytics reports
+
+**Classes that should be here:**
+
+1. **`SearchTermStatsRepository`**
+   - Repository for the `SearchTermStats` model.
+   - Responsibilities:
+     - Create/update stats for a (normalized) term & period:
+       - `create_or_update_stats`
+     - Retrieve stats:
+       - `get_term_stats`
+       - `get_trending_terms`
+       - `get_top_performing_terms`
+       - `get_poor_performing_terms`
+     - Trend analysis:
+       - `calculate_term_trends`
+       - `_calculate_velocity_score`
+
+2. **`SearchMetricsRepository`**
+   - Repository for the `SearchMetrics` model.
+   - Responsibilities:
+     - Create/update aggregated metrics:
+       - `create_or_update_metrics`
+     - Retrieve metrics:
+       - `get_metrics`
+       - `get_latest_metrics`
+       - `get_aggregated_metrics`
+     - Period comparison:
+       - `compare_periods`
+
+3. **`PopularSearchTermRepository`**
+   - Repository for `PopularSearchTerm`.
+   - Responsibilities:
+     - Manage popular terms:
+       - `create_or_update_popular_term`
+       - `get_popular_terms`
+       - `get_featured_terms`
+
+4. **`TrendingSearchRepository`**
+   - Repository for `TrendingSearch`.
+   - Responsibilities:
+     - Create trending entries:
+       - `create_trending_search`
+     - Retrieve trending searches:
+       - `get_trending_searches`
+
+5. **`ZeroResultTermRepository`**
+   - Repository for `ZeroResultTerm`.
+   - Responsibilities:
+     - Track and update zero-result terms:
+       - `create_or_update_zero_result`
+       - `get_unresolved_terms`
+       - `mark_resolved`
+       - `_calculate_priority_score`
+
+6. **`SearchAnalyticsReportRepository`**
+   - Repository for `SearchAnalyticsReport`.
+   - Responsibilities:
+     - Manage precomputed reports:
+       - `create_report`
+       - `get_latest_report`
+       - `get_reports`
+       - `publish_report`
+
+👉 Conceptually: this file should contain **repositories for derived / aggregated search analytics** rather than raw logs.
+
+---
+
+## 3. `search_autocomplete_repository.py`
+
+**Purpose of this module:**  
+Everything related to *autocomplete*:
+
+- Suggestions
+- Autocomplete query logs
+- Suggestion sources and sync
+- Popular suggestions for fallback
+- Suggestion performance over time
+
+**Classes that should be here:**
+
+1. **`AutocompleteSuggestionRepository`**
+   - Repository for `AutocompleteSuggestion`.
+   - Responsibilities:
+     - Creating suggestions:
+       - `create_suggestion`
+       - `bulk_create_suggestions`
+     - Fetching suggestions:
+       - `search_suggestions`
+       - `get_by_value_and_type`
+       - `get_featured_suggestions`
+       - `get_top_suggestions`
+     - Updating usage / scores:
+       - `update_usage_metrics`
+       - `update_score`
+       - `toggle_featured`
+       - `recalculate_all_scores`
+       - `cleanup_low_performing`
+     - Internal scoring:
+       - `_calculate_suggestion_score`
+
+2. **`AutocompleteQueryLogRepository`**
+   - Repository for `AutocompleteQueryLog`.
+   - Responsibilities:
+     - Log prefix queries:
+       - `log_query`
+     - Analytics on autocomplete performance:
+       - `get_query_analytics`
+
+3. **`SuggestionSourceRepository`**
+   - Repository for `SuggestionSource`.
+   - Responsibilities:
+     - Determine sync candidates:
+       - `get_sources_for_sync`
+     - Update sync status/metrics:
+       - `update_sync_status`
+
+4. **`PopularSearchSuggestionRepository`**
+   - Repository for `PopularSearchSuggestion`.
+   - Responsibilities:
+     - Retrieve current popular suggestions for fallback:
+       - `get_current_popular`
+
+5. **`SuggestionPerformanceRepository`**
+   - Repository for `SuggestionPerformance`.
+   - Responsibilities:
+     - Record time-series performance for suggestions:
+       - `record_performance`
+       - `get_suggestion_performance_trend`
+
+👉 Conceptually: this file should contain **all repositories whose primary responsibility is autocomplete behavior or autocomplete-related data**.
+
+---
+
+## 4. `search_aggregate_repository.py`
+
+**Purpose of this module:**  
+A higher-level façade that **composes all the lower-level search repositories** and offers cross-cutting operations / dashboards.
+
+**Class that should be here:**
+
+1. **`SearchAggregateRepository`**
+   - Not model-specific; instead, it aggregates:
+     - `SearchQueryLogRepository`
+     - `SearchSessionRepository`
+     - `SavedSearchRepository`
+     - `SearchTermStatsRepository`
+     - `SearchMetricsRepository`
+     - `PopularSearchTermRepository`
+     - `TrendingSearchRepository`
+     - `ZeroResultTermRepository`
+     - `SearchAnalyticsReportRepository`
+     - `AutocompleteSuggestionRepository`
+     - `AutocompleteQueryLogRepository`
+     - `SuggestionSourceRepository`
+     - `PopularSearchSuggestionRepository`
+     - `SuggestionPerformanceRepository`
+   - Responsibilities:
+     - Unified analytics / dashboards:
+       - `get_complete_search_dashboard`
+       - `get_search_health_metrics`
+     - Cross-functional events:
+       - `process_search_event`
+       - `process_autocomplete_event`
+     - Optimization reporting:
+       - `generate_search_optimization_report`
+     - Internal scoring & recommendations:
+       - `_calculate_health_score`
+       - `_generate_health_recommendations`
+       - `_generate_optimization_recommendations`
+
+👉 Conceptually: this file should **only** contain this aggregate/facade class; no individual per-model repositories.
+
+---
+
+## 5. `__init__.py` (package initializer)
+
+**Purpose of this module:**  
+Purely to expose a clean import surface for the `search` repository package.
+
+**What should be here:**
+
+- Imports of all repository classes from the four modules:
+
+  - From `search_query_log_repository`:
+    - `SearchQueryLogRepository`
+    - `SearchSessionRepository`
+    - `SavedSearchRepository`
+
+  - From `search_analytics_repository`:
+    - `SearchTermStatsRepository`
+    - `SearchMetricsRepository`
+    - `PopularSearchTermRepository`
+    - `TrendingSearchRepository`
+    - `ZeroResultTermRepository`
+    - `SearchAnalyticsReportRepository`
+
+  - From `search_autocomplete_repository`:
+    - `AutocompleteSuggestionRepository`
+    - `AutocompleteQueryLogRepository`
+    - `SuggestionSourceRepository`
+    - `PopularSearchSuggestionRepository`
+    - `SuggestionPerformanceRepository`
+
+  - From `search_aggregate_repository`:
+    - `SearchAggregateRepository`
+
+- An `__all__` list listing those class names.
+
+**No classes should be defined in `__init__.py`**; it’s only for orga
+nizing exports.
+
+---
+
+=========================================================================================================================================================================
+
+Here’s a clear, file‑by‑file map of what classes belong in this `app/repositories/room` package, based on the code you shared and clean architectural boundaries.
+
+---
+
+## 1. `base_repository.py`
+
+**Should contain:**
+
+- `BaseRepository[T]`
+
+**Purpose:**
+
+- A generic, reusable base class for all repositories.
+- Implements common CRUD and utility operations (create, bulk_create, find_by_id, find_by_criteria, update, soft_delete, paginate, transaction helpers, etc.).
+- No model‑specific logic here; it only depends on `BaseModel` and SQLAlchemy `Session`.
+
+**Nothing else should live here** other than helpers that are generic across all repositories.
+
+---
+
+## 2. `bed_assignment_repository.py`
+
+**Should contain:**
+
+- `BedAssignmentRepository`
+
+**Purpose:**
+
+Repository focused on **bed assignment workflows** and related aggregates, all rooted in `BedAssignment`:
+
+- Core responsibility: lifecycle of `BedAssignment`
+  - `create_assignment_with_validation`
+  - `check_assignment_conflicts`
+  - `find_active_assignments`
+  - `find_student_current_assignment`
+  - `complete_assignment`
+  - `transfer_assignment`
+- Rule engine around assignments:
+  - `AssignmentRule`
+  - `_evaluate_rule`, `execute_assignment_rules`
+- Conflict management:
+  - `AssignmentConflict`
+  - `_create_conflict_record`, `find_unresolved_conflicts`, `resolve_conflict`
+- Optimization:
+  - `AssignmentOptimization`
+  - `run_assignment_optimization`, `_execute_optimization_algorithm`, `_calculate_match_score`
+- History and preferences:
+  - `AssignmentHistory` (e.g., `get_assignment_history`)
+  - `AssignmentPreference` (e.g., `create_assignment_preference`, `find_student_preferences`)
+- Reporting / analytics:
+  - `get_assignment_statistics`
+  - `find_expiring_assignments`
+  - `find_overdue_assignments`
+
+**Importantly:** this file should not define the ORM model classes (`BedAssignment`, `AssignmentRule`, etc.); those stay in `app/models/room`. This repository only coordinates them.
+
+---
+
+## 3. `bed_repository.py`
+
+**Should contain:**
+
+- `BedRepository`
+
+**Purpose:**
+
+Repository focused on **Bed** entity and bed‑level management:
+
+- Basic bed CRUD & lookups:
+  - `create_bed_with_details`
+  - `find_beds_by_room`, `find_by_bed_number`, `find_by_bed_code`
+- Availability & status:
+  - `find_available_beds`, `find_occupied_beds`, `find_beds_by_status`
+  - `update_bed_status`
+- Assignment helpers:
+  - `assign_bed_to_student`, `release_bed`
+- Condition / configuration:
+  - `BedCondition` – `update_bed_condition`, `get_bed_condition`, `find_beds_requiring_maintenance`
+  - `BedConfiguration` – `update_bed_configuration`, `get_bed_configuration`
+- Accessibility:
+  - `BedAccessibility` – `find_accessible_beds`, `update_bed_accessibility`
+- Preferences:
+  - `BedPreference` – `create_bed_preference`, `find_student_bed_preferences`, `match_bed_preferences`
+- Utilization & analytics:
+  - `BedUtilization` – `update_bed_utilization`, `get_bed_utilization_stats`
+  - Higher‑level analytics: `find_top_performing_beds`, `get_room_bed_statistics`, `get_bed_type_distribution`, `calculate_bed_occupancy_trends`
+
+Again, the **ORM models** (`Bed`, `BedCondition`, etc.) stay in `app/models/room`, not here.
+
+---
+
+## 4. `room_repository.py`
+
+**Should contain:**
+
+- `RoomRepository`
+
+**Purpose:**
+
+Repository focused on **Room** entity as an aggregate root:
+
+- Room creation with associated sub‑records:
+  - `create_room_with_details` -> handles:
+    - `RoomSpecification`
+    - `RoomPricingHistory` (initial)
+    - `RoomMaintenanceStatus`
+    - `RoomAccessControl`
+    - `RoomOccupancyLimit`
+- Core lookups:
+  - `find_by_room_number`
+  - `find_rooms_by_hostel`
+- Search & filtering:
+  - `search_available_rooms`
+  - `find_rooms_by_status`
+  - `find_rooms_under_maintenance`
+- Occupancy:
+  - `update_room_occupancy`
+  - `get_room_occupancy_rate`
+  - `find_fully_occupied_rooms`
+  - `find_vacant_rooms`
+- Pricing history:
+  - `update_room_pricing`
+  - `get_pricing_history`
+- Maintenance lifecycle:
+  - `mark_room_under_maintenance`
+  - `complete_room_maintenance`
+- Statistics:
+  - `get_hostel_room_statistics`
+  - `get_room_type_distribution`
+  - `get_floor_wise_occupancy`
+- Availability checks & recommendations:
+  - `check_room_availability`
+  - `find_best_match_rooms`
+
+All room‑level concerns go here; cross‑room analytics live in `room_aggregate_repository.py`.
+
+---
+
+## 5. `room_amenity_repository.py`
+
+**Should contain:**
+
+- `RoomAmenityRepository`
+
+**Purpose:**
+
+Repository for **RoomAmenity** and its supporting entities:
+
+- Creation & search:
+  - `create_amenity_with_details`
+  - `find_amenities_by_room`
+  - `find_amenities_by_type`
+  - `find_amenities_by_category`
+  - `search_amenities`
+- Status & warranty:
+  - `update_amenity_status`
+  - `find_defective_amenities`
+  - `find_amenities_under_warranty`
+  - `find_expiring_warranties`
+- Condition:
+  - `AmenityCondition` – `update_amenity_condition`, `get_amenity_condition`
+  - `find_amenities_requiring_maintenance`
+  - `find_amenities_requiring_replacement`
+- Maintenance:
+  - `AmenityMaintenance` – `schedule_amenity_maintenance`, `complete_amenity_maintenance`
+  - `get_maintenance_history`, `get_scheduled_maintenance`
+- Usage:
+  - `AmenityUsage` – `track_amenity_usage`, `get_usage_statistics`
+- Feedback:
+  - `AmenityFeedback` – `submit_amenity_feedback`, `get_amenity_feedback`, `get_average_rating`, `find_low_rated_amenities`
+- Inventory:
+  - `AmenityInventory` – `update_amenity_inventory`, `get_amenity_inventory`, `find_amenities_for_verification`
+- Analytics:
+  - `get_amenity_statistics`
+  - `get_amenity_value_summary`
+  - `get_maintenance_cost_summary`
+
+This keeps all amenity‑centric logic localized.
+
+---
+
+## 6. `room_availability_repository.py`
+
+**Should contain:**
+
+- `RoomAvailabilityRepository`
+
+**Purpose:**
+
+Repository for **RoomAvailability** and real‑time availability ecosystem:
+
+- Core availability record:
+  - `create_or_update_availability`
+  - `get_room_availability`
+  - `sync_availability_with_room`
+  - `bulk_sync_availability`
+- Availability search:
+  - `find_available_rooms`
+  - `find_low_availability_rooms`
+  - `find_full_rooms`
+  - `get_availability_summary`
+- Time windows:
+  - `AvailabilityWindow` – `create_availability_window`, `find_active_windows`, `get_applicable_window`
+- Rules engine:
+  - `AvailabilityRule` – `create_availability_rule`, `find_active_rules`, `execute_availability_rules`, `_evaluate_availability_rule`
+- Forecasting:
+  - `AvailabilityForecast` – `create_or_update_forecast`, `get_forecast`, `generate_simple_forecast`
+- Alerts:
+  - `AvailabilityAlert` – `create_availability_alert`, `check_and_create_alerts`, `find_active_alerts`, `acknowledge_alert`, `resolve_alert`
+- Optimization:
+  - `AvailabilityOptimization` – `create_optimization`, `run_optimization_analysis`, `get_latest_optimization`
+- Demand tracking:
+  - `update_demand_metrics`
+  - `reset_daily_metrics`
+
+This is the “availability layer” for rooms, distinct from room’s own basic status or bed assignment logic.
+
+---
+
+## 7. `room_type_repository.py`
+
+**Should contain:**
+
+- `RoomTypeRepository`
+
+**Purpose:**
+
+Repository for **RoomTypeDefinition** and type‑level concerns:
+
+- Creation & retrieval:
+  - `create_room_type_with_details`
+  - `find_by_type`
+  - `find_by_type_code`
+  - `find_active_types`
+  - `find_featured_types`
+  - `find_popular_types`
+- Features:
+  - `RoomTypeFeature` – `add_feature_to_type`, `get_type_features`, `get_features_by_category`, `compare_type_features`
+- Pricing:
+  - `RoomTypePricing` – `add_pricing_tier`, `get_current_pricing`, `get_pricing_history`, `get_pricing_for_date`, `calculate_discounted_price`
+- Availability:
+  - `RoomTypeAvailability` – `update_type_availability`, `sync_type_availability_from_rooms`, `get_type_availability`, `find_available_types`
+- Comparisons:
+  - `RoomTypeComparison` – `create_type_comparison`, `get_type_comparisons`, `compare_all_types`
+- Upgrades/downgrades:
+  - `RoomTypeUpgrade` – `create_upgrade_path`, `get_upgrade_options`, `get_downgrade_options`
+- Analytics:
+  - `get_type_statistics`
+  - `get_pricing_comparison`
+  - `get_capacity_summary`
+  - `get_popular_types_ranking`
+  - `recommend_type_for_student`
+
+All **type‑level** logic, not specific rooms.
+
+---
+
+## 8. `room_aggregate_repository.py`
+
+**Should contain:**
+
+- `RoomAggregateRepository`
+
+**Purpose:**
+
+Cross‑cutting / aggregate analytics across rooms, beds, assignments, amenities:
+
+- Hostel overview & dashboard:
+  - `get_hostel_overview`
+  - `get_dashboard_metrics`
+- Search:
+  - `comprehensive_room_search` (joins `Room` + `RoomAvailability` and yields rich objects)
+- Analytics:
+  - `get_occupancy_trends`
+  - `get_revenue_forecast`
+  - `get_performance_report`
+
+This is not a `BaseRepository` child; it’s a pure query/analytics façade over multiple models.
+
+---
+
+## 9. `__init__.py`
+
+**Should contain:**
+
+- Imports/exports:
+
+  ```python
+  from app.repositories.room.room_repository import RoomRepository
+  from app.repositories.room.bed_repository import BedRepository
+  from app.repositories.room.bed_assignment_repository import BedAssignmentRepository
+  from app.repositories.room.room_amenity_repository import RoomAmenityRepository
+  from app.repositories.room.room_availability_repository import RoomAvailabilityRepository
+  from app.repositories.room.room_type_repository import RoomTypeRepository
+  from app.repositories.room.room_aggregate_repository import RoomAggregateRepository
+
+  __all__ = [
+      "RoomRepository",
+      "BedRepository",
+      "BedAssignmentRepository",
+      "RoomAmenityRepository",
+      "RoomAvailabilityRepository",
+      "RoomTypeRepository",
+      "RoomAggregateRepository",
+  ]
+  ```
+
+- Repository registry and factory:
+
+  ```python
+  ROOM_REPOSITORIES = {
+      'room': RoomRepository,
+      'bed': BedRepository,
+      'bed_assignment': BedAssignmentRepository,
+      'room_amenity': RoomAmenityRepository,
+      'room_availability': RoomAvailabilityRepository,
+      'room_type': RoomTypeRepository,
+      'aggregate': RoomAggregateRepository,
+  }
+
+  def get_repository(repository_name: str, session):
+      repository_class = ROOM_REPOSITORIES.get(repository_name)
+      if not repository_class:
+          raise ValueError(f"Unknown repository: {repository_name}")
+      return repository_class(session)
+  ```
+
+- Optional: `__version__ = "1.0.0"` as already present.
+
+No model classes, no business logic here—only wiring.
+
+---
+
+=========================================================================================================================================================================
+
+Here’s how the repository layer is structured and what classes are expected in each of the files you showed.
+
+I’ll separate:
+
+- **Repository classes that belong in each file** (what should be defined there)
+- **Model classes they depend on** (which must exist in `app.models.*`, not in these repository files)
+
+---
+
+## 1. `review_repository.py`
+
+### Classes that should be in this file
+
+- **`ReviewRepository(BaseRepository[Review])`**  
+  Core repository for the `Review` entity. Responsibilities:
+
+  - CRUD:
+    - `create_review(...)`
+    - `update_review(...)`
+    - `delete_review(...)` (soft delete)
+  - Queries:
+    - `find_by_hostel(...)`
+    - `find_by_reviewer(...)`
+    - `find_by_status(...)`
+    - `find_verified_reviews(...)`
+    - `find_flagged_reviews(...)`
+    - `find_pending_approval(...)`
+    - `search_reviews(...)`
+  - Statistics:
+    - `get_hostel_rating_summary(...)`
+    - `get_rating_distribution(...)`
+    - `get_aspect_ratings(...)`
+    - `get_review_trends(...)`
+  - Lifecycle:
+    - `approve_review(...)`
+    - `reject_review(...)`
+    - `flag_review(...)`
+    - `unflag_review(...)`
+    - `verify_stay(...)`
+  - Internals:
+    - `_apply_filters(...)`
+    - `_paginate_query(...)`
+    - `_create_status_history(...)`
+
+No other repository classes belong in this file.
+
+### Model classes it depends on (must exist elsewhere)
+
+From `app.models.review`:
+
+- `Review`
+- `ReviewAspect`
+- `ReviewVerification`
+- `ReviewStatusHistory`
+
+From `app.models.enums`:
+
+- `ReviewStatus`
+
+From `app.repositories.base`:
+
+- `BaseRepository`
+- `PaginationResult`
+- (Optionally) `QueryBuilder` – imported but not used here.
+
+---
+
+## 2. `review_moderation_repository.py`
+
+### Classes that should be in this file
+
+- **`ReviewModerationRepository(BaseRepository[ReviewModerationLog])`**  
+  Repository for all moderation-related operations. Responsibilities:
+
+  - Moderation logs:
+    - `log_moderation_action(...)`
+    - `get_moderation_history(...)`
+    - `get_moderator_activity(...)`
+    - `get_moderation_statistics(...)`
+  - Flags:
+    - `create_flag(...)`
+    - `resolve_flag(...)`
+    - `get_pending_flags(...)`
+    - `get_review_flags(...)`
+    - `get_flag_statistics(...)`
+  - Moderation queue:
+    - `add_to_queue(...)`
+    - `assign_to_moderator(...)`
+    - `complete_moderation(...)`
+    - `escalate_review(...)`
+    - `get_moderation_queue(...)`
+    - `get_queue_statistics(...)`
+  - Auto‑moderation:
+    - `create_auto_moderation(...)`
+    - `get_auto_moderation(...)`
+    - `get_reviews_for_auto_approval(...)`
+    - `get_reviews_for_auto_rejection(...)`
+    - `get_auto_moderation_statistics(...)`
+  - Internals:
+    - `_paginate_query(...)`
+
+No other repository classes should be defined here.
+
+### Model classes it depends on
+
+From `app.models.review` / `app.models.review.review_moderation`:
+
+- `Review`
+- `ReviewModerationLog`
+- `ReviewFlag`
+- `ReviewModerationQueue`
+- `ReviewAutoModeration`
+
+From `app.models.enums`:
+
+- (Imported but not used here: `ReviewStatus`)
+
+From `app.repositories.base`:
+
+- `BaseRepository`
+- `PaginationResult`
+
+---
+
+## 3. `review_voting_repository.py`
+
+### Classes that should be in this file
+
+- **`ReviewVotingRepository(BaseRepository[ReviewVote])`**  
+  Repository for votes and engagement. Responsibilities:
+
+  - Voting:
+    - `cast_vote(...)`
+    - `remove_vote(...)`
+    - `get_user_vote(...)`
+    - `get_review_votes(...)`
+    - `get_vote_statistics(...)`
+  - Helpfulness scoring:
+    - `get_helpfulness_score(...)`
+    - `calculate_wilson_score(...)`
+    - `get_top_helpful_reviews(...)`
+    - `update_helpfulness_rankings(...)`
+  - Engagement:
+    - `track_view(...)`
+    - `track_read_time(...)`
+    - `track_share(...)`
+    - `track_bookmark(...)`
+    - `track_booking_influence(...)`
+    - `track_inquiry_influence(...)`
+    - `get_engagement_metrics(...)`
+    - `calculate_engagement_score(...)`
+    - `get_most_engaged_reviews(...)`
+  - Internals:
+    - `_update_helpfulness_score(...)`
+    - `_get_or_create_engagement(...)`
+
+### Model classes it depends on
+
+From `app.models.review.review_voting`:
+
+- `ReviewVote`
+- `ReviewHelpfulnessScore`
+- `ReviewEngagement`
+
+From `app.models.enums`:
+
+- `VoteType`
+
+From `app.repositories.base`:
+
+- `BaseRepository`
+
+---
+
+## 4. `review_response_repository.py`
+
+### Classes that should be in this file
+
+- **`ReviewResponseRepository(BaseRepository[ReviewResponse])`**  
+  Repository for hostel responses and templates. Responsibilities:
+
+  - Response CRUD:
+    - `create_response(...)`
+    - `update_response(...)`
+    - `approve_response(...)`
+    - `publish_response(...)`
+    - `unpublish_response(...)`
+    - `delete_response(...)`
+  - Response queries:
+    - `get_response_by_review(...)`
+    - `get_hostel_responses(...)`
+    - `get_pending_approval(...)`
+    - `get_responder_responses(...)`
+  - Response analytics:
+    - `get_response_rate(...)`
+    - `get_average_response_time(...)`
+    - `get_template_usage_statistics(...)`
+  - Templates:
+    - `create_template(...)`
+    - `update_template(...)`
+    - `get_templates(...)`
+    - `get_template(...)`
+    - `apply_template(...)`
+    - `approve_template(...)`
+    - `deactivate_template(...)`
+  - Periodic statistics:
+    - `create_statistics(...)`
+    - `get_statistics(...)`
+    - `get_latest_statistics(...)`
+  - Internals:
+    - `_increment_template_usage(...)`
+    - `_apply_response_filters(...)`
+    - `_paginate_query(...)`
+
+### Model classes it depends on
+
+From `app.models.review`:
+
+- `Review`
+
+From `app.models.review.review_response`:
+
+- `ReviewResponse`
+- `ResponseTemplate`
+- `ResponseStatistics`
+
+From `app.repositories.base`:
+
+- `BaseRepository`
+- `PaginationResult`
+
+---
+
+## 5. `review_media_repository.py`
+
+### Classes that should be in this file
+
+- **`ReviewMediaRepository(BaseRepository[ReviewMedia])`**  
+  Repository for review media (photos/videos) and processing. Responsibilities:
+
+  - Media CRUD:
+    - `create_media(...)`
+    - `update_media(...)`
+    - `delete_media(...)`
+  - Queries:
+    - `get_review_media(...)`
+    - `get_pending_moderation(...)`
+    - `get_flagged_media(...)`
+    - `get_processing_queue(...)`
+  - Processing state:
+    - `mark_processing_started(...)`
+    - `mark_processing_completed(...)`
+    - `mark_processing_failed(...)`
+    - `update_processing_step(...)`
+  - Moderation:
+    - `approve_media(...)`
+    - `reject_media(...)`
+    - `flag_media(...)`
+    - `update_content_analysis(...)`
+  - Analytics:
+    - `get_media_statistics(...)`
+    - `get_processing_statistics(...)`
+    - `increment_view_count(...)`
+  - Internals:
+    - `_create_processing_log(...)`
+    - `_get_processing_log(...)`
+    - `_paginate_query(...)`
+
+### Model classes it depends on
+
+From `app.models.review.review_media`:
+
+- `ReviewMedia`
+- `ReviewMediaProcessing`
+
+From `app.repositories.base`:
+
+- `BaseRepository`
+- `PaginationResult`
+
+---
+
+## 6. `review_analytics_repository.py`
+
+### Classes that should be in this file
+
+- **`ReviewAnalyticsRepository(BaseRepository[ReviewAnalyticsSummary])`**  
+  Repository for computed analytics objects. Responsibilities:
+
+  - Analytics summary:
+    - `calculate_analytics_summary(...)`
+    - `get_analytics_summary(...)`
+  - Rating distribution:
+    - `calculate_rating_distribution(...)`
+    - `get_rating_distribution(...)`
+  - Trends:
+    - `calculate_review_trend(...)`
+    - `get_trend_history(...)`
+  - Monthly ratings:
+    - `calculate_monthly_rating(...)`
+    - `get_monthly_ratings(...)`
+  - Sentiment:
+    - `calculate_sentiment_analysis(...)`
+    - `get_sentiment_analysis(...)`
+  - Aspect ratings:
+    - `calculate_aspect_ratings(...)`
+    - `_calculate_single_aspect_rating(...)`
+    - `get_aspect_ratings(...)`
+  - Competitor comparison:
+    - `calculate_competitor_comparison(...)`
+    - `get_competitor_comparison(...)`
+  - Bulk refresh:
+    - `refresh_all_analytics(...)`
+
+### Model classes it depends on
+
+From `app.models.review`:
+
+- `Review`
+
+From `app.models.review.review_analytics`:
+
+- `ReviewAnalyticsSummary`
+- `RatingDistribution`
+- `ReviewTrend`
+- `MonthlyRating`
+- `SentimentAnalysis`
+- `AspectRating`
+- `CompetitorComparison`
+
+From `app.repositories.base`:
+
+- `BaseRepository`
+
+---
+
+## 7. `review_aggregate_repository.py`
+
+### Classes that should be in this file
+
+- **`ReviewAggregateRepository(BaseRepository[Review])`**  
+  Repository for multi-entity, aggregated queries. Responsibilities:
+
+  - Dashboard metrics:
+    - `get_hostel_dashboard_metrics(...)`
+  - Review performance:
+    - `get_top_performing_reviews(...)`
+    - `get_review_performance_over_time(...)`
+  - Reviewer behavior:
+    - `get_reviewer_insights(...)`
+  - Content themes:
+    - `get_common_themes(...)`
+  - Comparative analysis:
+    - `compare_time_periods(...)`
+  - Export:
+    - `get_review_export_data(...)`
+
+Only this repository class belongs here.
+
+### Model classes it depends on
+
+From `app.models.review`:
+
+- `Review`
+
+From `app.models.review.review_response`:
+
+- `ReviewResponse`
+
+From `app.models.review.review_voting`:
+
+- `ReviewVote`
+- `ReviewHelpfulnessScore`
+
+From `app.models.review.review_media`:
+
+- `ReviewMedia` (imported but not used in current code)
+
+From `app.models.review.review_moderation`:
+
+- `ReviewModerationQueue`
+
+From `app.repositories.base`:
+
+- `BaseRepository`
+
+---
+
+## 8. `__init__.py` in `app/repositories/review`
+
+### What should be in this file
+
+No new classes here. It should only:
+
+- Import and re‑export repository classes:
+
+  ```python
+  from app.repositories.review.review_repository import ReviewRepository
+  from app.repositories.review.review_moderation_repository import ReviewModerationRepository
+  from app.repositories.review.review_voting_repository import ReviewVotingRepository
+  from app.repositories.review.review_response_repository import ReviewResponseRepository
+  from app.repositories.review.review_media_repository import ReviewMediaRepository
+  from app.repositories.review.review_analytics_repository import ReviewAnalyticsRepository
+  from app.repositories.review.review_aggregate_repository import ReviewAggregateRepository
+
+  __all__ = [
+      'ReviewRepository',
+      'ReviewModerationRepository',
+      'ReviewVotingRepository',
+      'ReviewResponseRepository',
+      'ReviewMediaRepository',
+      'ReviewAnalyticsRepository',
+      'ReviewAggregateRepository',
+  ]
+  ```
+
+==========================================================================================================================================================================
+
+
+Here’s the clean mental model for what *should* live in each of these repository files, based on the code you shared and good separation‑of‑concerns.
+
+---
+
+## 1. `referral_repository.py`
+
+**Class:** `ReferralRepository(BaseRepository[Referral])`
+
+**Purpose:** All data access and business operations centered on a single referral record (one row in `Referral`), plus referral‑level analytics.
+
+**Responsibilities:**
+
+- CRUD on `Referral`
+  - `create_referral`
+  - `get_referral_by_id`
+  - `update_referral`
+
+- Lookup / listing by various dimensions:
+  - `find_by_referrer`
+  - `find_by_referee_email`
+  - `find_by_referee_phone`
+  - `find_by_referee_user`
+  - `find_by_code`
+  - `find_by_program`
+
+- Conversion lifecycle:
+  - `mark_as_converted`
+  - `link_referee_user`
+
+- Status lifecycle:
+  - `update_status`
+  - `cancel_referral`
+  - `expire_old_referrals`
+
+- Reward status flags (on the referral itself, not the reward table):
+  - `update_referrer_reward_status`
+  - `update_referee_reward_status`
+
+- Referral‑level analytics:
+  - `get_referral_statistics`
+  - `get_conversion_funnel`
+  - `get_top_referrers`
+  - `get_referral_sources_breakdown`
+
+- “Pending action” queues:
+  - `get_pending_rewards`      (referrals where reward statuses are pending)
+  - `get_pending_conversions`  (old PENDING referrals)
+
+- Search:
+  - `search_referrals`
+
+Nothing else needs to be in this file; all of that correctly belongs to a `ReferralRepository`.
+
+---
+
+## 2. `referral_code_repository.py`
+
+**Class:** `ReferralCodeRepository(BaseRepository[ReferralCode])`
+
+**Purpose:** All operations around *referral codes* as entities (creation, activation, usage counters, validity, and code‑level analytics).
+
+**Responsibilities:**
+
+- CRUD on `ReferralCode`
+  - `create_referral_code`
+  - `get_code_by_id`
+  - `get_by_code`
+  - `update_code`
+
+- Lookup / listing:
+  - `find_by_user`
+  - `find_by_program`
+  - `find_active_codes`
+  - `find_expiring_codes`
+  - `find_exhausted_codes`
+
+- Validation / availability:
+  - `validate_code`
+  - `check_code_availability`
+
+- Usage & engagement tracking:
+  - `increment_usage`
+  - `increment_shares`
+  - `increment_clicks`
+  - `increment_registrations`
+  - `increment_bookings`
+  - `track_channel_usage`
+
+- Code state management:
+  - `activate_code`
+  - `deactivate_code`
+  - `extend_expiry`
+  - `increase_max_uses`
+  - `expire_old_codes`
+
+- Code‑level analytics:
+  - `get_code_statistics`
+  - `get_user_code_performance`
+  - `get_top_performing_codes`
+  - `get_channel_breakdown`
+
+- Simple “recommendation” helpers:
+  - `get_recommended_codes_for_user`
+  - `suggest_code_optimization`
+
+- Search:
+  - `search_codes`
+
+Again, a single class here is correct; all code‑centric responsibilities belong in this repository.
+
+---
+
+## 3. `referral_program_repository.py`
+
+**Class:** `ReferralProgramRepository(BaseRepository[ReferralProgram])`
+
+**Purpose:** Managing *referral programs* as long‑lived configurations/policies: lifecycle, eligibility, program‑level stats.
+
+**Responsibilities:**
+
+- CRUD on `ReferralProgram`
+  - `create_program`
+  - `get_program_by_id`
+  - `get_by_name`
+  - `get_by_code`
+  - `update_program`
+
+- Lookup:
+  - `find_active_programs`
+  - `find_by_type`
+  - `find_expiring_programs`
+  - `find_upcoming_programs`
+
+- Eligibility rules:
+  - `check_user_eligibility`       (by user role)
+  - `check_referral_limit`         (max referrals per user)
+  - `validate_booking_eligibility` (booking amount / stay duration)
+
+- Program lifecycle:
+  - `activate_program`
+  - `deactivate_program`
+  - `extend_program`
+
+- Program statistics counters (denormalized fields on the program model):
+  - `increment_referral_count`
+  - `increment_successful_referrals`
+  - `add_reward_amount`
+  - `recalculate_statistics`
+
+- Program‑level analytics:
+  - `get_program_statistics`
+  - `get_program_performance_comparison`
+  - `get_program_timeline_data`
+
+- Search:
+  - `search_programs`
+
+Only `ReferralProgramRepository` should be in this file, as you have it now.
+
+---
+
+## 4. `referral_reward_repository.py`
+
+**Primary Class:** `ReferralRewardRepository(BaseRepository[ReferralReward])`
+
+**Purpose:** Everything about *monetary rewards and payouts*:
+- Rewards tied to a `Referral` (for referrer/referee).
+- Cash‑out / payout requests (`RewardPayout`).
+
+This file intentionally handles *two* closely related entities:
+- `ReferralReward` (per‑referral earning entries).
+- `RewardPayout` (user cash‑out requests).
+
+You do not need a separate `RewardPayoutRepository` unless you want stricter separation.
+
+**Responsibilities:**
+
+### Rewards (`ReferralReward`)
+
+- CRUD‑like:
+  - `create_reward`
+  - `get_reward_by_id`
+
+- Lookup:
+  - `find_by_user`
+  - `find_by_referral`
+  - `find_pending_rewards`
+  - `find_approved_unpaid_rewards`
+
+- Status lifecycle:
+  - `approve_reward`
+  - `reject_reward`
+  - `mark_reward_paid`
+  - `cancel_reward`
+  - `bulk_approve_rewards`
+
+- Analytics:
+  - `get_user_reward_summary`
+  - `get_reward_statistics`
+
+### Payouts (`RewardPayout`)
+
+- Create / get:
+  - `create_payout_request`
+  - `get_payout_by_id`
+
+- Lookup:
+  - `find_payouts_by_user`
+  - `find_pending_payouts`
+
+- Payout lifecycle:
+  - `approve_payout`
+  - `process_payout`
+  - `complete_payout`
+  - `fail_payout`
+
+- Analytics:
+  - `get_payout_statistics`
+
+So: only `ReferralRewardRepository` class, but it legitimately encapsulates reward + payout concerns.
+
+If you ever want stricter layering, you could split this into:
+- `ReferralRewardRepository`
+- `RewardPayoutRepository`
+but it’s not required by the current design.
+
+---
+
+## 5. `referral_aggregate_repository.py`
+
+**Class:** `ReferralAggregateRepository`
+
+**Purpose:** Cross‑cutting, *read‑only* analytics that aggregate across multiple entities (programs, codes, referrals, rewards, payouts). This is explicitly *not* an entity repository; it’s an “analytics/reporting” repository.
+
+**Responsibilities:**
+
+- System / dashboard views:
+  - `get_system_overview`              (global stats: programs, codes, referrals, rewards)
+  - `get_performance_dashboard`        (funnel + revenue metrics)
+
+- Trend analysis:
+  - `get_referral_trends`              (daily)
+  - `get_conversion_trends`            (weekly)
+
+- Comparative analysis:
+  - `compare_programs`                 (multi‑program ROI/comparison)
+
+- User‑level insights:
+  - `get_top_referrers_leaderboard`
+  - `get_user_lifetime_value`
+
+- Financial reconciliation:
+  - `get_financial_summary`           (rewards + payouts, liabilities vs paid)
+
+No other classes belong here; this is the “BI / analytics” façade over the referral subsystem.
+
+---
+
+## 6. `__init__.py` (package initializer)
+
+**No classes here.**
+
+**Purpose:** Make the repositories easy to import from the `app.repositories.referral` package.
+
+- It re‑exports:
+  - `ReferralRepository`
+  - `ReferralCodeRepository`
+  - `ReferralProgramRepository`
+  - `ReferralRewardRepository`
+  - `ReferralAggregateRepository`
+
+So callers can do:
+
+```python
+from app.repositories.referral import (
+    ReferralRepository,
+    ReferralCodeRepository,
+    ReferralProgramRepository,
+    ReferralRewardRepository,
+    ReferralAggregateRepository,
+)
+```
+
+---
