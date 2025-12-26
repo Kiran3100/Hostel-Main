@@ -1,34 +1,52 @@
 """
 Maintenance services package.
 
-Provides services for:
+Provides comprehensive services for maintenance management including:
 
-- Requests:
-  - MaintenanceRequestService
+- **Requests**: MaintenanceRequestService
+  - Request lifecycle management
+  - Emergency request handling
+  - Request tracking and status updates
 
-- Approvals:
-  - MaintenanceApprovalService
+- **Approvals**: MaintenanceApprovalService
+  - Multi-level approval workflows
+  - Threshold-based routing
+  - Approval delegation
 
-- Assignments:
-  - MaintenanceAssignmentService
+- **Assignments**: MaintenanceAssignmentService
+  - Staff and vendor assignments
+  - Workload balancing
+  - Assignment history tracking
 
-- Completion & QC:
-  - MaintenanceCompletionService
+- **Completion**: MaintenanceCompletionService
+  - Work completion documentation
+  - Quality checks and inspections
+  - Completion certificates
 
-- Costs & Budgets:
-  - MaintenanceCostService
+- **Costs**: MaintenanceCostService
+  - Cost tracking and budgeting
+  - Expense reporting
+  - Budget compliance monitoring
 
-- Scheduling:
-  - MaintenanceScheduleService
+- **Schedules**: MaintenanceScheduleService
+  - Preventive maintenance scheduling
+  - Schedule execution tracking
+  - Compliance reporting
 
-- Vendors:
-  - MaintenanceVendorService
+- **Vendors**: MaintenanceVendorService
+  - Vendor management
+  - Contract tracking
+  - Performance reviews
 
-- Analytics:
-  - MaintenanceAnalyticsService
+- **Analytics**: MaintenanceAnalyticsService
+  - Comprehensive analytics and KPIs
+  - Performance metrics
+  - Category and vendor analytics
 
-- Predictive:
-  - PredictiveMaintenanceService
+- **Predictive**: PredictiveMaintenanceService
+  - Risk assessment
+  - Failure prediction
+  - Preventive action recommendations
 """
 
 from .maintenance_analytics_service import MaintenanceAnalyticsService
@@ -52,3 +70,5 @@ __all__ = [
     "MaintenanceVendorService",
     "PredictiveMaintenanceService",
 ]
+
+__version__ = "1.0.0"
