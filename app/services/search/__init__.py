@@ -1,25 +1,32 @@
 """
 Search services package.
 
-Provides services for:
+Provides comprehensive services for:
 
-- Core search:
-  - SearchService
+Core search:
+- SearchService: Orchestrates basic, advanced, and nearby searches
 
-- Autocomplete:
-  - SearchAutocompleteService
+Autocomplete:
+- SearchAutocompleteService: Provides typeahead suggestions
 
-- Analytics:
-  - SearchAnalyticsService
+Analytics:
+- SearchAnalyticsService: Generates search behavior analytics
 
-- Indexing:
-  - SearchIndexingService
+Indexing:
+- SearchIndexingService: Manages search index operations
 
-- Optimization:
-  - SearchOptimizationService
+Optimization:
+- SearchOptimizationService: Suggests search quality improvements
 
-- Personalization:
-  - SearchPersonalizationService
+Personalization:
+- SearchPersonalizationService: Personalizes search based on visitor behavior
+
+All services are designed to be:
+- Stateless and thread-safe
+- Testable with dependency injection
+- Backend-agnostic (SQL/Elasticsearch/etc.)
+- Logging-aware with structured context
+- Error-resilient with graceful degradation
 """
 
 from .search_analytics_service import SearchAnalyticsService
@@ -37,3 +44,5 @@ __all__ = [
     "SearchOptimizationService",
     "SearchPersonalizationService",
 ]
+
+__version__ = "1.0.0"

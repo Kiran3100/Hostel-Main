@@ -1,28 +1,31 @@
 """
 Review services package.
 
-Provides services for:
+Provides comprehensive review management services with enhanced
+error handling, validation, caching, and performance optimization.
 
-- Core review CRUD + submission:
-  - ReviewService
+Services:
 
-- Moderation:
-  - ReviewModerationService
+Core Review Operations:
+- ReviewService: Main review CRUD and submission
 
-- Voting:
-  - ReviewVotingService
+Moderation:
+- ReviewModerationService: Admin moderation workflow
 
-- Owner responses:
-  - ReviewResponseService
+Voting:
+- ReviewVotingService: Helpfulness voting system
 
-- Media:
-  - ReviewMediaService
+Owner Responses:
+- ReviewResponseService: Hostel owner responses
 
-- Analytics:
-  - ReviewAnalyticsService
+Media:
+- ReviewMediaService: Review media management
 
-- Incentives:
-  - ReviewIncentiveService
+Analytics:
+- ReviewAnalyticsService: Analytics and insights
+
+Incentives:
+- ReviewIncentiveService: Reward system
 """
 
 from .review_analytics_service import ReviewAnalyticsService
@@ -42,3 +45,5 @@ __all__ = [
     "ReviewAnalyticsService",
     "ReviewIncentiveService",
 ]
+
+__version__ = "2.0.0"

@@ -1,8 +1,16 @@
 """
 Visitor services package.
 
-Provides services for visitor profiles, dashboards, favorites, preferences,
-saved searches, recommendations, conversions, and tracking.
+Provides comprehensive services for visitor profile management, dashboards,
+favorites, preferences, saved searches, recommendations, conversions, and
+behavioral tracking.
+
+All services follow consistent patterns:
+- Comprehensive error handling and logging
+- Input validation
+- Transaction management
+- Caching where appropriate
+- GDPR-compliant data handling
 """
 
 from .saved_search_service import SavedSearchService
@@ -24,3 +32,5 @@ __all__ = [
     "VisitorService",
     "VisitorTrackingService",
 ]
+
+__version__ = "1.0.0"
