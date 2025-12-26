@@ -451,4 +451,4 @@ class AdminAuthenticationService(BaseService[AdminUser, AdminUserRepository]):
             self._logger.error(
                 f"Failed to record login attempt: {str(e)}",
                 exc_info=True,
-            )
+            )                                                                    
