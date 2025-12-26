@@ -2,34 +2,27 @@
 """
 Payment services package.
 
-Provides services for:
+Provides comprehensive payment management services:
 
-- Core payments:
-  - PaymentService
+Core Services:
+- PaymentService: Core payment operations and CRUD
+- PaymentGatewayService: Gateway integration for online payments
+- PaymentLedgerService: Financial ledger and account statements
+- PaymentRefundService: Refund lifecycle management
+- PaymentScheduleService: Recurring payment schedules
+- PaymentReminderService: Payment reminder configuration and delivery
 
-- Gateway integration:
-  - PaymentGatewayService
+Support Services:
+- PaymentReconciliationService: Payment reconciliation with gateway
+- PaymentFraudService: Fraud detection and risk assessment
+- PaymentReportingService: Analytics and reporting
 
-- Ledger & statements:
-  - PaymentLedgerService
-
-- Refunds:
-  - PaymentRefundService
-
-- Reminders:
-  - PaymentReminderService
-
-- Schedules:
-  - PaymentScheduleService
-
-- Reconciliation:
-  - PaymentReconciliationService
-
-- Fraud detection:
-  - PaymentFraudService
-
-- Reporting & analytics:
-  - PaymentReportingService
+All services follow consistent patterns:
+- Dependency injection via repositories
+- Comprehensive validation
+- Logging and error handling
+- Transaction safety
+- Business rule enforcement
 """
 
 from .payment_service import PaymentService
@@ -43,14 +36,19 @@ from .payment_fraud_service import PaymentFraudService
 from .payment_reporting_service import PaymentReportingService
 
 __all__ = [
+    # Core services
     "PaymentService",
     "PaymentGatewayService",
     "GatewayClient",
     "PaymentLedgerService",
     "PaymentRefundService",
-    "PaymentReminderService",
     "PaymentScheduleService",
+    "PaymentReminderService",
+    # Support services
     "PaymentReconciliationService",
     "PaymentFraudService",
     "PaymentReportingService",
 ]
+
+# Version
+__version__ = "1.0.0"
