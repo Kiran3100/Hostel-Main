@@ -1,66 +1,283 @@
+"""
+Fee Calculation and Projection Endpoints
+
+This module handles all fee-related calculations including:
+- Quote generation for prospective bookings
+- Fee calculations for existing bookings
+- Revenue projections for hostels
+"""
+
 from typing import Any
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
 from app.api import deps
 from app.schemas.fee_structure import (
     FeeCalculation,
     FeeProjection,
-    FeeQuoteRequest,  # Assuming a request schema for quote calculation
+    FeeQuoteRequest,
 )
 from app.services.fee_structure.fee_calculation_service import FeeCalculationService
 from app.services.fee_structure.fee_projection_service import FeeProjectionService
 
-router = APIRouter(prefix="/fee-structures/calculate", tags=["fee-structures:calculate"])
+# Router configuration with prefix and tags
+router = APIRouter(
+    prefix="/fee-structures/calculate",
+    tags=["fee-structures:calculate"]
+)
 
 
-def get_calculation_service(db: Session = Depends(deps.get_db)) -> FeeCalculationService:
+# Dependency injection for services
+def get_calculation_service(
+    db: Session = Depends(deps.get_db)
+) -> FeeCalculationService:
+    """
+    Dependency provider for FeeCalculationService.
+    
+    Args:
+        db: Database session from dependency injection
+        
+    Returns:
+        FeeCalculationService: Initialized service instance
+    """
     return FeeCalculationService(db=db)
 
 
-def get_projection_service(db: Session = Depends(deps.get_db)) -> FeeProjectionService:
+def get_projection_service(
+    db: Session = Depends(deps.get_db)
+) -> FeeProjectionService:
+    """
+    Dependency provider for FeeProjectionService.
+    
+    Args:
+        db: Database session from dependency injection
+        
+    Returns:
+        FeeProjectionService: Initialized service instance
+    """
     return FeeProjectionService(db=db)
 
 
 @router.post(
     "/quote",
     response_model=FeeCalculation,
-    summary="Calculate fee quote (without saving)",
+    status_code=status.HTTP_200_OK,
+    summary="Calculate fee quote without persisting",
+    description="""
+    Generate a fee calculation based on room type, dates, and optional discount codes.
+    This endpoint does not save the calculation to the database.
+    
+    **Use Cases:**
+    - Prospective customer inquiries
+    - Booking form price previews
+    - Marketing campaign calculations
+    """,
+    responses={
+        200: {
+            "description": "Fee calculation successful",
+            "model": FeeCalculation
+        },
+        400: {
+            "description": "Invalid request parameters"
+        },
+        404: {
+            "description": "Room type or discount code not found"
+        },
+        422: {
+            "description": "Validation error"
+        }
+    }
 )
 def calculate_quote(
     payload: FeeQuoteRequest,
-    # This might be public or require authentication depending on use case
     service: FeeCalculationService = Depends(get_calculation_service),
 ) -> Any:
     """
-    Calculate fees based on room type, dates, and optional discount code.
+    Calculate fees for a potential booking without saving to database.
+    
+    Args:
+        payload: Quote request containing room type, dates, and optional discount
+        service: Fee calculation service instance
+        
+    Returns:
+        FeeCalculation: Detailed breakdown of calculated fees
+        
+    Raises:
+        HTTPException: If calculation fails due to invalid data
     """
-    return service.calculate_quote(payload)
+    try:
+        return service.calculate_quote(payload)
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e)
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to calculate quote"
+        )
 
 
 @router.get(
     "/booking/{booking_id}",
     response_model=FeeCalculation,
-    summary="Get fee calculation for a booking",
+    status_code=status.HTTP_200_OK,
+    summary="Retrieve fee calculation for existing booking",
+    description="""
+    Fetch the complete fee breakdown for a specific booking.
+    Requires authentication and booking ownership or admin privileges.
+    """,
+    responses={
+        200: {
+            "description": "Fee calculation retrieved successfully",
+            "model": FeeCalculation
+        },
+        401: {
+            "description": "Unauthorized - Authentication required"
+        },
+        403: {
+            "description": "Forbidden - Insufficient permissions"
+        },
+        404: {
+            "description": "Booking not found"
+        }
+    }
 )
 def get_booking_fees(
     booking_id: str,
     current_user=Depends(deps.get_current_user),
     service: FeeCalculationService = Depends(get_calculation_service),
 ) -> Any:
-    return service.get_calculations_for_booking(booking_id)
+    """
+    Get detailed fee calculation for a specific booking.
+    
+    Args:
+        booking_id: Unique identifier of the booking
+        current_user: Authenticated user from dependency injection
+        service: Fee calculation service instance
+        
+    Returns:
+        FeeCalculation: Complete fee breakdown for the booking
+        
+    Raises:
+        HTTPException: If booking not found or user lacks permission
+    """
+    try:
+        fee_calculation = service.get_calculations_for_booking(
+            booking_id=booking_id,
+            user_id=current_user.id
+        )
+        
+        if not fee_calculation:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Fee calculation not found for booking: {booking_id}"
+            )
+        
+        return fee_calculation
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to retrieve booking fees"
+        )
 
 
 @router.get(
     "/projections",
     response_model=FeeProjection,
-    summary="Get revenue projections",
+    status_code=status.HTTP_200_OK,
+    summary="Generate revenue projections for hostel",
+    description="""
+    Calculate projected revenue for a hostel over a specified time period.
+    Requires administrative privileges.
+    
+    **Features:**
+    - Configurable projection period (1-60 months)
+    - Historical data analysis
+    - Seasonal trend consideration
+    - Occupancy rate projections
+    """,
+    responses={
+        200: {
+            "description": "Projections calculated successfully",
+            "model": FeeProjection
+        },
+        401: {
+            "description": "Unauthorized - Admin access required"
+        },
+        404: {
+            "description": "Hostel not found"
+        },
+        422: {
+            "description": "Invalid query parameters"
+        }
+    }
 )
 def get_fee_projections(
-    hostel_id: str = Query(...),
-    months: int = Query(12, ge=1, le=60),
+    hostel_id: str = Query(
+        ...,
+        description="Unique identifier of the hostel",
+        min_length=1,
+        max_length=100
+    ),
+    months: int = Query(
+        default=12,
+        ge=1,
+        le=60,
+        description="Number of months to project (1-60)"
+    ),
+    include_historical: bool = Query(
+        default=True,
+        description="Include historical data in response"
+    ),
     _admin=Depends(deps.get_admin_user),
     service: FeeProjectionService = Depends(get_projection_service),
 ) -> Any:
-    return service.project_for_hostel(hostel_id=hostel_id, months=months)
+    """
+    Generate revenue projections for a specific hostel.
+    
+    Args:
+        hostel_id: Unique identifier of the hostel
+        months: Number of months to project (1-60)
+        include_historical: Whether to include historical data
+        _admin: Authenticated admin user
+        service: Fee projection service instance
+        
+    Returns:
+        FeeProjection: Detailed revenue projections with breakdowns
+        
+    Raises:
+        HTTPException: If hostel not found or projection fails
+    """
+    try:
+        projection = service.project_for_hostel(
+            hostel_id=hostel_id,
+            months=months,
+            include_historical=include_historical
+        )
+        
+        if not projection:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Hostel not found: {hostel_id}"
+            )
+        
+        return projection
+        
+    except HTTPException:
+        raise
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e)
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to generate projections"
+        )
