@@ -1,0 +1,4942 @@
+========================================================================================================================
+
+# Admin Models - Complete Class Breakdown
+
+## 1. **admin_user.py**
+
+### `AdminUser`
+- **Purpose**: Core admin entity extending base User with multi-hostel management capabilities
+- **Functions**: 
+  - `update_access()` - Update access metrics
+  - `calculate_frequency_score()` - Calculate frequency score for ranking
+
+### `AdminProfile`
+- **Purpose**: Extended admin profile with employment and personal details
+- **Functions**: Standard CRUD operations
+
+### `AdminRole`
+- **Purpose**: Role definitions with hierarchical permissions for RBAC
+- **Functions**: Standard CRUD operations
+
+### `AdminSession`
+- **Purpose**: Admin session tracking for security and audit
+- **Functions**: Standard CRUD operations
+
+---
+
+## 2. **admin_permissions.py**
+
+### `AdminPermission`
+- **Purpose**: Granular permission system for hostel-level access control
+- **Functions**: Standard CRUD operations
+
+### `PermissionGroup`
+- **Purpose**: Groups related permissions into logical categories
+- **Functions**: Standard CRUD operations
+
+### `RolePermission`
+- **Purpose**: Maps permissions to admin roles (RBAC)
+- **Functions**: Standard CRUD operations
+
+### `PermissionAudit`
+- **Purpose**: Audit trail for all permission changes
+- **Functions**: Standard CRUD operations
+
+### `PermissionTemplate`
+- **Purpose**: Predefined permission sets for quick assignment
+- **Functions**: Standard CRUD operations
+
+---
+
+## 3. **admin_hostel_assignment.py**
+
+### `AdminHostelAssignment`
+- **Purpose**: Manages admin-to-hostel relationships with comprehensive tracking
+- **Functions**: Standard CRUD operations
+
+### `AssignmentPermission`
+- **Purpose**: Specific permission overrides for individual assignments
+- **Functions**: Standard CRUD operations
+
+### `AssignmentHistory`
+- **Purpose**: Historical record of assignment changes for audit
+- **Functions**: Standard CRUD operations
+
+### `PrimaryHostelDesignation`
+- **Purpose**: Tracks changes to admin's primary hostel designation
+- **Functions**: Standard CRUD operations
+
+---
+
+## 4. **admin_override.py**
+
+### `AdminOverride`
+- **Purpose**: Tracks admin overrides of supervisor decisions with audit trails
+- **Functions**: Standard CRUD operations
+
+### `OverrideReason`
+- **Purpose**: Predefined override reasons for standardization
+- **Functions**: Standard CRUD operations
+
+### `OverrideApproval`
+- **Purpose**: Higher-level approval workflow for significant overrides
+- **Functions**: Standard CRUD operations
+
+### `OverrideImpact`
+- **Purpose**: Impact assessment and tracking for overrides
+- **Functions**: Standard CRUD operations
+
+---
+
+## 5. **hostel_context.py**
+
+### `HostelContext`
+- **Purpose**: Current hostel context for multi-hostel admin session management
+- **Functions**: 
+  - `update_activity()` - Update last accessed timestamp and session duration
+  - `refresh_stats()` - Refresh cached statistics from provided dictionary
+
+### `ContextSwitch`
+- **Purpose**: Individual context switch records with comprehensive tracking
+- **Functions**: Standard CRUD operations
+
+### `ContextPreference`
+- **Purpose**: User preferences for each hostel context
+- **Functions**: Standard CRUD operations
+
+### `ContextSnapshot`
+- **Purpose**: Captures complete state of hostel context at switch time
+- **Functions**: Standard CRUD operations
+
+---
+
+## 6. **hostel_selector.py**
+
+### `RecentHostel`
+- **Purpose**: Recently accessed hostels tracking with access patterns
+- **Functions**: 
+  - `update_access()` - Update access metrics when hostel is accessed
+  - `calculate_frequency_score()` - Calculate frequency score for ranking
+
+### `FavoriteHostel`
+- **Purpose**: Favorite hostels with customization options
+- **Functions**: Standard CRUD operations
+
+### `HostelQuickStats`
+- **Purpose**: Cached quick statistics for hostel selector fast rendering
+- **Functions**: 
+  - `refresh_stats()` - Refresh cached statistics from provided dictionary
+
+### `HostelSelectorCache`
+- **Purpose**: Pre-computed hostel selector data for instant dropdown/sidebar rendering
+- **Functions**: 
+  - `invalidate()` - Invalidate cache by setting last_updated to past
+
+---
+
+## 7. **multi_hostel_dashboard.py**
+
+### `MultiHostelDashboard`
+- **Purpose**: Aggregated dashboard data for multi-hostel admin portfolio
+- **Functions**: Standard CRUD operations
+
+### `CrossHostelMetric`
+- **Purpose**: Cross-hostel metric comparison with best/worst values
+- **Functions**: Standard CRUD operations
+
+### `HostelPerformanceRanking`
+- **Purpose**: Performance ranking for individual hostels based on composite scores
+- **Functions**: Standard CRUD operations
+
+### `DashboardWidget`
+- **Purpose**: Configurable dashboard widgets for personalized dashboards
+- **Functions**: Standard CRUD operations
+
+### `DashboardSnapshot`
+- **Purpose**: Historical dashboard snapshots for trend tracking
+- **Functions**: Standard CRUD operations
+
+---
+
+## **Summary by Use Case**
+
+### **User Management (4 classes)**
+- `AdminUser` - Core admin entity
+- `AdminProfile` - Extended profile details
+- `AdminRole` - Role definitions
+- `AdminSession` - Session tracking
+
+### **Permission System (5 classes)**
+- `AdminPermission` - Granular permissions
+- `PermissionGroup` - Permission grouping
+- `RolePermission` - Role-permission mapping
+- `PermissionAudit` - Permission change audit
+- `PermissionTemplate` - Quick permission sets
+
+### **Assignment Management (4 classes)**
+- `AdminHostelAssignment` - Admin-hostel relationships
+- `AssignmentPermission` - Assignment-specific permissions
+- `AssignmentHistory` - Assignment change history
+- `PrimaryHostelDesignation` - Primary hostel tracking
+
+### **Override Tracking (4 classes)**
+- `AdminOverride` - Override records
+- `OverrideReason` - Predefined reasons
+- `OverrideApproval` - Approval workflow
+- `OverrideImpact` - Impact assessment
+
+### **Context Management (4 classes)**
+- `HostelContext` - Current context tracking
+- `ContextSwitch` - Context switch records
+- `ContextPreference` - User preferences
+- `ContextSnapshot` - Context state snapshots
+
+### **UI Components (4 classes)**
+- `RecentHostel` - Recent access tracking
+- `FavoriteHostel` - Favorites management
+- `HostelQuickStats` - Quick stats caching
+- `HostelSelectorCache` - Selector optimization
+
+### **Dashboard Analytics (5 classes)**
+- `MultiHostelDashboard` - Portfolio dashboard
+- `CrossHostelMetric` - Cross-hostel comparisons
+- `HostelPerformanceRanking` - Performance rankings
+- `DashboardWidget` - Configurable widgets
+- `DashboardSnapshot` - Historical snapshots
+
+**Total: 30 classes across 7 files**
+
+========================================================================================================================
+# Analytics Models Complete Class Breakdown
+
+## 1. base_analytics.py
+
+### **Mixin Classes (for inheritance)**
+- **`AnalyticsMixin`** - Provides standard analytics fields (period tracking, calculation metadata, cache control)
+- **`MetricMixin`** - Adds metric storage fields (metric_value, target_value, variance, unit)
+- **`TrendMixin`** - Adds trend tracking fields (direction, percentage change, confidence)
+- **`AggregationMixin`** - Tracks aggregation details (level, method, source count)
+- **`CachedAnalyticsMixin`** - Manages cache lifecycle and invalidation
+- **`HostelScopedMixin`** - Links analytics to specific hostel or platform-wide
+- **`ComparisonMixin`** - Enables comparison with benchmarks and peers
+
+### **Base Model Class**
+- **`BaseAnalyticsModel`** - Abstract base for all analytics models with common functionality
+
+---
+
+## 2. booking_analytics.py
+
+### **Core Classes**
+- **`BookingKPI`** - Stores booking performance metrics (conversion rates, cancellation rates, lead times)
+- **`BookingTrendPoint`** - Daily booking trend data for time-series analysis
+- **`BookingFunnelAnalytics`** - Conversion funnel tracking (page views → confirmed bookings)
+- **`CancellationAnalytics`** - Detailed cancellation patterns and timing analysis
+- **`BookingSourceMetrics`** - Performance metrics by booking source/channel
+- **`BookingAnalyticsSummary`** - Cached comprehensive booking analytics summary
+
+---
+
+## 3. complaint_analytics.py
+
+### **Core Classes**
+- **`ComplaintKPI`** - Complaint management KPIs (resolution times, SLA compliance)
+- **`SLAMetrics`** - Service Level Agreement compliance tracking
+- **`ComplaintTrendPoint`** - Daily complaint trend data points
+- **`CategoryBreakdown`** - Complaint analysis by category type
+- **`PriorityBreakdown`** - Complaint analysis by priority level
+- **`ComplaintDashboard`** - Cached complaint dashboard analytics
+
+---
+
+## 4. custom_reports.py
+
+### **Core Classes**
+- **`CustomReportDefinition`** - Saved report configurations for reuse
+- **`ReportSchedule`** - Automated report execution schedules
+- **`ReportExecutionHistory`** - Logs of report executions for audit
+- **`CachedReportResult`** - Cached report results for performance
+
+---
+
+## 5. dashboard_analytics.py
+
+### **Core Classes**
+- **`DashboardKPI`** - Generic KPI storage for dashboard display
+- **`TimeseriesMetric`** - Time-series data points for charts
+- **`DashboardWidget`** - Widget configurations for customizable dashboards
+- **`AlertNotification`** - System-generated alerts for dashboard
+- **`QuickStats`** - Cached snapshot metrics for immediate dashboard visibility
+- **`RoleSpecificDashboard`** - Role-based dashboard configurations
+
+---
+
+## 6. financial_analytics.py
+
+### **Revenue & Expense Classes**
+- **`RevenueBreakdown`** - Detailed revenue by source and type
+- **`ExpenseBreakdown`** - Detailed expense by category
+- **`FinancialRatios`** - Key financial ratios and metrics
+
+### **Financial Statement Classes**
+- **`ProfitAndLossStatement`** - Complete P&L with revenue, expenses, profitability
+- **`CashflowPoint`** - Single cashflow data point for time-series
+- **`CashflowSummary`** - Complete cashflow analysis and liquidity position
+
+### **Analysis Classes**
+- **`BudgetComparison`** - Budget vs actual variance analysis
+- **`TaxSummary`** - Tax-related summary for compliance
+- **`FinancialReport`** - Comprehensive financial report consolidating all metrics
+
+---
+
+## 7. occupancy_analytics.py
+
+### **Core Occupancy Classes**
+- **`OccupancyKPI`** - Occupancy performance metrics and utilization
+- **`OccupancyTrendPoint`** - Daily occupancy trend data
+- **`OccupancyByRoomType`** - Occupancy breakdown by room type
+- **`OccupancyByFloor`** - Occupancy breakdown by floor
+
+### **Forecasting Classes**
+- **`SeasonalPattern`** - Identified seasonal occupancy patterns
+- **`ForecastPoint`** - Single occupancy forecast data point
+- **`ForecastData`** - Complete occupancy forecasting with model metadata
+
+### **Summary Class**
+- **`OccupancyReport`** - Comprehensive occupancy analytics report
+
+---
+
+## 8. platform_analytics.py
+
+### **Platform-Wide Classes**
+- **`TenantMetrics`** - Individual tenant (hostel) performance metrics
+- **`PlatformMetrics`** - High-level platform metrics across all tenants
+- **`GrowthMetrics`** - Growth analysis and trends
+- **`MonthlyMetric`** - Monthly metric data points for trend analysis
+
+### **Analysis Classes**
+- **`ChurnAnalysis`** - Customer churn analysis and prediction
+- **`SystemHealthMetrics`** - Platform system health and performance
+- **`PlatformUsageAnalytics`** - Platform usage and engagement analytics
+- **`RevenueMetrics`** - Platform-wide revenue metrics and analysis
+
+---
+
+## 9. supervisor_analytics.py
+
+### **Supervisor Performance Classes**
+- **`SupervisorKPI`** - Individual supervisor performance metrics
+- **`SupervisorWorkload`** - Workload distribution and capacity tracking
+- **`SupervisorPerformanceRating`** - Multi-dimensional performance ratings
+- **`SupervisorTrendPoint`** - Performance trend data over time
+
+### **Comparison & Team Classes**
+- **`SupervisorComparison`** - Comparative analysis and ranking of supervisors
+- **`TeamAnalytics`** - Team-level supervisor analytics
+
+---
+
+## 10. visitor_analytics.py
+
+### **Visitor Journey Classes**
+- **`VisitorFunnel`** - Complete visitor acquisition and conversion funnel
+- **`TrafficSourceMetrics`** - Performance metrics by traffic source
+- **`SearchBehavior`** - Search behavior and pattern analysis
+- **`EngagementMetrics`** - Visitor interaction depth and quality
+
+### **Analysis Classes**
+- **`VisitorBehaviorAnalytics`** - Comprehensive visitor behavior analysis
+- **`ConversionPathAnalysis`** - Multi-touch visitor journey tracking
+- **`TrafficSourceAnalytics`** - Aggregated traffic source comparison
+
+---
+
+## Key Functions of Each Class Type:
+
+### **KPI Classes**
+- Store calculated performance indicators
+- Track targets and variance
+- Provide trend analysis
+
+### **Trend/Point Classes**
+- Store time-series data
+- Enable trend visualization
+- Support historical analysis
+
+### **Breakdown Classes**
+- Provide granular analysis by category
+- Support drill-down reporting
+- Identify optimization opportunities
+
+### **Summary/Report Classes**
+- Aggregate multiple metrics
+- Provide executive-level insights
+- Cache complex calculations
+
+### **Analytics Classes**
+- Perform deeper analysis
+- Generate actionable insights
+- Support strategic decision-making
+
+Each class is designed for specific analytics use cases while maintaining consistency through shared mixins and base models.
+
+========================================================================================================================
+# Complete Announcement Model Classes Overview
+
+## 1. **announcement.py** - Core Announcement Models
+
+### **Announcement**
+- **Purpose**: Main announcement entity that manages the complete lifecycle
+- **Use**: Store announcement content, status, targeting, delivery settings, and metrics
+- **Key Functions**: Track publication, approval, delivery, read counts, engagement rates
+
+### **AnnouncementAttachment** 
+- **Purpose**: File attachments for announcements
+- **Use**: Store images, documents, media files linked to announcements
+- **Key Functions**: Handle file metadata, thumbnails, display order, captions
+
+### **AnnouncementVersion**
+- **Purpose**: Version history tracking for announcements
+- **Use**: Audit trail when announcements are edited
+- **Key Functions**: Store content snapshots, track changes, enable rollback
+
+### **AnnouncementRecipient**
+- **Purpose**: Final calculated list of who should receive the announcement
+- **Use**: Track individual recipient status and engagement
+- **Key Functions**: Store targeting method, delivery status, read/acknowledgment tracking
+
+---
+
+## 2. **announcement_approval.py** - Approval Workflow Models
+
+### **AnnouncementApproval**
+- **Purpose**: Manage approval requests for announcements
+- **Use**: Track approval workflow when supervisors need admin approval
+- **Key Functions**: Handle approval status, routing to approvers, SLA tracking
+
+### **ApprovalWorkflow** 
+- **Purpose**: Configure multi-step approval processes
+- **Use**: Define approval workflows with routing rules and escalation
+- **Key Functions**: Manage approval steps, auto-approval rules, escalation timelines
+
+### **ApprovalHistory**
+- **Purpose**: Audit trail for approval actions
+- **Use**: Record every action taken during approval process
+- **Key Functions**: Track who did what when, maintain compliance records
+
+### **ApprovalRule**
+- **Purpose**: Automatic approval conditions
+- **Use**: Define when announcements can be auto-approved
+- **Key Functions**: Evaluate conditions, apply automatic approvals, reduce manual work
+
+---
+
+## 3. **announcement_delivery.py** - Multi-Channel Delivery Models
+
+### **AnnouncementDelivery**
+- **Purpose**: Track delivery to individual recipients across channels
+- **Use**: Monitor email, SMS, push, in-app delivery per student
+- **Key Functions**: Handle delivery status, retries, failure tracking, engagement metrics
+
+### **DeliveryChannel**
+- **Purpose**: Configure delivery providers and settings
+- **Use**: Manage email/SMS/push service providers per hostel
+- **Key Functions**: Handle provider configs, rate limits, health monitoring, fallback channels
+
+### **DeliveryBatch**
+- **Purpose**: Group deliveries for efficient processing
+- **Use**: Process large recipient lists in manageable batches
+- **Key Functions**: Manage batch queues, worker assignment, progress tracking
+
+### **DeliveryFailure**
+- **Purpose**: Track and analyze delivery failures
+- **Use**: Record why deliveries failed and resolution status
+- **Key Functions**: Categorize failures, track resolution, improve delivery rates
+
+### **DeliveryRetry**
+- **Purpose**: Manage retry attempts for failed deliveries
+- **Use**: Handle automatic retries with backoff strategies
+- **Key Functions**: Schedule retries, track attempts, use fallback channels
+
+---
+
+## 4. **announcement_scheduling.py** - Scheduling Models
+
+### **AnnouncementSchedule**
+- **Purpose**: Schedule one-time publication of announcements
+- **Use**: Publish announcements at specific future times
+- **Key Functions**: Handle timezone-aware scheduling, auto-expiry, execution tracking
+
+### **RecurringAnnouncement**
+- **Purpose**: Templates for automatically recurring announcements
+- **Use**: Create announcements that publish daily/weekly/monthly automatically
+- **Key Functions**: Generate announcements from templates, manage recurrence patterns
+
+### **ScheduleExecution**
+- **Purpose**: Track each execution of scheduled announcements
+- **Use**: Monitor scheduled publication attempts and results
+- **Key Functions**: Record execution status, handle retries, debugging failed schedules
+
+### **PublishQueue**
+- **Purpose**: Queue management for batch publication processing
+- **Use**: Process scheduled announcements efficiently with worker management
+- **Key Functions**: Priority queuing, worker locks, retry handling, batch processing
+
+---
+
+## 5. **announcement_targeting.py** - Audience Targeting Models
+
+### **AnnouncementTarget**
+- **Purpose**: Define who should receive announcements
+- **Use**: Configure targeting by rooms, floors, students, or criteria
+- **Key Functions**: Calculate recipients, validate targeting, estimate audience size
+
+### **TargetingRule**
+- **Purpose**: Individual rules for complex targeting logic
+- **Use**: Create conditional rules for audience selection
+- **Key Functions**: Evaluate criteria, apply inclusion/exclusion logic, priority handling
+
+### **TargetAudienceCache**
+- **Purpose**: Cache calculated recipient lists for performance
+- **Use**: Avoid recalculating large audience lists repeatedly
+- **Key Functions**: Store recipient lists, manage cache expiry, breakdown analytics
+
+### **BulkTargetingRule**
+- **Purpose**: Combine multiple targeting rules with AND/OR logic
+- **Use**: Handle complex targeting scenarios requiring multiple conditions
+- **Key Functions**: Merge rule results, apply boolean logic, final audience calculation
+
+---
+
+## 6. **announcement_tracking.py** - Engagement Tracking Models
+
+### **AnnouncementView**
+- **Purpose**: Track every time students view announcements
+- **Use**: Record detailed viewing behavior and context
+- **Key Functions**: Capture reading time, scroll depth, device info, engagement actions
+
+### **ReadReceipt**
+- **Purpose**: Confirm students have actually read announcements
+- **Use**: Distinguish between viewing and confirmed reading
+- **Key Functions**: Record completion status, reading metrics, first-read tracking
+
+### **Acknowledgment**
+- **Purpose**: Track required acknowledgments for important announcements
+- **Use**: Ensure students confirm they understand critical information
+- **Key Functions**: Handle acknowledgment deadlines, verification, action tracking
+
+### **EngagementMetric**
+- **Purpose**: Aggregated engagement statistics per announcement
+- **Use**: Analyze announcement performance and effectiveness
+- **Key Functions**: Calculate engagement scores, delivery rates, device breakdowns
+
+### **ReadingTimeAnalytic**
+- **Purpose**: Detailed reading time pattern analysis
+- **Use**: Optimize announcement length and content based on reading behavior
+- **Key Functions**: Statistical analysis, reader categorization, time distribution patterns
+
+---
+
+## Summary by Functional Area:
+
+- **Core (4 classes)**: Main announcement management and attachments
+- **Approval (4 classes)**: Workflow management for approval processes  
+- **Delivery (5 classes)**: Multi-channel delivery infrastructure
+- **Scheduling (4 classes)**: Time-based publication management
+- **Targeting (4 classes)**: Audience selection and caching
+- **Tracking (5 classes)**: Engagement and analytics measurement
+
+**Total: 26 classes** providing comprehensive announcement lifecycle management from creation through delivery to engagement analysis.
+
+========================================================================================================================
+
+# Attendance Models Structure & Class Functions
+
+## **attendance_alert.py**
+
+### **AttendanceAlert**
+- **Purpose**: Track attendance-related alerts and violations
+- **Functions**: 
+  - Store alert details (type, severity, message)
+  - Track acknowledgment and resolution status
+  - Handle escalation levels
+  - Link alerts to students and hostels
+
+### **AlertConfiguration**
+- **Purpose**: Configure alert rules and thresholds per hostel
+- **Functions**:
+  - Set attendance thresholds (low attendance, consecutive absences)
+  - Configure notification preferences
+  - Define escalation rules
+  - Manage alert suppression settings
+
+### **AlertNotification**
+- **Purpose**: Track individual alert notification deliveries
+- **Functions**:
+  - Record notification delivery status across channels
+  - Track read receipts and delivery failures
+  - Handle retry logic for failed notifications
+
+---
+
+## **attendance_policy.py**
+
+### **AttendancePolicy**
+- **Purpose**: Define hostel-specific attendance rules and requirements
+- **Functions**:
+  - Set minimum attendance percentages
+  - Configure late entry thresholds
+  - Define grace periods and notification rules
+  - Manage auto-marking settings
+
+### **PolicyViolation**
+- **Purpose**: Record instances of policy violations by students
+- **Functions**:
+  - Track violation types and severity
+  - Store attendance metrics at violation time
+  - Manage notification status to guardians/admins
+  - Handle violation resolution
+
+### **PolicyException**
+- **Purpose**: Manage temporary exemptions from attendance policies
+- **Functions**:
+  - Create temporary policy exemptions
+  - Handle approval workflow
+  - Track exception validity periods
+  - Manage revocation of exceptions
+
+---
+
+## **attendance_record.py**
+
+### **AttendanceRecord**
+- **Purpose**: Store daily attendance records for students
+- **Functions**:
+  - Record check-in/check-out times
+  - Track attendance status (present/absent/late)
+  - Store geolocation data for mobile check-ins
+  - Handle attendance corrections
+
+### **AttendanceCorrection**
+- **Purpose**: Audit trail for attendance record modifications
+- **Functions**:
+  - Store original vs corrected values
+  - Track who made corrections and when
+  - Require correction reasons for compliance
+  - Handle approval workflow for corrections
+
+### **BulkAttendanceLog**
+- **Purpose**: Track bulk attendance operations
+- **Functions**:
+  - Log bulk marking operations
+  - Track success/failure statistics
+  - Store error details for debugging
+  - Monitor execution performance
+
+---
+
+## **attendance_report.py**
+
+### **AttendanceReport**
+- **Purpose**: Store generated attendance reports with caching
+- **Functions**:
+  - Cache pre-generated reports for performance
+  - Store report metadata and file paths
+  - Track report views and access
+  - Handle different report formats (JSON, PDF, etc.)
+
+### **AttendanceSummary**
+- **Purpose**: Store aggregated attendance statistics per student
+- **Functions**:
+  - Calculate attendance percentages and metrics
+  - Track attendance streaks (present/absent)
+  - Cache calculated summaries for quick access
+  - Assess compliance with minimum requirements
+
+### **AttendanceTrend**
+- **Purpose**: Store attendance trend analysis and forecasting data
+- **Functions**:
+  - Track attendance trends over time
+  - Detect anomalies in attendance patterns
+  - Provide forecasting capabilities
+  - Support analytics and reporting dashboards
+
+---
+
+## **Summary by File Purpose**
+
+- **attendance_alert.py**: **Alert Management System**
+- **attendance_policy.py**: **Rule & Policy Engine**  
+- **attendance_record.py**: **Core Attendance Tracking**
+- **attendance_report.py**: **Analytics & Reporting Engine**
+
+Each class serves a specific function in the comprehensive attendance management workflow, from recording daily attendance to generating insights and managing policy compliance.
+
+========================================================================================================================
+
+Based on your audit model files, here's the complete breakdown of classes, their purposes, and key functions:
+
+## **1. AdminOverrideLog** (`admin_override_log.py`)
+**Purpose:** Tracks admin interventions when they override supervisor decisions
+
+**Key Functions:**
+- `validate_reason()` - Ensures override reason is at least 10 characters
+- `validate_impact_score()` - Validates impact score is 0-100
+- `is_pending_approval()` - Checks if override needs approval
+
+**Use Case:** Accountability and governance when admins overrule supervisors
+
+---
+
+## **2. AuditLog** (`audit_log.py`)
+**Purpose:** Comprehensive system-wide activity tracking for all user actions
+
+**Key Functions:**
+- `validate_action_type()` - Validates action type format
+- `validate_action_description()` - Validates description length
+- `validate_ip_address()` - IP validation
+- `validate_user_agent()` - Sanitizes user agent strings
+- `get_changed_fields()` - Returns list of changed fields
+- `to_log_message()` - Generates structured log messages
+
+**Use Case:** Complete audit trail for compliance, security, and analytics
+
+---
+
+## **3. EntityChangeLog** (⚠️ **DUPLICATE ISSUE** - appears in both files)
+
+### Version 1 (`audit_log.py`) - Basic
+**Purpose:** Simple field-level change tracking
+
+**Key Functions:**
+- `has_actual_change()` - Checks if values actually changed
+- `get_display_value()` - Safe display (masks sensitive data)
+
+### Version 2 (`entity_change_log.py`) - Advanced ⭐ **RECOMMENDED**
+**Purpose:** Detailed field-level change tracking with comprehensive features
+
+**Key Functions:**
+- `validate_field_name()` - Validates field name format
+- `validate_change_type()` - Validates change type values
+- `validate_impact_score()` - Score validation
+- `has_actual_change()` - Checks for real changes
+- `get_display_value()` - Safe display with masking
+- `invalidate()` - Marks change as rolled back
+- `mark_reviewed()` - Marks change as reviewed
+- `calculate_impact_score()` - Auto-calculates impact (0-100)
+- `get_entity_history()` - Class method to get entity history
+- `get_field_history()` - Class method for field-specific history
+- `create_change()` - Class method to create new changes
+- `to_dict()` - Converts to dictionary representation
+
+**Use Case:** Granular field-level tracking with versioning and impact assessment
+
+---
+
+## **4. EntityChangeHistory** (`entity_change_log.py`)
+**Purpose:** Snapshot-based complete entity state tracking
+
+**Key Functions:** *(Basic model, mostly data storage)*
+
+**Use Case:** Version control - stores complete entity snapshots at different points in time
+
+---
+
+## **5. SupervisorActivityLog** (`supervisor_activity_log.py`)
+**Purpose:** Tracks all supervisor activities and performance metrics
+
+**Key Functions:**
+- `validate_time_taken()` - Ensures time is reasonable (0-1440 minutes)
+- `validate_score()` - Validates quality/feedback scores (0-5)
+- `validate_gps()` - Validates GPS coordinate format
+- `is_overdue()` - Checks if follow-up tasks are overdue
+
+**Use Case:** Performance monitoring, accountability, and activity tracking for supervisors
+
+---
+
+## **🚨 CRITICAL ISSUE IDENTIFIED**
+
+You have **duplicate EntityChangeLog classes**:
+- Simple version in `audit_log.py` 
+- Advanced version in `entity_change_log.py`
+
+**RECOMMENDATION:** 
+1. **Remove** the basic EntityChangeLog from `audit_log.py`
+2. **Keep only** the advanced version in `entity_change_log.py`
+3. **Update imports** in `audit_log.py` if needed
+
+## **SUMMARY BY USE CASE:**
+
+| Class | Primary Use |
+|-------|-------------|
+| `AuditLog` | System-wide action tracking |
+| `EntityChangeLog` | Field-level change history |
+| `EntityChangeHistory` | Entity version snapshots |
+| `SupervisorActivityLog` | Supervisor performance tracking |
+| `AdminOverrideLog` | Admin intervention accountability |
+
+**All classes inherit from `BaseModel` and `TimestampMixin` for common database and timestamp functionality.**
+
+========================================================================================================================
+# Complete Authentication Models Structure
+
+## File: `otp_token.py`
+
+### 1. **OTPToken**
+- **Purpose**: Store and manage one-time passwords for email/SMS verification
+- **Use Cases**: Email verification, password reset, 2FA, login verification
+- **Key Functions**:
+  - `is_valid()` - Check if OTP is still valid and can be used
+  - `increment_attempt()` - Track verification attempts and lock after max attempts
+  - `mark_as_used()` - Mark OTP as successfully verified
+  - `check_expiration()` - Check and update expiration status
+
+### 2. **OTPTemplate**
+- **Purpose**: Store customizable message templates for OTP delivery
+- **Use Cases**: Multi-language support, different message formats for email/SMS
+- **Key Functions**: None (data storage model)
+
+### 3. **OTPDelivery**
+- **Purpose**: Track individual OTP delivery attempts per channel (email/SMS)
+- **Use Cases**: Monitor delivery success, retry failed deliveries, track provider responses
+- **Key Functions**:
+  - `mark_as_sent()` - Mark delivery as sent with provider ID
+  - `mark_as_delivered()` - Mark delivery as successfully delivered
+  - `mark_as_failed()` - Mark delivery as failed with error details
+
+### 4. **OTPThrottling**
+- **Purpose**: Prevent OTP abuse through rate limiting
+- **Use Cases**: Block spam requests, prevent brute force attacks
+- **Key Functions**:
+  - `check_rate_limit()` - Check if user/IP exceeded request limits (class method)
+
+---
+
+## File: `password_reset.py`
+
+### 1. **PasswordReset**
+- **Purpose**: Manage password reset tokens with secure generation and validation
+- **Use Cases**: "Forgot password" flow, secure password reset links
+- **Key Functions**:
+  - `is_valid()` - Check if reset token is still valid
+  - `mark_as_used()` - Mark token as used (one-time use)
+  - `check_expiration()` - Verify token hasn't expired
+
+### 2. **PasswordHistory**
+- **Purpose**: Store previous passwords to prevent reuse
+- **Use Cases**: Enforce password rotation policies, prevent password cycling
+- **Key Functions**: None (data storage model)
+
+### 3. **PasswordPolicy**
+- **Purpose**: Define password strength requirements and security policies
+- **Use Cases**: Configure password rules (length, complexity, expiration, lockout)
+- **Key Functions**: None (configuration model)
+
+### 4. **PasswordAttempt**
+- **Purpose**: Track failed password verification attempts
+- **Use Cases**: Monitor login security, implement account lockout
+- **Key Functions**:
+  - `count_recent_failures()` - Count failed attempts in time window (class method)
+
+---
+
+## File: `social_auth_token.py`
+
+### 1. **SocialAuthProvider**
+- **Purpose**: Configure OAuth providers (Google, Facebook, Apple, etc.)
+- **Use Cases**: Store OAuth credentials, enable/disable social login providers
+- **Key Functions**: None (configuration model)
+
+### 2. **SocialAuthToken**
+- **Purpose**: Store and manage OAuth access/refresh tokens
+- **Use Cases**: Maintain social login sessions, refresh expired tokens
+- **Key Functions**:
+  - `is_expired()` - Check if access token has expired
+  - `update_tokens()` - Refresh OAuth tokens with new values
+
+### 3. **SocialAuthProfile**
+- **Purpose**: Cache user profile data from OAuth providers
+- **Use Cases**: Store social profile info (name, email, avatar), sync profile updates
+- **Key Functions**:
+  - `sync_profile()` - Update cached profile data from provider
+
+### 4. **SocialAuthLink**
+- **Purpose**: Manage linking/unlinking of social accounts to user accounts
+- **Use Cases**: Track which social accounts are connected, manage primary login method
+- **Key Functions**:
+  - `unlink()` - Disconnect social account from user
+  - `relink()` - Reconnect previously unlinked social account
+
+---
+
+## File: `token_blacklist.py`
+
+### 1. **BlacklistedToken**
+- **Purpose**: Store revoked JWT tokens to prevent reuse
+- **Use Cases**: Logout functionality, forced token invalidation, security breach response
+- **Key Functions**:
+  - `is_blacklisted()` - Check if token JTI is blacklisted (class method)
+
+### 2. **TokenRevocation**
+- **Purpose**: Audit trail for token revocation events
+- **Use Cases**: Track who revoked tokens and why, bulk revocation history
+- **Key Functions**: None (audit model)
+
+### 3. **SecurityEvent**
+- **Purpose**: Log security-related events for monitoring and threat detection
+- **Use Cases**: Track suspicious activities, failed logins, unusual access patterns
+- **Key Functions**:
+  - `resolve()` - Mark security event as resolved with notes
+
+---
+
+## File: `user_session.py`
+
+### 1. **UserSession**
+- **Purpose**: Track active user sessions with device and location info
+- **Use Cases**: Multi-device session management, session timeout, security monitoring
+- **Key Functions**:
+  - `update_activity()` - Update last activity timestamp
+  - `is_expired()` - Check if session has expired
+  - `terminate()` - End the session (logout)
+
+### 2. **SessionToken**
+- **Purpose**: Store and track JWT access tokens
+- **Use Cases**: Token validation, revocation, rotation
+- **Key Functions**:
+  - `is_valid()` - Check if token is valid (not revoked/expired)
+  - `revoke()` - Invalidate the token
+
+### 3. **RefreshToken**
+- **Purpose**: Manage JWT refresh tokens with rotation for security
+- **Use Cases**: Issue new access tokens, detect token reuse attacks
+- **Key Functions**:
+  - `is_valid()` - Check if refresh token can be used
+  - `mark_as_used()` - Mark token as consumed
+  - `revoke_family()` - Revoke entire token family on security breach
+
+### 4. **LoginAttempt**
+- **Purpose**: Track all login attempts (successful and failed)
+- **Use Cases**: Brute force prevention, security analytics, suspicious activity detection
+- **Key Functions**:
+  - `count_recent_failures()` - Count failed login attempts in time window (class method)
+
+---
+
+## Summary Table
+
+| File | Classes | Primary Purpose |
+|------|---------|-----------------|
+| `otp_token.py` | 4 classes | OTP generation, delivery, and verification |
+| `password_reset.py` | 4 classes | Password reset flow and security policies |
+| `social_auth_token.py` | 4 classes | OAuth/Social login integration |
+| `token_blacklist.py` | 3 classes | Token revocation and security monitoring |
+| `user_session.py` | 4 classes | Session management and login tracking |
+
+**Total: 19 classes** across 5 files handling complete authentication infrastructure.
+========================================================================================================================
+# Complete Clarity on Base Models Structure
+
+## 1. **base_model.py** - Core Base Classes
+
+### Classes:
+
+1. **`Base`**
+   - **Type**: SQLAlchemy Declarative Base
+   - **Purpose**: Foundation for all ORM models; required by SQLAlchemy
+   - **Use**: All models inherit from this
+
+2. **`BaseModel(Base)`**
+   - **Purpose**: Abstract base with common CRUD operations
+   - **Features**: 
+     - Auto table name generation (CamelCase → snake_case)
+     - `to_dict()` - Convert model to dictionary
+     - `get_by_id()` - Fetch single record by ID
+     - `get_all()` - Fetch all records with pagination
+     - `count()` - Count total records
+     - `save()` - Save instance to database
+     - `delete()` - Hard delete from database
+     - `update()` - Update fields
+   - **Use**: Base for models that don't need timestamps
+
+3. **`TimestampModel(BaseModel)`**
+   - **Purpose**: Adds automatic timestamp tracking
+   - **Fields**: `created_at`, `updated_at`
+   - **Use**: For models needing creation/update tracking
+
+4. **`SoftDeleteModel(TimestampModel)`**
+   - **Purpose**: Enables logical deletion (data preserved)
+   - **Fields**: `is_deleted`, `deleted_at`
+   - **Methods**:
+     - `soft_delete()` - Mark as deleted
+     - `restore()` - Undelete record
+     - `get_active()` - Fetch non-deleted records
+   - **Use**: For models requiring deletion history
+
+5. **`TenantModel(SoftDeleteModel)`**
+   - **Purpose**: Multi-tenancy support (hostel isolation)
+   - **Fields**: `hostel_id`
+   - **Methods**:
+     - `get_by_hostel()` - Fetch records for specific hostel
+     - `count_by_hostel()` - Count records per hostel
+   - **Use**: For hostel-specific data isolation
+
+### Event Listeners (Functions):
+
+- **`receive_before_update()`** - Auto-update `updated_at` timestamp
+- **`receive_before_soft_delete()`** - Auto-set `deleted_at` timestamp
+
+---
+
+## 2. **enums.py** - Enumeration Classes
+
+### All Classes (29 Enums):
+
+1. **`UserRole`** - User permission levels (super_admin, admin, supervisor, student, visitor)
+2. **`Gender`** - Gender options (male, female, other, prefer_not_to_say)
+3. **`HostelStatus`** - Hostel operational state (active, inactive, suspended, under_maintenance)
+4. **`RoomStatus`** - Room availability (available, occupied, maintenance, out_of_order)
+5. **`BedStatus`** - Bed availability (available, occupied, reserved, maintenance)
+6. **`BookingStatus`** - Booking lifecycle (pending, confirmed, cancelled, completed, no_show)
+7. **`PaymentStatus`** - Payment processing state (pending, processing, completed, failed, refunded)
+8. **`PaymentType`** - Payment category (advance, monthly_rent, mess_fee, security_deposit, late_fee, utility_charge, other)
+9. **`PaymentMethod`** - Payment mode (cash, card, bank_transfer, upi, cheque, online)
+10. **`ComplaintStatus`** - Complaint resolution (open, in_progress, resolved, closed, escalated)
+11. **`ComplaintCategory`** - Complaint type (maintenance, cleanliness, food, noise, security, staff_behavior, facilities, other)
+12. **`ComplaintPriority`** - Urgency level (low, medium, high, urgent)
+13. **`MaintenanceStatus`** - Maintenance workflow (requested, assigned, in_progress, completed, cancelled, verified)
+14. **`MaintenanceCategory`** - Work type (electrical, plumbing, carpentry, painting, cleaning, hvac, appliance, other)
+15. **`AttendanceStatus`** - Presence state (present, absent, late, on_leave)
+16. **`AttendanceMode`** - Recording method (manual, qr_code, biometric, rfid)
+17. **`LeaveStatus`** - Leave approval (pending, approved, rejected, cancelled)
+18. **`LeaveType`** - Leave category (casual, sick, emergency, vacation, other)
+19. **`AnnouncementStatus`** - Announcement lifecycle (draft, pending_approval, approved, published, archived)
+20. **`AnnouncementCategory`** - Announcement type (general, emergency, event, policy, maintenance, academic)
+21. **`AnnouncementPriority`** - Announcement urgency (low, medium, high, urgent)
+22. **`NotificationStatus`** - Delivery state (pending, sent, delivered, failed, read)
+23. **`NotificationChannel`** - Delivery method (email, sms, push, in_app)
+24. **`NotificationType`** - Notification category (alert, reminder, info, warning, error)
+25. **`ReviewStatus`** - Review moderation (draft, submitted, moderated, published, rejected)
+26. **`SubscriptionStatus`** - Subscription state (active, expired, cancelled, suspended, trial)
+27. **`SubscriptionType`** - Pricing tier (basic, standard, premium, enterprise)
+28. **`ReferralStatus`** - Referral program (pending, completed, expired, cancelled)
+29. **`InquiryStatus`** - Lead tracking (new, contacted, qualified, converted, lost)
+30. **`AuditActionCategory`** - Audit log types (authentication, authorization, user_management, etc.)
+
+**Purpose**: Standardized dropdown values, ensure data consistency
+
+---
+
+## 3. **mixins.py** - Reusable Field Groups
+
+### Classes (14 Mixins):
+
+1. **`TimestampMixin`**
+   - **Fields**: `created_at`, `updated_at`
+   - **Use**: Add timestamps to any model
+
+2. **`SoftDeleteMixin`**
+   - **Fields**: `is_deleted`, `deleted_at`, `deleted_by`
+   - **Use**: Add soft delete capability
+
+3. **`UUIDMixin`**
+   - **Fields**: `id` (UUID primary key)
+   - **Use**: UUID-based primary keys instead of integers
+
+4. **`AddressMixin`**
+   - **Fields**: `address_line1`, `address_line2`, `city`, `state`, `country`, `postal_code`
+   - **Validators**: `validate_postal_code()` - Normalizes postal codes
+   - **Use**: Standardized address fields
+
+5. **`ContactMixin`**
+   - **Fields**: `phone`, `alternate_phone`, `email`
+   - **Validators**: 
+     - `validate_email()` - Email format check
+     - `validate_phone()` - Phone number normalization
+   - **Use**: Contact information fields
+
+6. **`LocationMixin`**
+   - **Fields**: `latitude`, `longitude`, `geohash`
+   - **Validators**: 
+     - `validate_latitude()` - Range check (-90 to 90)
+     - `validate_longitude()` - Range check (-180 to 180)
+   - **Use**: GPS coordinates for location-based features
+
+7. **`MediaMixin`**
+   - **Fields**: `image_url`, `thumbnail_url`, `video_url`, `document_url`
+   - **Use**: Attach media files to models
+
+8. **`EmergencyContactMixin`**
+   - **Fields**: `emergency_contact_name`, `emergency_contact_relationship`, `emergency_contact_phone`, `emergency_contact_email`
+   - **Validators**: `validate_emergency_phone()`
+   - **Use**: Emergency contact information (students, staff)
+
+9. **`AuditMixin`**
+   - **Fields**: `created_by`, `updated_by`, `ip_address`
+   - **Use**: Track who made changes and from where
+
+10. **`ApprovalMixin`**
+    - **Fields**: `approval_status`, `approved_by`, `approved_at`, `rejection_reason`
+    - **Validators**: `validate_approval_status()`
+    - **Use**: Approval workflow (leave requests, complaints)
+
+11. **`SEOMixin`**
+    - **Fields**: `meta_title`, `meta_description`, `meta_keywords`, `slug`
+    - **Validators**: `validate_slug()` - URL-friendly slug generation
+    - **Use**: Public-facing content SEO
+
+12. **`VersionMixin`**
+    - **Fields**: `version`, `is_current_version`, `version_notes`
+    - **Use**: Version control for documents/policies
+
+13. **`PriorityMixin`**
+    - **Fields**: `priority_level`, `urgency`
+    - **Validators**: `validate_priority()`
+    - **Use**: Prioritize tasks/complaints
+
+14. **`StatusMixin`**
+    - **Fields**: `status`, `status_changed_at`, `status_changed_by`
+    - **Use**: Generic status tracking with history
+
+**Purpose**: Compose models by mixing in needed functionality (DRY principle)
+
+---
+
+## 4. **types.py** - Custom Column Types
+
+### Classes (9 Custom Types):
+
+1. **`EncryptedType(TypeDecorator)`**
+   - **Purpose**: Auto-encrypt sensitive data (passwords, SSN)
+   - **Methods**:
+     - `process_bind_param()` - Encrypt before saving
+     - `process_result_value()` - Decrypt after reading
+   - **Use**: Sensitive fields requiring encryption
+
+2. **`JSONType(TypeDecorator)`**
+   - **Purpose**: Store complex JSON data with validation
+   - **Methods**: JSON serialization/deserialization
+   - **Use**: Flexible schema fields (preferences, metadata)
+
+3. **`MoneyType(TypeDecorator)`**
+   - **Purpose**: Fixed precision monetary values (2 decimals)
+   - **Methods**: Auto-rounding to 2 decimal places
+   - **Use**: All price/amount fields
+
+4. **`PhoneNumberType(TypeDecorator)`**
+   - **Purpose**: Auto-normalize phone numbers
+   - **Methods**: Strip non-numeric characters, validate length
+   - **Use**: Phone number fields
+
+5. **`EmailType(TypeDecorator)`**
+   - **Purpose**: Auto-lowercase and validate emails
+   - **Methods**: Normalize to lowercase, regex validation
+   - **Use**: Email fields
+
+6. **`URLType(TypeDecorator)`**
+   - **Purpose**: Validate URL format
+   - **Methods**: Regex validation for http/https URLs
+   - **Use**: Website/image URL fields
+
+7. **`SlugType(TypeDecorator)`**
+   - **Purpose**: Auto-generate URL-friendly slugs
+   - **Methods**: Convert to lowercase, replace spaces with hyphens
+   - **Use**: SEO-friendly URLs
+
+8. **`CoordinateType(TypeDecorator)`**
+   - **Purpose**: Validate latitude/longitude ranges
+   - **Methods**: Range validation based on coordinate type
+   - **Use**: GPS coordinate fields
+
+**Purpose**: Automatic data validation and normalization at database layer
+
+---
+
+## 5. **validators.py** - Validation Functions
+
+### Functions (13 Validators + 3 Normalizers):
+
+#### Validation Functions:
+1. **`validate_email(email: str) -> bool`** - Email format check
+2. **`validate_phone(phone: str) -> bool`** - Phone number format check (min 10 digits)
+3. **`validate_postal_code(postal_code: str, country: Optional[str]) -> bool`** - Postal code format
+4. **`validate_url(url: str) -> bool`** - URL format check
+5. **`validate_coordinate(value: Decimal, coord_type: str) -> bool`** - Lat/long range check
+6. **`validate_date_range(start_date: date, end_date: date) -> bool`** - End date after start date
+7. **`validate_amount(amount: Decimal, min_value: Decimal) -> bool`** - Non-negative amounts
+8. **`validate_percentage(value: Decimal) -> bool`** - Value between 0-100
+9. **`validate_slug(slug: str) -> bool`** - URL-friendly format check
+10. **`validate_json_structure(data: dict, required_keys: List[str]) -> bool`** - Required keys check
+
+#### Normalization Functions:
+11. **`normalize_phone(phone: str) -> str`** - Strip to digits only
+12. **`normalize_email(email: str) -> str`** - Lowercase and trim
+13. **`normalize_slug(text: str) -> str`** - Convert to URL-friendly slug
+
+**Purpose**: Reusable validation logic for business rules
+
+---
+
+## 6. **__init__.py** - Package Exports
+
+### Purpose:
+- Central import point for all base components
+- Exports 60+ classes/functions for easy importing
+- No classes defined here, only imports/exports
+
+**Use**: 
+```python
+from app.models.base import BaseModel, UserRole, validate_email
+```
+
+---
+
+## Summary Table
+
+| File | Classes | Primary Purpose |
+|------|---------|----------------|
+| `base_model.py` | 5 | Core model inheritance hierarchy |
+| `enums.py` | 30 | Standardized dropdown/status values |
+| `mixins.py` | 14 | Reusable field groups (composition) |
+| `types.py` | 8 | Custom column types with validation |
+| `validators.py` | 0 (16 functions) | Validation/normalization logic |
+| `__init__.py` | 0 (exports only) | Package interface |
+
+**Total**: 57 classes + 16 utility functions
+========================================================================================================================
+# Complete Booking Module Structure - Classes and Their Purpose
+
+## 1. booking.py - Core Booking Management
+
+### Classes:
+
+1. **Booking** (Main Entity)
+   - **Purpose**: Core booking entity managing the entire reservation lifecycle
+   - **Key Functions**:
+     - `approve()` - Approve a pending booking
+     - `reject()` - Reject a booking with reason
+     - `cancel()` - Cancel an active booking
+     - `confirm_payment()` - Mark advance payment as received
+     - `convert_to_student()` - Convert to student profile after check-in
+     - `mark_as_completed()` - Mark booking as completed
+     - `mark_as_no_show()` - Mark as no-show
+     - `set_expiry()` - Set booking expiration time
+
+2. **BookingStatusHistory**
+   - **Purpose**: Audit trail for all booking status changes
+   - **Key Functions**: Track who changed status, when, and why
+
+3. **BookingNote**
+   - **Purpose**: Internal notes and communications about bookings
+   - **Key Functions**: Store admin notes, alerts, and communication logs
+
+---
+
+## 2. booking_approval.py - Approval Workflow
+
+### Classes:
+
+1. **BookingApproval** (One-to-One with Booking)
+   - **Purpose**: Detailed approval workflow and pricing confirmation
+   - **Key Functions**:
+     - `send_approval_notification()` - Mark notification sent
+     - `calculate_advance_amount()` - Calculate advance payment required
+
+2. **RejectionRecord**
+   - **Purpose**: Store rejection details and alternative suggestions
+   - **Key Functions**:
+     - `send_rejection_notification()` - Mark rejection notification sent
+
+3. **ApprovalSettings** (Hostel-specific)
+   - **Purpose**: Configure auto-approval rules and payment policies
+   - **Key Functions**:
+     - `update_settings()` - Update approval configuration
+     - `calculate_cancellation_charge()` - Calculate charges based on timing
+
+---
+
+## 3. booking_assignment.py - Room/Bed Assignment
+
+### Classes:
+
+1. **BookingAssignment** (One-to-One with Booking)
+   - **Purpose**: Assign specific room and bed to approved bookings
+   - **Key Functions**:
+     - `deactivate()` - Deactivate current assignment
+     - `reactivate()` - Reactivate assignment
+
+2. **AssignmentHistory**
+   - **Purpose**: Track all room/bed assignment changes
+   - **Key Functions**: Audit trail for reassignments and corrections
+
+---
+
+## 4. booking_calendar.py - Calendar & Availability
+
+### Classes:
+
+1. **BookingCalendarEvent**
+   - **Purpose**: Calendar events for visualization (check-ins, check-outs, maintenance)
+   - **Key Functions**:
+     - `mark_action_required()` - Flag event requiring admin action
+     - `clear_action_required()` - Clear action flag
+
+2. **DayAvailability**
+   - **Purpose**: Daily bed availability tracking for capacity planning
+   - **Key Functions**:
+     - `calculate_availability()` - Update availability metrics
+     - `add_active_booking()` - Add booking to active list
+     - `remove_active_booking()` - Remove from active list
+
+3. **CalendarBlock**
+   - **Purpose**: Block dates for maintenance, renovation, or unavailability
+   - **Key Functions**:
+     - `deactivate()` - Deactivate block
+     - `reactivate()` - Reactivate block
+     - `mark_completed()` - Mark maintenance/work completed
+     - `send_notification()` - Notify affected guests
+
+---
+
+## 5. booking_cancellation.py - Cancellation & Refunds
+
+### Classes:
+
+1. **BookingCancellation** (One-to-One with Booking)
+   - **Purpose**: Manage cancellations and refund calculations
+   - **Key Functions**:
+     - `initiate_refund()` - Start refund process
+     - `complete_refund()` - Mark refund completed
+     - `fail_refund()` - Mark refund failed
+     - `send_cancellation_notification()` - Notify guest
+
+2. **CancellationPolicy** (Hostel-specific)
+   - **Purpose**: Define tiered cancellation charges and refund rules
+   - **Key Functions**:
+     - `calculate_cancellation_charge()` - Calculate charge based on timing
+
+3. **RefundTransaction**
+   - **Purpose**: Track individual refund transactions separately from payments
+   - **Key Functions**: Separate accounting for refunds
+
+---
+
+## 6. booking_conversion.py - Convert to Student Profile
+
+### Classes:
+
+1. **BookingConversion** (One-to-One with Booking)
+   - **Purpose**: Convert confirmed booking to active student profile
+   - **Key Functions**:
+     - `verify_documents()` - Mark documents verified
+     - `update_checklist_completion()` - Update checklist progress
+     - `mark_as_failed()` - Mark conversion failed
+
+2. **ConversionChecklist** (One-to-One with BookingConversion)
+   - **Purpose**: Validation checklist before conversion
+   - **Key Functions**:
+     - `evaluate_checklist()` - Calculate completion and validate readiness
+
+3. **ChecklistItem**
+   - **Purpose**: Individual checklist requirement
+   - **Key Functions**:
+     - `mark_completed()` - Mark item done
+     - `mark_incomplete()` - Revert completion
+
+---
+
+## 7. booking_guest.py - Guest Information
+
+### Classes:
+
+1. **BookingGuest** (One-to-One with Booking)
+   - **Purpose**: Comprehensive guest details (personal, contact, emergency)
+   - **Key Functions**:
+     - `verify_id_proof()` - Mark ID verified
+     - `update_consent()` - Update privacy consents
+
+2. **GuestDocument**
+   - **Purpose**: Store uploaded documents (ID proof, photos)
+   - **Key Functions**:
+     - `verify()` - Mark document verified
+     - `reject()` - Reject document with reason
+
+---
+
+## 8. booking_modification.py - Modify Existing Bookings
+
+### Classes:
+
+1. **BookingModification**
+   - **Purpose**: Handle requests to change dates, duration, or room type
+   - **Key Functions**:
+     - `calculate_price_impact()` - Calculate price changes
+     - `approve()` - Approve modification request
+     - `reject()` - Reject modification request
+     - `apply_modification()` - Apply approved changes
+
+2. **ModificationApprovalRecord**
+   - **Purpose**: Admin approval decision details
+   - **Key Functions**: Store approval notes and price adjustments
+
+---
+
+## 9. booking_waitlist.py - Waitlist Management
+
+### Classes:
+
+1. **BookingWaitlist**
+   - **Purpose**: Manage waitlist when hostels are fully booked
+   - **Key Functions**:
+     - `notify_availability()` - Create notification when room available
+     - `convert_to_booking()` - Convert to actual booking
+     - `cancel()` - Cancel waitlist entry
+     - `mark_expired()` - Mark as expired
+     - `update_priority()` - Change position in queue
+
+2. **WaitlistNotification**
+   - **Purpose**: Track notifications sent when rooms become available
+   - **Key Functions**:
+     - `record_response()` - Record visitor's accept/decline
+     - `mark_delivered()` - Mark notification delivered
+     - `mark_failed()` - Mark delivery failed
+
+---
+
+## Summary by Relationship Type:
+
+### One-to-One with Booking:
+- BookingGuest
+- BookingAssignment
+- BookingApproval
+- BookingCancellation
+- BookingConversion
+
+### One-to-One with Parent:
+- ConversionChecklist (with BookingConversion)
+- ModificationApprovalRecord (with BookingModification)
+
+### One-to-Many with Booking:
+- BookingStatusHistory
+- BookingNote
+- BookingModification
+
+### One-to-Many with Parent:
+- GuestDocument (with BookingGuest)
+- AssignmentHistory (with BookingAssignment)
+- ChecklistItem (with ConversionChecklist)
+- WaitlistNotification (with BookingWaitlist)
+
+### Independent/Configuration:
+- ApprovalSettings (hostel-level)
+- CancellationPolicy (hostel-level)
+- BookingCalendarEvent
+- DayAvailability
+- CalendarBlock
+- BookingWaitlist
+- RefundTransaction
+
+This structure provides complete separation of concerns while maintaining proper relationships and audit trails.
+========================================================================================================================
+# Complete Clarity: Complaint Models Classes and Functions
+
+## 1. complaint.py
+
+### Class: `Complaint`
+**Purpose**: Core complaint entity that manages the entire complaint lifecycle from creation to closure.
+
+**Key Functions**:
+- `__repr__()` - String representation
+- `age_hours` (property) - Calculate complaint age in hours
+- `time_to_resolve_hours` (property) - Calculate resolution time
+- `is_active` (property) - Check if complaint is in active state
+- `is_overdue` (property) - Check if complaint exceeded SLA deadline
+
+**Use Case**: Main complaint record with status tracking, SLA management, assignment, escalation, and resolution data.
+
+---
+
+## 2. complaint_analytics.py
+
+### Class: `ComplaintAnalyticSnapshot`
+**Purpose**: Store pre-computed complaint analytics for specific time periods (daily, weekly, monthly).
+
+**Key Functions**:
+- `__repr__()` - String representation
+- `resolution_rate` (property) - Calculate resolution rate percentage
+
+**Use Case**: Optimize dashboard performance by storing aggregated metrics instead of calculating on-the-fly.
+
+---
+
+### Class: `ComplaintCategoryMetric`
+**Purpose**: Track performance metrics for each complaint category.
+
+**Key Functions**:
+- `__repr__()` - String representation
+
+**Use Case**: Analyze which complaint categories have better/worse resolution rates and response times.
+
+---
+
+### Class: `ComplaintStaffPerformance`
+**Purpose**: Track individual staff member performance in complaint handling.
+
+**Key Functions**:
+- `__repr__()` - String representation
+- `efficiency_rating` (property) - Calculate efficiency rating based on resolution time (EXCELLENT/GOOD/AVERAGE/NEEDS_IMPROVEMENT)
+
+**Use Case**: Monitor staff workload, resolution speed, quality scores, and identify training needs.
+
+---
+
+## 3. complaint_assignment.py
+
+### Class: `ComplaintAssignment`
+**Purpose**: Maintain complete history of all complaint assignments and reassignments.
+
+**Key Functions**:
+- `__repr__()` - String representation
+- `calculate_duration()` - Calculate and update assignment duration in hours
+
+**Use Case**: Track who was assigned when, for how long, and why reassignments happened.
+
+---
+
+## 4. complaint_comment.py
+
+### Class: `ComplaintComment`
+**Purpose**: Handle comments and internal notes on complaints with threading support.
+
+**Key Functions**:
+- `__repr__()` - String representation
+- `mark_edited()` - Mark comment as edited and update edit tracking (timestamps, edit count)
+
+**Use Case**: Enable communication between staff and students, internal staff notes, and discussion threads.
+
+---
+
+## 5. complaint_escalation.py
+
+### Class: `ComplaintEscalation`
+**Purpose**: Track complaint escalation history with reasons and response times.
+
+**Key Functions**:
+- `__repr__()` - String representation
+- `calculate_resolution_time()` - Calculate and update time taken to respond to escalation
+
+**Use Case**: Maintain audit trail of escalations, track who escalated to whom, and measure escalation response.
+
+---
+
+### Class: `AutoEscalationRule`
+**Purpose**: Define automatic escalation triggers based on time, SLA, and priority.
+
+**Key Functions**:
+- `__repr__()` - String representation
+- `get_threshold_for_priority(priority)` - Get escalation threshold hours for given priority level
+
+**Use Case**: Automatically escalate complaints that aren't resolved within defined timeframes based on priority.
+
+---
+
+## 6. complaint_feedback.py
+
+### Class: `ComplaintFeedback`
+**Purpose**: Collect student feedback and satisfaction ratings after complaint resolution.
+
+**Key Functions**:
+- `__repr__()` - String representation
+- `overall_satisfaction_score` (property) - Calculate overall satisfaction score (0-100) based on ratings and boolean factors
+- `average_detailed_rating` (property) - Calculate average of detailed ratings (resolution quality, communication, professionalism)
+
+**Use Case**: Measure service quality, identify improvement areas, and track satisfaction trends.
+
+---
+
+## 7. complaint_resolution.py
+
+### Class: `ComplaintResolution`
+**Purpose**: Document how complaints were resolved with actions taken and quality validation.
+
+**Key Functions**:
+- `__repr__()` - String representation
+- `is_follow_up_overdue` (property) - Check if scheduled follow-up date has passed
+- `resolution_efficiency` (property) - Calculate efficiency rating (EXCELLENT/GOOD/AVERAGE/POOR) based on resolution time
+
+**Use Case**: Track resolution details, follow-up requirements, quality checks, and handle complaint reopening.
+
+---
+
+## Summary Table
+
+| File | Classes | Primary Purpose |
+|------|---------|----------------|
+| complaint.py | Complaint (1) | Main complaint lifecycle management |
+| complaint_analytics.py | ComplaintAnalyticSnapshot, ComplaintCategoryMetric, ComplaintStaffPerformance (3) | Performance analytics and reporting |
+| complaint_assignment.py | ComplaintAssignment (1) | Assignment history tracking |
+| complaint_comment.py | ComplaintComment (1) | Comments and discussions |
+| complaint_escalation.py | ComplaintEscalation, AutoEscalationRule (2) | Escalation workflow |
+| complaint_feedback.py | ComplaintFeedback (1) | Student satisfaction tracking |
+| complaint_resolution.py | ComplaintResolution (1) | Resolution documentation |
+
+**Total: 10 Classes**
+========================================================================================================================
+# Complete Clarity on Fee Structure Models
+
+## File 1: `fee_structure.py`
+
+### Classes:
+
+1. **FeeStructure**
+   - **Purpose**: Main pricing configuration for hostel rooms
+   - **Use**: Stores base rent, deposits, utilities, mess charges for specific room types
+   - **Key Functions**:
+     - `is_currently_effective` - Check if fee structure is active today
+     - `monthly_total_minimum` - Calculate minimum monthly cost
+     - `has_variable_charges` - Check if utilities are billed separately
+     - `is_all_inclusive` - Check if all charges included in rent
+
+2. **FeeApproval**
+   - **Purpose**: Approval workflow for fee changes
+   - **Use**: Track who approved/rejected fee structure changes and when
+   - **Key Functions**: None (data storage only)
+
+---
+
+## File 2: `charge_component.py`
+
+### Classes:
+
+1. **ChargeComponent**
+   - **Purpose**: Individual fee items that make up total charges
+   - **Use**: Break down fees into rent, deposit, electricity, water, mess, etc.
+   - **Key Functions**:
+     - `total_amount_with_tax` - Calculate amount including tax
+     - `tax_amount` - Calculate just the tax portion
+
+2. **ChargeRule**
+   - **Purpose**: Business rules for applying charges
+   - **Use**: Define conditions for discounts, surcharges, waivers, proration
+   - **Key Functions**: None (stores rule logic as JSON)
+
+3. **DiscountConfiguration**
+   - **Purpose**: Discount/offer management
+   - **Use**: Create and manage discount codes, seasonal offers, early bird discounts
+   - **Key Functions**:
+     - `is_currently_valid` - Check if discount is active and usable now
+     - `remaining_usage_count` - Check how many times discount can still be used
+
+---
+
+## File 3: `fee_calculation.py`
+
+### Classes:
+
+1. **FeeCalculation**
+   - **Purpose**: Actual fee calculation records for students/bookings
+   - **Use**: Store complete fee breakdown when student books or estimates cost
+   - **Key Functions**:
+     - `average_monthly_cost` - Calculate average cost per month
+     - `savings_percentage` - Calculate discount savings as percentage
+
+2. **FeeProjection**
+   - **Purpose**: Future revenue forecasting
+   - **Use**: Project expected revenue, occupancy, bookings for planning
+   - **Key Functions**: None (analytics data storage)
+
+---
+
+## Summary Table
+
+| Class | File | Primary Use |
+|-------|------|-------------|
+| FeeStructure | fee_structure.py | Define pricing for room types |
+| FeeApproval | fee_structure.py | Approve price changes |
+| ChargeComponent | charge_component.py | Break down individual charges |
+| ChargeRule | charge_component.py | Apply business rules to charges |
+| DiscountConfiguration | charge_component.py | Manage discounts/offers |
+| FeeCalculation | fee_calculation.py | Store actual student fee calculations |
+| FeeProjection | fee_calculation.py | Forecast future revenue |
+
+---
+
+## Typical Workflow:
+
+1. **FeeStructure** - Admin sets base prices
+2. **ChargeComponent** - System breaks down into individual charges
+3. **DiscountConfiguration** - Marketing creates discount offers
+4. **ChargeRule** - System applies business logic
+5. **FeeCalculation** - Student gets final calculated fee
+6. **FeeApproval** - Management approves new pricing
+7. **FeeProjection** - Business analyzes future trends
+========================================================================================================================
+# File Management Models - Complete Class Breakdown
+
+## 1. **file_upload.py** - Core File Upload Management
+
+### Classes:
+
+1. **FileUpload**
+   - **Purpose**: Main file metadata storage and tracking
+   - **Use**: Store file information (name, size, type, storage path), ownership, processing status, virus scan results, access tracking
+
+2. **UploadSession**
+   - **Purpose**: Manage upload sessions (direct & multipart)
+   - **Use**: Track upload progress, generate pre-signed URLs, handle upload expiration, retry management
+
+3. **FileValidation**
+   - **Purpose**: File validation results storage
+   - **Use**: Store validation checks (format, size, content), pass/fail status, extracted metadata, validation scores
+
+4. **UploadProgress**
+   - **Purpose**: Real-time upload progress tracking
+   - **Use**: Monitor bytes uploaded, calculate speed, estimate time remaining, track chunks for large files
+
+5. **FileQuota**
+   - **Purpose**: Storage quota management per user/hostel/tenant
+   - **Use**: Track storage usage vs limits, enforce quotas, trigger alerts, manage file count limits
+
+6. **MultipartUpload**
+   - **Purpose**: Manage multipart uploads for large files
+   - **Use**: Track multipart upload sessions, manage parts assembly, monitor overall progress
+
+7. **MultipartUploadPart**
+   - **Purpose**: Individual part tracking in multipart uploads
+   - **Use**: Store part URLs, track upload status per part, manage retries, verify checksums
+
+---
+
+## 2. **image_upload.py** - Image-Specific Processing
+
+### Classes:
+
+1. **ImageUpload**
+   - **Purpose**: Image-specific metadata and processing configuration
+   - **Use**: Store image dimensions, format, color info, processing settings (optimize, watermark, variants), track processing status
+
+2. **ImageVariant**
+   - **Purpose**: Store generated image variants (thumbnails, different sizes)
+   - **Use**: Track resized versions (thumbnail, small, medium, large), store URLs, dimensions, file sizes for each variant
+
+3. **ImageProcessing**
+   - **Purpose**: Image processing queue and workflow management
+   - **Use**: Queue images for processing, track processing status, manage worker assignments, handle retries, monitor progress
+
+4. **ImageOptimization**
+   - **Purpose**: Image optimization settings and results
+   - **Use**: Configure compression settings, track size reduction, measure quality scores (SSIM), store optimization metrics
+
+5. **ImageMetadata**
+   - **Purpose**: Extended EXIF and image metadata
+   - **Use**: Store camera data (make, model, settings), GPS coordinates, date taken, resolution, copyright info
+
+---
+
+## 3. **document_upload.py** - Document Management
+
+### Classes:
+
+1. **DocumentUpload**
+   - **Purpose**: Document-specific upload handling
+   - **Use**: Manage document types (ID proof, certificates), track verification status, handle OCR processing, monitor expiry dates
+
+2. **DocumentType**
+   - **Purpose**: Define document type requirements and rules
+   - **Use**: Configure validation rules per document type, set required fields, define accepted formats, manage expiry settings
+
+3. **DocumentValidation**
+   - **Purpose**: Document validation results
+   - **Use**: Store validation checks for documents, track authenticity, record pass/fail reasons, extract document metadata
+
+4. **DocumentOCR**
+   - **Purpose**: OCR processing results for documents
+   - **Use**: Store extracted text from documents, capture structured data (name, ID number, dates), track OCR confidence scores
+
+5. **DocumentVerification**
+   - **Purpose**: Document verification audit trail
+   - **Use**: Record verification decisions (approved/rejected), track verifier details, store verification notes, maintain history
+
+6. **DocumentExpiry**
+   - **Purpose**: Document expiry tracking and alerts
+   - **Use**: Monitor expiry dates, calculate days until expiry, send renewal alerts, track renewal requests
+
+---
+
+## 4. **file_metadata.py** - Rich Metadata & Access Control
+
+### Classes:
+
+1. **FileTag**
+   - **Purpose**: File tagging and categorization system
+   - **Use**: Create tags for file organization, support tag hierarchy, track tag usage, enable file searching
+
+2. **FileAccess**
+   - **Purpose**: Granular file access control
+   - **Use**: Manage permissions (view, download, edit, delete, share), set access expiration, handle access revocation
+
+3. **FileVersion**
+   - **Purpose**: File version control and history
+   - **Use**: Track file versions, store version metadata, enable rollback, manage change history
+
+4. **FileAnalytics**
+   - **Purpose**: File usage analytics and metrics
+   - **Use**: Track views/downloads, calculate popularity scores, monitor engagement, identify optimization opportunities
+
+5. **FileAccessLog**
+   - **Purpose**: Comprehensive access audit logging
+   - **Use**: Log every file access, track user activity, store IP/device info, capture geo-location, monitor performance
+
+6. **FileFavorite**
+   - **Purpose**: User favorite files management
+   - **Use**: Allow users to bookmark files, organize personal favorites, track favorite access patterns
+
+---
+
+## Summary by Functionality:
+
+| Category | Classes | Primary Function |
+|----------|---------|------------------|
+| **Core Upload** | FileUpload, UploadSession, FileValidation, UploadProgress | Handle file uploads and validation |
+| **Quota Management** | FileQuota | Enforce storage limits |
+| **Large Files** | MultipartUpload, MultipartUploadPart | Handle chunked uploads |
+| **Image Processing** | ImageUpload, ImageVariant, ImageProcessing, ImageOptimization, ImageMetadata | Process and optimize images |
+| **Document Handling** | DocumentUpload, DocumentType, DocumentValidation, DocumentOCR, DocumentVerification, DocumentExpiry | Manage documents with verification |
+| **Access & Organization** | FileTag, FileAccess, FileVersion, FileFavorite | Organize and control access |
+| **Analytics & Audit** | FileAnalytics, FileAccessLog | Track usage and maintain audit trail |
+
+**Total: 28 classes across 4 files**
+
+Each class serves a specific purpose in the comprehensive file management system, from upload to storage, processing, organization, and analytics.
+========================================================================================================================
+# Complete Clarity on Hostel Models Classes
+
+## 1. **hostel.py**
+
+### Class: `Hostel`
+**Purpose**: Core hostel entity representing a hostel property in the system
+**Use**: 
+- Store basic hostel information (name, slug, description, type)
+- Manage pricing and capacity (rooms, beds, occupancy)
+- Track location and contact details
+- Handle status and visibility settings
+- Store media URLs and amenities
+- Track statistics (revenue, students, ratings)
+
+**Key Functions**:
+- `calculate_occupancy_percentage()` - Calculate current occupancy rate
+- `update_available_beds()` - Update count of available beds
+- `update_capacity_stats()` - Update all capacity-related statistics
+- `can_accommodate(required_beds)` - Check if hostel can accommodate N beds
+
+**Properties**:
+- `full_address` - Get formatted complete address
+- `is_fully_occupied` - Check if hostel is at full capacity
+- `has_availability` - Check if beds are available
+
+---
+
+## 2. **hostel_amenity.py**
+
+### Class: `HostelAmenity`
+**Purpose**: Detailed tracking of individual amenities in a hostel
+**Use**:
+- Store amenity details (name, category, description)
+- Track availability and booking status
+- Monitor condition and maintenance
+- Track capacity and usage for bookable amenities
+- Manage operating hours and location
+
+**Key Functions**:
+- `increment_views()` - Increment view count
+- `increment_clicks()` - Increment click count
+
+**Properties**:
+- `is_fully_utilized` - Check if amenity is at full capacity
+- `has_capacity` - Check if amenity has available capacity
+- `can_be_used()` - Check if amenity is available and has capacity
+
+### Class: `AmenityCategory`
+**Purpose**: Master data for standardizing amenity categories
+**Use**:
+- Define standard amenity categories (WiFi, Gym, etc.)
+- Set category properties (requires booking, chargeable)
+- Manage display order and icons
+- Define applicable media types per category
+
+### Class: `AmenityBooking`
+**Purpose**: Track bookings/reservations for amenities
+**Use**:
+- Record booking details (date, time slots, participants)
+- Track booking status (pending, confirmed, cancelled)
+- Store cancellation information
+- Link student to booked amenity
+
+---
+
+## 3. **hostel_analytics.py**
+
+### Class: `HostelAnalytic`
+**Purpose**: Comprehensive performance metrics and analytics for hostels
+**Use**:
+- Store aggregated analytics for different time periods (daily, weekly, monthly)
+- Track occupancy metrics (average, peak, lowest rates)
+- Monitor revenue metrics (total, by source, collection rate)
+- Analyze booking metrics (total, conversion rate)
+- Track student metrics (new, departed, retention)
+- Monitor complaint and maintenance metrics
+- Calculate overall performance scores
+
+**Key Functions**:
+- `calculate_performance_score()` - Calculate weighted performance score (0-100)
+
+**Properties**:
+- `revenue_growth_rate` - Revenue change vs previous period
+- `occupancy_growth_rate` - Occupancy change vs previous period
+
+### Class: `OccupancyTrend`
+**Purpose**: Daily occupancy tracking with granular details
+**Use**:
+- Store daily occupancy snapshots
+- Track check-ins and checkouts
+- Record new reservations
+- Identify weekend and holiday patterns
+- Enable trend analysis and forecasting
+
+### Class: `RevenueTrend`
+**Purpose**: Revenue tracking over time
+**Use**:
+- Store daily/monthly revenue data
+- Break down revenue by source (rent, mess, other)
+- Track collection vs pending amounts
+- Calculate per-student revenue averages
+- Enable revenue forecasting
+
+---
+
+## 4. **hostel_comparison.py**
+
+### Class: `HostelComparison`
+**Purpose**: Competitive analysis and benchmarking between hostels
+**Use**:
+- Compare hostel against competitors
+- Store comparison metrics (price, rating, occupancy rankings)
+- Calculate percentile rankings
+- Identify competitive advantages/disadvantages
+- Generate AI recommendations
+- Track comparison validity period
+
+**Properties**:
+- `is_valid` - Check if comparison is currently valid
+
+### Class: `BenchmarkData`
+**Purpose**: Industry and regional benchmark standards
+**Use**:
+- Store industry-wide benchmark metrics
+- Provide regional comparison data
+- Track average rates (occupancy, pricing, ratings)
+- Define sample size and confidence levels
+- Enable standardized comparisons
+
+### Class: `CompetitorAnalysis`
+**Purpose**: Track specific competitor performance
+**Use**:
+- Monitor individual competitor hostels
+- Compare metrics (price, rating, occupancy differences)
+- Identify competitive threats and opportunities
+- Generate recommended strategic actions
+- Prioritize competitive responses
+
+---
+
+## 5. **hostel_media.py**
+
+### Class: `HostelMedia`
+**Purpose**: Manage all media content for hostels
+**Use**:
+- Store images, videos, virtual tours, documents
+- Categorize media (exterior, interior, rooms, facilities)
+- Track file details (URL, size, dimensions, MIME type)
+- Manage display order and featured status
+- Handle moderation and approval workflow
+- Track analytics (views, clicks)
+
+**Key Functions**:
+- `increment_views()` - Increment view counter
+- `increment_clicks()` - Increment click counter
+
+**Properties**:
+- `is_image` - Check if media is image type
+- `is_video` - Check if media is video type
+- `aspect_ratio` - Calculate image/video aspect ratio
+
+### Class: `MediaCategory`
+**Purpose**: Standardize media categories
+**Use**:
+- Define standard media categories
+- Set category properties (max items, requires approval)
+- Define applicable media types per category
+- Manage display order
+
+---
+
+## 6. **hostel_policy.py**
+
+### Class: `HostelPolicy`
+**Purpose**: Manage hostel rules, regulations, and policies
+**Use**:
+- Store policy documents with version control
+- Define policy types (general, visitor, payment, conduct)
+- Set effective date ranges
+- Track policy approval and publishing
+- Monitor acknowledgment and view counts
+- Support rich content and attachments
+
+**Key Functions**:
+- `increment_views()` - Increment view count
+- `increment_acknowledgments()` - Increment acknowledgment count
+
+**Properties**:
+- `is_current` - Check if policy is currently in effect
+
+### Class: `PolicyAcknowledgment`
+**Purpose**: Track student acknowledgment of policies
+**Use**:
+- Record which students acknowledged which policies
+- Track acknowledgment timestamp and version
+- Store IP address and user agent for audit
+- Support digital signatures
+- Ensure compliance tracking
+
+### Class: `PolicyViolation`
+**Purpose**: Track and manage policy violations
+**Use**:
+- Record policy violation incidents
+- Store evidence and witness statements
+- Track severity levels (minor to critical)
+- Manage disciplinary actions and fines
+- Monitor resolution status
+- Generate violation reports
+
+---
+
+## 7. **hostel_settings.py**
+
+### Class: `HostelSettings`
+**Purpose**: Centralized operational configuration for hostels
+**Use**:
+- **Booking Settings**: Auto-approval, advance payment, duration limits
+- **Payment Settings**: Due dates, grace periods, penalties, deposits
+- **Attendance Settings**: Tracking, minimum requirements, alerts
+- **Notification Settings**: Email/SMS preferences for various events
+- **Mess Settings**: Charges, booking advance, opt-out options
+- **Security Settings**: Visitor hours, late entry, ID requirements
+- **Room Settings**: Transfer policies, auto-assignment
+- **Maintenance Settings**: SLA hours, approval thresholds
+- **Leave Settings**: Maximum days, advance notice requirements
+- **General Settings**: Timezone, currency, language
+- **Feature Flags**: Enable/disable specific features
+- **Custom Settings**: Hostel-specific configurations
+
+**Key Functions**:
+- `get_payment_reminder_days()` - Get list of reminder days before due date
+- `is_feature_enabled(feature_name)` - Check if feature is enabled
+- `get_custom_setting(key, default)` - Retrieve custom setting value
+
+---
+
+## Summary Table
+
+| File | Classes | Primary Purpose |
+|------|---------|----------------|
+| hostel.py | Hostel | Core hostel entity and management |
+| hostel_amenity.py | HostelAmenity, AmenityCategory, AmenityBooking | Amenity tracking and bookings |
+| hostel_analytics.py | HostelAnalytic, OccupancyTrend, RevenueTrend | Performance metrics and trends |
+| hostel_comparison.py | HostelComparison, BenchmarkData, CompetitorAnalysis | Competitive intelligence |
+| hostel_media.py | HostelMedia, MediaCategory | Media content management |
+| hostel_policy.py | HostelPolicy, PolicyAcknowledgment, PolicyViolation | Rules and compliance |
+| hostel_settings.py | HostelSettings | Operational configuration |
+
+**Total Classes**: 15 classes across 7 files
+========================================================================================================================
+# Complete Clarity on Inquiry Module Classes
+
+## File: `inquiry.py`
+
+### Class: `Inquiry`
+**Purpose**: Main model for tracking visitor inquiries and lead management for hostels
+
+**Key Responsibilities**:
+- Store visitor contact information (name, email, phone)
+- Track inquiry preferences (check-in date, duration, room type)
+- Manage inquiry lifecycle (status, source, priority)
+- Track assignment and contact history
+- Monitor conversion to bookings
+- Calculate lead scoring and priority
+- Track marketing attribution (UTM parameters, referrer)
+- Store device and location data
+
+**Key Properties** (Computed values):
+- `age_days` - Calculate inquiry age
+- `is_new` - Check if less than 24 hours old
+- `is_stale` - Check if older than 7 days without contact
+- `has_been_contacted` - Verify contact status
+- `is_assigned` - Check assignment status
+- `has_date_preference` - Check if check-in date specified
+- `has_duration_preference` - Check if stay duration specified
+- `has_room_preference` - Check if room type specified
+- `is_detailed_inquiry` - Check if all preferences provided
+- `urgency_level` - Determine urgency (high/medium/low)
+- `days_since_contact` - Calculate days since last contact
+- `needs_follow_up` - Check if follow-up is due
+
+**Key Methods**:
+- `calculate_priority_score()` - Calculate priority score (0-100) based on recency, completeness, engagement, and source
+
+---
+
+## File: `inquiry_follow_up.py`
+
+### Enum: `ContactMethod`
+**Purpose**: Define available contact methods for follow-ups
+
+**Values**: PHONE, EMAIL, SMS, WHATSAPP, IN_PERSON, OTHER
+
+---
+
+### Enum: `ContactOutcome`
+**Purpose**: Define possible outcomes of contact attempts
+
+**Values**: CONNECTED, NO_ANSWER, VOICEMAIL, EMAIL_SENT, EMAIL_BOUNCED, INTERESTED, NOT_INTERESTED, CALLBACK_REQUESTED, WRONG_NUMBER, DO_NOT_CONTACT
+
+---
+
+### Class: `InquiryFollowUp`
+**Purpose**: Track all communication attempts and interactions with visitors
+
+**Key Responsibilities**:
+- Record contact method and outcome
+- Store timing and duration of interactions
+- Save conversation notes and summaries
+- Schedule next follow-up dates
+- Track email engagement (opened, clicked)
+- Monitor response times
+- Assess sentiment and interest level
+- Track automated vs manual follow-ups
+- Number sequential attempts
+
+**Key Properties** (Computed values):
+- `is_recent` - Check if within 24 hours
+- `days_ago` - Calculate days since follow-up
+- `was_positive_outcome` - Check if outcome was positive
+- `was_negative_outcome` - Check if outcome was negative
+- `needs_retry` - Check if retry needed (for NO_ANSWER/VOICEMAIL with <3 attempts)
+
+**No Custom Methods** - Only properties for status checking
+
+---
+
+## Summary
+
+**Total Classes**: 3 (Inquiry, InquiryFollowUp, ContactMethod, ContactOutcome - actually 4 with enums)
+
+**Total Functions/Methods**: 1 method + 23 properties across both models
+
+**Relationships**:
+- One Inquiry → Many InquiryFollowUps (one-to-many)
+- Inquiry belongs to one Hostel
+- Both models relate to User (for assignment, contact, conversion tracking)
+========================================================================================================================
+# Complete Leave Management Models - Class Structure & Purpose
+
+## File 1: `leave_application.py`
+
+### **LeaveApplication**
+**Purpose**: Main entity for student leave requests
+**Key Functions**:
+- `is_active` - Check if leave is currently ongoing
+- `is_upcoming` - Check if leave starts in future
+- `is_past` - Check if leave has ended
+- `can_be_cancelled` - Verify if cancellation is allowed
+- `days_until_start` - Calculate days before leave begins
+- `days_remaining` - Calculate remaining leave days
+
+### **LeaveCancellation**
+**Purpose**: Track cancellation requests for approved leaves
+**Usage**: When students want to cancel their approved leave (early return)
+
+### **LeaveDocument**
+**Purpose**: Store supporting documents (medical certificates, etc.)
+**Usage**: Attach proof/evidence to leave applications
+
+### **LeaveEmergencyContact**
+**Purpose**: Emergency contact info during leave period
+**Usage**: Store where/how to reach student during leave
+
+### **LeaveStatusHistory**
+**Purpose**: Audit trail of all status changes
+**Usage**: Track complete history: pending → approved → active → completed
+
+---
+
+## File 2: `leave_approval.py`
+
+### **LeaveApproval**
+**Purpose**: Record individual approval/rejection decisions
+**Usage**: Store who approved/rejected, when, and why
+
+### **LeaveApprovalWorkflow**
+**Purpose**: Define multi-level approval process configuration
+**Usage**: Set rules like "casual leave needs warden approval, sick leave needs both warden + admin"
+
+### **LeaveApprovalStep**
+**Purpose**: Individual steps in multi-level approval
+**Usage**: Define each step: "Step 1: Warden, Step 2: Admin, Step 3: Principal"
+
+---
+
+## File 3: `leave_balance.py`
+
+### **LeaveBalance**
+**Purpose**: Track available/used leave days per student
+**Key Functions**:
+- `usage_percentage` - Calculate how much quota used
+- `is_exhausted` - Check if no leaves remaining
+- `utilization_status` - Get status: critical/high/moderate/low
+
+### **LeaveQuota**
+**Purpose**: Define leave entitlements per hostel/leave type
+**Usage**: Set rules like "Casual: 30 days/year, Sick: 60 days/year"
+
+### **LeaveUsage**
+**Purpose**: Detailed daily leave consumption tracking
+**Usage**: Analytics - track patterns, backdated applications, notice periods
+
+### **LeaveCarryForward**
+**Purpose**: Track unused leaves carried to next year
+**Usage**: If student used only 20 of 30 days, carry forward 10 to next year
+
+### **LeaveAdjustment**
+**Purpose**: Manual corrections to leave balance
+**Usage**: Admin manually adds/deducts days with audit trail
+
+---
+
+## File 4: `leave_type.py`
+
+### **LeaveTypeConfig**
+**Purpose**: Detailed configuration for each leave type (Casual, Sick, Emergency, etc.)
+**Usage**: Define all rules - max days, notice period, document requirements, approval needs
+
+### **LeavePolicy**
+**Purpose**: Store complete policy documents with versioning
+**Usage**: Official leave policy PDFs/documents students must acknowledge
+
+### **LeaveBlackoutDate**
+**Purpose**: Define dates when leaves are restricted
+**Usage**: Block leaves during exam periods, important events, etc.
+
+---
+
+## File 5: `__init__.py`
+
+### **Purpose**: Package initialization
+**Usage**: Export all classes for easy imports elsewhere in the application
+
+---
+
+# Summary by Category
+
+## **Core Leave Management** (3 classes)
+1. `LeaveApplication` - Main leave request
+2. `LeaveCancellation` - Cancel approved leaves
+3. `LeaveStatusHistory` - Track all status changes
+
+## **Supporting Documents** (2 classes)
+4. `LeaveDocument` - Attach files/certificates
+5. `LeaveEmergencyContact` - Contact info during leave
+
+## **Approval System** (3 classes)
+6. `LeaveApproval` - Individual decisions
+7. `LeaveApprovalWorkflow` - Multi-level approval config
+8. `LeaveApprovalStep` - Each step in workflow
+
+## **Balance & Quota** (5 classes)
+9. `LeaveBalance` - Current available leaves
+10. `LeaveQuota` - Entitlement configuration
+11. `LeaveUsage` - Detailed usage tracking
+12. `LeaveCarryForward` - Year-end carry forward
+13. `LeaveAdjustment` - Manual balance corrections
+
+## **Configuration** (3 classes)
+14. `LeaveTypeConfig` - Leave type rules & limits
+15. `LeavePolicy` - Policy documents
+16. `LeaveBlackoutDate` - Restricted date periods
+
+---
+
+**Total: 16 Classes across 5 files**
+
+Each class has specific database table, relationships, constraints, and business logic properties/methods for the hostel leave management system.
+========================================================================================================================
+# Complete Maintenance Module Classes Overview
+
+## 1. maintenance_request.py
+
+### **MaintenanceRequest**
+- **Purpose**: Core entity for all maintenance work orders from creation to completion
+- **Key Functions**:
+  - `update_status()` - Updates status with audit trail
+  - `assign_to_user()` - Assigns request to staff member
+- **Key Properties**:
+  - `is_completed` - Check if work is done
+  - `is_overdue` - Check if past deadline
+  - `cost_variance` - Calculate actual vs estimated cost difference
+  - `days_open` - Calculate how long request has been open
+  - `within_budget` - Check if completed within approved budget
+
+### **MaintenanceStatusHistory**
+- **Purpose**: Tracks every status change for complete audit trail
+- **Key Functions**: None (data record only)
+
+### **MaintenanceIssueType**
+- **Purpose**: Dynamic issue type definitions beyond basic enums (e.g., "Water Leak - Bathroom", "AC Not Cooling")
+- **Key Functions**: None (configuration record)
+
+---
+
+## 2. maintenance_assignment.py
+
+### **MaintenanceAssignment**
+- **Purpose**: Tracks assignment of maintenance tasks to internal staff
+- **Key Functions**:
+  - `mark_completed()` - Mark task as done with notes and hours
+  - `reassign()` - Transfer task to different staff member
+- **Key Properties**:
+  - `is_overdue` - Check if past deadline
+  - `hours_variance` - Difference between estimated and actual hours
+
+### **VendorAssignment**
+- **Purpose**: Manages outsourced maintenance work with external contractors
+- **Key Functions**: None
+- **Key Properties**:
+  - `is_overdue` - Check if work is past due date
+  - `days_delayed` - Calculate delay from estimated completion
+
+---
+
+## 3. maintenance_approval.py
+
+### **MaintenanceApproval**
+- **Purpose**: Approval workflow for maintenance requiring authorization (usually high-cost items)
+- **Key Functions**:
+  - `approve()` - Approve the request with budget and conditions
+  - `reject()` - Reject with reason and alternative suggestions
+  - `escalate()` - Escalate to higher authority
+- **Key Properties**:
+  - `is_pending` - Check if awaiting decision
+  - `is_approved` - Check if approved
+  - `is_rejected` - Check if rejected
+  - `response_time_hours` - Time taken to respond
+
+### **ApprovalThreshold**
+- **Purpose**: Configuration for approval requirements based on cost limits
+- **Key Functions**:
+  - `get_required_approval_level()` - Determines who needs to approve based on amount
+- **Key Properties**: None
+
+### **ApprovalWorkflow**
+- **Purpose**: Tracks current state of approval process
+- **Key Functions**:
+  - `update_overdue_status()` - Update if approval is overdue
+- **Key Properties**:
+  - `is_complete` - Check if all approval steps done
+
+---
+
+## 4. maintenance_completion.py
+
+### **MaintenanceCompletion**
+- **Purpose**: Comprehensive record of completed maintenance work with all details
+- **Key Functions**:
+  - `calculate_efficiency_score()` - Calculate efficiency metric
+- **Key Properties**:
+  - `total_cost_calculated` - Sum all cost components
+  - `is_within_budget` - Check if completed within approved budget
+
+### **MaintenanceMaterial**
+- **Purpose**: Individual materials used in maintenance work (for inventory and billing)
+- **Key Functions**: None
+- **Key Properties**: None
+
+### **MaintenanceQualityCheck**
+- **Purpose**: Quality inspection record with pass/fail and ratings
+- **Key Functions**: None
+- **Key Properties**:
+  - `overall_score` - Calculate average quality score
+
+### **MaintenanceCertificate**
+- **Purpose**: Formal completion certificate with signatures and warranties
+- **Key Functions**: None
+- **Key Properties**: None
+
+---
+
+## 5. maintenance_cost.py
+
+### **MaintenanceCost**
+- **Purpose**: Cost tracking with variance analysis for each maintenance request
+- **Key Functions**:
+  - `calculate_variance()` - Calculate actual vs approved cost variance
+- **Key Properties**:
+  - `cost_breakdown_total` - Sum of all cost components
+
+### **BudgetAllocation**
+- **Purpose**: Yearly maintenance budget for hostel with category breakdown
+- **Key Functions**:
+  - `update_utilization()` - Recalculate budget usage percentage
+- **Key Properties**:
+  - `is_over_budget` - Check if budget exceeded
+  - `available_budget` - Calculate remaining budget
+
+### **CategoryBudget**
+- **Purpose**: Budget allocation for specific maintenance category (e.g., Electrical, Plumbing)
+- **Key Functions**:
+  - `update_utilization()` - Recalculate category budget usage
+- **Key Properties**:
+  - `is_over_budget` - Check if category over budget
+  - `available_for_commitment` - Money available for new work
+
+### **VendorInvoice**
+- **Purpose**: Vendor invoice tracking with payment status
+- **Key Functions**:
+  - `mark_paid()` - Record payment made
+- **Key Properties**:
+  - `is_overdue` - Check if payment overdue
+  - `balance_due` - Calculate outstanding amount
+
+### **ExpenseReport**
+- **Purpose**: Aggregated expense report for time periods (monthly, quarterly, annual)
+- **Key Functions**: None
+- **Key Properties**:
+  - `completion_rate` - Percentage of requests completed
+
+---
+
+## 6. maintenance_schedule.py
+
+### **MaintenanceSchedule**
+- **Purpose**: Preventive maintenance schedule with recurrence (e.g., "AC servicing every quarter")
+- **Key Functions**:
+  - `calculate_next_due_date()` - Calculate next occurrence based on recurrence pattern
+- **Key Properties**:
+  - `is_overdue` - Check if maintenance is past due
+  - `days_until_due` - Days remaining until next service
+  - `success_rate` - Percentage of executions completed successfully
+
+### **ScheduleExecution**
+- **Purpose**: Record of individual preventive maintenance execution
+- **Key Functions**: None
+- **Key Properties**:
+  - `execution_status` - Get status (incomplete, on_time, delayed)
+
+---
+
+## 7. maintenance_vendor.py
+
+### **MaintenanceVendor**
+- **Purpose**: Master record for contractors/vendors with performance metrics
+- **Key Functions**:
+  - `update_performance_metrics()` - Recalculate all performance scores
+- **Key Properties**:
+  - `completion_rate` - Percentage of jobs completed
+  - `is_insurance_valid` - Check if liability insurance current
+  - `overall_performance_score` - Weighted performance metric
+
+### **VendorContract**
+- **Purpose**: Contract/agreement with vendor including rates and SLAs
+- **Key Functions**: None
+- **Key Properties**:
+  - `is_active` - Check if contract currently valid
+  - `is_expiring_soon` - Check if expiring within 30 days
+  - `days_remaining` - Days left in contract
+
+### **VendorPerformanceReview**
+- **Purpose**: Periodic performance evaluation of vendor work quality
+- **Key Functions**: None
+- **Key Properties**:
+  - `overall_score` - Average of all rating dimensions
+
+---
+
+## 8. maintenance_analytics.py
+
+### **MaintenanceAnalytic**
+- **Purpose**: Aggregated analytics data for dashboards and reporting (daily, monthly, yearly)
+- **Key Functions**:
+  - `calculate_efficiency_score()` - Calculate composite efficiency metric
+- **Key Properties**: None
+
+### **CategoryPerformanceMetric**
+- **Purpose**: Performance breakdown by maintenance category for targeted improvements
+- **Key Functions**: None
+- **Key Properties**:
+  - `completion_rate` - Category completion percentage
+  - `cost_per_completed` - Average cost per completed request
+
+---
+
+## Summary by Use Case:
+
+| **Use Case** | **Classes Used** |
+|--------------|------------------|
+| **Creating a maintenance request** | MaintenanceRequest, MaintenanceStatusHistory |
+| **Assigning work to staff** | MaintenanceAssignment |
+| **Outsourcing to vendor** | VendorAssignment, MaintenanceVendor |
+| **Approving high-cost work** | MaintenanceApproval, ApprovalThreshold, ApprovalWorkflow |
+| **Completing work** | MaintenanceCompletion, MaintenanceMaterial, MaintenanceQualityCheck |
+| **Tracking costs** | MaintenanceCost, VendorInvoice |
+| **Managing budgets** | BudgetAllocation, CategoryBudget |
+| **Preventive maintenance** | MaintenanceSchedule, ScheduleExecution |
+| **Vendor management** | MaintenanceVendor, VendorContract, VendorPerformanceReview |
+| **Analytics & Reporting** | MaintenanceAnalytic, CategoryPerformanceMetric, ExpenseReport |
+| **Issuing certificates** | MaintenanceCertificate |
+
+**Total Classes: 23**
+========================================================================================================================
+# Complete Mess Models Package - Class Structure & Purpose
+
+## 1. dietary_option.py
+
+### **DietaryOption**
+- **Purpose**: Hostel-level configuration for available dietary options
+- **Key Functions**:
+  - `available_menus` (property): Returns list of available menu types
+  - `special_dietary_options` (property): Returns list of special dietary options
+
+### **StudentDietaryPreference**
+- **Purpose**: Individual student's dietary preferences and restrictions
+- **Key Functions**:
+  - `dietary_tags` (property): Returns all applicable dietary tags for student
+
+### **AllergenProfile**
+- **Purpose**: Detailed allergen tracking with severity levels for students
+- **Key Functions**:
+  - `severe_allergens` (property): Returns list of severe/life-threatening allergens
+  - `all_allergens` (property): Returns complete list of all allergens
+
+### **DietaryRestriction**
+- **Purpose**: Medical/religious dietary restrictions with documentation
+- **Key Functions**:
+  - `is_active` (property): Checks if restriction is currently active based on dates
+
+### **MealCustomization**
+- **Purpose**: Student meal customization requests with approval workflow
+- **Key Functions**: None (data model only)
+
+---
+
+## 2. meal_item.py
+
+### **MealItem**
+- **Purpose**: Individual food items with complete dietary and allergen information
+- **Key Functions**:
+  - `allergen_list` (property): Returns list of allergens present
+  - `dietary_flags` (property): Returns list of dietary classifications
+
+### **Recipe**
+- **Purpose**: Recipe information with ingredients and cooking instructions
+- **Key Functions**: None (data model only)
+
+### **IngredientMaster**
+- **Purpose**: Master database of all ingredients for standardization
+- **Key Functions**: None (data model only)
+
+### **ItemCategory**
+- **Purpose**: Hierarchical categorization of menu items
+- **Key Functions**: None (data model only)
+
+### **ItemAllergen**
+- **Purpose**: Detailed allergen information for specific menu items
+- **Key Functions**: None (data model only)
+
+### **ItemPopularity**
+- **Purpose**: Popularity metrics and analytics for menu items
+- **Key Functions**:
+  - `calculate_popularity_score()`: Calculates overall popularity score based on ratings and feedback
+
+---
+
+## 3. menu_approval.py
+
+### **MenuApproval**
+- **Purpose**: Core approval tracking for individual menus
+- **Key Functions**:
+  - `days_pending` (property): Calculates days approval has been pending
+  - `time_to_approval_hours` (property): Calculates hours taken for approval
+
+### **MenuApprovalRequest**
+- **Purpose**: Detailed approval request submission with justification
+- **Key Functions**: None (data model only)
+
+### **ApprovalWorkflow**
+- **Purpose**: Complete workflow state tracking for menu approval
+- **Key Functions**:
+  - `days_pending` (property): Days workflow has been pending
+  - `completion_percentage` (property): Workflow completion percentage
+
+### **ApprovalHistory**
+- **Purpose**: Complete audit trail of all approval attempts
+- **Key Functions**: None (data model only)
+
+### **ApprovalAttempt**
+- **Purpose**: Individual approval submission record
+- **Key Functions**: None (data model only)
+
+### **ApprovalRule**
+- **Purpose**: Automated approval rules configuration
+- **Key Functions**:
+  - `success_rate` (property): Calculates rule success rate
+
+### **BulkApproval**
+- **Purpose**: Bulk approval/rejection operation tracking
+- **Key Functions**:
+  - `success_rate` (property): Calculates operation success rate
+
+---
+
+## 4. menu_feedback.py
+
+### **MenuFeedback**
+- **Purpose**: Student feedback and ratings for menus
+- **Key Functions**:
+  - `average_aspect_rating` (property): Average of all aspect ratings
+  - `helpfulness_ratio` (property): Calculates helpfulness ratio
+
+### **ItemRating**
+- **Purpose**: Aggregated ratings for individual menu items
+- **Key Functions**:
+  - `sentiment` (property): Overall sentiment based on rating
+  - `like_ratio` (property): Like to dislike ratio
+
+### **RatingsSummary**
+- **Purpose**: Comprehensive ratings summary for a menu
+- **Key Functions**:
+  - `quality_score` (property): Overall quality score 0-100
+
+### **QualityMetrics**
+- **Purpose**: Menu quality metrics and trends over time
+- **Key Functions**: None (data model only)
+
+### **SentimentAnalysis**
+- **Purpose**: NLP-based sentiment analysis of feedback comments
+- **Key Functions**: None (data model only)
+
+### **FeedbackAnalysis**
+- **Purpose**: Comprehensive feedback analysis with actionable insights
+- **Key Functions**: None (data model only)
+
+### **FeedbackComment**
+- **Purpose**: Threaded comments on feedback
+- **Key Functions**: None (data model only)
+
+### **FeedbackHelpfulness**
+- **Purpose**: Helpfulness voting for feedback quality ranking
+- **Key Functions**: None (data model only)
+
+---
+
+## 5. menu_planning.py
+
+### **MenuTemplate**
+- **Purpose**: Reusable menu patterns for recurring schedules
+- **Key Functions**:
+  - `success_rate` (property): Template success rate based on ratings
+
+### **DailyMenuPlan**
+- **Purpose**: Complete menu for all meals of a single day
+- **Key Functions**:
+  - `total_items_count` (property): Total items across all meals
+
+### **WeeklyMenuPlan**
+- **Purpose**: Organized weekly menu plan
+- **Key Functions**:
+  - `completion_percentage` (property): Plan completion percentage
+
+### **MonthlyMenuPlan**
+- **Purpose**: Comprehensive monthly menu plan
+- **Key Functions**: None (data model only)
+
+### **SpecialOccasionMenu**
+- **Purpose**: Enhanced menus for festivals and special events
+- **Key Functions**: None (data model only)
+
+### **MenuSuggestion**
+- **Purpose**: AI/system generated menu recommendations
+- **Key Functions**:
+  - `recommendation_strength` (property): Returns recommendation strength label
+
+### **MenuPlanningRule**
+- **Purpose**: Business rules for automated menu planning
+- **Key Functions**: None (data model only)
+
+### **SeasonalMenu**
+- **Purpose**: Season-specific menu configurations
+- **Key Functions**: None (data model only)
+
+---
+
+## 6. mess_menu.py
+
+### **MessMenu**
+- **Purpose**: Core daily menu entity for all meals
+- **Key Functions**:
+  - `total_items` (property): Total items across all meals
+  - `is_complete` (property): Checks if menu has all main meals
+  - `approval_status` (property): Returns approval status label
+  - `update_statistics()`: Updates denormalized statistics
+
+### **MenuCycle**
+- **Purpose**: Weekly/monthly recurring menu patterns
+- **Key Functions**: None (data model only)
+
+### **MenuVersion**
+- **Purpose**: Version history tracking for menu changes
+- **Key Functions**: None (data model only)
+
+### **MenuPublishing**
+- **Purpose**: Menu publishing workflow and distribution tracking
+- **Key Functions**:
+  - `delivery_success_rate` (property): Calculates delivery success rate
+
+### **MenuAvailability**
+- **Purpose**: Real-time menu item availability tracking
+- **Key Functions**:
+  - `mark_item_unavailable()`: Marks specific item as unavailable
+  - `update_overall_availability()`: Updates overall availability status
+
+---
+
+## 7. nutritional_info.py
+
+### **NutritionalInfo**
+- **Purpose**: Detailed nutritional data for menu items
+- **Key Functions**:
+  - `macronutrient_ratio` (property): Protein:carbs:fat ratio
+  - `is_high_protein` (property): Checks if high protein (>20g)
+  - `is_low_carb` (property): Checks if low carb (<10g)
+  - `is_low_fat` (property): Checks if low fat (<3g)
+  - `is_low_sodium` (property): Checks if low sodium (<140mg)
+  - `is_high_fiber` (property): Checks if high fiber (>5g)
+
+### **NutrientProfile**
+- **Purpose**: Nutrient profile with daily value percentages
+- **Key Functions**: None (data model only)
+
+### **DietaryValue**
+- **Purpose**: Suitability tracking for specific diet types
+- **Key Functions**: None (data model only)
+
+### **NutritionalReport**
+- **Purpose**: Aggregated nutritional reports for menus
+- **Key Functions**: None (data model only)
+
+---
+
+## Summary by File
+
+| File | Classes | Total Functions/Properties |
+|------|---------|---------------------------|
+| dietary_option.py | 5 | 3 |
+| meal_item.py | 6 | 3 |
+| menu_approval.py | 7 | 4 |
+| menu_feedback.py | 8 | 3 |
+| menu_planning.py | 8 | 3 |
+| mess_menu.py | 5 | 6 |
+| nutritional_info.py | 4 | 6 |
+| **TOTAL** | **43 classes** | **28 functions** |
+
+---
+
+## Key Design Patterns Used
+
+1. **Properties**: Used for calculated/derived values (don't store in DB)
+2. **Methods**: Used for business logic and data manipulation
+3. **SQLAlchemy Events**: Automatic behavior triggers (in mess_menu.py)
+4. **Relationships**: Connect related entities bidirectionally
+5. **Constraints**: Enforce data integrity at database level
+========================================================================================================================
+# Complete Notification Models Structure - Classes & Functions
+
+## 1. **device_token.py**
+
+### **DeviceToken**
+- **Purpose**: Stores device information for push notifications (iOS, Android, Web)
+- **Key Functions**:
+  - `increment_badge(amount)` - Increase app badge count
+  - `decrement_badge(amount)` - Decrease app badge count
+  - `reset_badge()` - Set badge to 0
+  - `mark_invalid()` - Mark token as invalid when device uninstalls app
+
+---
+
+## 2. **email_notification.py**
+
+### **EmailNotification**
+- **Purpose**: Email-specific details extending base Notification (one-to-one relationship)
+- **Key Functions**: None (data model only)
+- **Tracks**: Opens, clicks, bounces, spam reports, CC/BCC, attachments
+
+### **EmailAttachment**
+- **Purpose**: Store email attachment metadata
+- **Key Functions**: None (data model only)
+- **Stores**: filename, URL, MIME type, size, download count
+
+### **EmailClickEvent**
+- **Purpose**: Track individual link clicks in emails for analytics
+- **Key Functions**: None (data model only)
+- **Stores**: URL clicked, timestamp, IP, user agent, device type
+
+---
+
+## 3. **notification.py** (CORE)
+
+### **Notification**
+- **Purpose**: Main unified notification table for all channels (email/SMS/push/in-app)
+- **Key Properties**:
+  - `is_sent` - Check if notification sent
+  - `is_pending` - Check if waiting for delivery
+  - `is_read` - Check if user read it
+  - `can_retry` - Check if retry allowed
+  - `delivery_duration_seconds` - Calculate delivery time
+- **Key Functions**: None (properties only)
+
+### **NotificationStatusHistory**
+- **Purpose**: Audit trail for every status change of a notification
+- **Key Functions**: None (data model only)
+- **Tracks**: from_status → to_status, who changed it, when, why
+
+### **NotificationReadReceipt**
+- **Purpose**: Track when and how users read notifications
+- **Key Functions**: None (data model only)
+- **Stores**: read_at, device, IP, user agent, interaction duration
+
+---
+
+## 4. **notification_preferences.py**
+
+### **NotificationPreference**
+- **Purpose**: User's global notification settings (one per user)
+- **Key Functions**: None (data model only)
+- **Controls**: 
+  - Channel toggles (email, SMS, push, in-app)
+  - Category preferences (payment, booking, complaints, etc.)
+  - Quiet hours
+  - Digest settings (daily/weekly)
+  - Language and timezone
+
+### **ChannelPreference**
+- **Purpose**: Fine-grained preferences per channel (email/SMS/push)
+- **Key Functions**: None (data model only)
+- **Stores**: Channel-specific settings and category preferences in JSON
+
+### **UnsubscribeToken**
+- **Purpose**: Secure one-click unsubscribe tokens for emails
+- **Key Functions**: None (data model only)
+- **Tracks**: token, unsubscribe type, usage, reason, IP
+
+---
+
+## 5. **notification_queue.py**
+
+### **NotificationQueue**
+- **Purpose**: Queue management for processing notifications with priority
+- **Key Properties**:
+  - `age_minutes` - How long in queue
+  - `can_retry` - Check if retryable
+- **Key Functions**: None (properties only)
+- **Manages**: Priority, scheduling, retry logic, worker assignment
+
+### **NotificationBatch**
+- **Purpose**: Batch/bulk notification processing with progress tracking
+- **Key Properties**:
+  - `progress_percentage` - Calculate batch completion %
+  - `success_rate` - Calculate success rate %
+- **Key Functions**: None (properties only)
+- **Tracks**: Total, processed, successful, failed counts, throughput
+
+---
+
+## 6. **notification_routing.py**
+
+### **RoutingRule**
+- **Purpose**: Define rules for routing notifications to recipients
+- **Key Functions**: None (data model only)
+- **Defines**: 
+  - Conditions (event type, priority, hostel)
+  - Recipients (roles, users, groups)
+  - Channels to use
+  - Template to apply
+
+### **EscalationPath**
+- **Purpose**: Define multi-level escalation workflow configuration
+- **Key Functions**: None (data model only)
+- **Defines**: Escalation levels with timing and recipients for unhandled notifications
+
+### **NotificationEscalation**
+- **Purpose**: Track active escalation state for individual notifications
+- **Key Functions**: None (data model only)
+- **Tracks**: Current level, next escalation time, resolution status, history
+
+### **NotificationRoute**
+- **Purpose**: Record final routing decision for each notification (audit)
+- **Key Functions**: None (data model only)
+- **Stores**: Which rule matched, recipients, channels, template used
+
+---
+
+## 7. **notification_template.py**
+
+### **NotificationTemplate**
+- **Purpose**: Reusable message templates with variable substitution
+- **Key Functions**:
+  - `increment_usage()` - Increment usage count and update last_used_at
+- **Features**: 
+  - Variable placeholders {{variable}}
+  - Multi-language support
+  - Categories and tags
+  - Usage statistics
+
+### **NotificationTemplateVersion**
+- **Purpose**: Version history for templates (audit & rollback)
+- **Key Functions**: None (data model only)
+- **Stores**: Complete snapshot of template at each version, change summary
+
+---
+
+## 8. **push_notification.py**
+
+### **PushNotification**
+- **Purpose**: Push notification details for mobile and web (one-to-one with Notification)
+- **Key Functions**: None (data model only)
+- **Features**:
+  - Rich content (images, icons)
+  - Action buttons
+  - Badge management
+  - Deep links
+  - Platform-specific settings (iOS/Android)
+  - Delivery tracking
+
+---
+
+## 9. **sms_notification.py**
+
+### **SMSNotification**
+- **Purpose**: SMS-specific details extending base Notification (one-to-one)
+- **Key Properties**:
+  - `total_cost` - Calculate cost based on segments
+- **Key Functions**: None (property only)
+- **Features**:
+  - Segment tracking (160 chars each)
+  - DLT compliance (India)
+  - Provider integration
+  - Cost tracking
+  - Delivery status
+
+---
+
+## **Summary Table**
+
+| File | Classes | Total Functions/Properties |
+|------|---------|---------------------------|
+| device_token.py | 1 (DeviceToken) | 4 functions |
+| email_notification.py | 3 (EmailNotification, EmailAttachment, EmailClickEvent) | 0 functions |
+| notification.py | 3 (Notification, NotificationStatusHistory, NotificationReadReceipt) | 5 properties |
+| notification_preferences.py | 3 (NotificationPreference, ChannelPreference, UnsubscribeToken) | 0 functions |
+| notification_queue.py | 2 (NotificationQueue, NotificationBatch) | 4 properties |
+| notification_routing.py | 4 (RoutingRule, EscalationPath, NotificationEscalation, NotificationRoute) | 0 functions |
+| notification_template.py | 2 (NotificationTemplate, NotificationTemplateVersion) | 1 function |
+| push_notification.py | 1 (PushNotification) | 0 functions |
+| sms_notification.py | 1 (SMSNotification) | 1 property |
+
+**Total: 20 Classes**
+
+---
+
+## **Key Relationships**
+
+```
+Notification (CORE) 
+├── has one → EmailNotification
+├── has one → SMSNotification  
+├── has one → PushNotification
+├── has one → NotificationQueue
+├── has one → NotificationRoute
+├── has one → NotificationEscalation
+├── has many → NotificationStatusHistory
+└── has many → NotificationReadReceipt
+
+User
+├── has many → DeviceToken
+├── has one → NotificationPreference
+└── has many → Notification (as recipient)
+
+NotificationTemplate
+└── has many → NotificationTemplateVersion
+```
+========================================================================================================================
+# Complete Clarity on Payment Models Classes
+
+## 🚨 **ISSUE IDENTIFIED**
+You have **duplicate GatewayTransaction classes** in:
+- `gateway_transaction.py` (detailed version)
+- `payment_gateway.py` (simpler version)
+
+**Recommendation:** Keep `gateway_transaction.py` and **DELETE** `payment_gateway.py`
+
+---
+
+## 📁 File-by-File Class Breakdown
+
+### **1. payment.py**
+**Purpose:** Core payment transactions
+
+| Class | Purpose | Key Methods/Properties |
+|-------|---------|----------------------|
+| `Payment` | Main payment record for all transactions (rent, fees, deposits) | `net_amount`, `is_completed`, `is_pending`, `is_failed`, `is_partially_refunded`, `is_fully_refunded`, `to_dict()`, `__repr__()` |
+
+**Use Case:** Every payment made by students - rent, mess fees, security deposits, one-time charges
+
+---
+
+### **2. gateway_transaction.py** ⭐ (KEEP THIS)
+**Purpose:** Detailed tracking of payment gateway interactions
+
+| Class | Purpose | Key Methods/Properties |
+|-------|---------|----------------------|
+| `GatewayTransactionStatus` | Enum for transaction statuses | `INITIATED`, `PENDING`, `PROCESSING`, `SUCCESS`, `FAILED`, `CANCELLED`, `TIMEOUT`, `REFUNDED` |
+| `GatewayTransactionType` | Enum for transaction types | `PAYMENT`, `REFUND`, `VERIFICATION`, `CAPTURE`, `AUTHORIZATION`, `VOID` |
+| `GatewayProvider` | Enum for gateway providers | `RAZORPAY`, `STRIPE`, `PAYTM`, `PHONEPE`, `CASHFREE`, `INSTAMOJO`, `PAYPAL`, `MANUAL` |
+| `GatewayTransaction` | Complete gateway interaction tracking with request/response/webhook data | `is_success`, `is_failed`, `is_pending`, `is_refund_transaction`, `processing_duration_ms`, `can_retry`, `effective_amount`, `total_fees`, `mark_verified()`, `mark_reconciled()`, `increment_retry()`, `to_dict()`, `__repr__()` |
+
+**Use Case:** Track every API call, webhook, callback from Razorpay/Stripe/etc., including retry attempts and reconciliation
+
+---
+
+### **3. payment_gateway.py** ❌ (DELETE THIS - DUPLICATE)
+**Purpose:** Simpler gateway tracking (REDUNDANT)
+
+| Class | Purpose | Notes |
+|-------|---------|-------|
+| `GatewayTransactionStatus` | Duplicate enum | Already in gateway_transaction.py |
+| `GatewayTransaction` | Simpler gateway tracking | Less detailed than gateway_transaction.py version |
+
+**Recommendation:** **DELETE THIS FILE** - Use gateway_transaction.py instead
+
+---
+
+### **4. payment_schedule.py**
+**Purpose:** Recurring payment automation
+
+| Class | Purpose | Key Methods/Properties |
+|-------|---------|----------------------|
+| `ScheduleStatus` | Enum for schedule states | `ACTIVE`, `PAUSED`, `SUSPENDED`, `COMPLETED`, `CANCELLED` |
+| `PaymentSchedule` | Auto-generates recurring payments (monthly rent, quarterly fees) | `is_indefinite`, `is_suspended`, `is_completed`, `days_until_next_payment`, `is_overdue`, `collection_rate`, `calculate_next_due_date()`, `is_in_suspension_period()`, `__repr__()` |
+
+**Use Case:** Create payment schedule for student - auto-generate monthly rent payments on 1st of every month
+
+---
+
+### **5. payment_refund.py**
+**Purpose:** Handle refund requests and processing
+
+| Class | Purpose | Key Methods/Properties |
+|-------|---------|----------------------|
+| `RefundStatus` | Enum for refund workflow | `PENDING`, `APPROVED`, `REJECTED`, `PROCESSING`, `COMPLETED`, `FAILED`, `CANCELLED` |
+| `PaymentRefund` | Complete refund lifecycle from request to completion | `is_pending`, `is_approved`, `is_completed`, `is_failed`, `refund_percentage`, `__repr__()` |
+
+**Use Case:** Student requests refund → Admin approves → Gateway processes → Money returned
+
+---
+
+### **6. payment_reminder.py**
+**Purpose:** Payment reminder delivery tracking
+
+| Class | Purpose | Key Methods/Properties |
+|-------|---------|----------------------|
+| `ReminderType` | Enum for reminder timing | `BEFORE_DUE`, `ON_DUE`, `AFTER_DUE`, `OVERDUE`, `ESCALATION`, `MANUAL` |
+| `ReminderStatus` | Enum for delivery status | `PENDING`, `SENT`, `DELIVERED`, `FAILED`, `CANCELLED` |
+| `PaymentReminder` | Track email/SMS/push notification reminders | `is_sent`, `is_delivered`, `is_failed`, `channels_used`, `engagement_score`, `__repr__()` |
+
+**Use Case:** Send reminder 7 days before due date → Track if email opened → Track if SMS delivered
+
+---
+
+### **7. payment_ledger.py**
+**Purpose:** Double-entry accounting for financial records
+
+| Class | Purpose | Key Methods/Properties |
+|-------|---------|----------------------|
+| `LedgerEntryType` | Enum for entry types | `DEBIT`, `CREDIT`, `ADJUSTMENT`, `WRITEOFF`, `REVERSAL` |
+| `TransactionType` | Enum for transaction categories | `PAYMENT`, `REFUND`, `ADJUSTMENT`, `WRITEOFF`, `FEE_CHARGE`, `LATE_FEE`, `DISCOUNT`, `WAIVER` |
+| `PaymentLedger` | Accounting ledger for all financial transactions | `is_debit`, `is_credit`, `absolute_amount`, `balance_change`, `__repr__()` |
+
+**Use Case:** Maintain complete audit trail - every payment creates debit/credit entries with running balance
+
+---
+
+## 📊 **Summary Table**
+
+| File | Classes | Keep/Delete | Primary Use |
+|------|---------|-------------|-------------|
+| `payment.py` | `Payment` | ✅ KEEP | Core payment records |
+| `gateway_transaction.py` | `GatewayTransaction`, `GatewayTransactionStatus`, `GatewayTransactionType`, `GatewayProvider` | ✅ KEEP | Gateway API tracking |
+| `payment_gateway.py` | `GatewayTransaction`, `GatewayTransactionStatus` | ❌ DELETE | Duplicate - redundant |
+| `payment_schedule.py` | `PaymentSchedule`, `ScheduleStatus` | ✅ KEEP | Recurring payments |
+| `payment_refund.py` | `PaymentRefund`, `RefundStatus` | ✅ KEEP | Refund workflow |
+| `payment_reminder.py` | `PaymentReminder`, `ReminderType`, `ReminderStatus` | ✅ KEEP | Reminder delivery |
+| `payment_ledger.py` | `PaymentLedger`, `LedgerEntryType`, `TransactionType` | ✅ KEEP | Accounting ledger |
+
+---
+
+## 🎯 **Action Required**
+
+1. **Delete** `payment_gateway.py` (it's a duplicate)
+2. **Keep** all other files
+3. **Update** `__init__.py` to remove imports from payment_gateway.py
+
+Would you like me to provide the corrected `__init__.py` file?
+========================================================================================================================
+# Complete Clarity on Referral Models Structure
+
+## 1. referral_program.py
+
+### Classes:
+- **ReferralProgram** - Main program configuration class
+
+### Purpose:
+Defines and manages referral program configurations with reward structures, eligibility rules, and validity periods.
+
+### Key Functions/Properties:
+- `conversion_rate` - Calculate percentage of successful referrals
+- `is_expired` - Check if program validity period has ended
+- `is_upcoming` - Check if program hasn't started yet
+- `is_currently_valid` - Check if program is active and within validity period
+- `increment_referral_count()` - Increase total referrals counter
+- `increment_successful_referrals()` - Increase successful conversions counter
+- `increment_pending_referrals()` - Increase pending referrals counter
+- `add_reward_amount()` - Add to total rewards distributed
+
+---
+
+## 2. referral_code.py
+
+### Classes:
+- **ReferralCode** - Unique referral code management class
+
+### Purpose:
+Manages unique referral codes for users with usage tracking, sharing analytics, and validity controls.
+
+### Key Functions/Properties:
+- `remaining_uses` - Calculate how many uses are left
+- `is_expired` - Check if code has passed expiration date
+- `is_exhausted` - Check if code reached maximum usage limit
+- `is_valid` - Check if code is active, not expired, and has uses remaining
+- `conversion_rate` - Calculate percentage of clicks that led to bookings
+- `registration_rate` - Calculate percentage of clicks that led to registrations
+- `increment_usage()` - Increase usage count (returns False if limit reached)
+- `increment_shares()` - Track when code is shared
+- `increment_clicks()` - Track when referral link is clicked
+- `increment_registrations()` - Track when someone registers via code
+- `increment_bookings()` - Track when registration converts to booking
+- `deactivate()` - Disable the referral code
+
+---
+
+## 3. referral.py
+
+### Classes:
+- **Referral** - Individual referral tracking class
+
+### Purpose:
+Tracks complete lifecycle of a single referral from creation through conversion to reward distribution.
+
+### Key Functions/Properties:
+- `is_converted` - Check if referral resulted in a booking
+- `total_reward_amount` - Sum of referrer and referee rewards
+- `days_since_referral` - Calculate age of referral in days
+- `conversion_time_days` - Calculate days from referral to conversion
+- `is_reward_fully_paid` - Check if both parties received rewards
+- `add_status_to_history()` - Log status changes with timestamp and reason
+- `mark_converted()` - Update referral when booking is completed
+- `cancel()` - Cancel the referral with reason
+- `expire()` - Mark referral as expired
+
+---
+
+## 4. referral_reward.py
+
+### Classes:
+1. **ReferralReward** - Individual reward tracking class
+2. **RewardPayout** - Batch payout request management class
+
+### ReferralReward Purpose:
+Tracks individual reward entries for each referral participant (referrer and referee) with approval and payout lifecycle.
+
+### ReferralReward Key Functions/Properties:
+- `is_approved` - Check if reward is approved
+- `is_paid` - Check if reward payment is completed
+- `is_pending` - Check if reward is awaiting approval
+- `days_since_approval` - Calculate time since approval
+- `approve()` - Approve the reward for payment
+- `reject()` - Reject reward with reason
+- `mark_paid()` - Record successful payment with transaction details
+- `cancel()` - Cancel reward with reason
+
+### RewardPayout Purpose:
+Manages payout requests when users want to withdraw accumulated referral rewards in batch.
+
+### RewardPayout Key Functions/Properties:
+- `is_pending` - Check if payout request awaits approval
+- `is_completed` - Check if payout is successfully processed
+- `processing_time_days` - Calculate days to complete payout
+- `approve()` - Approve payout request and set estimated completion
+- `mark_processing()` - Update status to processing
+- `mark_completed()` - Record successful payout with transaction ID
+- `mark_failed()` - Record failed payout with failure reason
+
+---
+
+## Summary of Class Relationships:
+
+```
+ReferralProgram (1) ──→ (Many) ReferralCode
+       │
+       └──→ (Many) Referral ──→ (Many) ReferralReward
+                                         │
+                                         └──→ (Grouped in) RewardPayout
+```
+
+**Flow:**
+1. Admin creates **ReferralProgram** with rules and rewards
+2. Users get **ReferralCode** under that program
+3. When someone uses code, **Referral** record is created
+4. Upon conversion, **ReferralReward** records are created (one for referrer, one for referee)
+5. Users request **RewardPayout** to withdraw accumulated rewards
+========================================================================================================================
+# Review Models Complete Class Breakdown
+
+## 1. review.py
+
+### **Main Classes**
+
+- **`Review`** - Core review entity with comprehensive review management
+  
+  **Purpose:** Manages complete review lifecycle from creation to publication with multi-aspect ratings
+  
+  **Key Properties:**
+  - `is_verified_stay` - Whether reviewer's stay is verified
+  - `is_approved` - Moderation approval status
+  - `is_flagged` - Whether review is flagged for issues
+  
+  **Key Methods:**
+  - `calculate_average_detailed_rating()` - Calculate average of aspect ratings
+  - `calculate_helpfulness_ratio()` - Calculate helpfulness percentage
+  - `approve()` - Approve review for publication
+  - `reject()` - Reject review with reason
+  - `flag()` - Flag review for moderation
+  - `verify_stay()` - Mark review as verified stay
+  - `increment_helpful()` - Increment helpful vote count
+
+- **`ReviewAspect`** - Individual aspect ratings with detailed analysis
+  
+  **Purpose:** Tracks specific review aspects beyond standard ratings (custom aspects)
+
+- **`ReviewVerification`** - Review verification tracking and authenticity validation
+  
+  **Purpose:** Stores detailed verification information for authentic stays
+
+- **`ReviewStatusHistory`** - Review status change history for audit trail
+  
+  **Purpose:** Tracks all status transitions for compliance and debugging
+
+---
+
+## 2. review_analytics.py
+
+### **Analytics Classes**
+
+- **`ReviewAnalyticsSummary`** - Comprehensive review analytics summary for hostels
+  
+  **Purpose:** Aggregates all review metrics and insights
+  
+  **Key Methods:**
+  - `calculate_quality_score()` - Calculate overall quality score (0-100)
+  - `determine_health_indicator()` - Set health status based on quality
+
+- **`RatingDistribution`** - Rating distribution breakdown for hostels
+  
+  **Purpose:** Provides detailed analysis of rating spread (1-5 stars)
+  
+  **Key Methods:**
+  - `calculate_percentages()` - Calculate rating percentages and aggregated categories
+
+- **`ReviewTrend`** - Review trend analysis over time
+  
+  **Purpose:** Tracks rating changes and directional indicators
+
+- **`MonthlyRating`** - Monthly rating aggregation
+  
+  **Purpose:** Tracks average rating and review volume by month
+
+- **`SentimentAnalysis`** - AI-powered sentiment analysis of review content
+  
+  **Purpose:** Analyzes review sentiment and extracts themes
+
+- **`AspectRating`** - Analysis of specific review aspects
+  
+  **Purpose:** Granular insights into individual service aspects
+  
+  **Key Methods:**
+  - `calculate_sentiment_ratio()` - Calculate positive/negative sentiment ratio
+
+- **`CompetitorComparison`** - Competitive analysis with nearby competitors
+  
+  **Purpose:** Benchmarking insights and competitive positioning
+  
+  **Key Methods:**
+  - `is_outperforming()` - Check if hostel outperforms competitors
+
+---
+
+## 3. review_media.py
+
+### **Media Management Classes**
+
+- **`ReviewMedia`** - Media attachments for reviews (photos, videos)
+  
+  **Purpose:** Manages media uploads with processing and moderation
+  
+  **Key Methods:**
+  - `mark_as_processed()` - Mark media as processed
+  - `mark_processing_failed()` - Mark processing as failed
+  - `approve()` - Approve media for display
+  - `reject()` - Reject media with reason
+  - `flag()` - Flag media for review
+  - `increment_view()` - Track media views
+
+- **`ReviewMediaProcessing`** - Media processing tracking and logs
+  
+  **Purpose:** Tracks processing steps and performance metrics
+  
+  **Key Methods:**
+  - `add_step()` - Add completed processing step
+  - `add_error()` - Add error to error list
+  - `calculate_compression_ratio()` - Calculate file compression ratio
+  - `mark_started()` - Mark processing as started
+  - `mark_completed()` - Mark processing as completed
+  - `increment_retry()` - Increment retry count
+
+---
+
+## 4. review_moderation.py
+
+### **Moderation Classes**
+
+- **`ReviewModerationLog`** - Review moderation action log
+  
+  **Purpose:** Tracks all moderation actions for audit and compliance
+
+- **`ReviewFlag`** - Review flag for user-reported issues
+  
+  **Purpose:** Allows users to report inappropriate or problematic reviews
+  
+  **Key Methods:**
+  - `resolve()` - Resolve the flag with action
+
+- **`ReviewModerationQueue`** - Review moderation queue management
+  
+  **Purpose:** Tracks reviews pending moderation with priority and assignment
+  
+  **Key Methods:**
+  - `assign_to_moderator()` - Assign review to moderator
+  - `escalate()` - Escalate for higher-level moderation
+  - `complete()` - Mark moderation as completed
+  - `calculate_time_in_queue()` - Calculate time spent in queue
+
+- **`ReviewAutoModeration`** - Automated review moderation results
+  
+  **Purpose:** Stores AI/ML-based moderation analysis and decisions
+  
+  **Key Methods:**
+  - `should_auto_approve()` - Determine if review should be auto-approved
+  - `should_auto_reject()` - Determine if review should be auto-rejected
+  - `needs_manual_review()` - Determine if manual review is needed
+
+---
+
+## 5. review_response.py
+
+### **Response Management Classes**
+
+- **`ReviewResponse`** - Hostel management response to reviews
+  
+  **Purpose:** Allows hostel owners/admins to respond to customer feedback
+  
+  **Key Methods:**
+  - `mark_as_edited()` - Track response edits with history
+  - `calculate_response_time()` - Calculate response time from review creation
+  - `increment_helpful()` - Track helpful responses
+  - `increment_view()` - Track response views
+  - `publish()` - Publish the response
+  - `unpublish()` - Unpublish the response
+
+- **`ResponseTemplate`** - Pre-approved response templates
+  
+  **Purpose:** Helps staff respond professionally and consistently
+  
+  **Key Methods:**
+  - `increment_usage()` - Track template usage
+  - `apply_placeholders()` - Apply placeholder values to template
+
+- **`ResponseStatistics`** - Response statistics for hostels
+  
+  **Purpose:** Tracks response performance and metrics
+  
+  **Key Methods:**
+  - `calculate_response_rate()` - Calculate overall response rate
+  - `calculate_health_score()` - Calculate response health score
+  - `get_health_status()` - Get health status label
+
+---
+
+## 6. review_voting.py
+
+### **Voting & Engagement Classes**
+
+- **`ReviewVote`** - Review helpfulness voting system
+  
+  **Purpose:** Tracks user votes on review helpfulness with fraud prevention
+  
+  **Key Methods:**
+  - `change_vote()` - Change existing vote with tracking
+
+- **`ReviewHelpfulnessScore`** - Review helpfulness scoring for intelligent ranking
+  
+  **Purpose:** Uses Wilson score for statistically sound ranking
+  
+  **Key Methods:**
+  - `update_counts()` - Update vote counts and recalculate scores
+  - `calculate_helpfulness_percentage()` - Calculate helpfulness percentage
+  - `calculate_wilson_score()` - Calculate Wilson score for ranking
+
+- **`ReviewEngagement`** - Review engagement metrics and analytics
+  
+  **Purpose:** Tracks various engagement signals for review quality assessment
+  
+  **Key Methods:**
+  - `increment_view()` - Track review views
+  - `add_read_time()` - Add reading time to metrics
+  - `calculate_engagement_score()` - Calculate overall engagement score
+  - `calculate_quality_score()` - Calculate review quality score
+
+---
+
+## Key Functions by Category:
+
+### **Core Review Management**
+- **Review** - Complete review lifecycle and content management
+- **ReviewAspect** - Detailed aspect-specific ratings
+- **ReviewVerification** - Authenticity validation
+- **ReviewStatusHistory** - Audit trail maintenance
+
+### **Content Moderation**
+- **ReviewModerationLog** - Action auditing
+- **ReviewFlag** - User reporting system
+- **ReviewModerationQueue** - Queue management and assignment
+- **ReviewAutoModeration** - AI-powered moderation
+
+### **Media Handling**
+- **ReviewMedia** - Photo/video management and moderation
+- **ReviewMediaProcessing** - Processing pipeline tracking
+
+### **Engagement & Quality**
+- **ReviewVote** - Helpfulness voting system
+- **ReviewHelpfulnessScore** - Statistical ranking algorithm
+- **ReviewEngagement** - Comprehensive engagement tracking
+
+### **Response System**
+- **ReviewResponse** - Hostel response management
+- **ResponseTemplate** - Template system for consistency
+- **ResponseStatistics** - Performance metrics
+
+### **Analytics & Insights**
+- **ReviewAnalyticsSummary** - Overall performance metrics
+- **RatingDistribution** - Rating pattern analysis
+- **ReviewTrend** - Temporal trend analysis
+- **SentimentAnalysis** - AI sentiment processing
+- **AspectRating** - Aspect-specific insights
+- **CompetitorComparison** - Competitive benchmarking
+
+Each class is designed to handle specific aspects of the review ecosystem while maintaining data integrity and providing comprehensive tracking capabilities for business intelligence and quality assurance.
+========================================================================================================================
+# Room Models Complete Class Breakdown
+
+## 1. room.py
+
+### **Core Room Classes**
+
+- **`Room`** - Main room entity with comprehensive room management
+  
+  **Purpose:** Represents physical rooms with specifications, pricing, amenities, and availability
+  
+  **Key Properties:**
+  - `occupancy_rate` - Calculate current occupancy percentage
+  - `is_fully_occupied` - Check if room is at full capacity
+  - `vacancy_count` - Get number of vacant beds
+  
+  **Key Methods:**
+  - `update_occupancy()` - Update available beds based on occupancy
+  - `can_accommodate()` - Check if room can fit required beds
+
+- **`RoomSpecification`** - Detailed technical specifications
+  
+  **Purpose:** Extended physical and technical details for rooms (dimensions, electrical, bathroom, etc.)
+
+- **`RoomPricingHistory`** - Historical pricing data with effective dates
+  
+  **Purpose:** Tracks all pricing changes over time with audit trail
+
+- **`RoomMaintenanceStatus`** - Real-time maintenance and availability status
+  
+  **Purpose:** Tracks current maintenance state and schedules
+
+- **`RoomAccessControl`** - Access control and security features
+  
+  **Purpose:** Manages room access permissions, entry logs, security settings
+
+- **`RoomOccupancyLimit`** - Occupancy limits and enforcement rules
+  
+  **Purpose:** Manages capacity constraints and occupancy policies
+  
+  **Key Properties:**
+  - `is_at_capacity` - Check if at maximum capacity
+  - `available_capacity` - Get available capacity
+  - `occupancy_percentage` - Calculate current occupancy percentage
+
+---
+
+## 2. room_amenity.py
+
+### **Amenity Management Classes**
+
+- **`RoomAmenity`** - Individual room amenities and features
+  
+  **Purpose:** Tracks amenities available in rooms with detailed management
+
+- **`AmenityCondition`** - Condition tracking for amenities
+  
+  **Purpose:** Monitors current condition and degradation of amenities
+
+- **`AmenityMaintenance`** - Maintenance schedule and history
+  
+  **Purpose:** Tracks all maintenance activities performed on amenities
+
+- **`AmenityUsage`** - Usage tracking and analytics
+  
+  **Purpose:** Monitors amenity usage patterns and intensity
+
+- **`AmenityFeedback`** - Guest feedback on amenities
+  
+  **Purpose:** Collects and manages user feedback for amenity quality
+
+- **`AmenityInventory`** - Inventory management for amenities
+  
+  **Purpose:** Tracks inventory, stock levels, and procurement needs
+  
+  **Key Properties:**
+  - `net_book_value` - Calculate net book value after depreciation
+  - `age_in_years` - Calculate age from acquisition date
+
+---
+
+## 3. room_availability.py
+
+### **Availability Management Classes**
+
+- **`RoomAvailability`** - Real-time availability tracking
+  
+  **Purpose:** Maintains current availability status with dynamic updates
+  
+  **Key Properties:**
+  - `occupancy_rate` - Calculate current occupancy rate
+  
+  **Key Methods:**
+  - `update_availability()` - Update availability status based on bed counts
+
+- **`AvailabilityWindow`** - Time-based availability windows
+  
+  **Purpose:** Defines specific time periods with custom availability rules
+  
+  **Key Methods:**
+  - `is_active_for_date()` - Check if window is active for given date
+
+- **`AvailabilityRule`** - Business rules for availability calculation
+  
+  **Purpose:** Manages rules that affect availability determination
+
+- **`AvailabilityForecast`** - Predictive availability modeling
+  
+  **Purpose:** Forecasts future availability based on historical data
+  
+  **Key Methods:**
+  - `get_forecast_for_date()` - Get forecast data for specific date
+
+- **`AvailabilityAlert`** - Low availability alerts and notifications
+  
+  **Purpose:** Manages alerts for critical availability thresholds
+  
+  **Key Methods:**
+  - `acknowledge()` - Acknowledge the alert
+  - `resolve()` - Resolve the alert with method and notes
+
+- **`AvailabilityOptimization`** - Optimization algorithms and recommendations
+  
+  **Purpose:** Analyzes and optimizes availability management strategies
+  
+  **Key Properties:**
+  - `improvement_potential` - Calculate total improvement potential
+
+---
+
+## 4. room_type.py
+
+### **Room Type Definition Classes**
+
+- **`RoomTypeDefinition`** - Standardized room type categories
+  
+  **Purpose:** Master configuration for different room types across hostels
+
+- **`RoomTypeFeature`** - Features and amenities per room type
+  
+  **Purpose:** Detailed feature configuration for each room type
+
+- **`RoomTypePricing`** - Base pricing structure per room type
+  
+  **Purpose:** Manages pricing tiers and seasonal adjustments
+
+- **`RoomTypeAvailability`** - Availability patterns and seasonal adjustments
+  
+  **Purpose:** Manages availability rules and capacity planning
+  
+  **Key Properties:**
+  - `availability_percentage` - Calculate availability percentage
+
+- **`RoomTypeComparison`** - Comparative analysis between room types
+  
+  **Purpose:** Facilitates side-by-side comparison for decision making
+
+- **`RoomTypeUpgrade`** - Upgrade paths and pricing differentials
+  
+  **Purpose:** Manages room type upgrade options and costs
+  
+  **Key Properties:**
+  - `is_valid` - Check if upgrade path is currently valid
+
+---
+
+## 5. bed.py
+
+### **Bed Management Classes**
+
+- **`Bed`** - Individual bed entity with position and specifications
+  
+  **Purpose:** Represents single bed/berth with complete tracking
+  
+  **Key Properties:**
+  - `is_bunk_bed` - Check if this is a bunk bed
+  - `days_occupied_current` - Calculate days occupied in current assignment
+  - `occupancy_rate` - Calculate historical occupancy rate
+
+- **`BedCondition`** - Bed condition and maintenance tracking
+  
+  **Purpose:** Monitors physical condition, wear and tear, maintenance needs
+  
+  **Key Properties:**
+  - `needs_replacement` - Determine if bed needs replacement
+
+- **`BedConfiguration`** - Bed setup and configuration options
+  
+  **Purpose:** Manages customizable bed configurations and setup preferences
+
+- **`BedAccessibility`** - Accessibility features and accommodations
+  
+  **Purpose:** Manages special accessibility features for disabilities/special needs
+
+- **`BedPreference`** - Student preferences for bed selection
+  
+  **Purpose:** Tracks individual student preferences and matching criteria
+
+- **`BedUtilization`** - Bed utilization analytics and optimization
+  
+  **Purpose:** Tracks usage patterns, occupancy metrics, revenue analytics
+  
+  **Key Properties:**
+  - `roi_percentage` - Calculate ROI based on revenue vs maintenance
+  - `net_revenue_current_year` - Calculate net revenue after costs
+
+---
+
+## 6. bed_assignment.py
+
+### **Assignment Management Classes**
+
+- **`BedAssignment`** - Current bed assignments with student details
+  
+  **Purpose:** Tracks active bed assignments with complete lifecycle
+  
+  **Key Properties:**
+  - `days_stayed` - Calculate total days stayed
+  - `is_overdue` - Check if student overstayed expected date
+  - `has_outstanding_payment` - Check for outstanding balance
+
+- **`AssignmentRule`** - Automated bed assignment algorithms and rules
+  
+  **Purpose:** Defines rules for automatic bed assignment based on criteria
+
+- **`AssignmentConflict`** - Conflict resolution for bed assignments
+  
+  **Purpose:** Tracks and manages conflicts during assignment process
+
+- **`AssignmentOptimization`** - Optimal bed allocation strategies
+  
+  **Purpose:** Manages optimization runs and results for assignments
+
+- **`AssignmentHistory`** - Complete assignment history tracking
+  
+  **Purpose:** Maintains historical record of all assignments for audit
+
+- **`AssignmentPreference`** - Student and admin assignment preferences
+  
+  **Purpose:** Manages preferences that influence automatic assignment decisions
+
+---
+
+## Key Functions by Category:
+
+### **Room Management**
+- **Room** - Core room entity with full lifecycle management
+- **RoomSpecification** - Technical specifications and physical details
+- **RoomPricingHistory** - Historical pricing with audit trail
+- **RoomMaintenanceStatus** - Maintenance tracking and scheduling
+
+### **Availability & Optimization**
+- **RoomAvailability** - Real-time availability tracking
+- **AvailabilityWindow** - Time-based availability rules
+- **AvailabilityForecast** - Predictive availability modeling
+- **AvailabilityAlert** - Threshold-based alerting
+- **AvailabilityOptimization** - Strategy optimization
+
+### **Amenity Management**
+- **RoomAmenity** - Amenity tracking and management
+- **AmenityCondition** - Condition monitoring
+- **AmenityMaintenance** - Maintenance scheduling
+- **AmenityUsage** - Usage analytics
+- **AmenityFeedback** - User feedback collection
+- **AmenityInventory** - Inventory and asset management
+
+### **Room Type Configuration**
+- **RoomTypeDefinition** - Standardized room type templates
+- **RoomTypeFeature** - Feature definitions per type
+- **RoomTypePricing** - Pricing structures and tiers
+- **RoomTypeComparison** - Comparison analytics
+- **RoomTypeUpgrade** - Upgrade path management
+
+### **Bed Management**
+- **Bed** - Individual bed tracking
+- **BedCondition** - Physical condition monitoring
+- **BedConfiguration** - Setup and customization
+- **BedAccessibility** - Accessibility accommodations
+- **BedPreference** - Student preference matching
+- **BedUtilization** - Performance analytics
+
+### **Assignment & Allocation**
+- **BedAssignment** - Assignment lifecycle management
+- **AssignmentRule** - Automated assignment algorithms
+- **AssignmentConflict** - Conflict detection and resolution
+- **AssignmentOptimization** - Optimization strategies
+- **AssignmentHistory** - Complete audit trail
+- **AssignmentPreference** - Preference-based matching
+
+Each class is designed to handle specific aspects of room and bed management while maintaining comprehensive tracking, optimization, and analytics capabilities for efficient hostel operations.
+========================================================================================================================
+# Search Models Complete Class Breakdown
+
+## 1. search_query_log.py
+
+### **Query Logging Classes**
+
+- **`SearchQueryLog`** - Comprehensive search query logging model
+  
+  **Purpose:** Tracks all search queries with detailed metadata, filters, performance metrics, and user interaction data for deep analytics
+  
+  **Key Features:**
+  - Logs complete search parameters (query, filters, location, price range, amenities)
+  - Tracks performance metrics (execution time, cache hits, results count)
+  - Records user interaction (clicks, conversions, bookings)
+  - Captures device and source information
+  - Supports A/B testing tracking
+
+- **`SearchSession`** - Search session tracking model
+  
+  **Purpose:** Groups related searches into sessions for journey analysis, conversion tracking, and user behavior insights
+  
+  **Key Features:**
+  - Session timeline tracking (start, end, duration)
+  - Aggregates search metrics per session
+  - Tracks engagement and conversion
+  - Analyzes search patterns and filter evolution
+  - UTM and source tracking
+
+- **`SavedSearch`** - Saved search model for users
+  
+  **Purpose:** Allows users to save frequently used search criteria with optional alerts for new matching hostels
+  
+  **Key Features:**
+  - Stores complete search criteria
+  - Alert configuration and scheduling
+  - Execution tracking
+  - Favorite management
+
+---
+
+## 2. search_analytics.py
+
+### **Analytics and Insights Classes**
+
+- **`SearchTermStats`** - Detailed statistics for individual search terms
+  
+  **Purpose:** Tracks usage patterns, result quality, and engagement metrics for search optimization and content gap analysis
+  
+  **Key Features:**
+  - Usage metrics (search count, unique users, sessions)
+  - Result quality metrics (average results, zero-result rate)
+  - Engagement metrics (clicks, CTR, conversions)
+  - Trend indicators (growth rate, velocity score)
+  - Category and location breakdowns
+
+- **`SearchMetrics`** - Aggregated search performance metrics
+  
+  **Purpose:** Provides overview of search system health, performance, and quality across all searches
+  
+  **Key Features:**
+  - Volume metrics (total searches, unique users)
+  - Quality metrics (zero-result rate, average results)
+  - Performance metrics (response times, cache hit rate)
+  - Engagement and conversion metrics
+  - Filter usage analytics
+  - Device and source breakdowns
+
+- **`PopularSearchTerm`** - Popular search terms with rankings
+  
+  **Purpose:** Updated periodically to show trending/popular searches to users
+  
+  **Key Features:**
+  - Ranking and rank change tracking
+  - Search count and user metrics
+  - Context filtering (city, hostel type)
+  - Display configuration
+
+- **`TrendingSearch`** - Rapidly growing search terms
+  
+  **Purpose:** Identifies emerging search patterns and seasonal trends
+  
+  **Key Features:**
+  - Growth metrics (rate, velocity, absolute increase)
+  - Trend classification (emerging, seasonal, event-driven)
+  - Prediction capabilities
+  - Confidence scoring
+
+- **`ZeroResultTerm`** - Search terms that consistently return zero results
+  
+  **Purpose:** Critical for search optimization, content gap analysis, and improving search coverage
+  
+  **Key Features:**
+  - Intent analysis and entity extraction
+  - Suggested alternatives
+  - Resolution tracking (status, type, notes)
+  - Priority scoring and business impact
+  - Follow-up action flags
+
+- **`SearchAnalyticsReport`** - Generated search analytics reports
+  
+  **Purpose:** Stores pre-computed analytics reports for quick retrieval
+  
+  **Key Features:**
+  - Consolidates multiple analytics data types
+  - Geographic and temporal breakdowns
+  - AI-generated insights and recommendations
+  - Publication status tracking
+
+---
+
+## 3. search_autocomplete.py
+
+### **Autocomplete and Suggestion Classes**
+
+- **`AutocompleteSuggestion`** - Autocomplete suggestion model
+  
+  **Purpose:** Stores suggestions for real-time search autocomplete with rich metadata, scoring, and personalization support
+  
+  **Key Features:**
+  - Suggestion content (value, label, normalized)
+  - Type classification (hostel, city, area, landmark, amenity)
+  - Scoring and ranking (base score, popularity boost, recency)
+  - Result count estimation
+  - Display options (icon, thumbnail, highlighting)
+  - Usage tracking (selection count, impression count, selection rate)
+  - Full-text search support
+  - Quality metrics
+
+- **`AutocompleteQueryLog`** - Autocomplete query logging model
+  
+  **Purpose:** Tracks all autocomplete requests for performance monitoring, usage analysis, and suggestion optimization
+  
+  **Key Features:**
+  - Query information (prefix, length)
+  - Request parameters and filters
+  - Response metrics (suggestions returned, execution time)
+  - User interaction tracking (selection, position, conversion)
+  - Cache performance
+  - Session tracking
+
+- **`SuggestionSource`** - Suggestion source configuration model
+  
+  **Purpose:** Manages different sources for autocomplete suggestions with priority and sync configuration
+  
+  **Key Features:**
+  - Source configuration (type, priority, weight)
+  - Sync scheduling and automation
+  - Performance metrics
+  - Status tracking
+  - Source-specific settings
+
+- **`PopularSearchSuggestion`** - Popular search suggestions model
+  
+  **Purpose:** Stores popular searches for showing when no autocomplete matches or as default suggestions
+  
+  **Key Features:**
+  - Ranking (global and contextual)
+  - Popularity metrics
+  - Context filtering (city, state, hostel type)
+  - Display configuration
+  - Period tracking
+
+- **`SuggestionPerformance`** - Suggestion performance tracking model
+  
+  **Purpose:** Tracks detailed performance metrics for autocomplete suggestions to optimize ranking and relevance
+  
+  **Key Features:**
+  - Usage metrics (impressions, selections, selection rate)
+  - Position metrics (average position shown/selected)
+  - Conversion tracking
+  - Period-based analysis
+
+---
+
+## Key Functions by Category:
+
+### **Query Logging & Tracking**
+- **SearchQueryLog** - Complete search query logging with all parameters and results
+- **SearchSession** - Session-based journey analysis and behavior tracking
+- **SavedSearch** - User search management with alert functionality
+
+### **Analytics & Insights**
+- **SearchTermStats** - Individual search term performance analysis
+- **SearchMetrics** - Platform-wide search health monitoring
+- **PopularSearchTerm** - Popular search identification and ranking
+- **TrendingSearch** - Emerging trend detection and prediction
+- **ZeroResultTerm** - Search gap analysis and optimization
+- **SearchAnalyticsReport** - Consolidated analytics reporting
+
+### **Autocomplete & Suggestions**
+- **AutocompleteSuggestion** - Real-time suggestion storage and scoring
+- **AutocompleteQueryLog** - Autocomplete usage tracking
+- **SuggestionSource** - Multi-source suggestion management
+- **PopularSearchSuggestion** - Fallback and default suggestions
+- **SuggestionPerformance** - Suggestion effectiveness tracking
+
+### **Common Patterns Across Models**
+
+**Performance Tracking:**
+- Execution time monitoring
+- Cache performance metrics
+- Response time percentiles
+
+**User Behavior:**
+- Click tracking and positions
+- Conversion to bookings/inquiries
+- Session and journey analysis
+
+**Quality Metrics:**
+- Result relevance scoring
+- Zero-result detection
+- User satisfaction indicators
+
+**Optimization Support:**
+- A/B testing integration
+- Trend analysis
+- Intent classification
+- Content gap identification
+
+Each class is designed to provide comprehensive search functionality with deep analytics capabilities, enabling data-driven optimization of the search experience and continuous improvement of search quality and relevance.
+========================================================================================================================
+# Complete Class Structure for Student Models
+
+## **1. guardian_contact.py**
+
+### `GuardianContact`
+**Purpose:** Manage guardian/parent contact information for students with priority and relationship tracking
+**Properties:**
+- `full_address` - Get formatted complete address
+- `is_verified` - Check if guardian is fully verified (phone, email, ID)
+- `contact_numbers` - Get list of all contact numbers
+
+**Key Fields:** Guardian info, contact details, address, occupation, ID proof, emergency contact settings, authorizations, verification status, communication preferences
+
+---
+
+## **2. room_transfer_history.py**
+
+### `RoomTransferHistory`
+**Purpose:** Track complete history of room assignments and transfers for students with audit trail
+**Properties:**
+- `duration_days` - Calculate duration of stay in room
+- `is_rent_increase` - Check if transfer resulted in rent increase
+- `is_rent_decrease` - Check if transfer resulted in rent decrease  
+- `is_initial_assignment` - Check if this is initial room assignment
+- `total_charges` - Calculate total charges for transfer
+- `is_completed` - Check if transfer is completed
+- `is_pending` - Check if transfer is pending
+
+**Key Fields:** Room/bed assignments (from/to), transfer details, approval workflow, financial impact, room condition, documentation, notifications, status tracking
+
+---
+
+## **3. student.py**
+
+### `Student`
+**Purpose:** Core student entity linking users to hostels with comprehensive student-specific information and lifecycle management
+**Properties:**
+- `is_checked_in` - Check if student is currently checked in
+- `is_active_resident` - Check if student is an active resident
+- `days_in_hostel` - Calculate total days stayed in hostel
+- `is_student` - Check if this is an institutional student
+- `is_working_professional` - Check if this is a working professional
+- `has_valid_guardian` - Check if guardian information is complete
+- `all_documents_verified` - Check if all required documents are verified
+- `financial_clearance_pending` - Check if financial clearances are pending
+
+**Key Fields:** User/hostel/room relationships, ID proof, guardian info, institutional info, employment info, check-in/out dates, financial info, meal preferences, status tracking
+
+---
+
+## **4. student_document.py**
+
+### `StudentDocument`
+**Purpose:** Manage document uploads, verification, and lifecycle for students with various document types
+**Properties:**
+- `is_image` - Check if document is an image
+- `is_pdf` - Check if document is a PDF
+- `file_size_mb` - Get file size in MB
+- `days_until_expiry` - Calculate days until document expiry
+- `is_expiring_soon` - Check if document is expiring within 30 days
+- `verification_pending` - Check if verification is pending
+- `is_current_version` - Check if this is current version (not replaced)
+
+**Key Fields:** Document metadata, file information, upload details, verification status, validity dates, replacement/renewal tracking, access control, compliance
+
+---
+
+## **5. student_preferences.py**
+
+### `StudentPreferences`
+**Purpose:** Manage student-specific preferences for notifications, meals, privacy settings, and communication
+**Properties:**
+- `has_quiet_hours` - Check if quiet hours are configured
+- `notifications_enabled` - Check if any notification channel is enabled
+- `is_public_profile` - Check if profile is public
+
+**Key Fields:** Meal preferences, notification preferences (channels & types), notification timing, communication preferences, privacy settings, contact permissions, search/discovery settings, activity/presence settings, room/roommate preferences, dashboard/UI preferences, data/analytics settings, third-party integrations
+
+---
+
+## **6. student_profile.py**
+
+### `StudentProfile`
+**Purpose:** Extended student profile information beyond the core student entity with detailed personal, educational, and professional information
+**Properties:**
+- `full_permanent_address` - Get formatted permanent address
+- `is_international_student` - Check if student is from outside India
+- `has_complete_medical_info` - Check if medical information is complete
+
+**Key Fields:** Personal information, contact preferences, permanent address, educational details, employment details, medical information, emergency medical, hobbies/interests, social media profiles, additional information, preferences
+
+---
+
+## **7. __init__.py**
+**Purpose:** Package initialization file (no classes, only imports/exports)
+
+---
+
+## **Quick Reference Summary:**
+
+| File | Class | Main Purpose |
+|------|-------|--------------|
+| guardian_contact.py | GuardianContact | Guardian/parent contact management |
+| room_transfer_history.py | RoomTransferHistory | Room assignment and transfer tracking |
+| student.py | Student | Core student entity and lifecycle |
+| student_document.py | StudentDocument | Document upload and verification |
+| student_preferences.py | StudentPreferences | Student preferences and settings |
+| student_profile.py | StudentProfile | Extended student profile information |
+| __init__.py | None | Package exports |
+
+**Total: 6 Classes** across the student models package.
+
+Each class inherits from appropriate mixins (TimestampMixin, SoftDeleteMixin, AuditMixin) and includes comprehensive relationships with other models in the system.
+========================================================================================================================
+# Complete Clarity: Subscription Models Classes and Their Purpose
+
+## 1. `booking_commission.py`
+
+### Classes:
+
+**`BookingCommission`**
+- **Purpose**: Track commission owed to platform for each booking made through subscription
+- **Key Functions**:
+  - `is_paid` - Check if commission has been paid
+  - `is_overdue` - Check if payment is overdue
+  - `days_overdue` - Calculate days payment is overdue
+  - `days_until_due` - Calculate days remaining until due date
+
+---
+
+## 2. `subscription.py`
+
+### Classes:
+
+**`Subscription`**
+- **Purpose**: Manage active hostel subscription lifecycle (creation, activation, renewal, cancellation)
+- **Key Functions**:
+  - `days_until_expiry` - Days remaining until subscription expires
+  - `days_until_billing` - Days until next billing date
+  - `is_active` - Check if subscription is currently active
+  - `is_expiring_soon` - Check if expires within 7 days
+  - `is_in_trial_period` - Check if currently in trial
+  - `can_renew()` - Check if subscription can be renewed
+  - `can_cancel()` - Check if subscription can be cancelled
+  - `can_upgrade()` - Check if subscription can be upgraded
+
+**`SubscriptionHistory`**
+- **Purpose**: Track all changes made to subscription (status changes, plan changes, modifications)
+- **Key Functions**: (None - mainly for data storage and retrieval)
+
+**`SubscriptionCancellation`**
+- **Purpose**: Store detailed cancellation information (reason, feedback, refund details)
+- **Key Functions**: (None - mainly for data storage)
+
+---
+
+## 3. `subscription_billing.py`
+
+### Classes:
+
+**`SubscriptionBillingCycle`**
+- **Purpose**: Track individual billing periods with dates, amounts, and billing status
+- **Key Functions**:
+  - `is_current_cycle` - Check if this is the active billing cycle
+  - `is_upcoming_cycle` - Check if this is a future billing cycle
+  - `is_past_cycle` - Check if this is a completed billing cycle
+
+---
+
+## 4. `subscription_feature.py`
+
+### Classes:
+
+**`SubscriptionFeatureUsage`**
+- **Purpose**: Monitor usage of individual features against plan limits and quotas
+- **Key Functions**:
+  - `usage_percentage` - Calculate usage as percentage of limit
+  - `remaining_usage` - Calculate remaining allowance
+  - `is_near_limit()` - Check if usage is near limit (default 80%)
+  - `can_use()` - Check if feature can be used for specified amount
+  - `increment_usage()` - Increase usage count
+  - `reset_usage()` - Reset usage count to zero
+
+**`SubscriptionLimit`**
+- **Purpose**: Store configured limits for various subscription resources (hostels, rooms, students)
+- **Key Functions**:
+  - `remaining_limit` - Calculate remaining limit allowance
+  - `usage_percentage` - Calculate usage as percentage
+  - `is_near_limit` - Check if near warning threshold
+  - `can_add()` - Check if amount can be added within limit
+  - `increment()` - Increase current value
+  - `decrement()` - Decrease current value
+
+---
+
+## 5. `subscription_invoice.py`
+
+### Classes:
+
+**`SubscriptionInvoice`**
+- **Purpose**: Manage invoice generation, tracking, and payment for subscription billing
+- **Key Functions**:
+  - `is_overdue` - Check if invoice payment is overdue
+  - `is_fully_paid` - Check if invoice is completely paid
+  - `is_partially_paid` - Check if invoice is partially paid
+  - `days_overdue` - Calculate days invoice is overdue
+  - `days_until_due` - Calculate days until payment due
+
+---
+
+## 6. `subscription_plan.py`
+
+### Classes:
+
+**`SubscriptionPlan`**
+- **Purpose**: Define subscription plan structure (pricing, features, limits, configuration)
+- **Key Functions**:
+  - `yearly_savings` - Calculate savings when paying yearly vs monthly
+  - `yearly_discount_percent` - Calculate yearly discount percentage
+  - `has_trial` - Check if plan offers trial period
+  - `get_feature_value()` - Get feature value by key with default
+  - `has_feature()` - Check if plan has specific feature enabled
+  - `is_within_limits()` - Check if usage is within plan limits
+
+**`PlanFeature`**
+- **Purpose**: Define individual plan features with values, labels, and enablement status
+- **Key Functions**: (None - mainly for data storage and structured feature definitions)
+
+---
+
+## Summary by Category:
+
+### **Core Subscription Management** (2 classes)
+- `Subscription` - Main subscription entity
+- `SubscriptionHistory` - Audit trail of changes
+
+### **Billing & Invoicing** (2 classes)
+- `SubscriptionBillingCycle` - Billing period tracking
+- `SubscriptionInvoice` - Invoice management
+
+### **Plan Configuration** (2 classes)
+- `SubscriptionPlan` - Plan definitions
+- `PlanFeature` - Individual feature definitions
+
+### **Usage & Limits** (2 classes)
+- `SubscriptionFeatureUsage` - Feature usage tracking
+- `SubscriptionLimit` - Resource limit enforcement
+
+### **Business Logic** (2 classes)
+- `BookingCommission` - Commission tracking
+- `SubscriptionCancellation` - Cancellation records
+
+**Total: 9 Classes** managing the complete subscription lifecycle from plan definition to cancellation.
+========================================================================================================================
+# Complete Supervisor Module Classes Overview
+
+## File 1: `supervisor.py` - Core Supervisor Entity
+
+### **Classes:**
+
+1. **`Supervisor`**
+   - **Purpose:** Main supervisor entity with employment details, status, and performance tracking
+   - **Key Functions:**
+     - `tenure_days` - Calculate days since joining
+     - `tenure_months` - Calculate months since joining
+     - `is_probation` - Check if in probation period (first 3 months)
+     - `can_work` - Verify if supervisor can currently work
+     - `is_contract_employee` - Check if on contract
+     - `contract_days_remaining` - Days left in contract
+     - `suspension_days_remaining` - Days left in suspension
+
+2. **`SupervisorEmployment`**
+   - **Purpose:** Track employment history across different hostels/positions
+   - **Key Functions:**
+     - `duration_days` - Calculate assignment duration
+     - `is_current` - Check if current assignment
+
+3. **`SupervisorStatusHistory`**
+   - **Purpose:** Audit trail of status changes (active → suspended, etc.)
+   - **Key Functions:** None (pure data model)
+
+4. **`SupervisorNote`**
+   - **Purpose:** Administrative notes about supervisor (performance, disciplinary, commendations)
+   - **Key Functions:** None (pure data model)
+
+---
+
+## File 2: `supervisor_permissions.py` - Permission Management
+
+### **Classes:**
+
+1. **`SupervisorPermission`**
+   - **Purpose:** Granular permission control for each supervisor
+   - **Key Functions:** None (pure configuration model)
+   - **Permissions Include:**
+     - Complaint management (view, assign, resolve, close)
+     - Attendance recording and leave approval
+     - Maintenance management with cost thresholds
+     - Menu updates and communication
+     - Student profile access
+     - Financial data visibility
+
+2. **`PermissionTemplate`**
+   - **Purpose:** Predefined permission sets for quick assignment (e.g., "Senior Supervisor", "Junior Supervisor")
+   - **Key Functions:** None (pure template model)
+
+3. **`PermissionAuditLog`**
+   - **Purpose:** Track all permission changes for compliance
+   - **Key Functions:** None (pure audit model)
+
+---
+
+## File 3: `supervisor_assignment.py` - Assignment & Workload
+
+### **Classes:**
+
+1. **`SupervisorAssignment`**
+   - **Purpose:** Track supervisor-hostel assignments with responsibilities
+   - **Key Functions:**
+     - `assignment_duration_days` - Calculate assignment length
+     - `is_current` - Check if current assignment
+
+2. **`AssignmentTransfer`**
+   - **Purpose:** Manage transfers between hostels with approval workflow
+   - **Key Functions:** None (pure workflow model)
+
+3. **`AssignmentCoverage`**
+   - **Purpose:** Analyze hostel coverage by shift, identify gaps
+   - **Key Functions:** None (pure analytics model)
+
+4. **`WorkloadMetric`**
+   - **Purpose:** Track and balance workload across supervisors
+   - **Key Functions:**
+     - `completion_rate` - Calculate task completion percentage
+
+---
+
+## File 4: `supervisor_activity.py` - Activity Tracking
+
+### **Classes:**
+
+1. **`SupervisorActivity`**
+   - **Purpose:** Log every action performed by supervisor (audit trail)
+   - **Key Functions:** None (pure logging model)
+
+2. **`SupervisorSession`**
+   - **Purpose:** Track login sessions with device info and security
+   - **Key Functions:**
+     - `session_duration_minutes` - Calculate session length
+
+3. **`ActivitySummary`**
+   - **Purpose:** Pre-calculated daily/weekly/monthly activity aggregates
+   - **Key Functions:** None (pure cache model)
+
+4. **`ActivityMetric`**
+   - **Purpose:** KPIs like actions per day, response times, productivity scores
+   - **Key Functions:** None (pure metrics model)
+
+---
+
+## File 5: `supervisor_dashboard.py` - Dashboard Data
+
+### **Classes:**
+
+1. **`DashboardMetrics`**
+   - **Purpose:** Cached metrics for fast dashboard loading (students, beds, complaints, maintenance)
+   - **Key Functions:** None (pure cache model)
+
+2. **`DashboardAlert`**
+   - **Purpose:** Real-time alerts for supervisor dashboard (urgent tasks, warnings)
+   - **Key Functions:**
+     - `is_expired` - Check if alert expired
+     - `age_minutes` - Calculate alert age
+
+3. **`QuickAction`**
+   - **Purpose:** Configurable action buttons on dashboard (e.g., "Mark Attendance", "View Complaints")
+   - **Key Functions:** None (pure UI model)
+
+4. **`TodaySchedule`**
+   - **Purpose:** Daily schedule with tasks, meetings, deadlines
+   - **Key Functions:**
+     - `completion_rate` - Calculate daily completion percentage
+
+5. **`PerformanceIndicator`**
+   - **Purpose:** Real-time KPIs on dashboard (resolution rates, scores, grades)
+   - **Key Functions:** None (pure metrics model)
+
+---
+
+## File 6: `supervisor_performance.py` - Performance Management
+
+### **Classes:**
+
+1. **`SupervisorPerformance`**
+   - **Purpose:** Comprehensive performance records by period (weekly/monthly/quarterly)
+   - **Key Functions:** None (pure performance data model)
+   - **Tracks:** Complaint handling, attendance accuracy, maintenance efficiency, communication
+
+2. **`PerformanceReview`**
+   - **Purpose:** Formal performance reviews by admin with ratings and feedback
+   - **Key Functions:** None (pure review model)
+
+3. **`PerformanceGoal`**
+   - **Purpose:** SMART goals with progress tracking (e.g., "Reduce complaint resolution time to 4 hours")
+   - **Key Functions:**
+     - `duration_days` - Goal duration
+     - `days_remaining` - Days left to achieve
+
+4. **`PerformanceMetric`**
+   - **Purpose:** Time-series data for trend analysis (e.g., daily complaint count over 30 days)
+   - **Key Functions:** None (pure time-series model)
+
+5. **`PeerComparison`**
+   - **Purpose:** Compare supervisor against peers (rank, percentile, gaps to top performer)
+   - **Key Functions:** None (pure comparison model)
+
+---
+
+## Summary Table
+
+| File | Classes | Primary Purpose |
+|------|---------|----------------|
+| **supervisor.py** | Supervisor, SupervisorEmployment, SupervisorStatusHistory, SupervisorNote | Core entity & employment lifecycle |
+| **supervisor_permissions.py** | SupervisorPermission, PermissionTemplate, PermissionAuditLog | Access control & security |
+| **supervisor_assignment.py** | SupervisorAssignment, AssignmentTransfer, AssignmentCoverage, WorkloadMetric | Assignment management & workload balancing |
+| **supervisor_activity.py** | SupervisorActivity, SupervisorSession, ActivitySummary, ActivityMetric | Audit logging & activity analytics |
+| **supervisor_dashboard.py** | DashboardMetrics, DashboardAlert, QuickAction, TodaySchedule, PerformanceIndicator | Real-time dashboard data |
+| **supervisor_performance.py** | SupervisorPerformance, PerformanceReview, PerformanceGoal, PerformanceMetric, PeerComparison | Performance evaluation & development |
+
+---
+
+## Total Classes: **23**
+
+- Core: 4
+- Permissions: 3
+- Assignments: 4
+- Activity: 4
+- Dashboard: 5
+- Performance: 5
+
+Each class serves a specific, focused purpose in the supervisor management system. Most are pure data models with minimal business logic (properties/calculations only).
+========================================================================================================================
+# Complete User Module Classes Overview
+
+## File 1: `user.py` - Core User Entity
+
+### **Classes:**
+
+1. **`User`**
+   - **Purpose:** Core authentication and identity management entity
+   - **Key Functions:**
+     - `is_verified` (property) - Check if both email and phone are verified
+     - `is_locked` (property) - Check if account is currently locked due to failed attempts
+   - **Core Features:**
+     - Authentication credentials (email, phone, password_hash)
+     - Role-based access control (user_role: STUDENT, ADMIN, SUPERVISOR, VISITOR)
+     - Account status (is_active, is_email_verified, is_phone_verified)
+     - Security tracking (failed_login_attempts, account_locked_until)
+     - Soft delete support
+     - Links to role-specific profiles (admin_profile, supervisor_profile, student_profile, visitor_profile)
+
+---
+
+## File 2: `user_profile.py` - Extended Profile Data
+
+### **Classes:**
+
+1. **`UserProfile`**
+   - **Purpose:** Store extended user information, preferences, and personalization settings
+   - **Key Functions:**
+     - `age` (property) - Calculate age from date_of_birth
+   - **Core Features:**
+     - Demographics (gender, date_of_birth, nationality)
+     - Personal info (bio, occupation, organization)
+     - Media (profile_image_url, cover_image_url)
+     - Profile completion tracking (profile_completion_percentage)
+     - Localization (preferred_language, timezone)
+     - Notification preferences (JSONB: email, SMS, push settings)
+     - Privacy settings (JSONB: visibility controls)
+     - Communication preferences (JSONB: contact methods)
+     - Social links (JSONB: social media profiles)
+
+---
+
+## File 3: `user_address.py` - Address Management
+
+### **Classes:**
+
+1. **`UserAddress`**
+   - **Purpose:** Manage user addresses with geolocation and verification
+   - **Key Functions:**
+     - `full_address` (property) - Get formatted full address string
+     - `coordinates` (property) - Get (latitude, longitude) tuple
+   - **Core Features:**
+     - Address type classification (home, permanent, billing, work)
+     - Complete address components (address_line1, city, state, country, pincode)
+     - Geolocation support (latitude, longitude, geohash)
+     - Address verification (is_verified, verification_method)
+     - Privacy controls (is_public)
+     - Multiple addresses per user support
+     - Validity tracking (valid_from, valid_until for temporary addresses)
+
+---
+
+## File 4: `emergency_contact.py` - Emergency Contacts
+
+### **Classes:**
+
+1. **`EmergencyContact`**
+   - **Purpose:** Store and manage emergency contact information with consent tracking
+   - **Key Functions:** None (pure data model)
+   - **Core Features:**
+     - Contact details (name, phone, alternate_phone, email, address)
+     - Relationship tracking (emergency_contact_relation: Father, Mother, etc.)
+     - Priority ordering (priority, is_primary)
+     - Verification status (is_verified, verified_at, verification_method)
+     - Consent management (consent_given, consent_date)
+     - Authorization levels (can_make_decisions, can_access_medical_info)
+     - Communication log (last_contacted_at, contact_count)
+
+---
+
+## File 5: `user_session.py` - Session Management
+
+### **Classes:**
+
+1. **`UserSession`**
+   - **Purpose:** Track active login sessions with device and security information
+   - **Key Functions:**
+     - `is_active` (property) - Check if session is currently valid and not expired
+     - `device_name` (property) - Get human-readable device description
+   - **Core Features:**
+     - Token management (refresh_token_hash, access_token_jti)
+     - Device tracking (device_info JSONB, user_agent, device_fingerprint)
+     - Network info (ip_address, ip_location JSONB with GeoIP data)
+     - Session lifecycle (created_at, expires_at, last_activity)
+     - Revocation support (is_revoked, revoked_at, revocation_reason)
+     - Session types (web, mobile, api, admin)
+     - Security monitoring (is_suspicious, security_events JSONB)
+     - Performance tracking (requests_count)
+
+---
+
+## File 6: `login_history.py` - Login Audit Trail
+
+### **Classes:**
+
+1. **`LoginHistory`**
+   - **Purpose:** Comprehensive logging of all login attempts (successful and failed) for security auditing
+   - **Key Functions:** None (pure audit log model)
+   - **Core Features:**
+     - Login attempt details (email_attempted, is_successful, failure_reason)
+     - Device and network info (ip_address, user_agent, device_info JSONB)
+     - Geolocation tracking (geolocation JSONB)
+     - Security analysis (is_suspicious, risk_score 0-100, security_flags JSONB)
+     - Authentication method tracking (password, otp, social, biometric)
+     - Links to created session if successful
+     - Supports null user_id for failed attempts with invalid usernames
+
+---
+
+## File 7: `password_history.py` - Password History
+
+### **Classes:**
+
+1. **`PasswordHistory`**
+   - **Purpose:** Prevent password reuse by storing historical password hashes
+   - **Key Functions:** None (pure history model)
+   - **Core Features:**
+     - Historical password storage (password_hash)
+     - Change tracking (changed_by, change_reason)
+     - Change context (ip_address where change occurred)
+     - Supports both user-initiated and admin-initiated resets
+     - Enables compliance with password reuse policies (e.g., "cannot reuse last 5 passwords")
+
+---
+
+## Summary Table
+
+| File | Classes | Primary Purpose |
+|------|---------|----------------|
+| **user.py** | User | Core authentication, RBAC, account status |
+| **user_profile.py** | UserProfile | Extended demographics, preferences, personalization |
+| **user_address.py** | UserAddress | Address management with geolocation |
+| **emergency_contact.py** | EmergencyContact | Emergency contact info with consent tracking |
+| **user_session.py** | UserSession | Active session tracking with device security |
+| **login_history.py** | LoginHistory | Login attempt audit log with security analysis |
+| **password_history.py** | PasswordHistory | Password change history for reuse prevention |
+
+---
+
+## Total Classes: **7**
+
+### Relationship Structure:
+
+```
+User (1)
+├── UserProfile (1) - 1-to-1
+├── UserAddress (1) - 1-to-1
+├── EmergencyContact (1) - 1-to-1
+├── UserSession (many) - 1-to-many
+├── LoginHistory (many) - 1-to-many
+└── PasswordHistory (many) - 1-to-many
+```
+
+### Key Design Patterns:
+
+1. **Core + Extensions:** User is core, others extend with specific functionality
+2. **JSONB Flexibility:** Uses PostgreSQL JSONB for flexible nested data (preferences, device info, geolocation)
+3. **Security-First:** Comprehensive tracking for compliance and security auditing
+4. **Soft Delete:** User model supports soft deletion
+5. **Verification Tracking:** Multiple verification points (email, phone, address, emergency contacts)
+6. **Audit Trail:** Complete history of logins, password changes, and session activities
+
+All classes are primarily **data models** with minimal business logic (only calculated properties/getters).
+========================================================================================================================
+# Complete Visitor Module Classes Overview
+
+## File 1: `visitor.py` - Core Visitor Entity
+
+### **Classes:**
+
+1. **`Visitor`**
+   - **Purpose:** Core visitor entity with profile, preferences, and behavioral tracking
+   - **Key Functions:**
+     - `has_budget_preference` (property) - Check if budget is set
+     - `has_location_preference` (property) - Check if location preferences exist
+     - `notification_channels_enabled` (property) - Count enabled notification channels
+     - `booking_conversion_rate` (property) - Calculate conversion rate percentage
+     - `is_active_visitor` (property) - Check if active within last 30 days
+   - **Core Features:**
+     - Extends User with visitor-specific data
+     - Room and hostel type preferences
+     - Budget constraints and location preferences
+     - Required/preferred amenities tracking
+     - Activity metrics (searches, views, inquiries, bookings)
+     - Engagement scoring and segmentation
+
+2. **`VisitorSession`**
+   - **Purpose:** Track individual visitor sessions with device and activity metrics
+   - **Key Functions:** None (pure tracking model)
+   - **Core Features:**
+     - Session timing (started_at, ended_at, duration)
+     - Device info (device_type, OS, browser, user_agent)
+     - Location (IP, country, city from GeoIP)
+     - Activity metrics (page_views, searches, hostels_viewed)
+     - Conversion tracking (booking_made, booking_id)
+     - Traffic source (referrer_url, UTM parameters)
+
+3. **`VisitorJourney`**
+   - **Purpose:** Map visitor's complete journey from first visit to conversion
+   - **Key Functions:** None (pure journey model)
+   - **Core Features:**
+     - Journey stages (awareness → consideration → decision → conversion)
+     - Touchpoint tracking (first_visit, first_search, first_booking)
+     - Channel attribution (first_channel, last_channel)
+     - Conversion metrics (is_converted, time_to_conversion_days)
+     - Touchpoint sequence analysis
+
+4. **`VisitorSegment`**
+   - **Purpose:** Define visitor segments for targeted marketing
+   - **Key Functions:** None (pure segmentation model)
+   - **Core Features:**
+     - Segment definitions (high_intent, browser, etc.)
+     - Inclusion/exclusion rules (JSONB)
+     - Segment metrics (total_visitors, conversion_rate)
+     - Active segment tracking
+
+5. **`VisitorEngagement`**
+   - **Purpose:** Daily engagement metrics for behavior analysis
+   - **Key Functions:** None (pure metrics model)
+   - **Core Features:**
+     - Daily activity tracking (page_views, time_on_site)
+     - Engagement actions (searches, views, favorites, inquiries)
+     - Calculated engagement score (0-100)
+     - Unique per visitor per day
+
+---
+
+## File 2: `visitor_preferences.py` - Preference Management
+
+### **Classes:**
+
+1. **`VisitorPreferences`**
+   - **Purpose:** Comprehensive preference storage for personalization (1-to-1 with Visitor)
+   - **Key Functions:**
+     - `has_budget_preference` (property) - Check if budget is set
+     - `has_location_preference` (property) - Check if locations are set
+     - `notification_channels_count` (property) - Count enabled channels
+     - `total_required_amenities` (property) - Count must-have amenities
+     - `total_preferred_amenities` (property) - Count nice-to-have amenities
+   - **Core Features:**
+     - Room and hostel type preferences
+     - Budget constraints (min/max with validation)
+     - Location preferences (cities, areas, max distance)
+     - Amenity requirements (required vs preferred)
+     - Facility needs (parking, gym, laundry, mess)
+     - Dietary preferences
+     - Move-in details (earliest date, lease duration)
+     - Notification toggles (email, SMS, push)
+     - Preference strength metadata for matching algorithms
+
+2. **`SearchPreferences`**
+   - **Purpose:** Saved search configurations with automated alerts
+   - **Key Functions:**
+     - `has_new_matches` (property) - Check for new matching hostels
+     - `should_send_notification` (property) - Determine if notification is due based on frequency
+   - **Core Features:**
+     - Named saved searches
+     - Search criteria (cities, room types, price range, amenities)
+     - Alert settings (notify_on_new_matches, notification_frequency)
+     - Statistics (total_matches, new_matches_since_last_check)
+     - Active/inactive status
+     - Last checked and last notified timestamps
+
+3. **`NotificationPreferences`**
+   - **Purpose:** Granular notification channel and timing controls (1-to-1 with Visitor)
+   - **Key Functions:**
+     - `any_channel_enabled` (property) - Check if any channel is on
+     - `total_enabled_channels` (property) - Count enabled channels
+   - **Core Features:**
+     - Master channel toggles (email, SMS, push, in-app)
+     - Per-notification-type channel controls:
+       - Price drops (email/sms/push)
+       - Availability (email/sms/push)
+       - New listings (email/sms/push)
+       - Booking updates (confirmation, reminders)
+       - Marketing (promotional, newsletter)
+     - Quiet hours (start/end times, enabled flag)
+     - Frequency controls (digest_mode, max_notifications_per_day)
+
+---
+
+## File 3: `visitor_favorite.py` - Favorites/Wishlist
+
+### **Classes:**
+
+1. **`VisitorFavorite`**
+   - **Purpose:** Track saved/favorite hostels with price monitoring
+   - **Key Functions:**
+     - `days_in_favorites` (property) - Days since added
+     - `is_highly_rated` (property) - Check if rating >= 4.0
+     - `is_popular` (property) - Check if many reviews (>= 50)
+     - `is_frequently_viewed` (property) - Check if viewed >= 3 times
+     - `price_savings` (property) - Calculate savings if price dropped
+   - **Core Features:**
+     - Unique per visitor-hostel pair
+     - Cached hostel data (name, city, type, cover image)
+     - Price tracking (price_when_saved, current_price, price_drop_percentage)
+     - Availability tracking (available_beds, has_availability)
+     - Rating info (average_rating, total_reviews)
+     - Personal notes field
+     - View tracking (times_viewed, last_viewed_at)
+     - Alert preferences (alert_on_price_drop, alert_on_availability)
+
+2. **`FavoriteComparison`**
+   - **Purpose:** Track when visitors compare multiple favorites side-by-side
+   - **Key Functions:** None (pure analytics model)
+   - **Core Features:**
+     - List of favorite IDs being compared
+     - Comparison criteria used
+     - Selected favorite after comparison
+     - Comparison duration tracking
+     - Analytics for decision-making patterns
+
+3. **`FavoritePriceHistory`**
+   - **Purpose:** Historical price tracking for trend analysis and drop detection
+   - **Key Functions:** None (pure history model)
+   - **Core Features:**
+     - Price at specific point in time
+     - Price type (monthly_rent, discounted, etc.)
+     - Change from previous price (absolute and percentage)
+     - Timestamps for trend analysis
+
+---
+
+## File 4: `visitor_dashboard.py` - Dashboard Analytics
+
+### **Classes:**
+
+1. **`RecentSearch`**
+   - **Purpose:** Store recent search queries for quick re-execution
+   - **Key Functions:**
+     - `filters_count` (property) - Count applied filters
+     - `is_popular_search` (property) - Check if re-executed >= 3 times
+     - `has_results` (property) - Check if results were found
+   - **Core Features:**
+     - Search query and filters applied (JSONB)
+     - Search criteria (cities, price range, room types, amenities)
+     - Results count and hostel IDs
+     - Re-execution tracking (times_re_executed, last_re_executed_at)
+
+2. **`RecentlyViewedHostel`**
+   - **Purpose:** Track hostel views for quick access and recommendations
+   - **Key Functions:**
+     - `is_highly_viewed` (property) - Check if viewed >= 3 times
+     - `average_time_per_view` (property) - Calculate avg time
+     - `is_high_engagement` (property) - Check for deep engagement (multiple views, long time, many sections)
+   - **Core Features:**
+     - Unique per visitor-hostel pair
+     - Cached hostel data (name, city, price, rating, image)
+     - View tracking (view_count, first/last viewed, time_spent_seconds)
+     - Sections viewed (amenities, reviews, etc.)
+     - Actions taken (added_to_favorites, inquiry_sent, booking_initiated)
+
+3. **`RecommendedHostel`**
+   - **Purpose:** AI/ML-driven personalized hostel recommendations
+   - **Key Functions:**
+     - `is_excellent_match` (property) - Check if match score >= 80
+     - `is_active` (property) - Check if not expired
+     - `engagement_level` (property) - Get engagement status (converted/clicked/viewed/not_engaged)
+   - **Core Features:**
+     - Unique per visitor-hostel-day
+     - Cached hostel data
+     - Match scoring (match_score 0-100, recommendation_rank)
+     - Match reasons and criteria breakdown
+     - Recommendation type (preference_based, behavioral, collaborative)
+     - Algorithm tracking
+     - Engagement tracking (viewed, clicked, converted)
+     - Expiration support
+
+4. **`PriceDropAlert`**
+   - **Purpose:** Alert visitors to price reductions on favorite hostels
+   - **Key Functions:**
+     - `savings_amount` (property) - Get absolute savings
+     - `is_significant_drop` (property) - Check if >= 10% discount
+   - **Core Features:**
+     - Price comparison (previous_price, new_price, discount_amount, discount_percentage)
+     - Read status tracking
+     - Multi-channel notification delivery (email_sent, sms_sent, push_sent)
+
+5. **`AvailabilityAlert`**
+   - **Purpose:** Notify when previously full hostels have new availability
+   - **Key Functions:** None (pure alert model)
+   - **Core Features:**
+     - Room type and available beds count
+     - Alert message
+     - Read status tracking
+     - Multi-channel notification delivery
+
+6. **`VisitorActivity`**
+   - **Purpose:** Comprehensive activity log for all visitor actions
+   - **Key Functions:** None (pure log model)
+   - **Core Features:**
+     - Activity type and category
+     - Entity reference (hostel, search, booking)
+     - Session context (session_id, device_type)
+     - Activity data (JSONB for flexible tracking)
+     - Timestamp tracking
+
+---
+
+## File 5: `saved_search.py` - Saved Search with Automation
+
+### **Classes:**
+
+1. **`SavedSearch`**
+   - **Purpose:** Automated search monitoring with notifications
+   - **Key Functions:**
+     - `has_new_matches` (property) - Check for new results
+     - `should_execute` (property) - Determine if search should run now
+     - `should_send_notification` (property) - Check if notification is due based on frequency
+     - `criteria_summary` (property) - Get human-readable criteria summary
+   - **Core Features:**
+     - Named searches with descriptions
+     - Complete search criteria (cities, areas, room types, price range, amenities)
+     - Notification settings (channels, frequency: instant/daily/weekly/monthly)
+     - Active/paused status
+     - Match tracking (total_matches, new_matches_count)
+     - Execution scheduling (last_checked_at, next_check_at)
+     - Performance metrics (total_executions, average_execution_time_ms)
+     - Edit tracking (times_edited, last_edited_at)
+
+2. **`SavedSearchExecution`**
+   - **Purpose:** Log each search execution with performance metrics
+   - **Key Functions:**
+     - `has_new_results` (property) - Check if new matches found
+     - `performance_rating` (property) - Rate performance (excellent/good/acceptable/slow based on execution time)
+   - **Core Features:**
+     - Execution timestamp and success status
+     - Performance metrics (execution_time_ms, database_query_time_ms)
+     - Results (results_count, new_results_count, removed_results_count)
+     - Result data (hostel IDs, new hostel IDs)
+     - Criteria snapshot for audit
+
+3. **`SavedSearchMatch`**
+   - **Purpose:** Track individual hostel matches for saved searches
+   - **Key Functions:**
+     - `is_excellent_match` (property) - Check if match score >= 90
+     - `days_since_matched` (property) - Calculate days since first match
+   - **Core Features:**
+     - Unique per search-hostel pair
+     - Cached hostel data (name, slug, city, starting_price)
+     - Match scoring (0-100) with criteria breakdown
+     - Match status (is_new, is_notified)
+     - Temporal tracking (first_matched_at, last_checked_at, notified_at)
+     - Engagement tracking (was_viewed, viewed_at)
+
+4. **`SavedSearchNotification`**
+   - **Purpose:** Track notifications sent for saved search matches
+   - **Key Functions:**
+     - `is_successful` (property) - Check if delivered
+     - `engagement_rate` (property) - Calculate engagement percentage
+   - **Core Features:**
+     - Notification content (type, subject, message)
+     - Match information (new_matches_count, match_hostel_ids)
+     - Delivery channels and status (pending/sent/delivered/failed)
+     - Timing (sent_at, delivered_at, opened_at)
+     - Engagement tracking (was_opened, links_clicked)
+
+---
+
+## Summary Table
+
+| File | Classes | Primary Purpose |
+|------|---------|----------------|
+| **visitor.py** | Visitor, VisitorSession, VisitorJourney, VisitorSegment, VisitorEngagement | Core entity, sessions, journey mapping, segmentation |
+| **visitor_preferences.py** | VisitorPreferences, SearchPreferences, NotificationPreferences | Preference management and notification controls |
+| **visitor_favorite.py** | VisitorFavorite, FavoriteComparison, FavoritePriceHistory | Wishlist with price tracking and comparisons |
+| **visitor_dashboard.py** | RecentSearch, RecentlyViewedHostel, RecommendedHostel, PriceDropAlert, AvailabilityAlert, VisitorActivity | Dashboard components and real-time alerts |
+| **saved_search.py** | SavedSearch, SavedSearchExecution, SavedSearchMatch, SavedSearchNotification | Automated search monitoring with notifications |
+
+---
+
+## Total Classes: **22**
+
+- Core Visitor: 5
+- Preferences: 3
+- Favorites: 3
+- Dashboard: 6
+- Saved Search: 4
+- **Total: 21 classes**
+
+### Key Design Patterns:
+
+1. **Comprehensive Tracking:** Every visitor action is logged for analytics
+2. **Automated Monitoring:** Saved searches run automatically and notify visitors
+3. **Price Intelligence:** Historical price tracking with drop alerts
+4. **Personalization:** ML-ready with engagement scores, match scoring, and recommendations
+5. **Multi-channel Notifications:** Granular control over email/SMS/push channels
+6. **Journey Analytics:** Complete funnel tracking from first visit to conversion
+7. **JSONB Flexibility:** Extensible metadata fields for evolving requirements
+
+All classes are primarily **data models** with calculated properties for business logic. No complex methods - just properties for derived values.
+========================================================================================================================
+
