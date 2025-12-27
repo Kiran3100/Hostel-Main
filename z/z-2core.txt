@@ -1,0 +1,188 @@
+# Complete Class Overview for Hostel Management System
+
+## **app/core/dependencies.py**
+
+| Class | Purpose | Key Functions |
+|-------|---------|---------------|
+| `DatabaseDependency` | Database session management | `get_db()` - Provides database session with cleanup |
+| `AuthenticationDependency` | JWT authentication validation | `get_current_user()` - Extracts and validates user from JWT |
+| `AuthorizationDependency` | Permission-based authorization | `require_permission()` - Decorator for permission checking |
+| `TenantContextDependency` | Multi-tenant context resolution | `get_tenant_context()` - Extracts tenant context from request |
+| `CurrentUserDependency` | Current user with role data | `get_current_user_with_roles()` - Loads user with role relationships |
+| `SuperAdminDependency` | Super admin only access | `get_super_admin_user()` - Ensures super admin access |
+| `AdminDependency` | Admin level access control | `get_admin_user()` - Ensures admin access |
+| `SupervisorDependency` | Supervisor level access | `get_supervisor_user()` - Ensures supervisor access |
+| `StudentDependency` | Student access validation | `get_student_user()` - Ensures student access |
+| `HostelContextDependency` | Hostel context management | `get_hostel_context()` - Gets current hostel context |
+| `PaginationDependency` | Pagination parameters | `get_pagination_params()` - Extracts page/size parameters |
+| `FilterDependency` | Query filtering | `get_filter_params()` - Extracts filter parameters |
+| `CacheDependency` | Cache service provider | `get_cache_service()` - Provides cache service instance |
+| `NotificationDependency` | Notification service | `get_notification_service()` - Provides notification service |
+| `FileUploadDependency` | File upload validation | `validate_file_upload()` - Validates file size/type |
+
+---
+
+## **app/core/events/event_bus.py**
+
+| Class | Purpose | Key Functions |
+|-------|---------|---------------|
+| `EventBus` | Central event dispatching system | `publish()`, `subscribe()`, `start_processing()` |
+| `EventDispatcher` | Event distribution with middleware | `dispatch()`, `add_middleware()` |
+| `AsyncEventBus` | Asynchronous event processing | `start()`, `emit()`, `on()` |
+| `EventQueue` | Event queuing and batch processing | `enqueue()`, `start_batch_processing()` |
+| `EventRouter` | Event routing with conditions | `add_route()`, `route_event()`, `add_filter()` |
+| `EventPriorityManager` | Priority-based event processing | `enqueue_by_priority()`, `process_by_priority()` |
+| `EventBatch` | Batch event processing | `add_event()`, `add_processor()`, `flush()` |
+
+---
+
+## **app/core/events/handlers.py**
+
+| Class | Purpose | Key Functions |
+|-------|---------|---------------|
+| `EventHandlerRegistry` | Event handler registration | `register()`, `unregister()`, `execute_handlers()` |
+| `BaseEventHandler` | Abstract base for event handlers | `handle()`, `execute()`, `can_handle()` |
+| `AsyncEventHandler` | Async event handler with concurrency | `execute()`, `get_metrics()` |
+| `RetryableEventHandler` | Handler with retry logic | `execute()` - with retry on failure |
+| `EventHandlerChain` | Chain of responsibility pattern | `add_handler()`, `process()` |
+| `EventHandlerMetrics` | Performance metrics tracking | `record_handler_execution()`, `get_all_metrics()` |
+| `EventHandlerValidator` | Handler validation utility | `validate_handler()`, `suggest_improvements()` |
+
+---
+
+## **app/core/middleware/authentication.py**
+
+| Class | Purpose | Key Functions |
+|-------|---------|---------------|
+| `JWTAuthenticationMiddleware` | JWT token validation | `dispatch()` - validates JWT tokens |
+| `SessionAuthenticationMiddleware` | Session-based authentication | `dispatch()` - checks session validity |
+| `TokenValidationMiddleware` | Token refresh management | `dispatch()` - checks token expiry |
+| `DeviceTrackingMiddleware` | Device fingerprinting | `dispatch()` - creates device fingerprint |
+| `LoginAttemptMiddleware` | Failed login attempt tracking | `dispatch()` - tracks failed attempts |
+| `SecurityEventMiddleware` | Security event logging | `dispatch()` - logs security events |
+
+---
+
+## **app/core/middleware/authorization.py**
+
+| Class | Purpose | Key Functions |
+|-------|---------|---------------|
+| `RoleBasedAuthorizationMiddleware` | Role-based access control | `dispatch()` - checks role permissions |
+| `PermissionCheckMiddleware` | Granular permission checking | `dispatch()` - validates specific permissions |
+| `HostelAccessMiddleware` | Hostel-specific access control | `dispatch()` - validates hostel access |
+| `ResourceOwnershipMiddleware` | Resource ownership validation | `dispatch()` - checks resource ownership |
+| `SuperAdminOverrideMiddleware` | Super admin bypass capability | `dispatch()` - allows admin override |
+| `PermissionCacheMiddleware` | Permission result caching | `dispatch()` - caches permission results |
+
+---
+
+## **app/core/middleware/error_handling.py**
+
+| Class | Purpose | Key Functions |
+|-------|---------|---------------|
+| `GlobalExceptionHandler` | Global exception handling | `dispatch()` - handles all exceptions |
+| `ValidationErrorHandler` | Validation error formatting | `format_validation_errors()` |
+| `DatabaseErrorHandler` | Database error with retry | `handle_with_retry()` |
+| `ExternalServiceErrorHandler` | External service errors | `handle_external_service_error()` |
+| `BusinessLogicErrorHandler` | Business error formatting | `format_business_logic_error()` |
+| `SecurityExceptionHandler` | Security exception handling | `handle_security_exception()` |
+| `ErrorResponseFormatter` | Standardized error responses | `format_error_response()` |
+| `ErrorNotificationHandler` | Critical error notifications | `send_error_notification()` |
+
+---
+
+## **app/core/middleware/rate_limiting.py**
+
+| Class | Purpose | Key Functions |
+|-------|---------|---------------|
+| `GlobalRateLimitMiddleware` | Global API rate limiting | `dispatch()` - enforces global limits |
+| `UserSpecificRateLimitMiddleware` | User-based rate limiting | `dispatch()` - role-based limits |
+| `EndpointRateLimitMiddleware` | Endpoint-specific limits | `dispatch()` - per-endpoint limits |
+| `IPBasedRateLimitMiddleware` | IP-based rate limiting | `dispatch()` - IP and burst limits |
+| `APIQuotaMiddleware` | Monthly API quota management | `dispatch()` - subscription quotas |
+| `RateLimitExceptionMiddleware` | Rate limit exception handling | `dispatch()` - custom rate limit responses |
+
+---
+
+## **app/core/middleware/request_logging.py**
+
+| Class | Purpose | Key Functions |
+|-------|---------|---------------|
+| `RequestLoggingMiddleware` | HTTP request/response logging | `dispatch()` - logs requests/responses |
+| `AuditTrailMiddleware` | Audit trail generation | `dispatch()` - creates audit logs |
+| `PerformanceMonitoringMiddleware` | Request performance monitoring | `dispatch()` - tracks slow requests |
+| `SensitiveDataMaskingMiddleware` | Sensitive data masking | `mask_sensitive_data()` |
+| `RequestTrackingMiddleware` | Request correlation tracking | `dispatch()` - tracks request lifecycle |
+| `SlowQueryLoggingMiddleware` | Database query monitoring | `dispatch()` - logs slow queries |
+
+---
+
+## **app/core/middleware/tenant_context.py**
+
+| Class | Purpose | Key Functions |
+|-------|---------|---------------|
+| `TenantContextMiddleware` | Multi-tenant context resolution | `dispatch()` - resolves tenant context |
+| `HostelContextMiddleware` | Hostel context switching | `dispatch()` - manages hostel context |
+| `TenantIsolationMiddleware` | Tenant data isolation | `dispatch()` - enforces tenant isolation |
+| `CrossTenantAccessMiddleware` | Cross-tenant access validation | `dispatch()` - validates cross-tenant access |
+| `ContextSwitchTrackingMiddleware` | Context switch auditing | `dispatch()` - audits context switches |
+
+---
+
+## **app/core/security/encryption.py**
+
+| Class | Purpose | Key Functions |
+|-------|---------|---------------|
+| `DataEncryption` | General data encryption/decryption | `encrypt_string()`, `decrypt_string()`, `encrypt_dict()` |
+| `FieldEncryption` | Database field encryption | `encrypt_field()`, `decrypt_field()`, `is_encrypted_field()` |
+| `FileEncryption` | File encryption/decryption | `encrypt_file()`, `decrypt_file()` |
+| `KeyManager` | Encryption key management | `generate_key()`, `get_key()`, `rotate_key()` |
+| `TokenEncryption` | Token encryption utility | `encrypt_token()`, `decrypt_token()` |
+| `PIIEncryption` | PII data encryption | `encrypt_pii_data()`, `mask_pii_for_logging()` |
+| `EncryptionKeyRotation` | Key rotation management | `schedule_key_rotation()`, `rotate_key()` |
+
+---
+
+## **app/core/security/jwt_handler.py**
+
+| Class | Purpose | Key Functions |
+|-------|---------|---------------|
+| `JWTManager` | JWT token creation and validation | `create_access_token()`, `decode_token()` |
+| `TokenGenerator` | Token generation utility | `generate_user_tokens()`, `generate_service_token()` |
+| `TokenValidator` | Token validation utility | `validate_access_token()`, `validate_refresh_token()` |
+| `RefreshTokenManager` | Refresh token management | `refresh_access_token()` |
+| `TokenBlacklistManager` | Token revocation management | `blacklist_token()`, `is_token_blacklisted()` |
+| `ClaimsExtractor` | JWT claims extraction | `extract_user_id()`, `extract_user_role()` |
+| `TokenRotationManager` | Token rotation management | `should_rotate_token()`, `rotate_token()` |
+
+---
+
+## **app/core/security/password_hasher.py**
+
+| Class | Purpose | Key Functions |
+|-------|---------|---------------|
+| `PasswordHasher` | Password hashing and verification | `hash_password()`, `verify_password()` |
+| `PasswordValidator` | Password strength validation | `validate_password()`, `_calculate_strength_score()` |
+| `PasswordHistoryManager` | Password reuse prevention | `check_password_reuse()`, `add_to_history()` |
+| `PasswordPolicyEnforcer` | Password policy enforcement | `enforce_policy()`, `check_account_lockout()` |
+| `SecureRandomGenerator` | Secure random generation | `generate_password()`, `generate_token()` |
+| `SaltGenerator` | Password salt generation | `generate_salt()`, `generate_salt_for_user()` |
+
+---
+
+## **app/core/security/permissions.py**
+
+| Class | Purpose | Key Functions |
+|-------|---------|---------------|
+| `PermissionChecker` | Main permission validation | `check_permission()`, `_evaluate_permission()` |
+| `RolePermissionManager` | Role-based permission management | `define_role_permissions()`, `check_role_permission()` |
+| `ResourcePermissionChecker` | Resource-specific permissions | `can_access_resource()` |
+| `PermissionDecorator` | Permission checking decorators | `require_permission()`, `require_role()` |
+| `AdminPermissionChecker` | Admin-specific permissions | `check_admin_permission()` |
+| `SupervisorPermissionChecker` | Supervisor-specific permissions | `check_supervisor_permission()` |
+| `StudentPermissionChecker` | Student-specific permissions | `check_student_permission()` |
+| `HostelPermissionChecker` | Hostel-specific permissions | `check_hostel_permission()` |
+| `CrossHostelPermissionChecker` | Cross-hostel access validation | `check_cross_hostel_access()` |
+| `PermissionCache` | Permission result caching | `cache_permission_result()`, `get_cached_permission_result()` |
+
+Each class is designed with a single responsibility and specific use case within the hostel management system's security, middleware, and event handling architecture.

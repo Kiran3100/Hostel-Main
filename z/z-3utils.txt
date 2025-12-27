@@ -1,0 +1,236 @@
+# Complete Utility Classes Overview
+
+## 1. `constants.py` - System Constants
+**No classes** - Contains constants, enums, and configuration variables:
+- User roles, statuses, choices
+- File limits, validation patterns
+- Error/success messages
+- Feature flags, system limits
+
+## 2. `datetime_utils.py` - Date/Time Operations
+
+| Class | Purpose |
+|-------|---------|
+| `DateTimeHelper` | Basic date/time operations (now, parse, format, duration calculations) |
+| `TimezoneConverter` | Convert between timezones, UTC handling |
+| `DateRangeCalculator` | Generate date ranges, calculate overlaps, get month/quarter ranges |
+| `BusinessHoursChecker` | Check business hours, calculate business days, handle holidays |
+| `AgeCalculator` | Calculate age, check if minor, age categories, next birthday |
+| `ScheduleHelper` | Generate recurring dates, next occurrences, check if due |
+| `AttendanceDateHelper` | Attendance-specific date calculations, semester dates |
+| `LeaveCalculator` | Calculate leave days, validate leave periods |
+| `DateTimeValidator` | Validate date strings, check future/past dates |
+| `DateTimeFormatter` | Advanced date/time formatting, relative dates |
+
+## 3. `email_utils.py` - Email Operations
+
+| Class | Purpose |
+|-------|---------|
+| `EmailHelper` | Main email sending (SMTP, attachments, HTML/text) |
+| `TemplateRenderer` | Render email templates with Jinja2 |
+| `AttachmentHandler` | Handle email attachments (PDF, CSV, images) |
+| `EmailValidator` | Validate email addresses, check disposable emails |
+| `EmailAnalytics` | Track email opens, clicks, campaign analytics |
+| `EmailQueueManager` | Queue management for batch email sending |
+| `EmailTemplateManager` | Manage email templates, create defaults |
+
+## 4. `encryption.py` - Data Security
+
+| Class | Purpose |
+|-------|---------|
+| `EncryptionHelper` | Basic encryption/decryption using Fernet |
+| `FieldEncryption` | Encrypt specific database fields |
+| `FileEncryption` | Encrypt files with metadata |
+| `PIIEncryption` | Encrypt personally identifiable information |
+| `TokenEncryption` | Secure token storage and validation |
+| `KeyManager` | Manage encryption keys, key rotation |
+| `EncryptionKeyRotation` | Handle key rotation and data re-encryption |
+
+## 5. `excel_utils.py` - Excel Operations
+
+| Class | Purpose |
+|-------|---------|
+| `ExcelGenerator` | Generate Excel files with styling and charts |
+| `ExcelReader` | Read and parse Excel files |
+| `WorksheetManager` | Manage worksheets (add, delete, rename) |
+| `ChartGenerator` | Create Excel charts (line, bar, pie) |
+| `ExcelDataProcessor` | Process data for Excel export, pivot tables |
+| `ExcelReportGenerator` | Generate specialized reports (student, financial) |
+| `ExcelTemplateManager` | Manage Excel templates, import validation |
+
+## 6. `file_utils.py` - File Operations
+
+| Class | Purpose |
+|-------|---------|
+| `FileHelper` | Basic file operations (copy, move, delete, read, write) |
+| `DirectoryManager` | Directory operations, create nested structures |
+| `FileTypeDetector` | Detect file types, categorize files |
+| `FileValidator` | Validate file size, extension, safety |
+| `TempFileManager` | Manage temporary files with auto-cleanup |
+| `ArchiveManager` | Create/extract ZIP/TAR archives |
+| `FileDownloader` | Download files from URLs with progress tracking |
+
+## 7. `formatters.py` - Data Formatting (SKELETON)
+
+| Class | Purpose |
+|-------|---------|
+| `CurrencyFormatter` | Format monetary amounts, Indian currency |
+| `DateTimeFormatter` | Format dates/times for display |
+| `NumberFormatter` | Format numbers, percentages, file sizes |
+| `AddressFormatter` | Format addresses, postal codes |
+| `ContactFormatter` | Format contact information |
+| `TableFormatter` | Format data for tables, CSV export |
+| `ReportFormatter` | Format data for reports |
+| `DataExportFormatter` | Format data for export (Excel, CSV, PDF) |
+| `StudentFormatter` | Format student-specific data |
+| `BookingFormatter` | Format booking information |
+| `PaymentFormatter` | Format payment receipts |
+| `NotificationFormatter` | Format notifications (email, SMS) |
+| `TemplateFormatter` | Handle template variables |
+| `ValidationMessageFormatter` | Format validation error messages |
+
+## 8. `geo_utils.py` - Geolocation
+
+| Class | Purpose |
+|-------|---------|
+| `GeoLocationHelper` | Distance calculations, bounding boxes, bearings |
+| `DistanceCalculator` | Advanced distance algorithms (Vincenty, Manhattan) |
+| `AddressGeocoder` | Convert addresses to coordinates and vice versa |
+| `RegionDetector` | Detect regions, nearest cities, timezones |
+| `GeoFencing` | Create geofences, check point containment |
+| `LocationAnalytics` | Track location history, travel analytics |
+
+**Data Classes:**
+- `GeoPoint` - Geographic coordinates
+- `Address` - Structured address information
+- `GeocodeResult` - Geocoding results
+
+## 9. `hashing.py` - Hashing & Passwords
+
+| Class | Purpose |
+|-------|---------|
+| `HashingHelper` | General hashing (MD5, SHA256, with salt) |
+| `PasswordHasher` | Secure password hashing with bcrypt |
+| `TokenHasher` | Hash tokens, generate API keys |
+| `ChecksumCalculator` | File integrity checking |
+| `HMACHelper` | Message authentication, webhook signatures |
+| `SessionHasher` | Session tokens, CSRF tokens |
+| `DigitalSignature` | Simple digital signatures |
+| `PasswordHistory` | Track password history, prevent reuse |
+
+## 10. `image_utils.py` - Image Processing
+
+| Class | Purpose |
+|-------|---------|
+| `ImageProcessor` | Basic image operations (resize, crop, rotate, filters) |
+| `ThumbnailGenerator` | Generate thumbnails in multiple sizes |
+| `ImageOptimizer` | Optimize images for web, compress to target size |
+| `ImageValidator` | Validate image format, size, detect corruption |
+| `WatermarkManager` | Add text/image watermarks |
+| `ImageConverter` | Convert between image formats, batch processing |
+| `Base64ImageHandler` | Convert images to/from Base64 |
+
+## 11. `pagination_utils.py` - Pagination
+
+| Class | Purpose |
+|-------|---------|
+| `PaginationHelper` | Basic pagination for lists and queries |
+| `CursorPaginator` | Cursor-based pagination for large datasets |
+| `OffsetPaginator` | Traditional offset-based pagination |
+| `PageCalculator` | Calculate page numbers, ranges |
+| `PaginationAnalytics` | Track page usage, user behavior |
+| `PaginationOptimizer` | Optimize pagination performance |
+
+**Data Classes:**
+- `PaginationParams` - Input parameters
+- `PaginationInfo` - Pagination metadata
+- `PaginatedResponse[T]` - Generic paginated response
+
+## 12. `pdf_utils.py` - PDF Operations
+
+| Class | Purpose |
+|-------|---------|
+| `PDFGenerator` | Generate PDFs with ReportLab (reports, invoices) |
+| `PDFMerger` | Merge/split PDFs, extract pages |
+| `PDFSigner` | Add digital signatures |
+| `PDFValidator` | Validate PDF files, check corruption |
+| `PDFTextExtractor` | Extract text, search within PDFs |
+| `PDFImageExtractor` | Extract images, convert PDF to images |
+| `PDFReportGenerator` | Generate specialized reports |
+
+## 13. `slug_utils.py` - URL Slugs
+
+| Class | Purpose |
+|-------|---------|
+| `SlugHelper` | Basic slug generation, validation, sanitization |
+| `URLSafeSlugger` | Advanced URL-safe slugs with Unicode support |
+| `UniqueSlugGenerator` | Generate unique slugs with conflict resolution |
+| `SlugValidator` | Validate slug format, reserved words |
+| `HostelSlugGenerator` | Domain-specific slug generation |
+| `SlugBatch` | Batch slug generation with conflict resolution |
+
+## 14. `sms_utils.py` - SMS Messaging
+
+| Class | Purpose |
+|-------|---------|
+| `SMSHelper` | Send SMS via multiple providers (Twilio, MSG91, etc.) |
+| `MessageOptimizer` | Optimize message length, split long messages |
+| `NumberValidator` | Validate phone numbers by country |
+| `DeliveryTracker` | Track SMS delivery status |
+| `SMSTemplateManager` | Manage SMS templates |
+| `SMSAnalytics` | Track SMS analytics, delivery rates |
+
+**Data Classes:**
+- `SMSConfig` - SMS provider configuration
+- `SMSMessage` - SMS message structure
+
+## 15. `string_utils.py` - String Operations
+
+| Class | Purpose |
+|-------|---------|
+| `StringHelper` | Basic string manipulation (clean, case conversion, masking) |
+| `TextCleaner` | Clean text, remove HTML, extract data |
+| `NameFormatter` | Format names, parse full names, get initials |
+| `PhoneNumberFormatter` | Format phone numbers by country |
+| `AddressFormatter` | Format addresses, extract postal codes |
+| `PasswordGenerator` | Generate secure passwords, check strength |
+| `SearchHelper` | Fuzzy matching, similarity scoring, search tokens |
+| `ValidationHelper` | String validation (email, URL, password strength) |
+
+## 16. `validators.py` - Data Validation
+
+| Class | Purpose |
+|-------|---------|
+| `EmailValidator` | Validate email format, check disposable domains |
+| `PhoneValidator` | Validate phone numbers by country |
+| `URLValidator` | Validate URLs, check security |
+| `FileValidator` | Validate files (type, size, safety) |
+| `BusinessRuleValidator` | Validate business rules (age, dates, payments) |
+| `SecurityValidator` | Security validation (passwords, IPs, injection) |
+| `DataValidator` | Generic data validation (fields, types, ranges) |
+| `StudentValidator` | Student-specific validation |
+| `HostelValidator` | Hostel-specific validation |
+| `PaymentValidator` | Payment-specific validation |
+| `CompositeValidator` | Chain multiple validators |
+| `CustomValidator` | Build custom validation rules |
+
+**Data Classes:**
+- `ValidationResult` - Validation result container
+
+## 17. `__init__.py` - Package Exports
+**No classes** - Imports and exports all utility classes for easy access
+
+---
+
+## Summary by Category
+
+**Text Processing:** StringHelper, TextCleaner, NameFormatter, SlugHelper
+**Date/Time:** DateTimeHelper, TimezoneConverter, BusinessHoursChecker
+**Files:** FileHelper, ImageProcessor, PDFGenerator, ExcelGenerator
+**Communication:** EmailHelper, SMSHelper
+**Security:** EncryptionHelper, PasswordHasher, SecurityValidator
+**Data:** DataValidator, BusinessRuleValidator, PaginationHelper
+**Location:** GeoLocationHelper, AddressGeocoder
+**Formatting:** All formatter classes for display/export
+
+Each class is focused on a specific functionality with clear separation of concerns.
