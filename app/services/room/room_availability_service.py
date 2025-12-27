@@ -29,7 +29,7 @@ from app.schemas.room import (
     AvailabilityCalendar,
     BulkAvailabilityRequest,
 )
-from app.core.exceptions import ValidationException, BusinessLogicException
+from app.core1.exceptions import ValidationException, BusinessLogicException
 
 logger = logging.getLogger(__name__)
 

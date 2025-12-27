@@ -18,7 +18,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from app.repositories.notification import NotificationPreferenceRepository
 from app.schemas.user import NotificationPreferencesUpdate
 from app.models.notification.notification_preferences import NotificationPreference
-from app.core.exceptions import ValidationException, BusinessLogicException, NotFoundException
+from app.core1.exceptions import ValidationException, BusinessLogicException, NotFoundException
 
 logger = logging.getLogger(__name__)
 

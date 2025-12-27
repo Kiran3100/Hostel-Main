@@ -25,12 +25,12 @@ from app.schemas.visitor import (
     SearchPreferences,
     NotificationPreferences,
 )
-from app.core.exceptions import (
+from app.core1.exceptions import (
     ValidationException,
     NotFoundException,
     ServiceException,
 )
-from app.core.caching import cache_result, invalidate_cache
+from app.core1.caching import cache_result, invalidate_cache
 
 logger = logging.getLogger(__name__)
 

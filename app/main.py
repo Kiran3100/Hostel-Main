@@ -6,8 +6,8 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.v1.router import router as api_v1_router
 from app.config import settings
-from app.core.middleware import register_middlewares
-from app.core import init_db  # optional: for dev environments
+from app.core1.middleware import register_middlewares
+from app.core1 import init_db  # optional: for dev environments
 
 
 def create_app() -> FastAPI:

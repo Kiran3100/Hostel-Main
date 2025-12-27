@@ -19,7 +19,7 @@ from app.schemas.student import (
     StudentPreferences,
     StudentPrivacySettings,
 )
-from app.core.exceptions import (
+from app.core1.exceptions import (
     ValidationException,
     BusinessLogicException,
     NotFoundException,

@@ -31,7 +31,7 @@ from app.repositories.base.query_builder import QueryBuilder
 from app.repositories.base.specifications import Specification
 from app.repositories.base.pagination import PaginationParams, PaginatedResult
 from app.repositories.base.filtering import FilterCriteria
-from app.core.exceptions import (
+from app.core1.exceptions import (
     ResourceNotFoundError,
     ValidationError,
     BusinessLogicError,

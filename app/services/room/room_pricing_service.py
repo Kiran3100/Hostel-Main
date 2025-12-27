@@ -26,7 +26,7 @@ from app.repositories.room import RoomRepository, RoomPricingHistoryRepository
 from app.repositories.fee_structure import FeeStructureRepository
 from app.schemas.room import RoomPricingUpdate, RoomResponse
 from app.schemas.fee_structure import FeeStructure
-from app.core.exceptions import ValidationException, BusinessLogicException
+from app.core1.exceptions import ValidationException, BusinessLogicException
 
 logger = logging.getLogger(__name__)
 

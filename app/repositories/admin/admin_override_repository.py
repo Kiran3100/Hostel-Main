@@ -22,7 +22,7 @@ from app.models.admin.admin_override import (
 from app.models.admin.admin_user import AdminUser
 from app.models.supervisor.supervisor import Supervisor
 from app.repositories.base.base_repository import BaseRepository
-from app.core.exceptions import (
+from app.core1.exceptions import (
     EntityNotFoundError,
     ValidationError,
     AuthorizationError

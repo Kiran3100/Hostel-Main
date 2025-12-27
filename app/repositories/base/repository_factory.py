@@ -14,9 +14,9 @@ from sqlalchemy.orm import Session
 from app.models.base import BaseModel
 from app.repositories.base.base_repository import BaseRepository
 from app.repositories.base.caching_repository import CachingRepository
-from app.core.config import settings
-from app.core.logging import get_logger
-from app.core.cache import CacheManager
+from app.core1.config import settings
+from app.core1.logging import get_logger
+from app.core1.cache import CacheManager
 
 logger = get_logger(__name__)
 

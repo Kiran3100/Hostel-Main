@@ -25,7 +25,7 @@ from app.services.reporting.compliance_report_service import ComplianceReportSer
 from app.services.reporting.custom_report_service import CustomReportService
 from app.services.reporting.financial_report_service import FinancialReportService
 from app.services.reporting.operational_report_service import OperationalReportService
-from app.core.exceptions import ValidationException
+from app.core1.exceptions import ValidationException
 from app.utils.metrics import track_performance
 
 logger = logging.getLogger(__name__)

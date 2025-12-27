@@ -29,8 +29,8 @@ from app.schemas.admin.admin_user import (
     AdminUserResponse,
     AdminUserDetail,
 )
-from app.core.security.password_hasher import PasswordHasher
-from app.core.security.jwt_handler import JWTManager
+from app.core1.security.password_hasher import PasswordHasher
+from app.core1.security.jwt_handler import JWTManager
 
 
 class AdminUserService(BaseService[AdminUser, AdminUserRepository]):

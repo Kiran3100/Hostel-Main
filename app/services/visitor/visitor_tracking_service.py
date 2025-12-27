@@ -23,7 +23,7 @@ from app.repositories.visitor import (
     RecentlyViewedHostelRepository,
 )
 from app.schemas.search import BasicSearchRequest
-from app.core.exceptions import (
+from app.core1.exceptions import (
     ValidationException,
     ServiceException,
 )

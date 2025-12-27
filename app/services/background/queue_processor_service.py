@@ -32,7 +32,7 @@ from app.repositories.notification import NotificationQueueRepository
 from app.repositories.announcement import AnnouncementDeliveryRepository
 from app.repositories.integrations import ThirdPartyRepository
 from app.models.notification.notification_queue import NotificationQueue
-from app.core.logging import get_logger
+from app.core1.logging import get_logger
 
 
 class QueueType(str, Enum):

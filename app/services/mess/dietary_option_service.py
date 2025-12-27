@@ -38,7 +38,7 @@ from app.schemas.mess import (
     DietaryRestriction,
     MealCustomization,
 )
-from app.core.exceptions import (
+from app.core1.exceptions import (
     ValidationException,
     NotFoundException,
     DuplicateEntryException,

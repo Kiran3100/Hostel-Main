@@ -21,8 +21,8 @@ from app.models.supervisor.supervisor_dashboard import (
 )
 from app.models.supervisor.supervisor import Supervisor
 from app.repositories.base.base_repository import BaseRepository
-from app.core.exceptions import ResourceNotFoundError
-from app.core.logging import logger
+from app.core1.exceptions import ResourceNotFoundError
+from app.core1.logging import logger
 
 
 class SupervisorDashboardRepository(BaseRepository[DashboardMetrics]):

@@ -38,7 +38,7 @@ from app.schemas.auth.social_auth import (
     SocialProvider,
 )
 from app.models.user.user import User
-from app.core.security.jwt_handler import JWTManager
+from app.core1.security.jwt_handler import JWTManager
 
 logger = logging.getLogger(__name__)
 

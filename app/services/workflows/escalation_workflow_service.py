@@ -14,8 +14,8 @@ import asyncio
 
 from sqlalchemy.orm import Session
 
-from app.core.exceptions import ValidationException, BusinessLogicException
-from app.core.config import settings
+from app.core1.exceptions import ValidationException, BusinessLogicException
+from app.core1.config import settings
 from app.repositories.complaint import (
     ComplaintRepository,
     ComplaintEscalationRepository,

@@ -22,7 +22,7 @@ from app.models.search.search_query_log import (
 from app.repositories.base.base_repository import BaseRepository
 from app.repositories.base.query_builder import QueryBuilder
 from app.repositories.base.pagination import PaginationManager
-from app.core.exceptions import NotFoundException, ValidationException
+from app.core1.exceptions import NotFoundException, ValidationException
 
 
 class SearchQueryLogRepository(BaseRepository[SearchQueryLog]):

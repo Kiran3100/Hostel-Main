@@ -27,8 +27,8 @@ from app.schemas.notification import (
     RoutingRule,
     EscalationPath,
 )
-from app.core.exceptions import ValidationException, DatabaseException
-from app.core.logging import LoggingContext
+from app.core1.exceptions import ValidationException, DatabaseException
+from app.core1.logging import LoggingContext
 
 logger = logging.getLogger(__name__)
 

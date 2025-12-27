@@ -29,7 +29,7 @@ from app.schemas.fee_structure.fee_calculation import (
     FeeCalculationRequest,
     FeeCalculation as FeeCalculationSchema,
 )
-from app.core.logging import get_logger
+from app.core1.logging import get_logger
 
 
 class FeeCalculationService(BaseService[FeeCalculationModel, FeeCalculationRepository]):

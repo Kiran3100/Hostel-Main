@@ -24,15 +24,15 @@ from app.schemas.review import (
     VoteHistoryItem,
     VotingStats,
 )
-from app.core.exceptions import (
+from app.core1.exceptions import (
     ValidationException,
     BusinessLogicException,
     NotFoundException,
     DatabaseException,
     RateLimitException,
 )
-from app.core.cache import cache_result, invalidate_cache
-from app.core.metrics import track_performance
+from app.core1.cache import cache_result, invalidate_cache
+from app.core1.metrics import track_performance
 
 logger = logging.getLogger(__name__)
 

@@ -6,7 +6,7 @@ from typing import Optional, Dict, Any, Type
 from traceback import format_exception
 import sys
 
-from app.core.logging import get_logger
+from app.core1.logging import get_logger
 from app.services.base.service_result import (
     ServiceResult,
     ServiceError,

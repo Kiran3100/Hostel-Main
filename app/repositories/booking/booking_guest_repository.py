@@ -13,7 +13,7 @@ from uuid import UUID
 from sqlalchemy import and_, func, or_, select
 from sqlalchemy.orm import Session, joinedload, selectinload
 
-from app.core.exceptions import EntityNotFoundError, ValidationError
+from app.core1.exceptions import EntityNotFoundError, ValidationError
 from app.models.booking.booking_guest import BookingGuest, GuestDocument
 from app.models.booking.booking import Booking
 from app.repositories.base.base_repository import (

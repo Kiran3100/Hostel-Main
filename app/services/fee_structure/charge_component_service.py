@@ -35,7 +35,7 @@ from app.schemas.fee_structure.charge_component import (
     DiscountConfigurationCreate,
     DiscountConfigurationUpdate,
 )
-from app.core.logging import get_logger
+from app.core1.logging import get_logger
 
 
 class ChargeComponentService(BaseService[ChargeComponentModel, ChargeComponentRepository]):

@@ -31,7 +31,7 @@ from app.repositories.announcement import AnnouncementSchedulingRepository
 from app.repositories.analytics import CustomReportsRepository
 from app.repositories.subscription import SubscriptionBillingRepository
 from app.models.announcement.announcement_scheduling import AnnouncementSchedule
-from app.core.logging import get_logger
+from app.core1.logging import get_logger
 
 
 class TaskType(str, Enum):

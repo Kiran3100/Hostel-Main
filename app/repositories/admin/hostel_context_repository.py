@@ -22,7 +22,7 @@ from app.models.admin.hostel_context import (
 from app.models.admin.admin_user import AdminUser
 from app.models.hostel.hostel import Hostel
 from app.repositories.base.base_repository import BaseRepository
-from app.core.exceptions import (
+from app.core1.exceptions import (
     EntityNotFoundError,
     ValidationError,
     ConflictError

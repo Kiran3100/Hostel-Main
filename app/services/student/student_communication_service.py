@@ -19,7 +19,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from app.services.workflows import NotificationWorkflowService
 from app.repositories.student import StudentRepository
 from app.schemas.student import StudentContactInfo
-from app.core.exceptions import ValidationException, BusinessLogicException
+from app.core1.exceptions import ValidationException, BusinessLogicException
 
 logger = logging.getLogger(__name__)
 

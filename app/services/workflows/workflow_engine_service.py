@@ -22,15 +22,15 @@ from sqlalchemy.orm import Session
 from sqlalchemy import create_engine
 from redis import Redis
 
-from app.core.exceptions import (
+from app.core1.exceptions import (
     BusinessLogicException,
     ValidationException,
     WorkflowException
 )
-from app.core.logging import LoggingContext
+from app.core1.logging import LoggingContext
 from app.models.base.enums import WorkflowStatus, WorkflowType
 from app.utils.datetime_utils import DateTimeHelper
-from app.core.config import settings
+from app.core1.config import settings
 
 
 logger = logging.getLogger(__name__)

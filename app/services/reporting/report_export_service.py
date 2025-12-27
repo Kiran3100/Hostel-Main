@@ -21,7 +21,7 @@ from app.repositories.analytics import CustomReportsRepository
 from app.utils.excel_utils import ExcelReportGenerator
 from app.utils.pdf_utils import PDFReportGenerator
 from app.utils.file_utils import FileHelper
-from app.core.exceptions import ValidationException, NotFoundException
+from app.core1.exceptions import ValidationException, NotFoundException
 from app.utils.metrics import track_performance
 
 logger = logging.getLogger(__name__)

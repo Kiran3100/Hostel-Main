@@ -26,8 +26,8 @@ from app.schemas.maintenance import (
     VendorContract,
     VendorPerformanceReview,
 )
-from app.core.exceptions import ValidationException, BusinessLogicException
-from app.core.logging import logger
+from app.core1.exceptions import ValidationException, BusinessLogicException
+from app.core1.logging import logger
 
 
 class MaintenanceVendorService:

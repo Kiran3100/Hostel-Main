@@ -21,7 +21,7 @@ from app.models.fee_structure.charge_component import (
     DiscountConfiguration,
 )
 from app.repositories.base.base_repository import BaseRepository
-from app.core.exceptions import (
+from app.core1.exceptions import (
     NotFoundException,
     ValidationException,
     ConflictException,

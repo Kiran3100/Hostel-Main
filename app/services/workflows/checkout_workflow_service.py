@@ -13,8 +13,8 @@ from dataclasses import dataclass
 from enum import Enum
 import asyncio
 
-from app.core.exceptions import ValidationException, BusinessLogicException
-from app.core.config import settings
+from app.core1.exceptions import ValidationException, BusinessLogicException
+from app.core1.config import settings
 from app.models.base.enums import StudentStatus, PaymentStatus
 from app.repositories.student import StudentRepository
 from app.repositories.room import BedAssignmentRepository

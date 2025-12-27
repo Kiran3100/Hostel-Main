@@ -20,8 +20,8 @@ from sqlalchemy.orm import Session
 
 from app.repositories.payment import PaymentRepository, GatewayTransactionRepository
 from app.repositories.auth import SecurityEventRepository
-from app.core.exceptions import ValidationException, NotFoundException
-from app.core.logging import LoggingContext, logger
+from app.core1.exceptions import ValidationException, NotFoundException
+from app.core1.logging import LoggingContext, logger
 
 
 class PaymentFraudService:

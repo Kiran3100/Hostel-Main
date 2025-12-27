@@ -36,7 +36,7 @@ from app.schemas.subscription import (
     CancellationResponse,
     SubscriptionStatus,
 )
-from app.core.exceptions import ValidationException
+from app.core1.exceptions import ValidationException
 
 logger = logging.getLogger(__name__)
 

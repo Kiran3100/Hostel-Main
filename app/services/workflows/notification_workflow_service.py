@@ -27,8 +27,8 @@ from app.schemas.notification import (
     NotificationChannel,
     NotificationPriority
 )
-from app.core.exceptions import ValidationException
-from app.core.config import settings
+from app.core1.exceptions import ValidationException
+from app.core1.config import settings
 from app.services.external.email_service import EmailService
 from app.services.external.sms_service import SMSService
 from app.services.external.push_service import PushNotificationService

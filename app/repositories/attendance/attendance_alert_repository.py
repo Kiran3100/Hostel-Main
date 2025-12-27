@@ -19,7 +19,7 @@ from app.models.attendance.attendance_alert import (
     AlertNotification,
 )
 from app.repositories.base.base_repository import BaseRepository
-from app.core.exceptions import ValidationError, NotFoundError, ConflictError
+from app.core1.exceptions import ValidationError, NotFoundError, ConflictError
 
 
 class AttendanceAlertRepository(BaseRepository[AttendanceAlert]):

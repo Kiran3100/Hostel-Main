@@ -16,7 +16,7 @@ from sqlalchemy.exc import SQLAlchemyError
 
 from app.repositories.student import GuardianContactRepository
 from app.models.student.guardian_contact import GuardianContact
-from app.core.exceptions import (
+from app.core1.exceptions import (
     ValidationException,
     BusinessLogicException,
     NotFoundException,

@@ -29,7 +29,7 @@ from app.schemas.student import (
     StudentContactInfo,
     StudentDocumentInfo,
 )
-from app.core.exceptions import (
+from app.core1.exceptions import (
     ValidationException,
     BusinessLogicException,
     NotFoundException,

@@ -29,7 +29,7 @@ from app.repositories.analytics import (
     OccupancyAnalyticsRepository,
     SupervisorAnalyticsRepository,
 )
-from app.core.exceptions import ValidationException, NotFoundException
+from app.core1.exceptions import ValidationException, NotFoundException
 from app.utils.metrics import track_performance
 from app.utils.cache_utils import cache_result
 

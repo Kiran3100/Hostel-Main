@@ -27,7 +27,7 @@ from app.schemas.fee_structure.fee_structure import (
     FeeStructureCreate,
     FeeStructureUpdate,
 )
-from app.core.logging import get_logger
+from app.core1.logging import get_logger
 
 
 class FeeStructureService(BaseService[FeeStructureModel, FeeStructureRepository]):

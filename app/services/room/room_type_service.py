@@ -27,7 +27,7 @@ from app.schemas.room import (
     RoomTypeCreate,
     RoomTypeUpdate,
 )
-from app.core.exceptions import ValidationException, BusinessLogicException
+from app.core1.exceptions import ValidationException, BusinessLogicException
 
 logger = logging.getLogger(__name__)
 

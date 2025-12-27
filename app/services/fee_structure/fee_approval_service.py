@@ -25,7 +25,7 @@ from app.schemas.fee_structure.fee_structure import (
     FeeApprovalRequest,
     FeeApprovalResponse,
 )
-from app.core.logging import get_logger
+from app.core1.logging import get_logger
 
 
 class FeeApprovalService(BaseService[FeeApprovalModel, FeeStructureRepository]):

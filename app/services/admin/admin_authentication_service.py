@@ -22,8 +22,8 @@ from app.repositories.admin import AdminUserRepository
 from app.models.admin import AdminUser, AdminSession
 from app.schemas.auth.login import LoginRequest, LoginResponse, UserLoginInfo
 from app.schemas.auth.token import Token, RefreshTokenRequest, RefreshTokenResponse
-from app.core.security.password_hasher import PasswordHasher
-from app.core.security.jwt_handler import JWTManager
+from app.core1.security.password_hasher import PasswordHasher
+from app.core1.security.jwt_handler import JWTManager
 from app.models.base.enums import UserRole
 
 

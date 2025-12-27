@@ -16,7 +16,7 @@ from sqlalchemy.exc import SQLAlchemyError
 
 from app.repositories.user import UserAddressRepository
 from app.schemas.user import UserAddressUpdate
-from app.core.exceptions import (
+from app.core1.exceptions import (
     ValidationException,
     BusinessLogicException,
     NotFoundException,

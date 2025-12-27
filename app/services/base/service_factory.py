@@ -5,7 +5,7 @@ Service factory for dependency injection and service instantiation.
 from typing import Optional, Dict, Type, TypeVar, Generic
 from sqlalchemy.orm import Session
 
-from app.core.logging import get_logger
+from app.core1.logging import get_logger
 from app.repositories.base.repository_factory import RepositoryFactory
 from app.services.base.audit_service import AuditService
 from app.services.base.authorization_service import AuthorizationService

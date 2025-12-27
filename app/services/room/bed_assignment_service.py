@@ -33,7 +33,7 @@ from app.schemas.room import (
     BedAssignment,
     BedDetailedStatus,
 )
-from app.core.exceptions import ValidationException, BusinessLogicException
+from app.core1.exceptions import ValidationException, BusinessLogicException
 from app.models.base.enums import BedStatus
 
 logger = logging.getLogger(__name__)

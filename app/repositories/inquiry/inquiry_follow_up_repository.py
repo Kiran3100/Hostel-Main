@@ -20,7 +20,7 @@ from app.models.inquiry.inquiry_follow_up import (
 from app.models.inquiry.inquiry import Inquiry
 from app.repositories.base.base_repository import BaseRepository
 from app.repositories.base.query_builder import QueryBuilder
-from app.core.exceptions import NotFoundException, ValidationException
+from app.core1.exceptions import NotFoundException, ValidationException
 
 
 class InquiryFollowUpRepository(BaseRepository[InquiryFollowUp]):

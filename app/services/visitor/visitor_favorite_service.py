@@ -25,7 +25,7 @@ from app.schemas.visitor import (
     FavoriteHostelItem,
     FavoriteComparison as FavoriteComparisonSchema,
 )
-from app.core.exceptions import (
+from app.core1.exceptions import (
     ValidationException,
     NotFoundException,
     ServiceException,

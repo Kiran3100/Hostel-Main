@@ -13,8 +13,8 @@ from sqlalchemy.orm import Session
 
 from app.schemas.search import SearchAnalyticsRequest, SearchAnalytics
 from app.repositories.search import SearchAnalyticsRepository
-from app.core.exceptions import ValidationException
-from app.core.logging import logger, LoggingContext
+from app.core1.exceptions import ValidationException
+from app.core1.logging import logger, LoggingContext
 
 
 class SearchAnalyticsService:

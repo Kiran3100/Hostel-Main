@@ -2,7 +2,7 @@
 
 from typing import Any, Callable
 
-from app.core.dependencies import (
+from app.core1.dependencies import (
     AdminDependency,
     AuthenticationDependency,
     AuthorizationDependency,

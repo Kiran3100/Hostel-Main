@@ -19,7 +19,7 @@ from app.schemas.supervisor import (
     PermissionCheckRequest,
     PermissionCheckResponse,
 )
-from app.core.exceptions import ValidationException
+from app.core1.exceptions import ValidationException
 
 logger = logging.getLogger(__name__)
 

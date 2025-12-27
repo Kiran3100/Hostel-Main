@@ -35,8 +35,8 @@ from app.services.notification.sms_notification_service import SMSNotificationSe
 from app.services.notification.push_notification_service import PushNotificationService
 from app.services.notification.notification_routing_service import NotificationRoutingService
 from app.services.notification.notification_queue_service import NotificationQueueService
-from app.core.exceptions import ValidationException, DatabaseException
-from app.core.logging import LoggingContext
+from app.core1.exceptions import ValidationException, DatabaseException
+from app.core1.logging import LoggingContext
 
 logger = logging.getLogger(__name__)
 

@@ -9,8 +9,8 @@ from sqlalchemy.orm import Session
 from uuid import UUID
 
 from app.config import settings
-from app.core.database import SessionLocal
-from app.core.security import JWTSettings, decode_token
+from app.core1.database import SessionLocal
+from app.core1.security import JWTSettings, decode_token
 from app.schemas.common.enums import UserRole
 from app.services.common import UnitOfWork
 from app.services.auth import AuthService, RegistrationService, PasswordService

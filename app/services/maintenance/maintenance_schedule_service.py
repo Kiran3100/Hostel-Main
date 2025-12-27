@@ -31,8 +31,8 @@ from app.schemas.maintenance import (
     ExecutionHistoryItem,
     ScheduleHistory,
 )
-from app.core.exceptions import ValidationException, BusinessLogicException
-from app.core.logging import logger
+from app.core1.exceptions import ValidationException, BusinessLogicException
+from app.core1.logging import logger
 
 
 class MaintenanceScheduleService:

@@ -24,7 +24,7 @@ from app.models.fee_structure.fee_calculation import FeeProjection as FeeProject
 from app.schemas.fee_structure.fee_calculation import (
     FeeProjection as FeeProjectionSchema,
 )
-from app.core.logging import get_logger
+from app.core1.logging import get_logger
 
 
 class FeeProjectionService(BaseService[FeeProjectionModel, FeeCalculationRepository]):

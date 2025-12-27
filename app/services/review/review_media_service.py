@@ -16,14 +16,14 @@ from sqlalchemy.exc import SQLAlchemyError
 
 from app.repositories.review import ReviewMediaRepository
 from app.schemas.review_media import ReviewMedia
-from app.core.exceptions import (
+from app.core1.exceptions import (
     ValidationException,
     NotFoundException,
     DatabaseException,
     BusinessLogicException,
 )
-from app.core.cache import cache_result, invalidate_cache
-from app.core.metrics import track_performance
+from app.core1.cache import cache_result, invalidate_cache
+from app.core1.metrics import track_performance
 
 logger = logging.getLogger(__name__)
 

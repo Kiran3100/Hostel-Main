@@ -19,7 +19,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from app.services.workflows import OnboardingWorkflowService
 from app.schemas.student import StudentCheckInRequest, StudentDetail
 from app.repositories.student import StudentRepository
-from app.core.exceptions import (
+from app.core1.exceptions import (
     ValidationException,
     BusinessLogicException,
     NotFoundException,

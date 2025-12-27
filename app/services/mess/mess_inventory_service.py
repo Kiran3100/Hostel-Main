@@ -25,7 +25,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
 
 from app.repositories.mess import IngredientMasterRepository
-from app.core.exceptions import (
+from app.core1.exceptions import (
     ValidationException,
     NotFoundException,
     BusinessLogicException,

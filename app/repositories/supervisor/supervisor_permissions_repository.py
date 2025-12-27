@@ -19,12 +19,12 @@ from app.models.supervisor.supervisor_permissions import (
 )
 from app.models.supervisor.supervisor import Supervisor
 from app.repositories.base.base_repository import BaseRepository
-from app.core.exceptions import (
+from app.core1.exceptions import (
     ResourceNotFoundError,
     BusinessLogicError,
     ValidationError,
 )
-from app.core.logging import logger
+from app.core1.logging import logger
 
 
 class SupervisorPermissionsRepository(BaseRepository[SupervisorPermission]):

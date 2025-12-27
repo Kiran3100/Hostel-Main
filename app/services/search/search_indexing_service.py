@@ -12,8 +12,8 @@ from uuid import UUID
 from sqlalchemy.orm import Session
 
 from app.repositories.search import SearchIndexRepository
-from app.core.logging import LoggingContext, logger
-from app.core.exceptions import ValidationException
+from app.core1.logging import LoggingContext, logger
+from app.core1.exceptions import ValidationException
 
 
 class SearchIndexingService:

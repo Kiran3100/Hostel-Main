@@ -31,8 +31,8 @@ from app.schemas.search import (
     FacetedSearchResponse,
 )
 from app.repositories.search import SearchQueryLogRepository
-from app.core.exceptions import ValidationException
-from app.core.logging import LoggingContext, logger
+from app.core1.exceptions import ValidationException
+from app.core1.logging import LoggingContext, logger
 
 
 # Type aliases for search backend functions

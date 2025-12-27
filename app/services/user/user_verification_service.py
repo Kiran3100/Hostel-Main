@@ -18,7 +18,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from app.repositories.user import UserRepository
 from app.repositories.auth import OTPTokenRepository
 from app.schemas.common.enums import OTPType
-from app.core.exceptions import (
+from app.core1.exceptions import (
     ValidationException,
     BusinessLogicException,
     NotFoundException,

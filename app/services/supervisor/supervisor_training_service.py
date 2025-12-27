@@ -15,7 +15,7 @@ from sqlalchemy.orm import Session
 
 from app.repositories.supervisor import SupervisorPerformanceRepository
 from app.schemas.common import DateRangeFilter
-from app.core.exceptions import ValidationException
+from app.core1.exceptions import ValidationException
 
 logger = logging.getLogger(__name__)
 

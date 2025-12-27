@@ -22,7 +22,7 @@ from calendar import monthrange
 from sqlalchemy.orm import Session
 
 from app.services.base import ServiceResult, ServiceError, ErrorCode, ErrorSeverity
-from app.core.logging import get_logger
+from app.core1.logging import get_logger
 
 
 class ProrationService:

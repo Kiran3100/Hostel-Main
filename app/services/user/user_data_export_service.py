@@ -21,7 +21,7 @@ from app.schemas.user import UserDetail, UserStats
 from app.utils.excel_utils import ExcelReportGenerator
 from app.utils.pdf_utils import PDFReportGenerator
 from app.utils.file_utils import FileHelper
-from app.core.exceptions import (
+from app.core1.exceptions import (
     ValidationException,
     BusinessLogicException,
     NotFoundException,

@@ -32,7 +32,7 @@ from app.repositories.integrations import (
     IntegrationAggregateRepository,
 )
 from app.models.integrations.api_integration import APIIntegration
-from app.core.logging import get_logger
+from app.core1.logging import get_logger
 
 
 class SyncDirection(str, Enum):

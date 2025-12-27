@@ -8,7 +8,7 @@ import functools
 import hashlib
 from datetime import timedelta
 
-from app.core.logging import get_logger
+from app.core1.logging import get_logger
 from app.config.redis import RedisManager
 
 

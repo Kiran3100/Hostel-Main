@@ -30,8 +30,8 @@ from app.schemas.maintenance import (
     MaintenanceFilterParams,
     MaintenanceSortOptions,
 )
-from app.core.exceptions import ValidationException, BusinessLogicException
-from app.core.logging import LoggingContext, logger
+from app.core1.exceptions import ValidationException, BusinessLogicException
+from app.core1.logging import LoggingContext, logger
 
 
 class MaintenanceRequestService:

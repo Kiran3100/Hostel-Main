@@ -31,7 +31,7 @@ from app.schemas.mess import (
     ApprovalHistory,
     BulkApproval,
 )
-from app.core.exceptions import (
+from app.core1.exceptions import (
     ValidationException,
     BusinessLogicException,
     NotFoundException,

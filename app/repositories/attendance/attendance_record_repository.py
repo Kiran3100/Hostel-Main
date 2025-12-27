@@ -23,7 +23,7 @@ from app.models.base.enums import AttendanceStatus, AttendanceMode
 from app.repositories.base.base_repository import BaseRepository
 from app.repositories.base.query_builder import QueryBuilder
 from app.repositories.base.pagination import PaginationManager
-from app.core.exceptions import ValidationError, NotFoundError
+from app.core1.exceptions import ValidationError, NotFoundError
 
 
 class AttendanceRecordRepository(BaseRepository[AttendanceRecord]):

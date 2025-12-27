@@ -9,7 +9,7 @@ from sqlalchemy.orm import Session, joinedload
 from app.models.user import User
 from app.schemas.common.enums import UserRole
 from app.repositories.base.base_repository import BaseRepository
-from app.core.exceptions import EntityNotFoundError, BusinessRuleViolationError
+from app.core1.exceptions import EntityNotFoundError, BusinessRuleViolationError
 
 
 class UserRepository(BaseRepository[User]):

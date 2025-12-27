@@ -22,7 +22,7 @@ from app.models.search.search_autocomplete import (
     SuggestionPerformance
 )
 from app.repositories.base.base_repository import BaseRepository
-from app.core.exceptions import NotFoundException, ValidationException
+from app.core1.exceptions import NotFoundException, ValidationException
 
 
 class AutocompleteSuggestionRepository(BaseRepository[AutocompleteSuggestion]):

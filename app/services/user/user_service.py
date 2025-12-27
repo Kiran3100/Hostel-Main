@@ -27,7 +27,7 @@ from app.schemas.user import (
     UserListItem,
     UserStats,
 )
-from app.core.exceptions import (
+from app.core1.exceptions import (
     ValidationException,
     BusinessLogicException,
     NotFoundException,

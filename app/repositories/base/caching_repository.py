@@ -17,9 +17,9 @@ from sqlalchemy.orm import Query, Session
 
 from app.models.base import BaseModel
 from app.repositories.base.base_repository import BaseRepository, AuditContext
-from app.core.logging import get_logger
-from app.core.cache import CacheManager, CacheBackend
-from app.core.exceptions import CacheError
+from app.core1.logging import get_logger
+from app.core1.cache import CacheManager, CacheBackend
+from app.core1.exceptions import CacheError
 
 logger = get_logger(__name__)
 

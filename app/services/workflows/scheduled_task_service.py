@@ -33,8 +33,8 @@ from app.repositories.audit import AuditAggregateRepository
 from app.repositories.hostel import HostelRepository
 from app.services.workflows.escalation_workflow_service import EscalationWorkflowService
 from app.services.workflows.workflow_engine_service import workflow_engine
-from app.core.config import settings
-from app.core.exceptions import BusinessLogicException
+from app.core1.config import settings
+from app.core1.exceptions import BusinessLogicException
 
 
 logger = logging.getLogger(__name__)

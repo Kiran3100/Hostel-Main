@@ -41,7 +41,7 @@ from app.repositories.announcement import (
 )
 from app.repositories.audit import AuditLogRepository
 from app.models.auth.otp_token import OTPToken
-from app.core.logging import get_logger
+from app.core1.logging import get_logger
 
 
 class CleanupTask(str, Enum):

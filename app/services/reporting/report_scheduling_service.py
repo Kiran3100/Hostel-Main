@@ -21,7 +21,7 @@ from app.schemas.analytics import (
     ReportExecutionHistory,
 )
 from app.repositories.analytics import CustomReportsRepository
-from app.core.exceptions import (
+from app.core1.exceptions import (
     ValidationException,
     NotFoundException,
     AuthorizationException,

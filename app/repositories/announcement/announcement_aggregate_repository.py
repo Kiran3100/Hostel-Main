@@ -34,7 +34,7 @@ from app.repositories.announcement.announcement_scheduling_repository import Ann
 from app.repositories.announcement.announcement_approval_repository import AnnouncementApprovalRepository
 from app.repositories.announcement.announcement_delivery_repository import AnnouncementDeliveryRepository
 from app.repositories.announcement.announcement_tracking_repository import AnnouncementTrackingRepository
-from app.core.exceptions import (
+from app.core1.exceptions import (
     ResourceNotFoundError,
     ValidationError,
     BusinessLogicError,

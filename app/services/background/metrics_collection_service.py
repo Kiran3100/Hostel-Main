@@ -29,7 +29,7 @@ from app.services.base.service_result import ServiceError, ErrorCode, ErrorSever
 from app.repositories.analytics import PlatformAnalyticsRepository
 from app.repositories.notification import NotificationQueueRepository
 from app.models.analytics.platform_analytics import PlatformMetrics
-from app.core.logging import get_logger
+from app.core1.logging import get_logger
 
 
 class MetricCategory(str, Enum):

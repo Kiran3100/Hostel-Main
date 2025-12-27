@@ -18,7 +18,7 @@ from app.models.fee_structure.fee_structure import FeeStructure, FeeApproval
 from app.models.base.enums import RoomType, FeeType, ChargeType
 from app.repositories.base.base_repository import BaseRepository
 from app.repositories.base.specifications import Specification
-from app.core.exceptions import (
+from app.core1.exceptions import (
     NotFoundException,
     ValidationException,
     ConflictException,

@@ -26,7 +26,7 @@ from sqlalchemy.exc import SQLAlchemyError
 
 from app.services.base import BaseService, ServiceResult
 from app.services.base.service_result import ServiceError, ErrorCode, ErrorSeverity
-from app.core.logging import get_logger
+from app.core1.logging import get_logger
 
 # Config health checks
 from app.config.database import DatabaseHealthCheck

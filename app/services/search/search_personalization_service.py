@@ -13,8 +13,8 @@ from sqlalchemy.orm import Session
 
 from app.schemas.search import AdvancedSearchRequest
 from app.repositories.visitor import VisitorAggregateRepository
-from app.core.exceptions import ValidationException
-from app.core.logging import logger, LoggingContext
+from app.core1.exceptions import ValidationException
+from app.core1.logging import logger, LoggingContext
 
 
 class SearchPersonalizationService:

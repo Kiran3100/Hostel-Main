@@ -26,7 +26,7 @@ from app.models.student.student import Student
 from app.repositories.base.base_repository import BaseRepository
 from app.repositories.base.query_builder import QueryBuilder
 from app.repositories.base.specifications import Specification
-from app.core.exceptions import HostelNotFoundError, ValidationError
+from app.core1.exceptions import HostelNotFoundError, ValidationError
 
 
 class HostelAggregateRepository(BaseRepository[Hostel]):

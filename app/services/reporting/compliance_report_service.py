@@ -24,7 +24,7 @@ from app.schemas.audit import (
     AuditSummary,
 )
 from app.repositories.audit import AuditAggregateRepository
-from app.core.exceptions import ValidationException, NotFoundException
+from app.core1.exceptions import ValidationException, NotFoundException
 from app.utils.cache_utils import cache_result
 from app.utils.metrics import track_performance
 

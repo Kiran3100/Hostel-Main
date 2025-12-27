@@ -21,7 +21,7 @@ from app.services.base import (
 )
 from app.repositories.user import UserRepository
 from app.models.user.user import User
-from app.core.security.two_factor import TwoFactorAuthentication
+from app.core1.security.two_factor import TwoFactorAuthentication
 
 logger = logging.getLogger(__name__)
 

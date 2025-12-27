@@ -24,7 +24,7 @@ from app.schemas.user import (
     ContactInfoUpdate,
     UserDetail,
 )
-from app.core.exceptions import (
+from app.core1.exceptions import (
     ValidationException,
     BusinessLogicException,
     NotFoundException,

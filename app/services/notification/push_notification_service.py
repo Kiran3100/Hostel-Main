@@ -31,8 +31,8 @@ from app.schemas.notification import (
     PushStats,
     DeviceToken,
 )
-from app.core.logging import LoggingContext
-from app.core.exceptions import ValidationException, DatabaseException
+from app.core1.logging import LoggingContext
+from app.core1.exceptions import ValidationException, DatabaseException
 
 logger = logging.getLogger(__name__)
 

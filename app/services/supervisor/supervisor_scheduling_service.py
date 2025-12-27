@@ -15,7 +15,7 @@ from sqlalchemy.orm import Session
 
 from app.repositories.supervisor import SupervisorDashboardRepository
 from app.schemas.supervisor import TodaySchedule
-from app.core.exceptions import ValidationException
+from app.core1.exceptions import ValidationException
 
 logger = logging.getLogger(__name__)
 

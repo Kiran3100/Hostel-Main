@@ -19,7 +19,7 @@ from app.models.referral.referral_program import ReferralProgram
 from app.models.referral.referral import Referral
 from app.models.referral.referral_code import ReferralCode
 from app.repositories.base.base_repository import BaseRepository
-from app.core.exceptions import (
+from app.core1.exceptions import (
     EntityNotFoundError,
     ValidationError,
     BusinessLogicError,

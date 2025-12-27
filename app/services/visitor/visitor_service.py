@@ -26,13 +26,13 @@ from app.schemas.visitor import (
     VisitorDetail,
     VisitorStats,
 )
-from app.core.exceptions import (
+from app.core1.exceptions import (
     ValidationException,
     NotFoundException,
     ServiceException,
     DuplicateException,
 )
-from app.core.caching import cache_result, invalidate_cache
+from app.core1.caching import cache_result, invalidate_cache
 
 logger = logging.getLogger(__name__)
 

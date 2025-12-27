@@ -29,7 +29,7 @@ from app.repositories.room import (
 )
 from app.repositories.booking import BookingRepository
 from app.schemas.room import RoomAvailabilityRequest, AvailabilityResponse
-from app.core.exceptions import ValidationException, BusinessLogicException
+from app.core1.exceptions import ValidationException, BusinessLogicException
 
 logger = logging.getLogger(__name__)
 
