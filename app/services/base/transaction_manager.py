@@ -11,7 +11,7 @@ from uuid import uuid4
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError
 
-from app.core1.logging import get_logger
+from app.core.logging import get_logger
 
 
 @dataclass

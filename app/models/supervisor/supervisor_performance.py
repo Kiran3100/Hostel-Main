@@ -33,7 +33,7 @@ __all__ = [
 ]
 
 
-class SupervisorPerformance(BaseModel, TimestampModel, UUIDMixin):
+class SupervisorPerformance(UUIDMixin, TimestampModel, BaseModel):
     """
     Comprehensive supervisor performance records.
     
@@ -322,7 +322,7 @@ class SupervisorPerformance(BaseModel, TimestampModel, UUIDMixin):
         )
 
 
-class PerformanceReview(BaseModel, TimestampModel, UUIDMixin):
+class PerformanceReview(UUIDMixin, TimestampModel, BaseModel):
     """
     Formal performance reviews by administrators.
     
@@ -505,7 +505,7 @@ class PerformanceReview(BaseModel, TimestampModel, UUIDMixin):
         )
 
 
-class PerformanceGoal(BaseModel, TimestampModel, UUIDMixin):
+class PerformanceGoal(UUIDMixin, TimestampModel, BaseModel):
     """
     Performance goals for supervisors.
     
@@ -678,7 +678,7 @@ class PerformanceGoal(BaseModel, TimestampModel, UUIDMixin):
         return max(0, remaining)
 
 
-class PerformanceMetric(BaseModel, TimestampModel, UUIDMixin):
+class PerformanceMetric(UUIDMixin, TimestampModel, BaseModel):
     """
     Detailed performance metrics over time.
     
@@ -765,11 +765,11 @@ class PerformanceMetric(BaseModel, TimestampModel, UUIDMixin):
         comment="Trend: improving, stable, declining"
     )
     
-    # ============ Metadata ============
-    metadata: Mapped[Optional[dict]] = mapped_column(
+    # ============ Additional Data (renamed from metadata) ============
+    additional_data: Mapped[Optional[dict]] = mapped_column(
         JSON,
         nullable=True,
-        comment="Additional metric metadata"
+        comment="Additional metric metadata and context"
     )
     
     # ============ Relationships ============
@@ -795,7 +795,7 @@ class PerformanceMetric(BaseModel, TimestampModel, UUIDMixin):
         )
 
 
-class PeerComparison(BaseModel, TimestampModel, UUIDMixin):
+class PeerComparison(UUIDMixin, TimestampModel, BaseModel):
     """
     Peer comparison and benchmarking data.
     

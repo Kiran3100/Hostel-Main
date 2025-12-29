@@ -8,8 +8,8 @@ from datetime import datetime
 from uuid import uuid4
 import asyncio
 
-from app.core1.logging import get_logger
-from app.core1.events.event_bus import EventBus
+from app.core.logging import get_logger
+from app.core.events.event_bus import EventBus
 from app.schemas.core.domain_events import BaseDomainEvent
 
 

@@ -20,6 +20,7 @@ __all__ = [
     "PermissionMatrix",
     "RolePermissions",
     "PermissionCheck",
+    "PermissionCheckResponse",
 ]
 
 
@@ -323,3 +324,85 @@ class PermissionCheck(BaseSchema):
             return "Data Management"
         else:
             return "Unknown"
+
+
+class PermissionCheckResponse(BaseSchema):
+    """
+    Permission check response.
+    
+    Response format for permission verification requests.
+    """
+    
+    user_id: UUID = Field(..., description="User ID that was checked")
+    hostel_id: UUID = Field(..., description="Hostel ID context")
+    permission_key: str = Field(..., description="Permission key that was checked")
+    has_permission: bool = Field(..., description="Whether user has permission")
+    reason: Union[str, None] = Field(None, description="Reason if permission denied")
+    checked_at: Union[str, None] = Field(None, description="Timestamp when check was performed")
+    
+    @field_validator("permission_key")
+    @classmethod
+    def validate_permission_key(cls, v: str) -> str:
+        """Validate permission key is valid."""
+        value = v.strip()
+        if not value:
+            raise ValueError("permission_key cannot be empty")
+
+        if value not in ALL_PERMISSION_KEYS:
+            raise ValueError(
+                f"Invalid permission key: '{value}'. "
+                f"Valid keys: {', '.join(sorted(ALL_PERMISSION_KEYS))}"
+            )
+
+        return value
+    
+    @classmethod
+    def from_permission_check(cls, check: PermissionCheck, checked_at: Union[str, None] = None) -> "PermissionCheckResponse":
+        """Create response from permission check."""
+        return cls(
+            user_id=check.user_id,
+            hostel_id=check.hostel_id,
+            permission_key=check.permission_key,
+            has_permission=check.has_permission,
+            reason=check.reason,
+            checked_at=checked_at
+        )
+    
+    @property
+    def access_status(self) -> str:
+        """Get human-readable access status."""
+        return "Granted" if self.has_permission else "Denied"
+    
+    @property
+    def permission_category(self) -> str:
+        """Get category of checked permission."""
+        if self.permission_key in ROOM_PERMISSIONS:
+            return "Room Management"
+        elif self.permission_key in STUDENT_PERMISSIONS:
+            return "Student Management"
+        elif self.permission_key in BOOKING_PERMISSIONS:
+            return "Booking Management"
+        elif self.permission_key in FEE_PERMISSIONS:
+            return "Fee Management"
+        elif self.permission_key in SUPERVISOR_PERMISSIONS:
+            return "Supervisor Management"
+        elif self.permission_key in FINANCIAL_PERMISSIONS:
+            return "Financial Access"
+        elif self.permission_key in HOSTEL_PERMISSIONS:
+            return "Hostel Configuration"
+        elif self.permission_key in DATA_PERMISSIONS:
+            return "Data Management"
+        else:
+            return "Unknown"
+    
+    @property
+    def is_success(self) -> bool:
+        """Check if permission check was successful (has permission)."""
+        return self.has_permission
+    
+    @property
+    def summary(self) -> str:
+        """Get a summary of the permission check result."""
+        status = "GRANTED" if self.has_permission else "DENIED"
+        category = self.permission_category
+        return f"{status}: {self.permission_key} ({category})"

@@ -9,7 +9,7 @@ from enum import Enum
 
 from sqlalchemy.orm import Session
 
-from app.core1.logging import get_logger
+from app.core.logging import get_logger
 from app.services.base.base_service import BaseService
 from app.services.base.service_result import ServiceResult, ServiceError, ErrorCode, ErrorSeverity
 from app.repositories.notification.notification_repository import NotificationRepository
