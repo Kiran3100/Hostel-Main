@@ -31,7 +31,6 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import sessionmaker, Session
 from sqlalchemy.exc import SQLAlchemyError, DisconnectionError
-from sqlalchemy.engine.events import PoolEvents
 
 from .config import settings
 from .exceptions import DatabaseError
@@ -462,6 +461,13 @@ async def get_db_session() -> AsyncGenerator[AsyncSession, None]:
         yield session
 
 
+# Alias for compatibility with your dependencies.py
+async def get_db() -> AsyncGenerator[AsyncSession, None]:
+    """Alias for get_db_session for compatibility"""
+    async with database_manager.get_async_session() as session:
+        yield session
+
+
 @monitor_function("database_operation")
 async def safe_execute(
     session: AsyncSession,
@@ -547,6 +553,7 @@ __all__ = [
     'MigrationManager',
     'database_manager',
     'get_db_session',
+    'get_db',
     'safe_execute',
     'execute_in_transaction',
     'execute_with_retry'

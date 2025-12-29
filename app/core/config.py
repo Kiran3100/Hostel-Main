@@ -9,7 +9,8 @@ import os
 from typing import Optional, List, Dict, Any
 from functools import lru_cache
 
-from pydantic import BaseSettings, Field, validator
+from pydantic_settings import BaseSettings
+from pydantic import Field, field_validator
 from pydantic.networks import AnyHttpUrl
 
 
@@ -32,6 +33,13 @@ class DatabaseSettings(BaseSettings):
     # Advanced settings
     DB_ECHO: bool = Field(default=False, env="DB_ECHO")
     DB_ECHO_POOL: bool = Field(default=False, env="DB_ECHO_POOL")
+    
+    model_config = {
+        "env_file": ".env",
+        "env_file_encoding": "utf-8",
+        "case_sensitive": True,
+        "extra": "ignore"
+    }
     
     @property
     def database_url(self) -> str:
@@ -60,6 +68,13 @@ class RedisSettings(BaseSettings):
     REDIS_SOCKET_CONNECT_TIMEOUT: int = Field(default=5, env="REDIS_SOCKET_CONNECT_TIMEOUT")
     REDIS_SOCKET_TIMEOUT: int = Field(default=30, env="REDIS_SOCKET_TIMEOUT")
     
+    model_config = {
+        "env_file": ".env",
+        "env_file_encoding": "utf-8",
+        "case_sensitive": True,
+        "extra": "ignore"
+    }
+    
     @property
     def redis_url(self) -> str:
         """Generate Redis URL"""
@@ -71,7 +86,11 @@ class RedisSettings(BaseSettings):
 class SecuritySettings(BaseSettings):
     """Security configuration settings"""
     
-    SECRET_KEY: str = Field(..., env="SECRET_KEY", min_length=32)
+    SECRET_KEY: str = Field(
+        default="09f26e402586e2faa8da4c98a35f1b20d6b033c6097befa8be3486a829587fe2f90a832bd3ff9d42710a4da095a2ce285b009f0c3730cd9b8e1af3eb84df6611",
+        env="SECRET_KEY",
+        min_length=32
+    )
     ALGORITHM: str = Field(default="HS256", env="JWT_ALGORITHM")
     ACCESS_TOKEN_EXPIRE_MINUTES: int = Field(default=30, env="ACCESS_TOKEN_EXPIRE_MINUTES")
     REFRESH_TOKEN_EXPIRE_DAYS: int = Field(default=7, env="REFRESH_TOKEN_EXPIRE_DAYS")
@@ -93,7 +112,15 @@ class SecuritySettings(BaseSettings):
     CORS_ORIGINS: List[str] = Field(default=["http://localhost:3000"], env="CORS_ORIGINS")
     CORS_ALLOW_CREDENTIALS: bool = Field(default=True, env="CORS_ALLOW_CREDENTIALS")
     
-    @validator('CORS_ORIGINS', pre=True)
+    model_config = {
+        "env_file": ".env",
+        "env_file_encoding": "utf-8",
+        "case_sensitive": True,
+        "extra": "ignore"
+    }
+    
+    @field_validator('CORS_ORIGINS', mode='before')
+    @classmethod
     def parse_cors_origins(cls, v):
         if isinstance(v, str):
             return [origin.strip() for origin in v.split(",")]
@@ -116,6 +143,13 @@ class CacheSettings(BaseSettings):
     # Cache size limits
     CACHE_MAX_SIZE: int = Field(default=10000, env="CACHE_MAX_SIZE")
     CACHE_CLEANUP_INTERVAL: int = Field(default=3600, env="CACHE_CLEANUP_INTERVAL")
+    
+    model_config = {
+        "env_file": ".env",
+        "env_file_encoding": "utf-8",
+        "case_sensitive": True,
+        "extra": "ignore"
+    }
 
 
 class LoggingSettings(BaseSettings):
@@ -136,7 +170,15 @@ class LoggingSettings(BaseSettings):
     ENABLE_EXTERNAL_LOGGING: bool = Field(default=False, env="ENABLE_EXTERNAL_LOGGING")
     EXTERNAL_LOG_ENDPOINT: Optional[str] = Field(default=None, env="EXTERNAL_LOG_ENDPOINT")
     
-    @validator('LOG_LEVEL')
+    model_config = {
+        "env_file": ".env",
+        "env_file_encoding": "utf-8",
+        "case_sensitive": True,
+        "extra": "ignore"
+    }
+    
+    @field_validator('LOG_LEVEL')
+    @classmethod
     def validate_log_level(cls, v):
         valid_levels = ['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL']
         if v.upper() not in valid_levels:
@@ -163,6 +205,13 @@ class MonitoringSettings(BaseSettings):
     # External monitoring
     PROMETHEUS_ENABLED: bool = Field(default=False, env="PROMETHEUS_ENABLED")
     GRAFANA_ENABLED: bool = Field(default=False, env="GRAFANA_ENABLED")
+    
+    model_config = {
+        "env_file": ".env",
+        "env_file_encoding": "utf-8",
+        "case_sensitive": True,
+        "extra": "ignore"
+    }
 
 
 class NotificationSettings(BaseSettings):
@@ -196,6 +245,13 @@ class NotificationSettings(BaseSettings):
     )
     MAX_RETRY_ATTEMPTS: int = Field(default=3, env="NOTIFICATION_MAX_RETRY_ATTEMPTS")
     RETRY_DELAY_SECONDS: int = Field(default=60, env="NOTIFICATION_RETRY_DELAY")
+    
+    model_config = {
+        "env_file": ".env",
+        "env_file_encoding": "utf-8",
+        "case_sensitive": True,
+        "extra": "ignore"
+    }
 
 
 class APISettings(BaseSettings):
@@ -220,6 +276,13 @@ class APISettings(BaseSettings):
     ENABLE_API_MONITORING: bool = Field(default=True, env="ENABLE_API_MONITORING")
     ENABLE_REQUEST_LOGGING: bool = Field(default=True, env="ENABLE_REQUEST_LOGGING")
     ENABLE_RESPONSE_COMPRESSION: bool = Field(default=True, env="ENABLE_RESPONSE_COMPRESSION")
+    
+    model_config = {
+        "env_file": ".env",
+        "env_file_encoding": "utf-8",
+        "case_sensitive": True,
+        "extra": "ignore"
+    }
 
 
 class BackgroundTaskSettings(BaseSettings):
@@ -242,6 +305,13 @@ class BackgroundTaskSettings(BaseSettings):
     # Task scheduling
     ENABLE_PERIODIC_TASKS: bool = Field(default=True, env="ENABLE_PERIODIC_TASKS")
     TASK_CLEANUP_INTERVAL: int = Field(default=86400, env="TASK_CLEANUP_INTERVAL")  # 24 hours
+    
+    model_config = {
+        "env_file": ".env",
+        "env_file_encoding": "utf-8",
+        "case_sensitive": True,
+        "extra": "ignore"
+    }
 
 
 class Settings(BaseSettings):
@@ -285,12 +355,15 @@ class Settings(BaseSettings):
         env="MAINTENANCE_MESSAGE"
     )
     
-    class Config:
-        env_file = ".env"
-        env_file_encoding = "utf-8"
-        case_sensitive = True
+    model_config = {
+        "env_file": ".env",
+        "env_file_encoding": "utf-8",
+        "case_sensitive": True,
+        "extra": "ignore"
+    }
         
-    @validator('ENVIRONMENT')
+    @field_validator('ENVIRONMENT')
+    @classmethod
     def validate_environment(cls, v):
         valid_envs = ['development', 'staging', 'production', 'testing']
         if v not in valid_envs:
