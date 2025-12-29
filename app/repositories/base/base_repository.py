@@ -16,8 +16,8 @@ from sqlalchemy.exc import SQLAlchemyError, IntegrityError
 from sqlalchemy.inspection import inspect
 
 from app.models.base import BaseModel, SoftDeleteModel, TenantModel
-from app.core1.logging import get_logger
-from app.core1.exceptions import (
+from app.core.logging import get_logger
+from app.core.exceptions import (
     RepositoryError,
     EntityNotFoundError,
     EntityAlreadyExistsError,

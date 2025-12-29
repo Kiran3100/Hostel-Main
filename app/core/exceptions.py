@@ -47,6 +47,14 @@ class ErrorCode(str, Enum):
     GUEST_ALREADY_CHECKED_IN = "GUEST_ALREADY_CHECKED_IN"
     GUEST_NOT_CHECKED_IN = "GUEST_NOT_CHECKED_IN"
     
+    # User/Staff specific errors
+    USER_NOT_FOUND = "USER_NOT_FOUND"
+    ADMIN_NOT_FOUND = "ADMIN_NOT_FOUND"
+    STUDENT_NOT_FOUND = "STUDENT_NOT_FOUND"
+    SUPERVISOR_NOT_FOUND = "SUPERVISOR_NOT_FOUND"
+    HOSTEL_NOT_FOUND = "HOSTEL_NOT_FOUND"
+    ROOM_NOT_FOUND = "ROOM_NOT_FOUND"
+    
     # External service errors
     EXTERNAL_SERVICE_ERROR = "EXTERNAL_SERVICE_ERROR"
     PAYMENT_GATEWAY_ERROR = "PAYMENT_GATEWAY_ERROR"
@@ -200,6 +208,106 @@ class APIDeprecated(BaseAppException):
             "removal_date": removal_date
         }
         super().__init__(message, error_code, details, status_code)
+
+
+# ========================================
+# Resource Not Found Exceptions
+# ========================================
+
+class UserNotFoundError(ResourceNotFoundError):
+    """Exception raised when a user is not found"""
+    
+    def __init__(
+        self,
+        user_id: Optional[str] = None,
+        message: Optional[str] = None
+    ):
+        if not message:
+            message = "User not found"
+            if user_id:
+                message += f" (ID: {user_id})"
+        super().__init__("User", user_id, message)
+        self.error_code = ErrorCode.USER_NOT_FOUND
+
+
+class AdminNotFoundError(ResourceNotFoundError):
+    """Exception raised when an admin is not found"""
+    
+    def __init__(
+        self,
+        admin_id: Optional[str] = None,
+        message: Optional[str] = None
+    ):
+        if not message:
+            message = "Admin not found"
+            if admin_id:
+                message += f" (ID: {admin_id})"
+        super().__init__("Admin", admin_id, message)
+        self.error_code = ErrorCode.ADMIN_NOT_FOUND
+
+
+class StudentNotFoundError(ResourceNotFoundError):
+    """Exception raised when a student is not found"""
+    
+    def __init__(
+        self,
+        student_id: Optional[str] = None,
+        message: Optional[str] = None
+    ):
+        if not message:
+            message = "Student not found"
+            if student_id:
+                message += f" (ID: {student_id})"
+        super().__init__("Student", student_id, message)
+        self.error_code = ErrorCode.STUDENT_NOT_FOUND
+
+
+class SupervisorNotFoundError(ResourceNotFoundError):
+    """Exception raised when a supervisor is not found"""
+    
+    def __init__(
+        self,
+        supervisor_id: Optional[str] = None,
+        message: Optional[str] = None
+    ):
+        if not message:
+            message = "Supervisor not found"
+            if supervisor_id:
+                message += f" (ID: {supervisor_id})"
+        super().__init__("Supervisor", supervisor_id, message)
+        self.error_code = ErrorCode.SUPERVISOR_NOT_FOUND
+
+
+class HostelNotFoundError(ResourceNotFoundError):
+    """Exception raised when a hostel is not found"""
+    
+    def __init__(
+        self,
+        hostel_id: Optional[str] = None,
+        message: Optional[str] = None
+    ):
+        if not message:
+            message = "Hostel not found"
+            if hostel_id:
+                message += f" (ID: {hostel_id})"
+        super().__init__("Hostel", hostel_id, message)
+        self.error_code = ErrorCode.HOSTEL_NOT_FOUND
+
+
+class RoomNotFoundError(ResourceNotFoundError):
+    """Exception raised when a room is not found"""
+    
+    def __init__(
+        self,
+        room_id: Optional[str] = None,
+        message: Optional[str] = None
+    ):
+        if not message:
+            message = "Room not found"
+            if room_id:
+                message += f" (ID: {room_id})"
+        super().__init__("Room", room_id, message)
+        self.error_code = ErrorCode.ROOM_NOT_FOUND
 
 
 # ========================================
@@ -730,13 +838,21 @@ __all__ = [
     'MaintenanceMode',
     'APIDeprecated',
     
+    # Resource Not Found exceptions
+    'UserNotFoundError',
+    'AdminNotFoundError',  # Added this
+    'StudentNotFoundError',
+    'SupervisorNotFoundError',
+    'HostelNotFoundError',
+    'RoomNotFoundError',
+    
     # Auth exceptions
     'AuthenticationError',
     'AuthorizationError',
     'TokenError',
     'TokenExpiredError',
     'InvalidTokenError',
-    'PermissionError',  # Added this
+    'PermissionError',
     
     # Database exceptions
     'DatabaseError',

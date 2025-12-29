@@ -23,7 +23,7 @@ from app.models.search.search_analytics import (
     SearchAnalyticsReport
 )
 from app.repositories.base.base_repository import BaseRepository
-from app.core1.exceptions import NotFoundException, ValidationException
+from app.core.exceptions import NotFoundException, ValidationException
 
 
 class SearchTermStatsRepository(BaseRepository[SearchTermStats]):

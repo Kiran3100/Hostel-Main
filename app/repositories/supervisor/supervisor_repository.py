@@ -25,12 +25,12 @@ from app.models.hostel.hostel import Hostel
 from app.models.user.user import User
 from app.schemas.common.enums import SupervisorStatus, EmploymentType
 from app.repositories.base.base_repository import BaseRepository
-from app.core1.exceptions import (
+from app.core.exceptions import (
     ResourceNotFoundError,
     BusinessLogicError,
     ValidationError,
 )
-from app.core1.logging import logger
+from app.core.logging import logger
 
 
 class SupervisorRepository(BaseRepository[Supervisor]):

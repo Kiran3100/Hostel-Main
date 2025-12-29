@@ -15,7 +15,7 @@ from sqlalchemy.sql import Select, ClauseElement
 from sqlalchemy.sql.expression import ColumnElement
 
 from app.models.base import BaseModel
-from app.core1.logging import get_logger
+from app.core.logging import get_logger
 
 logger = get_logger(__name__)
 

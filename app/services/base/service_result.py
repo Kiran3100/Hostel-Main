@@ -3,9 +3,9 @@ Service result patterns for standardized response handling.
 """
 
 from typing import TypeVar, Generic, Optional, Any, Dict, List
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from enum import Enum
-from datetime import datetime
+from datetime import datetime, timezone
 
 
 class ErrorCode(str, Enum):
@@ -56,7 +56,12 @@ class ServiceError:
     severity: ErrorSeverity = ErrorSeverity.ERROR
     details: Optional[Dict[str, Any]] = None
     field: Optional[str] = None
-    timestamp: datetime = field(default_factory=datetime.utcnow)
+    timestamp: Optional[datetime] = None
+    
+    def __post_init__(self):
+        """Set timestamp if not provided."""
+        if self.timestamp is None:
+            self.timestamp = datetime.now(timezone.utc)
     
     def to_dict(self) -> Dict[str, Any]:
         """Convert error to dictionary representation."""
@@ -66,7 +71,7 @@ class ServiceError:
             "severity": self.severity.value,
             "details": self.details,
             "field": self.field,
-            "timestamp": self.timestamp.isoformat(),
+            "timestamp": self.timestamp.isoformat() if self.timestamp else None,
         }
 
 
@@ -138,6 +143,78 @@ class ServiceResult(Generic[TData]):
             )
         )
     
+    @classmethod
+    def validation_failure(
+        cls,
+        message: str,
+        field: Optional[str] = None,
+        details: Optional[Dict[str, Any]] = None,
+    ) -> "ServiceResult[TData]":
+        """Create a validation failure result."""
+        return cls.failure(
+            ServiceError(
+                code=ErrorCode.VALIDATION_ERROR,
+                message=message,
+                field=field,
+                details=details,
+            )
+        )
+    
+    @classmethod
+    def not_found(
+        cls,
+        resource_type: str,
+        resource_id: Optional[str] = None,
+    ) -> "ServiceResult[TData]":
+        """Create a not found failure result."""
+        message = f"{resource_type} not found"
+        if resource_id:
+            message += f" (ID: {resource_id})"
+        
+        return cls.failure(
+            ServiceError(
+                code=ErrorCode.NOT_FOUND,
+                message=message,
+                details={"resource_type": resource_type, "resource_id": resource_id},
+            )
+        )
+    
+    @classmethod
+    def unauthorized(
+        cls,
+        action: Optional[str] = None,
+        resource: Optional[str] = None,
+    ) -> "ServiceResult[TData]":
+        """Create an unauthorized failure result."""
+        message = "Unauthorized access"
+        if action:
+            message += f" to {action}"
+        if resource:
+            message += f" on {resource}"
+        
+        return cls.failure(
+            ServiceError(
+                code=ErrorCode.UNAUTHORIZED,
+                message=message,
+                details={"action": action, "resource": resource},
+            )
+        )
+    
+    @classmethod
+    def conflict(
+        cls,
+        message: str,
+        details: Optional[Dict[str, Any]] = None,
+    ) -> "ServiceResult[TData]":
+        """Create a conflict failure result."""
+        return cls.failure(
+            ServiceError(
+                code=ErrorCode.CONFLICT,
+                message=message,
+                details=details,
+            )
+        )
+    
     def unwrap(self) -> TData:
         """
         Unwrap the result data or raise exception if failed.
@@ -153,6 +230,41 @@ class ServiceResult(Generic[TData]):
         """Unwrap the result data or return default if failed."""
         return self.data if self.is_success else default
     
+    def unwrap_or_none(self) -> Optional[TData]:
+        """Unwrap the result data or return None if failed."""
+        return self.data if self.is_success else None
+    
+    def map(self, func) -> "ServiceResult":
+        """Map the result data through a function if successful."""
+        if self.is_success and self.data is not None:
+            try:
+                new_data = func(self.data)
+                return ServiceResult.success(data=new_data, message=self.message, metadata=self.metadata)
+            except Exception as e:
+                return ServiceResult.from_exception(e, "map operation")
+        return self
+    
+    def flat_map(self, func) -> "ServiceResult":
+        """Flat map the result data through a function that returns ServiceResult."""
+        if self.is_success:
+            try:
+                return func(self.data)
+            except Exception as e:
+                return ServiceResult.from_exception(e, "flat_map operation")
+        return self
+    
+    def add_metadata(self, key: str, value: Any) -> "ServiceResult[TData]":
+        """Add metadata to the result."""
+        if self.metadata is None:
+            self.metadata = {}
+        self.metadata[key] = value
+        return self
+    
+    def with_message(self, message: str) -> "ServiceResult[TData]":
+        """Set a custom message for the result."""
+        self.message = message
+        return self
+    
     def to_dict(self) -> Dict[str, Any]:
         """Convert result to dictionary representation."""
         result = {
@@ -167,3 +279,110 @@ class ServiceResult(Generic[TData]):
             result["error"] = self.error.to_dict() if self.error else None
         
         return result
+    
+    def __bool__(self) -> bool:
+        """Allow boolean evaluation of the result."""
+        return self.is_success
+    
+    def __repr__(self) -> str:
+        """String representation of the result."""
+        status = "Success" if self.is_success else "Failure"
+        if self.message:
+            return f"ServiceResult({status}: {self.message})"
+        return f"ServiceResult({status})"
+
+
+# Convenience type aliases for common result types
+BoolResult = ServiceResult[bool]
+StringResult = ServiceResult[str]
+IntResult = ServiceResult[int]
+DictResult = ServiceResult[Dict[str, Any]]
+ListResult = ServiceResult[List[Any]]
+
+
+# Utility functions for creating common results
+def success(
+    data: Optional[TData] = None,
+    message: Optional[str] = None,
+    metadata: Optional[Dict[str, Any]] = None,
+) -> ServiceResult[TData]:
+    """Create a successful service result."""
+    return ServiceResult.success(data=data, message=message, metadata=metadata)
+
+
+def failure(
+    error_code: ErrorCode,
+    message: str,
+    field: Optional[str] = None,
+    details: Optional[Dict[str, Any]] = None,
+    severity: ErrorSeverity = ErrorSeverity.ERROR,
+) -> ServiceResult[None]:
+    """Create a failed service result."""
+    error = ServiceError(
+        code=error_code,
+        message=message,
+        field=field,
+        details=details,
+        severity=severity,
+    )
+    return ServiceResult.failure(error)
+
+
+def validation_error(
+    message: str,
+    field: Optional[str] = None,
+    details: Optional[Dict[str, Any]] = None,
+) -> ServiceResult[None]:
+    """Create a validation error result."""
+    return ServiceResult.validation_failure(message=message, field=field, details=details)
+
+
+def not_found_error(
+    resource_type: str,
+    resource_id: Optional[str] = None,
+) -> ServiceResult[None]:
+    """Create a not found error result."""
+    return ServiceResult.not_found(resource_type=resource_type, resource_id=resource_id)
+
+
+def unauthorized_error(
+    action: Optional[str] = None,
+    resource: Optional[str] = None,
+) -> ServiceResult[None]:
+    """Create an unauthorized error result."""
+    return ServiceResult.unauthorized(action=action, resource=resource)
+
+
+def conflict_error(
+    message: str,
+    details: Optional[Dict[str, Any]] = None,
+) -> ServiceResult[None]:
+    """Create a conflict error result."""
+    return ServiceResult.conflict(message=message, details=details)
+
+
+# Export all public classes and functions
+__all__ = [
+    # Enums
+    "ErrorCode",
+    "ErrorSeverity",
+    
+    # Classes
+    "ServiceError",
+    "ServiceResult",
+    
+    # Type aliases
+    "BoolResult",
+    "StringResult", 
+    "IntResult",
+    "DictResult",
+    "ListResult",
+    
+    # Utility functions
+    "success",
+    "failure",
+    "validation_error",
+    "not_found_error",
+    "unauthorized_error",
+    "conflict_error",
+]

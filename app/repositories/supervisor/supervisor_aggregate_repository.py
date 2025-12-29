@@ -19,7 +19,7 @@ from app.models.supervisor.supervisor_performance import SupervisorPerformance
 from app.models.supervisor.supervisor_permissions import SupervisorPermission
 from app.models.hostel.hostel import Hostel
 from app.repositories.base.base_repository import BaseRepository
-from app.core1.logging import logger
+from app.core.logging import logger
 
 
 class SupervisorAggregateRepository:

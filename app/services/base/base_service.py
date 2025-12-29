@@ -10,7 +10,7 @@ from uuid import UUID
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError
 
-from app.core1.logging import get_logger
+from app.core.logging import get_logger
 from app.repositories.base.base_repository import BaseRepository
 from app.services.base.service_result import (
     ServiceResult,

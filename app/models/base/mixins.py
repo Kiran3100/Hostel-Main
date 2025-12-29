@@ -11,7 +11,7 @@ from decimal import Decimal
 from typing import Optional
 from uuid import uuid4
 
-from sqlalchemy import Column, DateTime, Boolean, String, Numeric, Text
+from sqlalchemy import Column, DateTime, Boolean, String, Numeric, Text, Integer
 from sqlalchemy.dialects.postgresql import UUID as PG_UUID
 from sqlalchemy.ext.declarative import declared_attr
 from sqlalchemy.sql import func
