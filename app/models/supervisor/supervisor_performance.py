@@ -11,7 +11,7 @@ from decimal import Decimal
 from typing import TYPE_CHECKING, Optional
 
 from sqlalchemy import (
-    Boolean, Date as SQLDate, DateTime, Decimal as SQLDecimal,
+    Boolean, Date as SQLDate, DateTime, Numeric as SQLDecimal,
     ForeignKey, Integer, String, Text, Index, JSON
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship

@@ -823,8 +823,8 @@ class AdminSession(TimestampModel, UUIDMixin):
         comment="Security-related flags and alerts"
     )
     
-    # Metadata
-    metadata: Mapped[Optional[dict]] = mapped_column(
+    # Session Metadata - RENAMED FROM 'metadata' to avoid SQLAlchemy conflict
+    session_metadata: Mapped[Optional[dict]] = mapped_column(
         JSONB,
         nullable=True,
         comment="Additional session metadata"

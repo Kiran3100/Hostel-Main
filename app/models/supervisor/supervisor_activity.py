@@ -31,7 +31,7 @@ __all__ = [
 ]
 
 
-class SupervisorActivity(BaseModel, TimestampModel, UUIDMixin):
+class SupervisorActivity(UUIDMixin, TimestampModel, BaseModel):
     """
     Detailed supervisor activity logging.
     
@@ -101,7 +101,7 @@ class SupervisorActivity(BaseModel, TimestampModel, UUIDMixin):
     )
     
     # ============ Context and Metadata ============
-    metadata: Mapped[Optional[dict]] = mapped_column(
+    action_metadata: Mapped[Optional[dict]] = mapped_column(
         JSON,
         nullable=True,
         comment="Additional action details and context"
@@ -213,7 +213,7 @@ class SupervisorActivity(BaseModel, TimestampModel, UUIDMixin):
         )
 
 
-class SupervisorSession(BaseModel, TimestampModel, UUIDMixin):
+class SupervisorSession(UUIDMixin, TimestampModel, BaseModel):
     """
     Supervisor login session tracking.
     
@@ -413,7 +413,7 @@ class SupervisorSession(BaseModel, TimestampModel, UUIDMixin):
         return int(duration / 60)
 
 
-class ActivitySummary(BaseModel, TimestampModel, UUIDMixin):
+class ActivitySummary(UUIDMixin, TimestampModel, BaseModel):
     """
     Aggregated activity summary for supervisors.
     
@@ -575,7 +575,7 @@ class ActivitySummary(BaseModel, TimestampModel, UUIDMixin):
         )
 
 
-class ActivityMetric(BaseModel, TimestampModel, UUIDMixin):
+class ActivityMetric(UUIDMixin, TimestampModel, BaseModel):
     """
     Detailed activity performance metrics.
     

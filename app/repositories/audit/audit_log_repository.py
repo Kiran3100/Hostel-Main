@@ -17,7 +17,7 @@ from app.repositories.base.base_repository import BaseRepository
 from app.repositories.base.query_builder import QueryBuilder
 from app.repositories.base.specifications import Specification
 from app.repositories.base.pagination import PaginationManager
-from app.repositories.base.filtering import FilteringEngine
+from app.repositories.base.filtering import FilterEngine
 from app.schemas.common.enums import AuditActionCategory
 
 

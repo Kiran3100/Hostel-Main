@@ -1,4 +1,3 @@
-# --- File: C:\Hostel-Main\app\models\audit\entity_change_log.py ---
 """
 Entity change log model for detailed field-level change tracking.
 
@@ -347,7 +346,7 @@ class EntityChangeLog(BaseModel, TimestampMixin):
             name='uq_entity_change_duplicate_prevention'
         ),
         
-        {'comment': 'Detailed field-level change tracking for entities'}
+        {'comment': 'Detailed field-level change tracking for entities', 'extend_existing': True}
     )
     
     @validates('field_name')
@@ -790,7 +789,7 @@ class EntityChangeHistory(BaseModel, TimestampMixin):
             name='uq_entity_history_version'
         ),
         
-        {'comment': 'Entity state snapshots for version history'}
+        {'comment': 'Entity state snapshots for version history', 'extend_existing': True}
     )
     
     def __repr__(self) -> str:

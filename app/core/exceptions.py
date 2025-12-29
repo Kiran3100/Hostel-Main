@@ -25,6 +25,7 @@ class ErrorCode(str, Enum):
     TOKEN_EXPIRED = "TOKEN_EXPIRED"
     TOKEN_INVALID = "TOKEN_INVALID"
     INSUFFICIENT_PERMISSIONS = "INSUFFICIENT_PERMISSIONS"
+    SECURITY_VIOLATION = "SECURITY_VIOLATION"
     
     # Validation errors
     VALIDATION_ERROR = "VALIDATION_ERROR"
@@ -37,6 +38,8 @@ class ErrorCode(str, Enum):
     CONNECTION_ERROR = "CONNECTION_ERROR"
     DUPLICATE_ENTRY = "DUPLICATE_ENTRY"
     FOREIGN_KEY_VIOLATION = "FOREIGN_KEY_VIOLATION"
+    REPOSITORY_ERROR = "REPOSITORY_ERROR"
+    OPTIMISTIC_LOCK_ERROR = "OPTIMISTIC_LOCK_ERROR"
     
     # Business logic errors
     BOOKING_CONFLICT = "BOOKING_CONFLICT"
@@ -161,6 +164,26 @@ class ResourceNotFoundError(BaseAppException):
             "resource_id": resource_id
         }
         super().__init__(message, ErrorCode.RESOURCE_NOT_FOUND, details, 404)
+
+
+class DuplicateError(BaseAppException):
+    """Exception raised when a duplicate resource is detected"""
+    
+    def __init__(
+        self,
+        message: str = "Duplicate resource detected",
+        resource_type: Optional[str] = None,
+        identifier: Optional[str] = None,
+        field: Optional[str] = None,
+        error_code: ErrorCode = ErrorCode.DUPLICATE_ENTRY,
+        status_code: int = 409
+    ):
+        details = {
+            "resource_type": resource_type,
+            "identifier": identifier,
+            "field": field
+        }
+        super().__init__(message, error_code, details, status_code)
 
 
 class AdminAPIException(BaseAppException):
@@ -339,6 +362,24 @@ class AuthorizationError(BaseAppException):
         super().__init__(message, error_code, details, 403)
 
 
+class SecurityError(BaseAppException):
+    """Base exception for security-related violations"""
+    
+    def __init__(
+        self,
+        message: str = "Security violation detected",
+        security_rule: Optional[str] = None,
+        violation_type: Optional[str] = None,
+        error_code: ErrorCode = ErrorCode.SECURITY_VIOLATION,
+        status_code: int = 403
+    ):
+        details = {
+            "security_rule": security_rule,
+            "violation_type": violation_type
+        }
+        super().__init__(message, error_code, details, status_code)
+
+
 class TokenError(AuthenticationError):
     """Exception raised for token-related authentication errors"""
     
@@ -426,6 +467,7 @@ class DatabaseConnectionError(DatabaseError):
     ):
         details = {"database": database} if database else {}
         super().__init__(message, error_code=ErrorCode.CONNECTION_ERROR, status_code=503)
+        self.details.update(details)
 
 
 class DuplicateEntryError(DatabaseError):
@@ -444,6 +486,7 @@ class DuplicateEntryError(DatabaseError):
             "table": table
         }
         super().__init__(message, table=table, error_code=ErrorCode.DUPLICATE_ENTRY, status_code=409)
+        self.details.update(details)
 
 
 class ForeignKeyViolationError(DatabaseError):
@@ -460,6 +503,206 @@ class ForeignKeyViolationError(DatabaseError):
             "referenced_table": referenced_table
         }
         super().__init__(message, error_code=ErrorCode.FOREIGN_KEY_VIOLATION, status_code=409)
+        self.details.update(details)
+
+
+# ========================================
+# Repository Exceptions
+# ========================================
+
+class RepositoryError(DatabaseError):
+    """Exception raised when repository operations fail"""
+    
+    def __init__(
+        self,
+        message: str = "Repository operation failed",
+        operation: Optional[str] = None,
+        repository: Optional[str] = None,
+        entity: Optional[str] = None,
+        error_code: ErrorCode = ErrorCode.REPOSITORY_ERROR
+    ):
+        details = {
+            "repository": repository,
+            "entity": entity
+        }
+        super().__init__(message, operation, error_code=error_code)
+        self.details.update(details)
+
+
+class RepositoryNotFoundError(RepositoryError):
+    """Exception raised when repository entity is not found"""
+    
+    def __init__(
+        self,
+        message: str = "Entity not found in repository",
+        entity_id: Optional[str] = None,
+        repository: Optional[str] = None,
+        entity: Optional[str] = None
+    ):
+        details = {"entity_id": entity_id}
+        super().__init__(
+            message,
+            operation="find",
+            repository=repository,
+            entity=entity,
+            error_code=ErrorCode.RESOURCE_NOT_FOUND
+        )
+        self.details.update(details)
+        self.status_code = 404
+
+
+class EntityNotFoundError(RepositoryNotFoundError):
+    """Exception raised when an entity is not found in repository operations"""
+    
+    def __init__(
+        self,
+        message: str = "Entity not found",
+        entity_type: Optional[str] = None,
+        entity_id: Optional[str] = None,
+        repository: Optional[str] = None
+    ):
+        if not message or message == "Entity not found":
+            if entity_type and entity_id:
+                message = f"{entity_type} with ID '{entity_id}' not found"
+            elif entity_type:
+                message = f"{entity_type} not found"
+        
+        super().__init__(
+            message=message,
+            entity_id=entity_id,
+            repository=repository,
+            entity=entity_type
+        )
+
+
+class EntityAlreadyExistsError(RepositoryError):
+    """Exception raised when trying to create an entity that already exists"""
+    
+    def __init__(
+        self,
+        message: str = "Entity already exists",
+        entity_type: Optional[str] = None,
+        entity_id: Optional[str] = None,
+        repository: Optional[str] = None,
+        field: Optional[str] = None,
+        value: Optional[str] = None
+    ):
+        if not message or message == "Entity already exists":
+            if entity_type and entity_id:
+                message = f"{entity_type} with ID '{entity_id}' already exists"
+            elif entity_type and field and value:
+                message = f"{entity_type} with {field}='{value}' already exists"
+            elif entity_type:
+                message = f"{entity_type} already exists"
+        
+        details = {
+            "entity_id": entity_id,
+            "field": field,
+            "value": value
+        }
+        super().__init__(
+            message,
+            operation="create",
+            repository=repository,
+            entity=entity_type,
+            error_code=ErrorCode.DUPLICATE_ENTRY
+        )
+        self.details.update(details)
+        self.status_code = 409
+
+
+class OptimisticLockError(RepositoryError):
+    """Exception raised when optimistic locking fails (concurrent modification)"""
+    
+    def __init__(
+        self,
+        message: str = "Optimistic lock error - entity was modified by another process",
+        entity_type: Optional[str] = None,
+        entity_id: Optional[str] = None,
+        repository: Optional[str] = None,
+        expected_version: Optional[int] = None,
+        actual_version: Optional[int] = None
+    ):
+        if not message or message == "Optimistic lock error - entity was modified by another process":
+            if entity_type and entity_id:
+                message = f"Optimistic lock error for {entity_type} with ID '{entity_id}' - entity was modified by another process"
+            elif entity_type:
+                message = f"Optimistic lock error for {entity_type} - entity was modified by another process"
+        
+        details = {
+            "entity_id": entity_id,
+            "expected_version": expected_version,
+            "actual_version": actual_version
+        }
+        super().__init__(
+            message,
+            operation="update",
+            repository=repository,
+            entity=entity_type,
+            error_code=ErrorCode.OPTIMISTIC_LOCK_ERROR
+        )
+        self.details.update(details)
+        self.status_code = 409
+
+
+class RepositoryCreateError(RepositoryError):
+    """Exception raised when repository create operation fails"""
+    
+    def __init__(
+        self,
+        message: str = "Failed to create entity in repository",
+        repository: Optional[str] = None,
+        entity: Optional[str] = None
+    ):
+        super().__init__(
+            message,
+            operation="create",
+            repository=repository,
+            entity=entity,
+            error_code=ErrorCode.OPERATION_FAILED
+        )
+
+
+class RepositoryUpdateError(RepositoryError):
+    """Exception raised when repository update operation fails"""
+    
+    def __init__(
+        self,
+        message: str = "Failed to update entity in repository",
+        entity_id: Optional[str] = None,
+        repository: Optional[str] = None,
+        entity: Optional[str] = None
+    ):
+        details = {"entity_id": entity_id}
+        super().__init__(
+            message,
+            operation="update",
+            repository=repository,
+            entity=entity,
+            error_code=ErrorCode.OPERATION_FAILED
+        )
+        self.details.update(details)
+
+
+class RepositoryDeleteError(RepositoryError):
+    """Exception raised when repository delete operation fails"""
+    
+    def __init__(
+        self,
+        message: str = "Failed to delete entity from repository",
+        entity_id: Optional[str] = None,
+        repository: Optional[str] = None,
+        entity: Optional[str] = None
+    ):
+        details = {"entity_id": entity_id}
+        super().__init__(
+            message,
+            operation="delete",
+            repository=repository,
+            entity=entity,
+            error_code=ErrorCode.OPERATION_FAILED
+        )
+        self.details.update(details)
 
 
 # ========================================
@@ -795,6 +1038,45 @@ class InvalidConfigurationError(ConfigurationError):
             error_code=ErrorCode.INVALID_CONFIGURATION
         )
         self.details.update(details)
+        
+class ConflictError(BaseAppException):
+    """Exception raised when a conflict occurs (generic conflict handler)"""
+    
+    def __init__(
+        self,
+        message: str = "Conflict occurred",
+        resource_type: Optional[str] = None,
+        resource_id: Optional[str] = None,
+        conflict_reason: Optional[str] = None,
+        error_code: ErrorCode = ErrorCode.DUPLICATE_ENTRY,
+        status_code: int = 409
+    ):
+        details = {
+            "resource_type": resource_type,
+            "resource_id": resource_id,
+            "conflict_reason": conflict_reason
+        }
+        super().__init__(message, error_code, details, status_code)
+
+
+class BusinessRuleViolationError(BaseAppException):
+    """Exception raised when a business rule is violated"""
+    
+    def __init__(
+        self,
+        message: str = "Business rule violation",
+        rule_name: Optional[str] = None,
+        rule_description: Optional[str] = None,
+        violation_details: Optional[Dict[str, Any]] = None,
+        error_code: ErrorCode = ErrorCode.CONSTRAINT_VIOLATION,
+        status_code: int = 422
+    ):
+        details = {
+            "rule_name": rule_name,
+            "rule_description": rule_description,
+            "violation_details": violation_details or {}
+        }
+        super().__init__(message, error_code, details, status_code)
 
 
 # ========================================
@@ -834,13 +1116,14 @@ __all__ = [
     'OperationError',
     'ValidationError',
     'ResourceNotFoundError',
+    'DuplicateError',
     'AdminAPIException',
     'MaintenanceMode',
     'APIDeprecated',
     
     # Resource Not Found exceptions
     'UserNotFoundError',
-    'AdminNotFoundError',  # Added this
+    'AdminNotFoundError',
     'StudentNotFoundError',
     'SupervisorNotFoundError',
     'HostelNotFoundError',
@@ -849,6 +1132,7 @@ __all__ = [
     # Auth exceptions
     'AuthenticationError',
     'AuthorizationError',
+    'SecurityError',
     'TokenError',
     'TokenExpiredError',
     'InvalidTokenError',
@@ -859,6 +1143,16 @@ __all__ = [
     'DatabaseConnectionError',
     'DuplicateEntryError',
     'ForeignKeyViolationError',
+    
+    # Repository exceptions
+    'RepositoryError',
+    'RepositoryNotFoundError',
+    'EntityNotFoundError',
+    'EntityAlreadyExistsError',
+    'OptimisticLockError',
+    'RepositoryCreateError',
+    'RepositoryUpdateError',
+    'RepositoryDeleteError',
     
     # Business logic exceptions
     'BookingError',
@@ -889,6 +1183,8 @@ __all__ = [
     'ConfigurationError',
     'MissingConfigurationError',
     'InvalidConfigurationError',
+    'ConflictError',
+    'BusinessRuleViolationError',
     
     # Utility functions
     'handle_database_exception',

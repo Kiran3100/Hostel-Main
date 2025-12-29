@@ -1,7 +1,7 @@
 """
 User Address model configuration.
 """
-from sqlalchemy import Boolean, Column, ForeignKey, Numeric, String, Text
+from sqlalchemy import Boolean, Column, ForeignKey, Numeric, String, Text, DateTime
 from sqlalchemy.orm import relationship
 
 from app.models.base.base_model import BaseModel

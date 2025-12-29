@@ -21,7 +21,7 @@ from app.models.attendance.attendance_report import (
 )
 from app.models.base.enums import AttendanceStatus
 from app.repositories.base.base_repository import BaseRepository
-from app.core1.exceptions import ValidationError, NotFoundError
+from app.core.exceptions import ValidationError, NotFoundError
 
 
 class AttendanceReportRepository(BaseRepository[AttendanceReport]):

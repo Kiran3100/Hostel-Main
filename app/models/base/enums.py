@@ -1,4 +1,3 @@
-# --- File: C:\Hostel-Main\app\models\base\enums.py ---
 """
 Database enums mirroring schema enums.
 
@@ -16,6 +15,17 @@ class UserRole(str, enum.Enum):
     SUPERVISOR = "supervisor"
     STUDENT = "student"
     VISITOR = "visitor"
+
+
+class PermissionLevel(str, enum.Enum):
+    """Permission level enumeration for access control."""
+    READ_ONLY = "read_only"
+    READ = "read"
+    WRITE = "write"
+    ADMIN = "admin"
+    FULL_ACCESS = "full_access"
+    LIMITED_ACCESS = "limited_access"
+    NO_ACCESS = "no_access"
 
 
 class Gender(str, enum.Enum):
@@ -286,3 +296,14 @@ class AuditActionCategory(str, enum.Enum):
     CONFIGURATION = "configuration"
     DATA_EXPORT = "data_export"
     OTHER = "other"
+
+class HostelType(str, enum.Enum):
+    """Hostel type categorization."""
+    BOYS = "boys"
+    GIRLS = "girls"
+    MIXED = "mixed"
+    SINGLE_OCCUPANCY = "single_occupancy"
+    SHARED_OCCUPANCY = "shared_occupancy"
+    PREMIUM = "premium"
+    STANDARD = "standard"
+    BUDGET = "budget"

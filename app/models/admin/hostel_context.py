@@ -17,6 +17,7 @@ from sqlalchemy import (
     DateTime,
     Integer,
     String,
+    ForeignKey,
     Text,
     Numeric,
     Index,
@@ -478,7 +479,7 @@ class ContextSwitch(TimestampModel, UUIDMixin):
     )
     
     # Metadata
-    metadata: Mapped[Optional[dict]] = mapped_column(
+    context_metadata: Mapped[Optional[dict]] = mapped_column(
         JSONB,
         nullable=True,
         comment="Additional switch metadata"

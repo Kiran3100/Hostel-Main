@@ -1,7 +1,7 @@
 """
 User Profile model configuration.
 """
-from sqlalchemy import Column, Date, Enum, ForeignKey, Integer, String, Text
+from sqlalchemy import Column, Date, Enum, ForeignKey, Integer, String, Text, DateTime
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import relationship
 

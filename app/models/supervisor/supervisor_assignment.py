@@ -31,7 +31,7 @@ __all__ = [
 ]
 
 
-class SupervisorAssignment(BaseModel, TimestampModel, UUIDMixin):
+class SupervisorAssignment(UUIDMixin, TimestampModel, BaseModel):
     """
     Supervisor-hostel assignment records.
     
@@ -287,7 +287,7 @@ class SupervisorAssignment(BaseModel, TimestampModel, UUIDMixin):
         return self.is_active and self.effective_to is None
 
 
-class AssignmentTransfer(BaseModel, TimestampModel, UUIDMixin):
+class AssignmentTransfer(UUIDMixin, TimestampModel, BaseModel):
     """
     Supervisor transfer records between hostels.
     
@@ -503,7 +503,7 @@ class AssignmentTransfer(BaseModel, TimestampModel, UUIDMixin):
         )
 
 
-class AssignmentCoverage(BaseModel, TimestampModel, UUIDMixin):
+class AssignmentCoverage(UUIDMixin, TimestampModel, BaseModel):
     """
     Assignment coverage analysis and optimization.
     
@@ -641,7 +641,7 @@ class AssignmentCoverage(BaseModel, TimestampModel, UUIDMixin):
         )
 
 
-class WorkloadMetric(BaseModel, TimestampModel, UUIDMixin):
+class WorkloadMetric(UUIDMixin, TimestampModel, BaseModel):
     """
     Supervisor workload tracking and analysis.
     

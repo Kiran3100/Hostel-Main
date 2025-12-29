@@ -178,7 +178,7 @@ class HostelMedia(TimestampModel, UUIDMixin):
     )
 
     # Metadata (JSONB for flexible data)
-    metadata: Mapped[Optional[dict]] = mapped_column(
+    media_metadata: Mapped[Optional[dict]] = mapped_column(
         JSONB,
         nullable=True,
         comment="Additional metadata (EXIF, GPS, etc.)",

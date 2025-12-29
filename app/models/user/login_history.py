@@ -1,7 +1,7 @@
 """
 Login History model for security auditing.
 """
-from sqlalchemy import Boolean, Column, ForeignKey, String, Text
+from sqlalchemy import Boolean, Column, ForeignKey, String, Text, Integer
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import relationship
 

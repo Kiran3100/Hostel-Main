@@ -1,4 +1,3 @@
-# --- File: C:\Hostel-Main\app\models\audit\supervisor_activity_log.py ---
 """
 Supervisor activity audit log model.
 
@@ -137,8 +136,8 @@ class SupervisorActivityLog(BaseModel, TimestampMixin):
         comment="Brief outcome description"
     )
     
-    # Additional data
-    metadata = Column(
+    # Additional data - FIXED: renamed from 'metadata' to 'action_metadata'
+    action_metadata = Column(
         JSONB,
         nullable=True,
         default=dict,
@@ -279,8 +278,8 @@ class SupervisorActivityLog(BaseModel, TimestampMixin):
         # Composite indexes
         Index('idx_sup_activity_sup_cat_created', 'supervisor_id', 'action_category', 'created_at'),
         Index('idx_sup_activity_hostel_cat_created', 'hostel_id', 'action_category', 'created_at'),
-        # GIN indexes
-        Index('idx_sup_activity_metadata_gin', 'metadata', postgresql_using='gin'),
+        # GIN indexes - FIXED: updated to use action_metadata
+        Index('idx_sup_activity_metadata_gin', 'action_metadata', postgresql_using='gin'),
         # Constraints
         CheckConstraint(
             "status IN ('completed', 'pending', 'failed', 'cancelled')",

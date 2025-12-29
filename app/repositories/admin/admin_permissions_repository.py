@@ -21,11 +21,10 @@ from app.models.admin.admin_permissions import (
 )
 from app.models.admin.admin_user import AdminUser, AdminRole
 from app.repositories.base.base_repository import BaseRepository
-from app.core1.exceptions import (
+from app.core.exceptions import (
     EntityNotFoundError,
     ValidationError,
     DuplicateError,
-    ConflictError
 )
 
 

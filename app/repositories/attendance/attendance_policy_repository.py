@@ -20,7 +20,7 @@ from app.models.attendance.attendance_policy import (
     PolicyException,
 )
 from app.repositories.base.base_repository import BaseRepository
-from app.core1.exceptions import ValidationError, NotFoundError, ConflictError
+from app.core.exceptions import ValidationError, NotFoundError, ConflictError
 
 
 class AttendancePolicyRepository(BaseRepository[AttendancePolicy]):

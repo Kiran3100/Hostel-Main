@@ -11,7 +11,7 @@ from decimal import Decimal
 from typing import TYPE_CHECKING, Optional
 
 from sqlalchemy import (
-    Boolean, Date as SQLDate, Decimal as SQLDecimal, Enum as SQLEnum,
+    Boolean, Date as SQLDate, Numeric as SQLDecimal, Enum as SQLEnum,  # ✅ Correct
     ForeignKey, Integer, String, Text, UniqueConstraint, Index
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -38,7 +38,7 @@ __all__ = [
 ]
 
 
-class Supervisor(BaseModel, TimestampModel, UUIDMixin, SoftDeleteMixin, AuditMixin):
+class Supervisor(UUIDMixin, SoftDeleteMixin, AuditMixin, TimestampModel, BaseModel):
     """
     Core supervisor entity with employment and assignment details.
     
@@ -447,7 +447,7 @@ class Supervisor(BaseModel, TimestampModel, UUIDMixin, SoftDeleteMixin, AuditMix
         return max(0, remaining)
 
 
-class SupervisorEmployment(BaseModel, TimestampModel, UUIDMixin):
+class SupervisorEmployment(UUIDMixin, TimestampModel, BaseModel):
     """
     Employment history tracking for supervisors.
     
@@ -568,7 +568,7 @@ class SupervisorEmployment(BaseModel, TimestampModel, UUIDMixin):
         return self.end_date is None
 
 
-class SupervisorStatusHistory(BaseModel, TimestampModel, UUIDMixin):
+class SupervisorStatusHistory(UUIDMixin, TimestampModel, BaseModel):
     """
     Status change history for supervisors.
     
@@ -680,7 +680,7 @@ class SupervisorStatusHistory(BaseModel, TimestampModel, UUIDMixin):
         )
 
 
-class SupervisorNote(BaseModel, TimestampModel, UUIDMixin):
+class SupervisorNote(UUIDMixin, TimestampModel, BaseModel):
     """
     Administrative notes for supervisors.
     

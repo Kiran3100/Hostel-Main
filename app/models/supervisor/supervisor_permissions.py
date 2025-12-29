@@ -11,7 +11,7 @@ from decimal import Decimal
 from typing import TYPE_CHECKING, Optional
 
 from sqlalchemy import (
-    Boolean, DateTime, Decimal as SQLDecimal, ForeignKey,
+    Boolean, DateTime, Numeric as SQLDecimal, ForeignKey,
     Integer, String, Text, UniqueConstraint, Index, JSON
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -25,12 +25,12 @@ if TYPE_CHECKING:
 
 __all__ = [
     "SupervisorPermission",
-    "PermissionTemplate",
+    "PermissionTemplate", 
     "PermissionAuditLog",
 ]
 
 
-class SupervisorPermission(BaseModel, TimestampModel, UUIDMixin):
+class SupervisorPermission(UUIDMixin, TimestampModel, BaseModel):
     """
     Granular permission configuration for supervisors.
     
@@ -399,7 +399,8 @@ class SupervisorPermission(BaseModel, TimestampModel, UUIDMixin):
         Index("idx_permissions_supervisor", "supervisor_id"),
         Index("idx_permissions_template", "template_applied"),
         {
-            "comment": "Granular permission configuration for supervisors"
+            "comment": "Granular permission configuration for supervisors",
+            "extend_existing": True
         }
     )
     
@@ -407,7 +408,7 @@ class SupervisorPermission(BaseModel, TimestampModel, UUIDMixin):
         return f"<SupervisorPermission(supervisor={self.supervisor_id})>"
 
 
-class PermissionTemplate(BaseModel, TimestampModel, UUIDMixin):
+class PermissionTemplate(UUIDMixin, TimestampModel, BaseModel):
     """
     Permission templates for quick assignment.
     
@@ -481,7 +482,8 @@ class PermissionTemplate(BaseModel, TimestampModel, UUIDMixin):
         Index("idx_template_name", "template_name"),
         Index("idx_template_active", "is_active", "is_system_template"),
         {
-            "comment": "Permission templates for supervisor role assignment"
+            "comment": "Permission templates for supervisor role assignment",
+            "extend_existing": True
         }
     )
     
@@ -489,7 +491,7 @@ class PermissionTemplate(BaseModel, TimestampModel, UUIDMixin):
         return f"<PermissionTemplate(name={self.template_name}, system={self.is_system_template})>"
 
 
-class PermissionAuditLog(BaseModel, TimestampModel, UUIDMixin):
+class PermissionAuditLog(UUIDMixin, TimestampModel, BaseModel):
     """
     Permission change audit log.
     
@@ -607,7 +609,8 @@ class PermissionAuditLog(BaseModel, TimestampModel, UUIDMixin):
         Index("idx_audit_changed_by", "changed_by", "changed_at"),
         Index("idx_audit_change_type", "change_type", "changed_at"),
         {
-            "comment": "Permission change audit trail for compliance"
+            "comment": "Permission change audit trail for compliance",
+            "extend_existing": True
         }
     )
     

@@ -5,7 +5,7 @@ Provides advanced query construction capabilities with automatic
 optimization and performance monitoring.
 """
 
-from typing import Any, Callable, Dict, List, Optional, Type, TypeVar, Union
+from typing import Any, Callable, Dict, List, Optional, Type, TypeVar, Union, Generic
 from datetime import datetime
 from enum import Enum
 

@@ -22,7 +22,7 @@ from app.models.admin.admin_user import (
 from app.models.user.user import User
 from app.models.admin.admin_hostel_assignment import AdminHostelAssignment
 from app.repositories.base.base_repository import BaseRepository
-from app.core1.exceptions import (
+from app.core.exceptions import (
     EntityNotFoundError,
     ValidationError,
     SecurityError,

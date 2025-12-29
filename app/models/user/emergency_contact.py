@@ -1,7 +1,7 @@
 """
 Emergency Contact model configuration.
 """
-from sqlalchemy import Boolean, Column, ForeignKey, String, Text
+from sqlalchemy import Boolean, Column, ForeignKey, String, Text, Integer, DateTime
 from sqlalchemy.orm import relationship
 
 from app.models.base.base_model import BaseModel
@@ -150,7 +150,7 @@ class EmergencyContact(BaseModel, UUIDMixin, TimestampMixin):
     )
 
     # Relationships
-    user = relationship("User", back_populates="emergency_contact")
+    user = relationship("User", back_populates="emergency_contacts")
 
     def __repr__(self):
         return f"<EmergencyContact user_id={self.user_id} name={self.emergency_contact_name} relation={self.emergency_contact_relation}>"

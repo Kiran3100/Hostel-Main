@@ -266,8 +266,8 @@ class AdminOverride(TimestampModel, UUIDMixin, AuditMixin):
         comment="Reason for reversal"
     )
     
-    # Metadata
-    metadata: Mapped[Optional[dict]] = mapped_column(
+    # Additional Data - RENAMED from 'metadata' to avoid SQLAlchemy conflict
+    additional_metadata: Mapped[Optional[dict]] = mapped_column(
         JSONB,
         nullable=True,
         comment="Additional override metadata"

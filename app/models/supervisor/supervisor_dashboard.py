@@ -11,7 +11,7 @@ from decimal import Decimal
 from typing import TYPE_CHECKING, Optional
 
 from sqlalchemy import (
-    Boolean, Date as SQLDate, DateTime, Decimal as SQLDecimal,
+    Boolean, Date as SQLDate, DateTime, Numeric as SQLDecimal,
     ForeignKey, Integer, String, Text, Time, Index, JSON
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -32,7 +32,7 @@ __all__ = [
 ]
 
 
-class DashboardMetrics(BaseModel, TimestampModel, UUIDMixin):
+class DashboardMetrics(UUIDMixin, TimestampModel, BaseModel):
     """
     Cached dashboard metrics for supervisors.
     
@@ -320,7 +320,7 @@ class DashboardMetrics(BaseModel, TimestampModel, UUIDMixin):
         )
 
 
-class DashboardAlert(BaseModel, TimestampModel, UUIDMixin):
+class DashboardAlert(UUIDMixin, TimestampModel, BaseModel):
     """
     Dashboard alerts and notifications for supervisors.
     
@@ -438,7 +438,7 @@ class DashboardAlert(BaseModel, TimestampModel, UUIDMixin):
         comment="Related entity ID"
     )
     
-    metadata: Mapped[Optional[dict]] = mapped_column(
+    alert_metadata: Mapped[Optional[dict]] = mapped_column(
         JSON,
         nullable=True,
         comment="Additional alert metadata"
@@ -493,7 +493,7 @@ class DashboardAlert(BaseModel, TimestampModel, UUIDMixin):
         return int((datetime.utcnow() - self.created_at).total_seconds() / 60)
 
 
-class QuickAction(BaseModel, TimestampModel, UUIDMixin):
+class QuickAction(UUIDMixin, TimestampModel, BaseModel):
     """
     Quick action buttons for supervisor dashboard.
     
@@ -617,7 +617,7 @@ class QuickAction(BaseModel, TimestampModel, UUIDMixin):
         )
 
 
-class TodaySchedule(BaseModel, TimestampModel, UUIDMixin):
+class TodaySchedule(UUIDMixin, TimestampModel, BaseModel):
     """
     Today's schedule for supervisor dashboard.
     
@@ -771,7 +771,7 @@ class TodaySchedule(BaseModel, TimestampModel, UUIDMixin):
         return (self.completed_items / self.total_scheduled_items) * 100
 
 
-class PerformanceIndicator(BaseModel, TimestampModel, UUIDMixin):
+class PerformanceIndicator(UUIDMixin, TimestampModel, BaseModel):
     """
     Key performance indicators for supervisor dashboard.
     
