@@ -9,7 +9,7 @@ from uuid import uuid4
 import asyncio
 
 from app.core.logging import get_logger
-from app.core.events.event_bus import EventBus
+from app.core.events4.event_bus import EventBus
 from app.schemas.core.domain_events import BaseDomainEvent
 
 
@@ -138,7 +138,6 @@ class EventDispatcher:
                         "error": str(e),
                     }
                 )
-                
                 # Wait before retry
                 if retry and attempts < self.max_retries:
                     import time
@@ -153,6 +152,7 @@ class EventDispatcher:
                 "event_data": transformed_event.model_dump() if hasattr(transformed_event, 'model_dump') else {},
             }
         )
+
         
         return DispatchedEvent(
             event=transformed_event,
