@@ -49,7 +49,7 @@ class DeviceType:
     DESKTOP = "desktop"
 
 
-class AnnouncementView(BaseModel, UUIDMixin, TimestampModel):
+class AnnouncementView(UUIDMixin, TimestampModel, BaseModel):
     """
     Announcement view tracking.
     
@@ -154,11 +154,11 @@ class AnnouncementView(BaseModel, UUIDMixin, TimestampModel):
         comment="Number of times viewed in this session",
     )
     
-    # Metadata
-    metadata: Mapped[Optional[dict]] = mapped_column(
+    # meta_data
+    meta_data: Mapped[Optional[dict]] = mapped_column(
         JSONB,
         nullable=True,
-        comment="Additional view metadata",
+        comment="Additional view meta_data",
     )
     
     # Relationships
@@ -204,7 +204,7 @@ class AnnouncementView(BaseModel, UUIDMixin, TimestampModel):
         )
 
 
-class ReadReceipt(BaseModel, UUIDMixin, TimestampModel):
+class ReadReceipt(UUIDMixin, TimestampModel, BaseModel):
     """
     Read receipt tracking.
     
@@ -290,11 +290,11 @@ class ReadReceipt(BaseModel, UUIDMixin, TimestampModel):
         comment="Whether this is the first time reading",
     )
     
-    # Metadata
-    metadata: Mapped[Optional[dict]] = mapped_column(
+    # meta_data
+    meta_data: Mapped[Optional[dict]] = mapped_column(
         JSONB,
         nullable=True,
-        comment="Additional read receipt metadata",
+        comment="Additional read receipt meta_data",
     )
     
     # Relationships
@@ -339,7 +339,7 @@ class ReadReceipt(BaseModel, UUIDMixin, TimestampModel):
         )
 
 
-class Acknowledgment(BaseModel, UUIDMixin, TimestampModel):
+class Acknowledgment(UUIDMixin, TimestampModel, BaseModel):
     """
     Announcement acknowledgment.
     
@@ -463,11 +463,11 @@ class Acknowledgment(BaseModel, UUIDMixin, TimestampModel):
         comment="Verification notes",
     )
     
-    # Metadata
-    metadata: Mapped[Optional[dict]] = mapped_column(
+    # meta_data
+    meta_data: Mapped[Optional[dict]] = mapped_column(
         JSONB,
         nullable=True,
-        comment="Additional acknowledgment metadata",
+        comment="Additional acknowledgment meta_data",
     )
     
     # Relationships
@@ -511,7 +511,7 @@ class Acknowledgment(BaseModel, UUIDMixin, TimestampModel):
         )
 
 
-class EngagementMetric(BaseModel, UUIDMixin, TimestampModel):
+class EngagementMetric(UUIDMixin, TimestampModel, BaseModel):
     """
     Engagement metrics for announcements.
     
@@ -720,11 +720,11 @@ class EngagementMetric(BaseModel, UUIDMixin, TimestampModel):
         comment="When metrics were last calculated",
     )
     
-    # Metadata
-    metadata: Mapped[Optional[dict]] = mapped_column(
+    # meta_data
+    meta_data: Mapped[Optional[dict]] = mapped_column(
         JSONB,
         nullable=True,
-        comment="Additional engagement metadata",
+        comment="Additional engagement meta_data",
     )
     
     # Relationships
@@ -775,7 +775,7 @@ class EngagementMetric(BaseModel, UUIDMixin, TimestampModel):
         )
 
 
-class ReadingTimeAnalytic(BaseModel, UUIDMixin, TimestampModel):
+class ReadingTimeAnalytic(UUIDMixin, TimestampModel, BaseModel):
     """
     Reading time analytics.
     

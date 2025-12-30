@@ -44,12 +44,38 @@ class HostelStatus(str, enum.Enum):
     UNDER_MAINTENANCE = "under_maintenance"
 
 
+class HostelType(str, enum.Enum):
+    """Hostel type categorization."""
+    BOYS = "boys"
+    GIRLS = "girls"
+    MIXED = "mixed"
+    SINGLE_OCCUPANCY = "single_occupancy"
+    SHARED_OCCUPANCY = "shared_occupancy"
+    PREMIUM = "premium"
+    STANDARD = "standard"
+    BUDGET = "budget"
+
+
 class RoomStatus(str, enum.Enum):
     """Room availability status."""
     AVAILABLE = "available"
     OCCUPIED = "occupied"
     MAINTENANCE = "maintenance"
     OUT_OF_ORDER = "out_of_order"
+
+
+class RoomType(str, enum.Enum):
+    """Room type categorization."""
+    SINGLE = "single"
+    DOUBLE = "double"
+    TRIPLE = "triple"
+    QUAD = "quad"
+    SHARED = "shared"
+    DORMITORY = "dormitory"
+    SUITE = "suite"
+    DELUXE = "deluxe"
+    STUDIO = "studio"
+    PRIVATE = "private"
 
 
 class BedStatus(str, enum.Enum):
@@ -156,6 +182,7 @@ class AttendanceStatus(str, enum.Enum):
     ABSENT = "absent"
     LATE = "late"
     ON_LEAVE = "on_leave"
+    HALF_DAY = "half_day"  # ✅ Added this missing value
 
 
 class AttendanceMode(str, enum.Enum):
@@ -164,6 +191,8 @@ class AttendanceMode(str, enum.Enum):
     QR_CODE = "qr_code"
     BIOMETRIC = "biometric"
     RFID = "rfid"
+    BULK = "bulk"  # ✅ Added this missing value
+    MOBILE = "mobile"  # ✅ Added this for mobile app check-ins
 
 
 class LeaveStatus(str, enum.Enum):
@@ -208,6 +237,22 @@ class AnnouncementPriority(str, enum.Enum):
     MEDIUM = "medium"
     HIGH = "high"
     URGENT = "urgent"
+
+
+# Add alias for backward compatibility
+Priority = AnnouncementPriority
+
+
+class TargetAudience(str, enum.Enum):
+    """Target audience for announcements."""
+    ALL = "all"
+    STUDENTS = "students"
+    STAFF = "staff"
+    SPECIFIC_ROOMS = "specific_rooms"
+    SPECIFIC_FLOORS = "specific_floors"
+    SPECIFIC_INDIVIDUALS = "specific_individuals"
+    ROOM_BASED = "room_based"
+    FLOOR_BASED = "floor_based"
 
 
 class NotificationStatus(str, enum.Enum):
@@ -297,13 +342,35 @@ class AuditActionCategory(str, enum.Enum):
     DATA_EXPORT = "data_export"
     OTHER = "other"
 
-class HostelType(str, enum.Enum):
-    """Hostel type categorization."""
-    BOYS = "boys"
-    GIRLS = "girls"
-    MIXED = "mixed"
-    SINGLE_OCCUPANCY = "single_occupancy"
-    SHARED_OCCUPANCY = "shared_occupancy"
-    PREMIUM = "premium"
-    STANDARD = "standard"
-    BUDGET = "budget"
+
+class StudentStatus(str, enum.Enum):
+    """Student lifecycle status."""
+    PENDING = "pending"
+    ACTIVE = "active"
+    INACTIVE = "inactive"
+    ON_NOTICE = "on_notice"
+    CHECKED_OUT = "checked_out"
+    SUSPENDED = "suspended"
+    EXPELLED = "expelled"
+
+
+class IDProofType(str, enum.Enum):
+    """ID proof document types."""
+    AADHAR = "aadhar"
+    PASSPORT = "passport"
+    DRIVING_LICENSE = "driving_license"
+    VOTER_ID = "voter_id"
+    PAN_CARD = "pan_card"
+    STUDENT_ID = "student_id"
+    EMPLOYEE_ID = "employee_id"
+    OTHER = "other"
+
+
+class DietaryPreference(str, enum.Enum):
+    """Dietary preference types."""
+    VEGETARIAN = "vegetarian"
+    NON_VEGETARIAN = "non_vegetarian"
+    VEGAN = "vegan"
+    JAIN = "jain"
+    EGGETARIAN = "eggetarian"
+    NO_PREFERENCE = "no_preference"

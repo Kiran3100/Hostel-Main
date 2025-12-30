@@ -5,7 +5,7 @@ Provides sophisticated filtering with full-text search, fuzzy matching,
 and geospatial capabilities.
 """
 
-from typing import Any, Dict, List, Optional, Type, Union, Callable
+from typing import Any, Dict, List, Optional, Type, Union, Callable, TypedDict
 from datetime import datetime, date
 from decimal import Decimal
 from enum import Enum
@@ -19,6 +19,26 @@ from app.models.base import BaseModel
 from app.core.logging import get_logger
 
 logger = get_logger(__name__)
+
+
+class FilterCriteria(TypedDict, total=False):
+    """Type definition for filter criteria dictionary."""
+    is_active: bool
+    featured_only: bool
+    has_availability: bool
+    required_beds: int
+    city: str
+    state: str
+    lat: float
+    lng: float
+    radius: float
+    min_price: Decimal
+    max_price: Decimal
+    hostel_type: str
+    amenities: List[str]
+    min_rating: float
+    sort_by: str
+    sort_order: str
 
 
 class FilterOperator(str, Enum):

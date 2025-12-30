@@ -11,7 +11,7 @@ from sqlalchemy.orm import selectinload
 from app.models.hostel.hostel_policy import HostelPolicy, PolicyAcknowledgment, PolicyViolation
 from app.repositories.base.base_repository import BaseRepository
 from app.repositories.base.specifications import Specification
-from app.repositories.base.pagination import PaginationRequest, PaginationResult
+from app.repositories.base.pagination import PaginationParams, PaginatedResult
 
 
 class ActivePoliciesSpecification(Specification[HostelPolicy]):
@@ -390,8 +390,8 @@ class HostelPolicyRepository(BaseRepository[HostelPolicy]):
         hostel_id: UUID,
         search_query: str,
         policy_type: Optional[str] = None,
-        pagination: Optional[PaginationRequest] = None
-    ) -> PaginationResult[HostelPolicy]:
+        pagination: Optional[PaginationParams] = None
+    ) -> PaginatedResult[HostelPolicy]:
         """Search policies with text query."""
         criteria = {"hostel_id": hostel_id}
         

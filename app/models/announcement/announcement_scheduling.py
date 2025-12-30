@@ -57,7 +57,7 @@ class ScheduleStatus:
     FAILED = "failed"
 
 
-class AnnouncementSchedule(BaseModel, UUIDMixin, TimestampModel):
+class AnnouncementSchedule(UUIDMixin, TimestampModel, BaseModel):
     """
     Announcement scheduling configuration.
     
@@ -221,7 +221,7 @@ class AnnouncementSchedule(BaseModel, UUIDMixin, TimestampModel):
     )
     
     # Metadata
-    metadata: Mapped[Optional[dict]] = mapped_column(
+    meta_data: Mapped[Optional[dict]] = mapped_column(
         JSONB,
         nullable=True,
         comment="Additional scheduling metadata",
@@ -296,7 +296,7 @@ class AnnouncementSchedule(BaseModel, UUIDMixin, TimestampModel):
         )
 
 
-class RecurringAnnouncement(BaseModel, UUIDMixin, TimestampModel):
+class RecurringAnnouncement(UUIDMixin, TimestampModel, BaseModel):
     """
     Recurring announcement template.
     
@@ -462,7 +462,7 @@ class RecurringAnnouncement(BaseModel, UUIDMixin, TimestampModel):
     )
     
     # Metadata
-    metadata: Mapped[Optional[dict]] = mapped_column(
+    meta_data: Mapped[Optional[dict]] = mapped_column(
         JSONB,
         nullable=True,
         comment="Additional metadata",
@@ -505,7 +505,7 @@ class RecurringAnnouncement(BaseModel, UUIDMixin, TimestampModel):
         )
 
 
-class ScheduleExecution(BaseModel, UUIDMixin, TimestampModel):
+class ScheduleExecution(UUIDMixin, TimestampModel, BaseModel):
     """
     Schedule execution tracking.
     
@@ -612,7 +612,7 @@ class ScheduleExecution(BaseModel, UUIDMixin, TimestampModel):
     )
     
     # Metadata
-    metadata: Mapped[Optional[dict]] = mapped_column(
+    meta_data: Mapped[Optional[dict]] = mapped_column(
         JSONB,
         nullable=True,
         comment="Additional execution metadata",
@@ -660,7 +660,7 @@ class ScheduleExecution(BaseModel, UUIDMixin, TimestampModel):
         )
 
 
-class PublishQueue(BaseModel, UUIDMixin, TimestampModel):
+class PublishQueue(UUIDMixin, TimestampModel, BaseModel):
     """
     Publication queue for batch processing.
     
@@ -786,7 +786,7 @@ class PublishQueue(BaseModel, UUIDMixin, TimestampModel):
     )
     
     # Metadata
-    metadata: Mapped[Optional[dict]] = mapped_column(
+    meta_data: Mapped[Optional[dict]] = mapped_column(
         JSONB,
         nullable=True,
         comment="Additional queue metadata",

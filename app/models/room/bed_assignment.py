@@ -43,7 +43,7 @@ __all__ = [
 ]
 
 
-class BedAssignment(BaseModel, UUIDMixin, TimestampModel, SoftDeleteMixin, AuditMixin):
+class BedAssignment(UUIDMixin, SoftDeleteMixin, AuditMixin, TimestampModel, BaseModel):
     """
     Current bed assignments with student details.
     
@@ -502,6 +502,7 @@ class BedAssignment(BaseModel, UUIDMixin, TimestampModel, SoftDeleteMixin, Audit
         Index("ix_bed_assignment_student", "student_id", "is_active"),
         Index("ix_bed_assignment_dates", "occupied_from", "expected_vacate_date"),
         Index("ix_bed_assignment_status", "assignment_status", "is_active"),
+        {'extend_existing': True}
     )
 
     def __repr__(self) -> str:
@@ -531,7 +532,7 @@ class BedAssignment(BaseModel, UUIDMixin, TimestampModel, SoftDeleteMixin, Audit
         return self.outstanding_balance > Decimal("0.00")
 
 
-class AssignmentRule(BaseModel, UUIDMixin, TimestampModel, SoftDeleteMixin, AuditMixin):
+class AssignmentRule(UUIDMixin, SoftDeleteMixin, AuditMixin, TimestampModel, BaseModel):
     """
     Automated bed assignment algorithms and rules.
     
@@ -785,6 +786,7 @@ class AssignmentRule(BaseModel, UUIDMixin, TimestampModel, SoftDeleteMixin, Audi
     __table_args__ = (
         Index("ix_assignment_rule_active", "hostel_id", "is_active"),
         Index("ix_assignment_rule_priority", "priority", "execution_order"),
+        {'extend_existing': True}
     )
 
     def __repr__(self) -> str:
@@ -794,7 +796,7 @@ class AssignmentRule(BaseModel, UUIDMixin, TimestampModel, SoftDeleteMixin, Audi
         )
 
 
-class AssignmentConflict(BaseModel, UUIDMixin, TimestampModel):
+class AssignmentConflict(UUIDMixin, TimestampModel, BaseModel):
     """
     Conflict resolution for bed assignments.
     
@@ -1002,6 +1004,7 @@ class AssignmentConflict(BaseModel, UUIDMixin, TimestampModel):
     __table_args__ = (
         Index("ix_conflict_status", "conflict_status", "is_resolved"),
         Index("ix_conflict_severity", "conflict_severity", "detected_at"),
+        {'extend_existing': True}
     )
 
     def __repr__(self) -> str:
@@ -1011,7 +1014,7 @@ class AssignmentConflict(BaseModel, UUIDMixin, TimestampModel):
         )
 
 
-class AssignmentOptimization(BaseModel, UUIDMixin, TimestampModel):
+class AssignmentOptimization(UUIDMixin, TimestampModel, BaseModel):
     """
     Optimal bed allocation strategies.
     
@@ -1265,6 +1268,7 @@ class AssignmentOptimization(BaseModel, UUIDMixin, TimestampModel):
     __table_args__ = (
         Index("ix_optimization_status", "execution_status", "run_date"),
         Index("ix_optimization_applied", "is_applied", "hostel_id"),
+        {'extend_existing': True}
     )
 
     def __repr__(self) -> str:
@@ -1274,7 +1278,7 @@ class AssignmentOptimization(BaseModel, UUIDMixin, TimestampModel):
         )
 
 
-class AssignmentHistory(BaseModel, UUIDMixin, TimestampModel):
+class AssignmentHistory(UUIDMixin, TimestampModel, BaseModel):
     """
     Complete assignment history tracking.
     
@@ -1426,6 +1430,7 @@ class AssignmentHistory(BaseModel, UUIDMixin, TimestampModel):
         Index("ix_history_bed", "bed_id", "change_date"),
         Index("ix_history_student", "student_id", "change_date"),
         Index("ix_history_change_type", "change_type", "change_date"),
+        {'extend_existing': True}
     )
 
     def __repr__(self) -> str:
@@ -1435,7 +1440,7 @@ class AssignmentHistory(BaseModel, UUIDMixin, TimestampModel):
         )
 
 
-class AssignmentPreference(BaseModel, UUIDMixin, TimestampModel):
+class AssignmentPreference(UUIDMixin, TimestampModel, BaseModel):
     """
     Student and admin assignment preferences.
     
@@ -1647,6 +1652,7 @@ class AssignmentPreference(BaseModel, UUIDMixin, TimestampModel):
     __table_args__ = (
         Index("ix_pref_student_active", "student_id", "is_active"),
         Index("ix_pref_hostel_type", "hostel_id", "preference_type"),
+        {'extend_existing': True}
     )
 
     def __repr__(self) -> str:

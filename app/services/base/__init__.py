@@ -433,7 +433,7 @@ def cache_result(key_builder=None, ttl=None, namespace=None):
 # Module initialization logging
 def _log_module_info():
     """Log module initialization information."""
-    from app.core1.logging import get_logger
+    from app.core.logging import get_logger
     
     logger = get_logger("services.base")
     logger.info(

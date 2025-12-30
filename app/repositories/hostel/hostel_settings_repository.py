@@ -15,7 +15,7 @@ from app.models.hostel.hostel_settings import HostelSettings
 from app.models.hostel.hostel import Hostel
 from app.repositories.base.base_repository import BaseRepository
 from app.repositories.base.specifications import Specification
-from app.core1.exceptions import SettingsValidationError, HostelNotFoundError
+from app.core.exceptions import SettingsValidationError, HostelNotFoundError
 
 
 class HostelSettingsRepository(BaseRepository[HostelSettings]):

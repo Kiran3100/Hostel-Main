@@ -1,4 +1,3 @@
-# --- File: app/models/announcement/announcement.py ---
 """
 Core announcement models.
 
@@ -26,14 +25,13 @@ from sqlalchemy import (
 from sqlalchemy.dialects.postgresql import ARRAY, JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from app.models.base.base_model import BaseModel, TimestampModel
+from app.models.base.combined_base import AnnouncementBaseModel, SimpleBaseModel
 from app.models.base.enums import (
     AnnouncementCategory,
     AnnouncementStatus,
     Priority,
     TargetAudience,
 )
-from app.models.base.mixins import AuditMixin, SoftDeleteMixin, UUIDMixin
 
 if TYPE_CHECKING:
     from app.models.hostel.hostel import Hostel
@@ -55,7 +53,7 @@ __all__ = [
 ]
 
 
-class Announcement(BaseModel, UUIDMixin, TimestampModel, AuditMixin, SoftDeleteMixin):
+class Announcement(AnnouncementBaseModel):
     """
     Core announcement entity.
     
@@ -300,7 +298,8 @@ class Announcement(BaseModel, UUIDMixin, TimestampModel, AuditMixin, SoftDeleteM
     )
     
     # Metadata
-    metadata: Mapped[Optional[dict]] = mapped_column(
+    extra_metadata: Mapped[Optional[dict]] = mapped_column(
+        "metadata",
         JSONB,
         nullable=True,
         comment="Additional metadata and custom fields",
@@ -491,7 +490,7 @@ class Announcement(BaseModel, UUIDMixin, TimestampModel, AuditMixin, SoftDeleteM
         return round((self.acknowledged_count / self.total_recipients) * 100, 2)
 
 
-class AnnouncementAttachment(BaseModel, UUIDMixin, TimestampModel):
+class AnnouncementAttachment(SimpleBaseModel):
     """
     Announcement file attachments.
     
@@ -569,7 +568,8 @@ class AnnouncementAttachment(BaseModel, UUIDMixin, TimestampModel):
     )
     
     # Metadata
-    metadata: Mapped[Optional[dict]] = mapped_column(
+    extra_metadata: Mapped[Optional[dict]] = mapped_column(
+        "metadata",
         JSONB,
         nullable=True,
         comment="Additional file metadata",
@@ -601,7 +601,7 @@ class AnnouncementAttachment(BaseModel, UUIDMixin, TimestampModel):
         )
 
 
-class AnnouncementVersion(BaseModel, UUIDMixin, TimestampModel):
+class AnnouncementVersion(SimpleBaseModel):
     """
     Announcement version history.
     
@@ -695,7 +695,7 @@ class AnnouncementVersion(BaseModel, UUIDMixin, TimestampModel):
         )
 
 
-class AnnouncementRecipient(BaseModel, UUIDMixin, TimestampModel):
+class AnnouncementRecipient(SimpleBaseModel):
     """
     Calculated recipients for announcements.
     
@@ -785,7 +785,8 @@ class AnnouncementRecipient(BaseModel, UUIDMixin, TimestampModel):
     )
     
     # Metadata
-    metadata: Mapped[Optional[dict]] = mapped_column(
+    extra_metadata: Mapped[Optional[dict]] = mapped_column(
+        "metadata",
         JSONB,
         nullable=True,
         comment="Additional recipient-specific metadata",

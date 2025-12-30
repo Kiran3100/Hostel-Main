@@ -166,7 +166,7 @@ class TimeseriesMetric(BaseAnalyticsModel):
         comment="Optional label for the point"
     )
     
-    metadata = Column(
+    metric_metadata = Column(
         JSONB,
         nullable=True,
         comment="Additional metadata"

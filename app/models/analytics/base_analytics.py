@@ -21,7 +21,7 @@ import uuid
 
 from app.models.base.base_model import BaseModel
 from app.models.base.mixins import TimestampMixin
-from app.core1.database import Base
+from app.core.database import Base
 
 
 class AnalyticsMixin:

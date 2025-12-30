@@ -11,10 +11,10 @@ from datetime import datetime
 from typing import Any, Dict, List, Optional, Type, TypeVar
 from uuid import uuid4
 
-from sqlalchemy import Column, DateTime, Boolean, event
+from sqlalchemy import Column, DateTime, Boolean, String, event
 from sqlalchemy.dialects.postgresql import UUID as PG_UUID
 from sqlalchemy.ext.declarative import declarative_base, declared_attr
-from sqlalchemy.orm import Session, Query
+from sqlalchemy.orm import Session, Query, Mapped, mapped_column
 from sqlalchemy.sql import func
 
 # Create declarative base
@@ -33,6 +33,15 @@ class BaseModel(Base):
     """
     
     __abstract__ = True
+    
+    # Primary key column - present in all models
+    id: Mapped[str] = mapped_column(
+        String(36),
+        primary_key=True,
+        default=lambda: str(uuid4()),
+        nullable=False,
+        comment="Primary key (UUID)"
+    )
     
     @declared_attr
     def __tablename__(cls) -> str:

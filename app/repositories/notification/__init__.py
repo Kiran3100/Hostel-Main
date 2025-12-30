@@ -169,3 +169,4 @@ Usage Examples:
    
    # Mark as read
    repo.mark_as_read(notification.id, user_id, {'read_method': 'web_view'})
+   """

@@ -11,7 +11,7 @@ from sqlalchemy.orm import selectinload, joinedload
 from app.models.hostel.hostel_amenity import HostelAmenity, AmenityCategory, AmenityBooking
 from app.repositories.base.base_repository import BaseRepository
 from app.repositories.base.specifications import Specification
-from app.repositories.base.pagination import PaginationRequest, PaginationResult
+from app.repositories.base.pagination import PaginationParams, PaginatedResult
 
 
 class AvailableAmenitiesSpecification(Specification[HostelAmenity]):

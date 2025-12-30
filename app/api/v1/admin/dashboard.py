@@ -1,4 +1,4 @@
-from typing import Any, List, Optional
+from typing import Any, Dict, List, Optional
 from functools import lru_cache
 from datetime import datetime, timedelta
 
@@ -25,7 +25,7 @@ router = APIRouter(prefix="/dashboard", tags=["admin:dashboard"])
 class DashboardPreferences(BaseModel):
     """Schema for dashboard preferences"""
     refresh_interval: int = Field(default=300, ge=60, le=3600)  # 1 minute to 1 hour
-    default_period: str = Field(default="7d", regex="^(1d|7d|30d|90d)$")
+    default_period: str = Field(default="7d", pattern="^(1d|7d|30d|90d)$")
     enabled_widgets: List[str] = Field(default_factory=list)
     chart_preferences: Dict[str, Any] = Field(default_factory=dict)
 
@@ -33,7 +33,7 @@ class DashboardPreferences(BaseModel):
 class DashboardFilter(BaseModel):
     """Schema for dashboard filtering"""
     hostel_ids: Optional[List[str]] = None
-    date_range: Optional[str] = Field(None, regex="^(1d|7d|30d|90d|custom)$")
+    date_range: Optional[str] = Field(None, pattern="^(1d|7d|30d|90d|custom)$")
     start_date: Optional[datetime] = None
     end_date: Optional[datetime] = None
     include_inactive: bool = Field(default=False)
@@ -56,7 +56,7 @@ def get_dashboard_service(
 )
 @cache_result(expire_time=300)  # Cache for 5 minutes
 async def get_dashboard(
-    period: str = Query("7d", regex="^(1d|7d|30d|90d)$", description="Dashboard period"),
+    period: str = Query("7d", pattern="^(1d|7d|30d|90d)$", description="Dashboard period"),
     hostel_ids: Optional[str] = Query(None, description="Comma-separated hostel IDs to include"),
     include_trends: bool = Query(True, description="Include trend analysis"),
     include_comparisons: bool = Query(True, description="Include cross-hostel comparisons"),
@@ -103,7 +103,7 @@ async def get_dashboard(
 )
 async def refresh_dashboard(
     background_tasks: BackgroundTasks,
-    refresh_type: str = Query("full", regex="^(quick|full|deep)$", description="Refresh type"),
+    refresh_type: str = Query("full", pattern="^(quick|full|deep)$", description="Refresh type"),
     notify_on_complete: bool = Query(True, description="Send notification when refresh completes"),
     current_admin=Depends(deps.get_admin_user),
     service: MultiHostelDashboardService = Depends(get_dashboard_service),
@@ -175,9 +175,9 @@ async def get_refresh_status(
 )
 @cache_result(expire_time=600)  # Cache for 10 minutes
 async def get_aggregated_stats(
-    period: str = Query("30d", regex="^(1d|7d|30d|90d)$", description="Statistics period"),
+    period: str = Query("30d", pattern="^(1d|7d|30d|90d)$", description="Statistics period"),
     include_forecasts: bool = Query(False, description="Include forecast data"),
-    breakdown_by: str = Query("hostel", regex="^(hostel|region|type)$", description="Breakdown dimension"),
+    breakdown_by: str = Query("hostel", pattern="^(hostel|region|type)$", description="Breakdown dimension"),
     current_admin=Depends(deps.get_admin_user),
     service: MultiHostelDashboardService = Depends(get_dashboard_service),
 ) -> AggregatedStats:
@@ -257,8 +257,8 @@ async def get_hostel_quick_stats(
 @cache_result(expire_time=900)  # Cache for 15 minutes
 async def get_cross_hostel_comparison(
     metrics: str = Query("occupancy,revenue,satisfaction", description="Comma-separated metrics to compare"),
-    period: str = Query("30d", regex="^(7d|30d|90d)$", description="Comparison period"),
-    normalize_by: Optional[str] = Query(None, regex="^(capacity|rooms|size)$", description="Normalization factor"),
+    period: str = Query("30d", pattern="^(7d|30d|90d)$", description="Comparison period"),
+    normalize_by: Optional[str] = Query(None, pattern="^(capacity|rooms|size)$", description="Normalization factor"),
     include_benchmarks: bool = Query(True, description="Include industry benchmarks"),
     current_admin=Depends(deps.get_admin_user),
     service: MultiHostelDashboardService = Depends(get_dashboard_service),

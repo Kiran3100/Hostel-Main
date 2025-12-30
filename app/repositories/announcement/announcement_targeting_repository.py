@@ -25,7 +25,7 @@ from app.models.user.user import User
 from app.models.room.room import Room
 from app.repositories.base.base_repository import BaseRepository
 from app.repositories.base.query_builder import QueryBuilder
-from app.core1.exceptions import (
+from app.core.exceptions import (
     ResourceNotFoundError,
     ValidationError,
     BusinessLogicError,

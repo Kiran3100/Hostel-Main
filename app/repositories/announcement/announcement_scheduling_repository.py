@@ -23,7 +23,7 @@ from app.models.announcement import (
 from app.repositories.base.base_repository import BaseRepository
 from app.repositories.base.query_builder import QueryBuilder
 from app.repositories.base.pagination import PaginationParams, PaginatedResult
-from app.core1.exceptions import (
+from app.core.exceptions import (
     ResourceNotFoundError,
     ValidationError,
     BusinessLogicError,

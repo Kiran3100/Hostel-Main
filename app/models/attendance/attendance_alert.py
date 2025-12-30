@@ -21,6 +21,7 @@ from sqlalchemy import (
     JSON,
     String,
     Text,
+    Time,
     UniqueConstraint,
 )
 from sqlalchemy.dialects.postgresql import UUID
@@ -428,11 +429,11 @@ class AlertConfiguration(TimestampModel, BaseModel):
         default=False,
     )
     alert_start_time: Mapped[Optional[time]] = mapped_column(
-        SQLEnum(time),
+        Time,
         nullable=True,
     )
     alert_end_time: Mapped[Optional[time]] = mapped_column(
-        SQLEnum(time),
+        Time,
         nullable=True,
     )
 

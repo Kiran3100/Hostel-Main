@@ -1,4 +1,3 @@
-# app/models/room/room_availability.py
 """
 Room availability models with real-time tracking and forecasting.
 
@@ -43,7 +42,7 @@ __all__ = [
 ]
 
 
-class RoomAvailability(BaseModel, UUIDMixin, TimestampModel):
+class RoomAvailability(UUIDMixin, TimestampModel, BaseModel):
     """
     Real-time room availability tracking.
     
@@ -390,7 +389,7 @@ class RoomAvailability(BaseModel, UUIDMixin, TimestampModel):
         ).quantize(Decimal("0.01"))
 
 
-class AvailabilityWindow(BaseModel, UUIDMixin, TimestampModel, SoftDeleteMixin):
+class AvailabilityWindow(UUIDMixin, TimestampModel, SoftDeleteMixin, BaseModel):
     """
     Time-based availability windows.
     
@@ -564,7 +563,7 @@ class AvailabilityWindow(BaseModel, UUIDMixin, TimestampModel, SoftDeleteMixin):
         return self.start_date <= check_date <= self.end_date
 
 
-class AvailabilityRule(BaseModel, UUIDMixin, TimestampModel, SoftDeleteMixin, AuditMixin):
+class AvailabilityRule(UUIDMixin, TimestampModel, SoftDeleteMixin, AuditMixin, BaseModel):
     """
     Rules governing availability calculation.
     
@@ -750,7 +749,7 @@ class AvailabilityRule(BaseModel, UUIDMixin, TimestampModel, SoftDeleteMixin, Au
         )
 
 
-class AvailabilityForecast(BaseModel, UUIDMixin, TimestampModel):
+class AvailabilityForecast(UUIDMixin, TimestampModel, BaseModel):
     """
     Predictive availability modeling.
     
@@ -958,7 +957,7 @@ class AvailabilityForecast(BaseModel, UUIDMixin, TimestampModel):
         return self.daily_forecasts.get(date_str)
 
 
-class AvailabilityAlert(BaseModel, UUIDMixin, TimestampModel):
+class AvailabilityAlert(UUIDMixin, TimestampModel, BaseModel):
     """
     Low availability alerts and notifications.
     
@@ -1216,7 +1215,7 @@ class AvailabilityAlert(BaseModel, UUIDMixin, TimestampModel):
             self.resolution_time_minutes = int(duration.total_seconds() / 60)
 
 
-class AvailabilityOptimization(BaseModel, UUIDMixin, TimestampModel):
+class AvailabilityOptimization(UUIDMixin, TimestampModel, BaseModel):
     """
     Availability optimization algorithms and recommendations.
     

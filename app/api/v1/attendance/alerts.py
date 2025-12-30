@@ -2,7 +2,7 @@ from typing import Any, Optional
 import logging
 from datetime import datetime
 
-from fastapi import APIRouter, Depends, Query, status, HTTPException
+from fastapi import APIRouter, Depends, Query, Path, Body, status, HTTPException
 from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 
@@ -201,8 +201,8 @@ async def trigger_alert(
     }
 )
 async def acknowledge_alert(
-    alert_id: str = Query(..., description="Unique alert identifier"),
-    payload: AlertAcknowledgment,
+    alert_id: str = Path(..., description="Unique alert identifier"),
+    payload: AlertAcknowledgment = Body(...),
     _admin=Depends(deps.get_admin_user),
     service: AttendanceAlertService = Depends(get_alert_service),
 ) -> Any:
@@ -256,7 +256,7 @@ async def acknowledge_alert(
     }
 )
 async def resolve_alert(
-    alert_id: str = Query(..., description="Unique alert identifier"),
+    alert_id: str = Path(..., description="Unique alert identifier"),
     resolution_notes: Optional[str] = Query(
         None, 
         description="Detailed resolution notes and actions taken",
@@ -515,8 +515,8 @@ async def get_alert_metrics(
     }
 )
 async def bulk_acknowledge_alerts(
-    alert_ids: list[str],
-    payload: AlertAcknowledgment,
+    alert_ids: list[str] = Body(..., description="List of alert IDs to acknowledge"),
+    payload: AlertAcknowledgment = Body(...),
     _admin=Depends(deps.get_admin_user),
     service: AttendanceAlertService = Depends(get_alert_service),
 ) -> Any:
