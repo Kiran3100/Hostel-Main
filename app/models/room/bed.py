@@ -1,4 +1,3 @@
-# app/models/room/bed.py
 """
 Bed models with comprehensive management and tracking.
 
@@ -44,7 +43,7 @@ __all__ = [
 ]
 
 
-class Bed(BaseModel, UUIDMixin, TimestampModel, SoftDeleteMixin, AuditMixin):
+class Bed(UUIDMixin, TimestampModel, SoftDeleteMixin, AuditMixin, BaseModel):
     """
     Individual bed entity with position and specifications.
     
@@ -425,7 +424,7 @@ class Bed(BaseModel, UUIDMixin, TimestampModel, SoftDeleteMixin, AuditMixin):
         ).quantize(Decimal("0.01"))
 
 
-class BedCondition(BaseModel, UUIDMixin, TimestampModel):
+class BedCondition(UUIDMixin, TimestampModel, BaseModel):
     """
     Bed condition and maintenance tracking.
     
@@ -717,7 +716,7 @@ class BedCondition(BaseModel, UUIDMixin, TimestampModel):
         )
 
 
-class BedConfiguration(BaseModel, UUIDMixin, TimestampModel, AuditMixin):
+class BedConfiguration(UUIDMixin, TimestampModel, AuditMixin, BaseModel):
     """
     Bed setup and configuration options.
     
@@ -1012,7 +1011,7 @@ class BedConfiguration(BaseModel, UUIDMixin, TimestampModel, AuditMixin):
         )
 
 
-class BedAccessibility(BaseModel, UUIDMixin, TimestampModel):
+class BedAccessibility(UUIDMixin, TimestampModel, BaseModel):
     """
     Accessibility features and accommodations.
     
@@ -1302,7 +1301,7 @@ class BedAccessibility(BaseModel, UUIDMixin, TimestampModel):
         )
 
 
-class BedPreference(BaseModel, UUIDMixin, TimestampModel):
+class BedPreference(UUIDMixin, TimestampModel, BaseModel):
     """
     Student preferences for bed selection.
     
@@ -1538,7 +1537,7 @@ class BedPreference(BaseModel, UUIDMixin, TimestampModel):
         )
 
 
-class BedUtilization(BaseModel, UUIDMixin, TimestampModel):
+class BedUtilization(UUIDMixin, TimestampModel, BaseModel):
     """
     Bed utilization analytics and optimization.
     

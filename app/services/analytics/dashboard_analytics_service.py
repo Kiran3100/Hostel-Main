@@ -25,7 +25,7 @@ from app.services.base import (
     ErrorSeverity,
 )
 from app.repositories.analytics import DashboardAnalyticsRepository
-from app.models.analytics.dashboard_analytics import DashboardMetrics as DashboardMetricsModel
+from app.models.analytics.dashboard_analytics import QuickStats as QuickStatsModel
 from app.schemas.analytics.dashboard_analytics import (
     KPIResponse,
     QuickStats,
@@ -58,7 +58,7 @@ class WidgetType(str, Enum):
     TREND = "trend"
 
 
-class DashboardAnalyticsService(BaseService[DashboardMetricsModel, DashboardAnalyticsRepository]):
+class DashboardAnalyticsService(BaseService[QuickStatsModel, DashboardAnalyticsRepository]):
     """
     Service for generic dashboard analytics and role-specific dashboards.
     

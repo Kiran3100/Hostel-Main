@@ -98,6 +98,7 @@ from app.repositories.base.repository_factory import (
 from app.repositories.base.pagination import (
     PaginationManager,
     PaginationStrategy,
+    PaginationParams,  # Added this line
     PageInfo,
     PaginatedResult,
     Cursor,
@@ -214,6 +215,7 @@ __all__ = [
     # Pagination
     "PaginationManager",
     "PaginationStrategy",
+    "PaginationParams",  # Added this line
     "PageInfo",
     "PaginatedResult",
     "Cursor",

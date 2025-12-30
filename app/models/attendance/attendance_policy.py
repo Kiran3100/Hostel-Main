@@ -1,4 +1,3 @@
-# --- File: app/models/attendance/attendance_policy.py ---
 """
 Attendance policy configuration models.
 
@@ -253,6 +252,7 @@ class AttendancePolicy(TimestampModel, BaseModel):
             "max_leaves_per_month >= 0 AND max_leaves_per_month <= 31",
             name="ck_policy_max_leaves_range",
         ),
+        {"extend_existing": True},
     )
 
     def __repr__(self) -> str:
@@ -435,6 +435,7 @@ class PolicyViolation(TimestampModel, BaseModel):
             "violation_type",
             "severity",
         ),
+        {"extend_existing": True},
     )
 
     def __repr__(self) -> str:
@@ -594,6 +595,7 @@ class PolicyException(TimestampModel, BaseModel):
             "is_active",
             "is_approved",
         ),
+        {"extend_existing": True},
     )
 
     def __repr__(self) -> str:

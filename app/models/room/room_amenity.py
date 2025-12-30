@@ -1,4 +1,3 @@
-# app/models/room/room_amenity.py
 """
 Room amenity models with condition tracking and maintenance.
 
@@ -43,7 +42,7 @@ __all__ = [
 ]
 
 
-class RoomAmenity(BaseModel, UUIDMixin, TimestampModel, SoftDeleteMixin, AuditMixin):
+class RoomAmenity(UUIDMixin, TimestampModel, SoftDeleteMixin, AuditMixin, BaseModel):
     """
     Room-specific amenities and features.
     
@@ -258,7 +257,7 @@ class RoomAmenity(BaseModel, UUIDMixin, TimestampModel, SoftDeleteMixin, AuditMi
         )
 
 
-class AmenityCondition(BaseModel, UUIDMixin, TimestampModel):
+class AmenityCondition(UUIDMixin, TimestampModel, BaseModel):
     """
     Condition tracking for amenities.
     
@@ -420,7 +419,7 @@ class AmenityCondition(BaseModel, UUIDMixin, TimestampModel):
         )
 
 
-class AmenityMaintenance(BaseModel, UUIDMixin, TimestampModel, AuditMixin):
+class AmenityMaintenance(UUIDMixin, TimestampModel, AuditMixin, BaseModel):
     """
     Maintenance schedule for room amenities.
     
@@ -592,7 +591,7 @@ class AmenityMaintenance(BaseModel, UUIDMixin, TimestampModel, AuditMixin):
         )
 
 
-class AmenityUsage(BaseModel, UUIDMixin, TimestampModel):
+class AmenityUsage(UUIDMixin, TimestampModel, BaseModel):
     """
     Usage tracking and analytics for amenities.
     
@@ -715,7 +714,7 @@ class AmenityUsage(BaseModel, UUIDMixin, TimestampModel):
         )
 
 
-class AmenityFeedback(BaseModel, UUIDMixin, TimestampModel):
+class AmenityFeedback(UUIDMixin, TimestampModel, BaseModel):
     """
     Guest feedback on amenities.
     
@@ -869,7 +868,7 @@ class AmenityFeedback(BaseModel, UUIDMixin, TimestampModel):
         )
 
 
-class AmenityInventory(BaseModel, UUIDMixin, TimestampModel):
+class AmenityInventory(UUIDMixin, TimestampModel, BaseModel):
     """
     Inventory management for amenities.
     

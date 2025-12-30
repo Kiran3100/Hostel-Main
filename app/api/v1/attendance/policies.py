@@ -209,7 +209,7 @@ async def create_attendance_policy(
     }
 )
 async def update_attendance_policy(
-    policy_id: str = Query(..., description="Policy identifier"),
+    policy_id: str,
     payload: PolicyUpdate,
     background_tasks: BackgroundTasks,
     _super_admin=Depends(deps.get_super_admin_user),
@@ -300,6 +300,7 @@ async def update_attendance_policy(
     }
 )
 async def detect_policy_violations(
+    background_tasks: BackgroundTasks,
     hostel_id: str = Query(..., description="Hostel identifier"),
     start_date: Optional[str] = Query(
         None, 
@@ -324,7 +325,6 @@ async def detect_policy_violations(
         True,
         description="Include intervention recommendations"
     ),
-    background_tasks: BackgroundTasks,
     _admin=Depends(deps.get_admin_user),
     service: AttendancePolicyService = Depends(get_policy_service),
 ) -> Any:
@@ -550,7 +550,7 @@ async def get_policy_templates(
     }
 )
 async def simulate_policy_changes(
-    policy_id: str = Query(..., description="Policy identifier"),
+    policy_id: str,
     payload: PolicyUpdate,
     simulation_days: int = Query(
         30, 

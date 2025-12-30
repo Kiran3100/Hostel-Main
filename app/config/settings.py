@@ -20,6 +20,14 @@ load_dotenv(dotenv_path=env_path)
 class Settings(BaseSettings):
     """Application settings with environment variable support"""
     
+    @staticmethod
+    def get_secret_key_default() -> str:
+        """Generate a default secret key if not provided"""
+        import secrets
+        import string
+        alphabet = string.ascii_letters + string.digits
+        return ''.join(secrets.choice(alphabet) for _ in range(32))
+    
     # Application configuration - using aliases to match your .env
     APP_NAME: str = Field(default="Hostel Management System", alias="PROJECT_NAME")
     API_VERSION: str = Field(default="v1", alias="PROJECT_VERSION")
@@ -27,7 +35,7 @@ class Settings(BaseSettings):
     DEBUG: bool = False
     ENVIRONMENT: str = "development"
     TIMEZONE: str = Field(default="UTC", alias="TIMEZONE")
-    SECRET_KEY: str = Field(..., min_length=32)
+    SECRET_KEY: str = Field(default_factory=lambda: Settings.get_secret_key_default())
     
     # Server configuration
     HOST: str = "0.0.0.0"
@@ -42,10 +50,10 @@ class Settings(BaseSettings):
     DB_HOST: str = "localhost"
     DB_PORT: int = 5432
     DB_USER: str = "postgres"
-    DB_PASSWORD: str = "password"  # Will be extracted from DATABASE_URL if provided
+    DB_PASSWORD: str = "password"
     DB_NAME: str = "hostel_management"
     DB_POOL_SIZE: int = 20
-    DB_POOL_OVERFLOW: int = 10
+    DB_POOL_OVERFLOW: int = 10  # Fixed: was DB_MAX_OVERFLOW
     DB_ECHO: bool = False
     DB_CONNECT_ARGS: Dict[str, Any] = {}
     
@@ -89,6 +97,8 @@ class Settings(BaseSettings):
     
     # SMS configuration
     SMS_PROVIDER: Optional[str] = None
+    SMS_API_KEY: Optional[str] = None
+    SMS_FROM_NUMBER: Optional[str] = None
     MSG91_API_KEY: Optional[str] = None
     MSG91_SENDER_ID: Optional[str] = None
     
@@ -99,7 +109,14 @@ class Settings(BaseSettings):
     CURRENCY: str = Field(default="INR", alias="CURRENCY")
     RAZORPAY_KEY_ID: Optional[str] = None
     RAZORPAY_KEY_SECRET: Optional[str] = None
+    PAYMENT_GATEWAY_API_KEY: Optional[str] = None
+    PAYMENT_GATEWAY_SECRET: Optional[str] = None
     PAYMENT_GATEWAY_MODE: str = "sandbox"
+    
+    # Google OAuth
+    GOOGLE_CLIENT_ID: Optional[str] = None
+    GOOGLE_CLIENT_SECRET: Optional[str] = None
+    GOOGLE_REDIRECT_URI: Optional[str] = None
     
     # Business logic
     BOOKING_ADVANCE_DAYS: int = 365
@@ -120,14 +137,6 @@ class Settings(BaseSettings):
         case_sensitive = True
         extra = "ignore"  # This will ignore extra fields from .env
     
-    @staticmethod
-    def get_secret_key_default() -> str:
-        """Generate a default secret key if not provided"""
-        import secrets
-        import string
-        alphabet = string.ascii_letters + string.digits
-        return ''.join(secrets.choice(alphabet) for _ in range(32))
-    
     # Validators
     @validator('CORS_ORIGINS', pre=True)
     def parse_cors_origins(cls, v: Union[str, List[str]]) -> List[str]:
@@ -135,9 +144,12 @@ class Settings(BaseSettings):
         if isinstance(v, str):
             # Handle JSON string format from .env
             if v.startswith('[') and v.endswith(']'):
-                import json
-                return json.loads(v)
-            return v.split(",")
+                try:
+                    import json
+                    return json.loads(v)
+                except json.JSONDecodeError:
+                    pass
+            return [origin.strip() for origin in v.split(",")]
         return v
     
     @validator('ALLOWED_EXTENSIONS', pre=True)
@@ -145,11 +157,14 @@ class Settings(BaseSettings):
         """Parse ALLOWED_EXTENSIONS from string to set"""
         if isinstance(v, str):
             if v.startswith('[') and v.endswith(']'):
-                import json
-                extensions = json.loads(v)
-                # Remove dots from extensions if present
-                return {ext.lstrip('.') for ext in extensions}
-            return {ext.strip() for ext in v.split(",")}
+                try:
+                    import json
+                    extensions = json.loads(v)
+                    # Remove dots from extensions if present
+                    return {ext.lstrip('.') for ext in extensions}
+                except json.JSONDecodeError:
+                    pass
+            return {ext.strip().lstrip('.') for ext in v.split(",")}
         elif isinstance(v, list):
             return {ext.lstrip('.') for ext in v}
         return v
@@ -159,16 +174,19 @@ class Settings(BaseSettings):
         """Parse NOTIFICATION_REMINDER_HOURS from string to list"""
         if isinstance(v, str):
             if v.startswith('[') and v.endswith(']'):
-                import json
-                return json.loads(v)
+                try:
+                    import json
+                    return json.loads(v)
+                except json.JSONDecodeError:
+                    pass
             return [int(x.strip()) for x in v.split(",")]
         return v
     
-    @validator('DATABASE_URL', pre=True)
-    def extract_db_components(cls, v, values):
-        """Extract individual DB components from DATABASE_URL"""
-        if v and v.startswith('postgresql://'):
-            # Parse DATABASE_URL to extract components
+    @validator('DATABASE_URL', pre=True, always=True)
+    def validate_database_url(cls, v, values):
+        """Validate and potentially construct DATABASE_URL"""
+        if v:
+            # If DATABASE_URL is provided, extract components for consistency
             import re
             pattern = r'postgresql://([^:]+):([^@]+)@([^:]+):(\d+)/(.+)'
             match = re.match(pattern, v)
@@ -181,10 +199,13 @@ class Settings(BaseSettings):
         return v
     
     def get_database_url(self) -> str:
-        """Construct database URL"""
+        """Construct database URL from components or use provided URL"""
         if self.DATABASE_URL:
             return self.DATABASE_URL
-        return f"postgresql://{self.DB_USER}:{self.DB_PASSWORD}@{self.DB_HOST}:{self.DB_PORT}/{self.DB_NAME}"
+        
+        # Construct from individual components
+        url = f"postgresql://{self.DB_USER}:{self.DB_PASSWORD}@{self.DB_HOST}:{self.DB_PORT}/{self.DB_NAME}"
+        return url
     
     def get_redis_url(self) -> str:
         """Get Redis URL"""

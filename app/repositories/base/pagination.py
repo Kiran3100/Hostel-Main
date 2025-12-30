@@ -5,7 +5,7 @@ Provides offset-based, cursor-based, keyset-based, and hybrid
 pagination strategies.
 """
 
-from typing import Any, Dict, Generic, List, Optional, Type, TypeVar, Callable
+from typing import Any, Dict, Generic, List, Optional, Type, TypeVar, Callable, Union
 from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum
@@ -30,6 +30,86 @@ class PaginationStrategy(str, Enum):
     CURSOR = "cursor"
     KEYSET = "keyset"
     HYBRID = "hybrid"
+
+
+@dataclass
+class PaginationParams:
+    """Parameters for pagination requests."""
+    
+    page: int = 1
+    per_page: int = 50
+    skip: Optional[int] = None
+    limit: Optional[int] = None
+    cursor: Optional[str] = None
+    order_by: Optional[str] = None
+    order_direction: str = "asc"
+    
+    def __post_init__(self):
+        """Validate and normalize parameters."""
+        # Ensure page is at least 1
+        self.page = max(1, self.page)
+        
+        # Ensure per_page is positive and within limits
+        self.per_page = max(1, min(self.per_page, 1000))
+        
+        # Calculate skip/limit from page/per_page if not provided
+        if self.skip is None:
+            self.skip = (self.page - 1) * self.per_page
+        
+        if self.limit is None:
+            self.limit = self.per_page
+        
+        # Validate order direction
+        if self.order_direction.lower() not in ['asc', 'desc']:
+            self.order_direction = 'asc'
+    
+    @classmethod
+    def from_request(
+        cls,
+        page: Optional[int] = None,
+        per_page: Optional[int] = None,
+        skip: Optional[int] = None,
+        limit: Optional[int] = None,
+        cursor: Optional[str] = None,
+        order_by: Optional[str] = None,
+        order_direction: Optional[str] = None
+    ) -> "PaginationParams":
+        """
+        Create pagination parameters from request parameters.
+        
+        Args:
+            page: Page number (1-indexed)
+            per_page: Items per page
+            skip: Number of items to skip
+            limit: Maximum number of items
+            cursor: Pagination cursor
+            order_by: Field to order by
+            order_direction: Order direction (asc/desc)
+            
+        Returns:
+            PaginationParams instance
+        """
+        return cls(
+            page=page or 1,
+            per_page=per_page or 50,
+            skip=skip,
+            limit=limit,
+            cursor=cursor,
+            order_by=order_by,
+            order_direction=order_direction or "asc"
+        )
+    
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert to dictionary."""
+        return {
+            "page": self.page,
+            "per_page": self.per_page,
+            "skip": self.skip,
+            "limit": self.limit,
+            "cursor": self.cursor,
+            "order_by": self.order_by,
+            "order_direction": self.order_direction
+        }
 
 
 @dataclass
@@ -61,14 +141,37 @@ class PaginatedResult(Generic[ModelType]):
     """Paginated query result."""
     
     items: List[ModelType]
-    page_info: PageInfo
+    page_info: Optional[PageInfo] = None
+    total_count: Optional[int] = None
+    page: Optional[int] = None
+    page_size: Optional[int] = None
+    
+    def __post_init__(self):
+        """Ensure backward compatibility."""
+        # If page_info is None but individual fields are provided, create page_info
+        if self.page_info is None and self.total_count is not None:
+            current_page = self.page or 1
+            per_page = self.page_size or len(self.items)
+            total_pages = (self.total_count + per_page - 1) // per_page if per_page > 0 else 1
+            
+            self.page_info = PageInfo(
+                current_page=current_page,
+                per_page=per_page,
+                total_items=self.total_count,
+                total_pages=total_pages,
+                has_next=current_page < total_pages,
+                has_previous=current_page > 1
+            )
     
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary representation."""
-        return {
+        result = {
             "items": [item.to_dict() if hasattr(item, 'to_dict') else item 
-                     for item in self.items],
-            "pagination": {
+                     for item in self.items]
+        }
+        
+        if self.page_info:
+            result["pagination"] = {
                 "current_page": self.page_info.current_page,
                 "per_page": self.page_info.per_page,
                 "total_items": self.page_info.total_items,
@@ -78,7 +181,15 @@ class PaginatedResult(Generic[ModelType]):
                 "next_cursor": self.page_info.next_cursor,
                 "previous_cursor": self.page_info.previous_cursor,
             }
-        }
+        elif self.total_count is not None:
+            # Fallback for backward compatibility
+            result["pagination"] = {
+                "total_count": self.total_count,
+                "page": self.page,
+                "page_size": self.page_size
+            }
+        
+        return result
 
 
 class Cursor:

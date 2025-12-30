@@ -1,12 +1,9 @@
 # Complete Implementation: announcement_tracking_repository.py
 
-Here's the **comprehensive and production-ready** implementation of the announcement tracking repository with all advanced features:
 
----
 
 ## File: announcement_tracking_repository.py
 
-```python
 """
 Announcement Tracking Repository
 
@@ -38,7 +35,7 @@ from app.models.user.user import User
 from app.repositories.base.base_repository import BaseRepository
 from app.repositories.base.query_builder import QueryBuilder
 from app.repositories.base.pagination import PaginationParams, PaginatedResult
-from app.core1.exceptions import (
+from app.core.exceptions import (
     ResourceNotFoundError,
     ValidationError,
     BusinessLogicError,

@@ -4,7 +4,7 @@ Social authentication token and profile models.
 Supports OAuth integration with multiple providers.
 """
 
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Optional
 from uuid import UUID, uuid4
 
@@ -123,7 +123,7 @@ class SocialAuthProvider(TimestampModel):
         comment="Provider icon URL for UI",
     )
 
-    metadata: Mapped[Optional[dict]] = mapped_column(
+    extra_data: Mapped[Optional[dict]] = mapped_column(
         JSONB,
         nullable=True,
         comment="Additional provider configuration",
@@ -238,7 +238,7 @@ class SocialAuthToken(TimestampModel):
     )
 
     # Metadata
-    metadata: Mapped[Optional[dict]] = mapped_column(
+    extra_data: Mapped[Optional[dict]] = mapped_column(
         JSONB,
         nullable=True,
         comment="Additional token metadata from provider",
@@ -414,7 +414,7 @@ class SocialAuthProfile(TimestampModel):
     )
 
     # Metadata
-    metadata: Mapped[Optional[dict]] = mapped_column(
+    extra_data: Mapped[Optional[dict]] = mapped_column(
         JSONB,
         nullable=True,
         comment="Additional profile metadata",
@@ -538,7 +538,7 @@ class SocialAuthLink(TimestampModel):
     )
 
     # Metadata
-    metadata: Mapped[Optional[dict]] = mapped_column(
+    extra_data: Mapped[Optional[dict]] = mapped_column(
         JSONB,
         nullable=True,
         comment="Additional link metadata",

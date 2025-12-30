@@ -8,9 +8,9 @@ trends, comparisons, and multi-level aggregations.
 
 from datetime import date as Date, datetime, time
 from decimal import Decimal
-from typing import Dict, List, Union
+from typing import Dict, List, Union, Any
 
-from pydantic import Field, computed_field, field_validator
+from pydantic import Field, computed_field, field_validator, model_validator
 from pydantic.types import UUID4 as UUID
 
 from app.schemas.common.base import BaseSchema
@@ -23,11 +23,16 @@ __all__ = [
     "DailyAttendanceRecord",
     "TrendAnalysis",
     "WeeklyAttendance",
+    "WeeklySummary",
     "MonthlyComparison",
     "MonthlyReport",
     "StudentMonthlySummary",
     "AttendanceComparison",
     "ComparisonItem",
+    "CustomReportConfig",
+    "ReportSchedule",
+    "DashboardData",
+    "ReportJobStatus",
 ]
 
 
@@ -154,7 +159,7 @@ class DailyAttendanceRecord(BaseSchema):
     for timeline views and detailed reports.
     """
 
-    date:Date = Field(
+    date: Date = Field(
         ...,
         description="Attendance Date",
     )
@@ -265,6 +270,122 @@ class WeeklyAttendance(BaseSchema):
             if v < info.data["week_start_date"]:
                 raise ValueError("week_end_date must be after week_start_date")
         return v
+
+
+class WeeklySummary(BaseSchema):
+    """
+    Weekly attendance summary with trends.
+    
+    Provides focused weekly attendance summary with day-by-day analysis
+    and week-over-week trend comparisons.
+    """
+    
+    hostel_id: UUID = Field(
+        ...,
+        description="Hostel unique identifier",
+    )
+    hostel_name: str = Field(
+        ...,
+        description="Hostel name",
+    )
+    week_number: int = Field(
+        ...,
+        ge=1,
+        le=53,
+        description="Week number in year (ISO week)",
+    )
+    year: int = Field(
+        ...,
+        ge=2000,
+        description="Year for the week",
+    )
+    week_start_date: Date = Field(
+        ...,
+        description="Monday of the week",
+    )
+    week_end_date: Date = Field(
+        ...,
+        description="Sunday of the week",
+    )
+    
+    # Summary statistics
+    total_working_days: int = Field(
+        ...,
+        ge=0,
+        le=7,
+        description="Total working days in week",
+    )
+    average_attendance_percentage: Decimal = Field(
+        ...,
+        ge=Decimal("0"),
+        le=Decimal("100"),
+        description="Average attendance for the week",
+    )
+    total_students: int = Field(
+        ...,
+        ge=0,
+        description="Total number of students",
+    )
+    
+    # Daily breakdown (if requested)
+    daily_breakdown: Union[List[DailyAttendanceRecord], None] = Field(
+        None,
+        description="Day-by-day detailed breakdown",
+    )
+    
+    # Week-over-week trends (if requested)
+    previous_week_percentage: Union[Decimal, None] = Field(
+        None,
+        ge=Decimal("0"),
+        le=Decimal("100"),
+        description="Previous week's attendance percentage",
+    )
+    percentage_change: Union[Decimal, None] = Field(
+        None,
+        description="Percentage point change from previous week",
+    )
+    trend_direction: Union[str, None] = Field(
+        None,
+        pattern=r"^(improving|declining|stable)$",
+        description="Trend direction compared to previous week",
+    )
+    
+    # Analytics
+    best_attendance_day: Union[str, None] = Field(
+        None,
+        description="Day with best attendance",
+    )
+    worst_attendance_day: Union[str, None] = Field(
+        None,
+        description="Day with worst attendance",
+    )
+    total_late_instances: int = Field(
+        default=0,
+        ge=0,
+        description="Total late arrivals in the week",
+    )
+    total_absences: int = Field(
+        default=0,
+        ge=0,
+        description="Total absences in the week",
+    )
+    
+    # Report metadata
+    generated_at: datetime = Field(
+        ...,
+        description="Report generation timestamp",
+    )
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def trend_indicator(self) -> str:
+        """Get trend indicator icon/color."""
+        if self.trend_direction == "improving":
+            return "↑"
+        elif self.trend_direction == "declining":
+            return "↓"
+        else:
+            return "→"
 
 
 class MonthlyComparison(BaseSchema):
@@ -833,3 +954,402 @@ class AttendanceComparison(BaseSchema):
             if ranks != expected_ranks:
                 raise ValueError("Comparison rankings must be sequential from 1")
         return v
+
+
+class CustomReportConfig(BaseSchema):
+    """
+    Custom report configuration.
+    
+    Allows users to define custom reports with specific metrics,
+    filters, and visualization options.
+    """
+    
+    report_name: str = Field(
+        ...,
+        min_length=3,
+        max_length=200,
+        description="Custom report name",
+    )
+    report_description: Union[str, None] = Field(
+        None,
+        max_length=1000,
+        description="Report description",
+    )
+    
+    # Date range
+    date_range: DateRangeFilter = Field(
+        ...,
+        description="Report date range",
+    )
+    
+    # Entity filters
+    hostel_id: Union[UUID, None] = Field(
+        None,
+        description="Specific hostel filter",
+    )
+    student_ids: Union[List[UUID], None] = Field(
+        None,
+        max_length=500,
+        description="Specific students to include",
+    )
+    room_ids: Union[List[UUID], None] = Field(
+        None,
+        max_length=100,
+        description="Specific rooms to include",
+    )
+    
+    # Metrics to include
+    include_summary: bool = Field(
+        True,
+        description="Include summary statistics",
+    )
+    include_daily_records: bool = Field(
+        True,
+        description="Include daily attendance records",
+    )
+    include_trends: bool = Field(
+        True,
+        description="Include trend analysis",
+    )
+    include_comparisons: bool = Field(
+        False,
+        description="Include comparative analysis",
+    )
+    include_violations: bool = Field(
+        False,
+        description="Include policy violations",
+    )
+    
+    # Grouping options
+    group_by: str = Field(
+        "student",
+        pattern=r"^(student|date|room|status|none)$",
+        description="Group results by field",
+    )
+    
+    # Sorting
+    sort_by: str = Field(
+        "date",
+        pattern=r"^(date|student_name|attendance_percentage|room)$",
+        description="Sort field",
+    )
+    sort_order: str = Field(
+        "asc",
+        pattern=r"^(asc|desc)$",
+        description="Sort order",
+    )
+    
+    # Visualization
+    chart_types: List[str] = Field(
+        default_factory=list,
+        description="Chart types to include",
+    )
+    
+    # Template saving
+    save_template: bool = Field(
+        default=False,
+        description="Save as reusable template",
+    )
+    template_name: Union[str, None] = Field(
+        None,
+        max_length=200,
+        description="Template name if saving",
+    )
+
+    @field_validator("chart_types")
+    @classmethod
+    def validate_chart_types(cls, v: List[str]) -> List[str]:
+        """Validate chart types."""
+        valid_types = {"line", "bar", "pie", "area", "heatmap"}
+        for chart_type in v:
+            if chart_type not in valid_types:
+                raise ValueError(f"Invalid chart type: {chart_type}")
+        return v
+
+    @model_validator(mode="after")
+    def validate_template_saving(self) -> "CustomReportConfig":
+        """Validate template saving requirements."""
+        if self.save_template and not self.template_name:
+            raise ValueError("template_name is required when save_template is True")
+        return self
+
+
+class ReportSchedule(BaseSchema):
+    """
+    Scheduled report configuration.
+    
+    Defines automated report generation and delivery schedule.
+    """
+    
+    id: Union[UUID, None] = Field(
+        None,
+        description="Schedule unique identifier",
+    )
+    schedule_name: str = Field(
+        ...,
+        min_length=3,
+        max_length=200,
+        description="Schedule name",
+    )
+    
+    # Report configuration
+    report_config: CustomReportConfig = Field(
+        ...,
+        description="Report configuration to execute",
+    )
+    
+    # Schedule settings
+    frequency: str = Field(
+        ...,
+        pattern=r"^(daily|weekly|monthly|quarterly|custom)$",
+        description="Report frequency",
+    )
+    cron_expression: Union[str, None] = Field(
+        None,
+        description="Cron expression for custom frequency",
+    )
+    
+    # Execution time
+    execution_time: time = Field(
+        ...,
+        description="Time of day to execute",
+    )
+    timezone: str = Field(
+        default="UTC",
+        description="Timezone for execution",
+    )
+    
+    # Delivery settings
+    delivery_channels: List[str] = Field(
+        ...,
+        min_length=1,
+        description="Delivery channels (email, dashboard, etc.)",
+    )
+    recipients: List[UUID] = Field(
+        ...,
+        min_length=1,
+        description="Recipient user IDs",
+    )
+    
+    # Status
+    is_active: bool = Field(
+        True,
+        description="Whether schedule is active",
+    )
+    last_run: Union[datetime, None] = Field(
+        None,
+        description="Last execution timestamp",
+    )
+    next_run: Union[datetime, None] = Field(
+        None,
+        description="Next scheduled execution",
+    )
+    
+    # Metadata
+    created_by: UUID = Field(
+        ...,
+        description="User who created schedule",
+    )
+    created_at: Union[datetime, None] = Field(
+        None,
+        description="Schedule creation timestamp",
+    )
+
+    @field_validator("delivery_channels")
+    @classmethod
+    def validate_channels(cls, v: List[str]) -> List[str]:
+        """Validate delivery channels."""
+        valid_channels = {"email", "dashboard", "sms", "webhook"}
+        for channel in v:
+            if channel not in valid_channels:
+                raise ValueError(f"Invalid delivery channel: {channel}")
+        return v
+
+    @model_validator(mode="after")
+    def validate_custom_frequency(self) -> "ReportSchedule":
+        """Validate cron expression is provided for custom frequency."""
+        if self.frequency == "custom" and not self.cron_expression:
+            raise ValueError("cron_expression is required when frequency is 'custom'")
+        return self
+
+
+class DashboardData(BaseSchema):
+    """
+    Real-time dashboard analytics data.
+    
+    Optimized data structure for attendance analytics dashboards.
+    """
+    
+    hostel_id: Union[UUID, None] = Field(
+        None,
+        description="Hostel filter (if applicable)",
+    )
+    time_range: str = Field(
+        ...,
+        pattern=r"^(today|week|month|quarter)$",
+        description="Time range for analytics",
+    )
+    generated_at: datetime = Field(
+        ...,
+        description="Data generation timestamp",
+    )
+    
+    # Current statistics
+    current_attendance_percentage: Decimal = Field(
+        ...,
+        ge=Decimal("0"),
+        le=Decimal("100"),
+        description="Current attendance percentage",
+    )
+    total_students: int = Field(
+        ...,
+        ge=0,
+        description="Total students",
+    )
+    present_today: int = Field(
+        ...,
+        ge=0,
+        description="Students present today",
+    )
+    absent_today: int = Field(
+        ...,
+        ge=0,
+        description="Students absent today",
+    )
+    late_today: int = Field(
+        default=0,
+        ge=0,
+        description="Late arrivals today",
+    )
+    
+    # Trends
+    trend_data: Union[List[Dict[str, Any]], None] = Field(
+        None,
+        description="Trend chart data",
+    )
+    comparison_data: Union[Dict[str, Any], None] = Field(
+        None,
+        description="Comparison metrics",
+    )
+    
+    # Alerts
+    active_alerts: int = Field(
+        default=0,
+        ge=0,
+        description="Number of active alerts",
+    )
+    critical_alerts: int = Field(
+        default=0,
+        ge=0,
+        description="Number of critical alerts",
+    )
+    
+    # Quick stats
+    top_performers: Union[List[Dict[str, Any]], None] = Field(
+        None,
+        description="Top performing students",
+    )
+    needs_attention: Union[List[Dict[str, Any]], None] = Field(
+        None,
+        description="Students needing attention",
+    )
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def attendance_status(self) -> str:
+        """Get overall attendance status indicator."""
+        percentage = float(self.current_attendance_percentage)
+        if percentage >= 95:
+            return "excellent"
+        elif percentage >= 85:
+            return "good"
+        elif percentage >= 75:
+            return "average"
+        else:
+            return "poor"
+
+
+class ReportJobStatus(BaseSchema):
+    """
+    Background report job status.
+    
+    Tracks status of long-running report generation jobs.
+    """
+    
+    job_id: str = Field(
+        ...,
+        description="Job unique identifier",
+    )
+    job_type: str = Field(
+        ...,
+        pattern=r"^(export|comparison|custom_report)$",
+        description="Type of job",
+    )
+    status: str = Field(
+        ...,
+        pattern=r"^(queued|processing|completed|failed|cancelled)$",
+        description="Current job status",
+    )
+    
+    # Progress tracking
+    progress_percentage: int = Field(
+        default=0,
+        ge=0,
+        le=100,
+        description="Job completion percentage",
+    )
+    current_step: Union[str, None] = Field(
+        None,
+        description="Current processing step",
+    )
+    
+    # Timing
+    created_at: datetime = Field(
+        ...,
+        description="Job creation timestamp",
+    )
+    started_at: Union[datetime, None] = Field(
+        None,
+        description="Job start timestamp",
+    )
+    completed_at: Union[datetime, None] = Field(
+        None,
+        description="Job completion timestamp",
+    )
+    estimated_completion: Union[datetime, None] = Field(
+        None,
+        description="Estimated completion time",
+    )
+    
+    # Results
+    result_file_path: Union[str, None] = Field(
+        None,
+        description="Path to result file (if completed)",
+    )
+    result_file_size: Union[int, None] = Field(
+        None,
+        ge=0,
+        description="Result file size in bytes",
+    )
+    error_message: Union[str, None] = Field(
+        None,
+        description="Error message (if failed)",
+    )
+    
+    # Metadata
+    created_by: UUID = Field(
+        ...,
+        description="User who created job",
+    )
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def is_complete(self) -> bool:
+        """Check if job is complete."""
+        return self.status in ["completed", "failed", "cancelled"]
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def is_successful(self) -> bool:
+        """Check if job completed successfully."""
+        return self.status == "completed"

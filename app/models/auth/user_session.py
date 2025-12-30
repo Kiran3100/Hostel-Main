@@ -45,7 +45,10 @@ class UserSession(TimestampModel, SoftDeleteMixin):
         Index("idx_user_sessions_session_id", "session_id", unique=True),
         Index("idx_user_sessions_last_activity", "last_activity_at"),
         Index("idx_user_sessions_is_active", "is_active"),
-        {"comment": "User session tracking and management"},
+        {
+            "comment": "User session tracking and management",
+            "extend_existing": True,
+        },
     )
 
     # Primary Key
@@ -194,7 +197,7 @@ class UserSession(TimestampModel, SoftDeleteMixin):
     )
 
     # Metadata
-    metadata: Mapped[Optional[dict]] = mapped_column(
+    extra_metadata: Mapped[Optional[dict]] = mapped_column(
         JSONB,
         nullable=True,
         comment="Additional session metadata",
@@ -252,7 +255,10 @@ class SessionToken(TimestampModel):
         Index("idx_session_tokens_jti", "jti", unique=True),
         Index("idx_session_tokens_expires_at", "expires_at"),
         Index("idx_session_tokens_is_revoked", "is_revoked"),
-        {"comment": "JWT access token management"},
+        {
+            "comment": "JWT access token management",
+            "extend_existing": True,
+        },
     )
 
     # Primary Key
@@ -374,7 +380,10 @@ class RefreshToken(TimestampModel):
         Index("idx_refresh_tokens_expires_at", "expires_at"),
         Index("idx_refresh_tokens_is_used", "is_used"),
         Index("idx_refresh_tokens_family_id", "family_id"),
-        {"comment": "JWT refresh token management with rotation"},
+        {
+            "comment": "JWT refresh token management with rotation",
+            "extend_existing": True,
+        },
     )
 
     # Primary Key
@@ -534,7 +543,10 @@ class LoginAttempt(TimestampModel):
         Index("idx_login_attempts_ip_address", "ip_address"),
         Index("idx_login_attempts_created_at", "created_at"),
         Index("idx_login_attempts_is_successful", "is_successful"),
-        {"comment": "Login attempt tracking for security monitoring"},
+        {
+            "comment": "Login attempt tracking for security monitoring",
+            "extend_existing": True,
+        },
     )
 
     # Primary Key
@@ -633,7 +645,7 @@ class LoginAttempt(TimestampModel):
     )
 
     # Metadata
-    metadata: Mapped[Optional[dict]] = mapped_column(
+    extra_metadata: Mapped[Optional[dict]] = mapped_column(
         JSONB,
         nullable=True,
         comment="Additional attempt metadata",

@@ -47,7 +47,7 @@ class ApprovalStatus:
     NOT_REQUIRED = "not_required"
 
 
-class AnnouncementApproval(BaseModel, UUIDMixin, TimestampModel):
+class AnnouncementApproval(UUIDMixin, TimestampModel, BaseModel):
     """
     Announcement approval tracking.
     
@@ -232,7 +232,7 @@ class AnnouncementApproval(BaseModel, UUIDMixin, TimestampModel):
     )
     
     # Metadata
-    metadata: Mapped[Optional[dict]] = mapped_column(
+    meta_data: Mapped[Optional[dict]] = mapped_column(
         JSONB,
         nullable=True,
         comment="Additional approval metadata",
@@ -297,7 +297,7 @@ class AnnouncementApproval(BaseModel, UUIDMixin, TimestampModel):
         )
 
 
-class ApprovalWorkflow(BaseModel, UUIDMixin, TimestampModel):
+class ApprovalWorkflow(UUIDMixin, TimestampModel, BaseModel):
     """
     Approval workflow configuration.
     
@@ -403,7 +403,7 @@ class ApprovalWorkflow(BaseModel, UUIDMixin, TimestampModel):
     )
     
     # Metadata
-    metadata: Mapped[Optional[dict]] = mapped_column(
+    meta_data: Mapped[Optional[dict]] = mapped_column(
         JSONB,
         nullable=True,
         comment="Additional workflow metadata",
@@ -440,7 +440,7 @@ class ApprovalWorkflow(BaseModel, UUIDMixin, TimestampModel):
         )
 
 
-class ApprovalHistory(BaseModel, UUIDMixin, TimestampModel):
+class ApprovalHistory(UUIDMixin, TimestampModel, BaseModel):
     """
     Approval history entry for audit trail.
     
@@ -554,7 +554,7 @@ class ApprovalHistory(BaseModel, UUIDMixin, TimestampModel):
         )
 
 
-class ApprovalRule(BaseModel, UUIDMixin, TimestampModel):
+class ApprovalRule(UUIDMixin, TimestampModel, BaseModel):
     """
     Automatic approval rules.
     
@@ -629,7 +629,7 @@ class ApprovalRule(BaseModel, UUIDMixin, TimestampModel):
     )
     
     # Metadata
-    metadata: Mapped[Optional[dict]] = mapped_column(
+    meta_data: Mapped[Optional[dict]] = mapped_column(
         JSONB,
         nullable=True,
         comment="Additional rule metadata",

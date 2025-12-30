@@ -25,11 +25,11 @@ from app.services.base import (
     ErrorSeverity,
 )
 from app.repositories.analytics import SupervisorAnalyticsRepository
-from app.models.analytics.supervisor_analytics import SupervisorDashboardAnalytics as SupervisorDashboardModel
+from app.models.analytics.supervisor_analytics import SupervisorKPI
 from app.schemas.analytics.supervisor_analytics import (
     SupervisorWorkload,
     SupervisorPerformanceRating,
-    SupervisorKPI,
+    SupervisorKPI as SupervisorKPISchema,
     SupervisorTrendPoint,
     SupervisorDashboardAnalytics,
     SupervisorComparison,
@@ -39,7 +39,7 @@ from app.schemas.analytics.supervisor_analytics import (
 logger = logging.getLogger(__name__)
 
 
-class SupervisorAnalyticsService(BaseService[SupervisorDashboardModel, SupervisorAnalyticsRepository]):
+class SupervisorAnalyticsService(BaseService[SupervisorKPI, SupervisorAnalyticsRepository]):
     """
     Service for supervisor analytics.
     

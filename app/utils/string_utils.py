@@ -7,9 +7,10 @@ import unicodedata
 import string
 import random
 import html
+import os
+import secrets
 from typing import Optional, List, Dict, Union
 from difflib import SequenceMatcher
-import secrets
 
 class StringHelper:
     """General string manipulation utilities"""
@@ -222,6 +223,117 @@ class StringHelper:
             return False
         
         return text.isidentifier()
+
+
+class SlugGenerator:
+    """URL-safe slug generation utilities"""
+    
+    @staticmethod
+    def generate_slug(text: str, max_length: int = 50) -> str:
+        """Generate URL-safe slug from text"""
+        if not text:
+            return ""
+        
+        # Convert to lowercase
+        slug = text.lower()
+        
+        # Normalize unicode characters
+        slug = StringHelper.normalize_unicode(slug)
+        
+        # Replace spaces and underscores with hyphens
+        slug = re.sub(r'[\s_]+', '-', slug)
+        
+        # Remove special characters except hyphens
+        slug = re.sub(r'[^a-z0-9-]', '', slug)
+        
+        # Remove multiple consecutive hyphens
+        slug = re.sub(r'-+', '-', slug)
+        
+        # Remove leading and trailing hyphens
+        slug = slug.strip('-')
+        
+        # Truncate if necessary
+        if len(slug) > max_length:
+            slug = slug[:max_length].rstrip('-')
+        
+        return slug or 'untitled'
+    
+    @staticmethod
+    def generate_unique_slug(text: str, existing_slugs: List[str] = None, max_length: int = 50) -> str:
+        """Generate unique slug avoiding duplicates"""
+        if existing_slugs is None:
+            existing_slugs = []
+        
+        base_slug = SlugGenerator.generate_slug(text, max_length - 10)  # Reserve space for suffix
+        
+        if base_slug not in existing_slugs:
+            return base_slug
+        
+        # Add numeric suffix to make it unique
+        counter = 1
+        while True:
+            suffix = f"-{counter}"
+            unique_slug = base_slug + suffix
+            
+            if len(unique_slug) <= max_length and unique_slug not in existing_slugs:
+                return unique_slug
+            
+            counter += 1
+            
+            # Prevent infinite loop
+            if counter > 9999:
+                # Use random suffix instead
+                random_suffix = f"-{secrets.randbelow(10000)}"
+                return base_slug + random_suffix
+    
+    @staticmethod
+    def generate_seo_slug(title: str, max_length: int = 60) -> str:
+        """Generate SEO-friendly slug"""
+        if not title:
+            return ""
+        
+        # Remove common stop words for SEO
+        stop_words = {
+            'a', 'an', 'and', 'are', 'as', 'at', 'be', 'by', 'for', 'from',
+            'has', 'he', 'in', 'is', 'it', 'its', 'of', 'on', 'that', 'the',
+            'to', 'was', 'will', 'with'
+        }
+        
+        # Split title into words
+        words = title.lower().split()
+        
+        # Filter out stop words (but keep at least first word)
+        filtered_words = []
+        for i, word in enumerate(words):
+            if i == 0 or word not in stop_words:
+                filtered_words.append(word)
+        
+        # Rejoin and generate slug
+        filtered_title = ' '.join(filtered_words)
+        return SlugGenerator.generate_slug(filtered_title, max_length)
+    
+    @staticmethod
+    def validate_slug(slug: str) -> bool:
+        """Validate if string is a proper slug"""
+        if not slug:
+            return False
+        
+        # Check if it matches slug pattern
+        pattern = r'^[a-z0-9]+(?:-[a-z0-9]+)*$'
+        
+        return bool(re.match(pattern, slug))
+    
+    @staticmethod
+    def humanize_slug(slug: str) -> str:
+        """Convert slug back to human readable text"""
+        if not slug:
+            return ""
+        
+        # Replace hyphens with spaces
+        text = slug.replace('-', ' ')
+        
+        # Capitalize words
+        return StringHelper.capitalize_words(text)
 
 
 class TextCleaner:
@@ -1173,7 +1285,3 @@ class ValidationHelper:
                 return False
         
         return True
-
-
-# Additional utility functions that might be useful
-import os  # For AddressFormatter.extract_postal_code error handling

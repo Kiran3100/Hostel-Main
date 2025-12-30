@@ -19,7 +19,7 @@ from email.utils import formataddr
 from pathlib import Path
 import aiofiles
 import jinja2
-from jinja2 import Environment, FileSystemLoader, select_autoescape
+from jinja2 import DictLoader, Environment, FileSystemLoader, select_autoescape
 
 from .config import settings
 from .exceptions import NotificationError, EmailDeliveryError, SMSDeliveryError

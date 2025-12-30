@@ -22,7 +22,7 @@ from app.repositories.admin import AdminPermissionsRepository
 from app.models.admin import (
     AdminPermission,
     PermissionTemplate,
-    PermissionAuditLog,
+    
 )
 from app.schemas.admin.admin_permissions import (
     AdminPermissionsUpdate,

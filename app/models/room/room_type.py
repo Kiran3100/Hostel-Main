@@ -1,4 +1,3 @@
-# app/models/room/room_type.py
 """
 Room type models with features, pricing, and comparison.
 
@@ -44,7 +43,7 @@ __all__ = [
 ]
 
 
-class RoomTypeDefinition(BaseModel, UUIDMixin, TimestampModel, SoftDeleteMixin, AuditMixin):
+class RoomTypeDefinition(UUIDMixin, TimestampModel, SoftDeleteMixin, AuditMixin, BaseModel):
     """
     Room type definitions with standardized categories.
     
@@ -263,7 +262,7 @@ class RoomTypeDefinition(BaseModel, UUIDMixin, TimestampModel, SoftDeleteMixin, 
         )
 
 
-class RoomTypeFeature(BaseModel, UUIDMixin, TimestampModel):
+class RoomTypeFeature(UUIDMixin, TimestampModel, BaseModel):
     """
     Features and amenities per room type.
     
@@ -349,7 +348,7 @@ class RoomTypeFeature(BaseModel, UUIDMixin, TimestampModel):
         )
 
 
-class RoomTypePricing(BaseModel, UUIDMixin, TimestampModel, AuditMixin):
+class RoomTypePricing(UUIDMixin, TimestampModel, AuditMixin, BaseModel):
     """
     Base pricing structure per room type.
     
@@ -494,7 +493,7 @@ class RoomTypePricing(BaseModel, UUIDMixin, TimestampModel, AuditMixin):
         )
 
 
-class RoomTypeAvailability(BaseModel, UUIDMixin, TimestampModel):
+class RoomTypeAvailability(UUIDMixin, TimestampModel, BaseModel):
     """
     Availability patterns and seasonal adjustments.
     
@@ -640,7 +639,7 @@ class RoomTypeAvailability(BaseModel, UUIDMixin, TimestampModel):
         ).quantize(Decimal("0.01"))
 
 
-class RoomTypeComparison(BaseModel, UUIDMixin, TimestampModel):
+class RoomTypeComparison(UUIDMixin, TimestampModel, BaseModel):
     """
     Comparative analysis between room types.
     
@@ -741,7 +740,7 @@ class RoomTypeComparison(BaseModel, UUIDMixin, TimestampModel):
         )
 
 
-class RoomTypeUpgrade(BaseModel, UUIDMixin, TimestampModel, AuditMixin):
+class RoomTypeUpgrade(UUIDMixin, TimestampModel, AuditMixin, BaseModel):
     """
     Upgrade paths and pricing differentials.
     

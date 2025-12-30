@@ -2,7 +2,7 @@ from typing import Any, List, Optional, Dict
 from functools import lru_cache
 from enum import Enum
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status, Body
 from sqlalchemy.orm import Session
 from pydantic import BaseModel, Field, validator
 
@@ -492,7 +492,7 @@ async def get_permission_audit_log(
     description="Validate multiple permission checks in a single request",
 )
 async def bulk_validate_permissions(
-    permission_checks: List[EnhancedPermissionCheck] = Field(..., min_items=1, max_items=100),
+    permission_checks: List[EnhancedPermissionCheck] = Body(..., min_items=1, max_items=100),
     fail_on_first_deny: bool = Query(False, description="Stop processing on first denied permission"),
     current_admin=Depends(deps.get_admin_user),
     service: AdminPermissionService = Depends(get_permission_service),

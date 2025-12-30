@@ -1,14 +1,11 @@
 """
-Enhanced announcements module with comprehensive API organization and middleware.
+Enhanced announcements module with comprehensive API organization.
 """
+from datetime import datetime
 from fastapi import APIRouter, Depends
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi.middleware.trustedhost import TrustedHostMiddleware
 
 from app.core.config import settings
 from app.core.logging import get_logger
-from app.middleware.rate_limiting import RateLimitMiddleware
-from app.middleware.security import SecurityHeadersMiddleware
 
 from . import announcements, approval, scheduling, targeting, tracking
 
@@ -77,6 +74,7 @@ router.include_router(
     }
 )
 
+
 # Health check endpoint for the announcements module
 @router.get(
     "/announcements/health",
@@ -94,13 +92,16 @@ async def announcements_health_check():
     - Service dependencies
     - Cache availability
     - External integrations
+    
+    Returns:
+        dict: Health status information
     """
     try:
         health_status = {
             "status": "healthy",
-            "timestamp": "2025-12-27T10:00:00Z",  # This would be dynamic in real implementation
+            "timestamp": datetime.utcnow().isoformat() + "Z",
             "module": "announcements",
-            "version": "1.0.0",
+            "version": __version__,
             "services": {
                 "core": "healthy",
                 "approval": "healthy", 
@@ -120,13 +121,53 @@ async def announcements_health_check():
         return health_status
         
     except Exception as e:
-        logger.error(f"Health check failed: {str(e)}")
+        logger.error(f"Health check failed: {str(e)}", exc_info=True)
         return {
             "status": "unhealthy",
-            "timestamp": "2025-12-27T10:00:00Z",
+            "timestamp": datetime.utcnow().isoformat() + "Z",
             "module": "announcements",
+            "version": __version__,
             "error": str(e)
         }
+
+
+# Module metadata endpoint
+@router.get(
+    "/announcements/info",
+    tags=["system:info"],
+    summary="Get announcements module information",
+    description="Returns metadata and configuration information about the announcements module.",
+    response_description="Module metadata and information"
+)
+async def announcements_info():
+    """
+    Get announcements module metadata and configuration.
+    
+    Returns:
+        dict: Module information including version, features, and endpoints
+    """
+    return {
+        "module": "announcements",
+        "version": __version__,
+        "author": __author__,
+        "description": __description__,
+        "features": [
+            "Core announcement management",
+            "Approval workflows",
+            "Scheduling and automation",
+            "Advanced targeting",
+            "Analytics and tracking"
+        ],
+        "endpoints": {
+            "core": len([route for route in announcements.router.routes]),
+            "approval": len([route for route in approval.router.routes]),
+            "scheduling": len([route for route in scheduling.router.routes]),
+            "targeting": len([route for route in targeting.router.routes]),
+            "tracking": len([route for route in tracking.router.routes])
+        },
+        "status": "active"
+    }
+
 
 # Module-level configuration and metadata
 __version__ = "1.0.0"
@@ -150,3 +191,14 @@ announcement_routers = {
     "targeting": targeting.router,
     "tracking": tracking.router
 }
+
+
+# Log module initialization
+logger.info(
+    f"Announcements module initialized (v{__version__})",
+    extra={
+        "version": __version__,
+        "sub_modules": list(announcement_routers.keys()),
+        "total_routers": len(announcement_routers)
+    }
+)

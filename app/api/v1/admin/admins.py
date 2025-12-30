@@ -1,13 +1,12 @@
 from typing import Any, Dict, List, Optional
 from functools import lru_cache
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Path, Body, status  # ✅ ADDED Body
 from sqlalchemy.orm import Session
 from pydantic import BaseModel, Field, validator
 
 from app.api import deps
 from app.core.exceptions import AdminNotFoundError, ValidationError
-from app.core.security import require_permission
 from app.services.admin.admin_user_service import AdminUserService
 from app.services.admin.admin_role_service import AdminRoleService
 from app.schemas.user.user_response import UserDetail, UserListItem, UserStats
@@ -22,11 +21,11 @@ router = APIRouter(prefix="/admins", tags=["admin:admins"])
 class AdminCreateRequest(BaseModel):
     """Schema for creating admin users"""
     full_name: str = Field(..., min_length=2, max_length=100)
-    email: str = Field(..., regex=r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$')
+    email: str = Field(..., pattern=r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$')
     employee_id: Optional[str] = Field(None, max_length=50)
     role: str = Field(..., min_length=1)
     department: Optional[str] = Field(None, max_length=100)
-    phone: Optional[str] = Field(None, regex=r'^\+?1?-?\.?\s?\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4}$')
+    phone: Optional[str] = Field(None, pattern=r'^\+?1?-?\.?\s?\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4}$')
     is_active: bool = Field(default=True)
     
     @validator('email')
@@ -42,7 +41,7 @@ class AdminUpdateRequest(BaseModel):
     employee_id: Optional[str] = Field(None, max_length=50)
     role: Optional[str] = None
     department: Optional[str] = Field(None, max_length=100)
-    phone: Optional[str] = Field(None, regex=r'^\+?1?-?\.?\s?\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4}$')
+    phone: Optional[str] = Field(None, pattern=r'^\+?1?-?\.?\s?\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4}$')
     is_active: Optional[bool] = None
 
 
@@ -106,7 +105,7 @@ async def list_admins(
     page: int = Query(1, ge=1, description="Page number for pagination"),
     limit: int = Query(50, ge=1, le=100, description="Items per page"),
     sort_by: str = Query("created_at", description="Sort field"),
-    sort_order: str = Query("desc", regex="^(asc|desc)$", description="Sort order"),
+    sort_order: str = Query("desc", pattern="^(asc|desc)$", description="Sort order"),
     db: Session = Depends(deps.get_db),
     current_admin=Depends(deps.get_super_admin_user),
     service: AdminUserService = Depends(get_admin_user_service),
@@ -152,7 +151,7 @@ async def list_admins(
     description="Retrieve comprehensive details for a specific admin user",
 )
 async def get_admin_detail(
-    admin_id: str = Field(..., min_length=1, description="Admin user ID"),
+    admin_id: str = Path(..., min_length=1, description="Admin user ID"),
     include_permissions: bool = Query(False, description="Include permission details"),
     include_audit_log: bool = Query(False, description="Include recent audit activities"),
     db: Session = Depends(deps.get_db),
@@ -253,8 +252,8 @@ async def create_admin(
     description="Update existing admin user with partial data",
 )
 async def update_admin(
-    admin_id: str,
-    payload: AdminUpdateRequest,
+    admin_id: str = Path(..., description="Admin user ID"),
+    payload: AdminUpdateRequest = ...,
     db: Session = Depends(deps.get_db),
     current_admin=Depends(deps.get_super_admin_user),
     service: AdminUserService = Depends(get_admin_user_service),
@@ -304,7 +303,7 @@ async def update_admin(
     description="Activate a suspended or inactive admin account",
 )
 async def activate_admin(
-    admin_id: str,
+    admin_id: str = Path(..., description="Admin user ID"),
     reason: Optional[str] = Query(None, max_length=500, description="Reason for activation"),
     send_notification: bool = Query(True, description="Send notification to admin"),
     db: Session = Depends(deps.get_db),
@@ -347,7 +346,7 @@ async def activate_admin(
     description="Suspend an admin account with mandatory reason",
 )
 async def suspend_admin(
-    admin_id: str,
+    admin_id: str = Path(..., description="Admin user ID"),
     reason: str = Query(..., min_length=10, max_length=500, description="Required reason for suspension"),
     notify_admin: bool = Query(True, description="Send notification to suspended admin"),
     effective_date: Optional[str] = Query(None, description="ISO date when suspension takes effect"),
@@ -466,7 +465,7 @@ async def get_admin_stats(
     description="Update multiple admin users in a single operation",
 )
 async def bulk_update_admins(
-    updates: List[Dict[str, Any]] = Field(..., min_items=1, max_items=100),
+    updates: List[Dict[str, Any]] = Body(..., min_items=1, max_items=100),  # ✅ FIXED: Changed Field to Body
     dry_run: bool = Query(False, description="Preview changes without applying them"),
     db: Session = Depends(deps.get_db),
     current_admin=Depends(deps.get_super_admin_user),

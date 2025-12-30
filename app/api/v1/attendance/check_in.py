@@ -2,21 +2,20 @@ from typing import Any, Optional
 import logging
 from datetime import datetime
 
-from fastapi import APIRouter, Depends, Query, status, HTTPException, BackgroundTasks
+from fastapi import APIRouter, Depends, Query, status, HTTPException, BackgroundTasks, Request
 from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 
 from app.api import deps
 from app.core.exceptions import ValidationError, NotFoundError, PermissionError
 from app.core.logging import get_logger
-from app.core.rate_limiting import RateLimiter
+from app.core.rate_limiting import rate_limiter
 from app.core.security import sanitize_device_id
 from app.schemas.attendance import CheckInResponse, CheckInStatus
 from app.services.attendance.check_in_service import CheckInService
 
 logger = get_logger(__name__)
 router = APIRouter(prefix="/attendance/check-in", tags=["attendance:check-in"])
-rate_limiter = RateLimiter()
 
 
 def get_checkin_service(db: Session = Depends(deps.get_db)) -> CheckInService:
@@ -48,6 +47,10 @@ def get_checkin_service(db: Session = Depends(deps.get_db)) -> CheckInService:
 )
 @rate_limiter.limit("10/minute")  # Prevent rapid check-in/out abuse
 async def check_in(
+    request: Request,  # Added for rate limiting
+    background_tasks: BackgroundTasks,
+    _student=Depends(deps.get_student_user),
+    service: CheckInService = Depends(get_checkin_service),
     device_id: Optional[str] = Query(
         None, 
         description="Unique device identifier for tracking and security",
@@ -58,9 +61,6 @@ async def check_in(
         description="Check-in location identifier",
         max_length=50
     ),
-    background_tasks: BackgroundTasks,
-    _student=Depends(deps.get_student_user),
-    service: CheckInService = Depends(get_checkin_service),
 ) -> Any:
     """
     Register student arrival with comprehensive tracking and validation.
@@ -146,6 +146,10 @@ async def check_in(
 )
 @rate_limiter.limit("10/minute")  # Match check-in rate limiting
 async def check_out(
+    request: Request,  # Added for rate limiting
+    background_tasks: BackgroundTasks,
+    _student=Depends(deps.get_student_user),
+    service: CheckInService = Depends(get_checkin_service),
     device_id: Optional[str] = Query(
         None, 
         description="Device identifier for consistency verification",
@@ -156,9 +160,6 @@ async def check_out(
         description="Check-out location identifier",
         max_length=50
     ),
-    background_tasks: BackgroundTasks,
-    _student=Depends(deps.get_student_user),
-    service: CheckInService = Depends(get_checkin_service),
 ) -> Any:
     """
     Register student departure with comprehensive session tracking.
@@ -249,6 +250,9 @@ async def check_out(
     }
 )
 async def get_check_in_status(
+    request: Request,  # Added for consistency
+    _student=Depends(deps.get_student_user),
+    service: CheckInService = Depends(get_checkin_service),
     include_history: bool = Query(
         False, 
         description="Include recent check-in history in response"
@@ -257,8 +261,6 @@ async def get_check_in_status(
         False,
         description="Include session analytics and patterns"
     ),
-    _student=Depends(deps.get_student_user),
-    service: CheckInService = Depends(get_checkin_service),
 ) -> Any:
     """
     Get comprehensive check-in status and session information.
@@ -323,6 +325,7 @@ async def get_check_in_status(
     }
 )
 async def get_current_session(
+    request: Request,  # Added for consistency
     _student=Depends(deps.get_student_user),
     service: CheckInService = Depends(get_checkin_service),
 ) -> Any:
@@ -359,15 +362,17 @@ async def get_current_session(
         403: {"description": "Access denied"},
     }
 )
+@rate_limiter.limit("5/minute")  # More restrictive rate limit for emergency operations
 async def emergency_checkout(
+    request: Request,  # Added for rate limiting
+    background_tasks: BackgroundTasks,
+    _student=Depends(deps.get_student_user),
+    service: CheckInService = Depends(get_checkin_service),
     reason: str = Query(..., description="Emergency reason", max_length=200),
     contact_emergency: bool = Query(
         True, 
         description="Whether to contact emergency contacts"
     ),
-    background_tasks: BackgroundTasks,
-    _student=Depends(deps.get_student_user),
-    service: CheckInService = Depends(get_checkin_service),
 ) -> Any:
     """
     Perform emergency check-out with special handling procedures.
@@ -429,12 +434,14 @@ async def emergency_checkout(
         403: {"description": "Access denied"},
     }
 )
+@rate_limiter.limit("30/minute")  # Rate limit for history queries
 async def get_check_in_history(
-    days: int = Query(30, ge=1, le=365, description="Number of days of history"),
-    include_analytics: bool = Query(False, description="Include session analytics"),
-    pagination=Depends(deps.get_pagination_params),
+    request: Request,  # Added for rate limiting
     _student=Depends(deps.get_student_user),
     service: CheckInService = Depends(get_checkin_service),
+    pagination=Depends(deps.get_pagination_params),
+    days: int = Query(30, ge=1, le=365, description="Number of days of history"),
+    include_analytics: bool = Query(False, description="Include session analytics"),
 ) -> Any:
     """
     Get paginated check-in history with optional analytics.

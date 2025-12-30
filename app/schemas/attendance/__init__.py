@@ -31,6 +31,8 @@ from app.schemas.attendance.attendance_policy import (
     PolicyConfig,
     PolicyUpdate,
     PolicyViolation,
+    ViolationSummary,
+    PolicyTemplate,
 )
 from app.schemas.attendance.attendance_record import (
     AttendanceCorrection,
@@ -44,18 +46,29 @@ from app.schemas.attendance.attendance_report import (
     AttendanceReport,
     AttendanceSummary,
     ComparisonItem,
+    CustomReportConfig,
     DailyAttendanceRecord,
+    DashboardData,
     MonthlyComparison,
     MonthlyReport,
+    ReportJobStatus,
+    ReportSchedule,
     StudentMonthlySummary,
     TrendAnalysis,
     WeeklyAttendance,
+    WeeklySummary,
 )
 from app.schemas.attendance.attendance_response import (
     AttendanceDetail,
     AttendanceListItem,
     AttendanceResponse,
     DailyAttendanceSummary,
+)
+from app.schemas.attendance.check_in import (
+    CheckInHistory,
+    CheckInResponse,
+    CheckInSession,
+    CheckInStatus,
 )
 
 __all__ = [
@@ -82,16 +95,23 @@ __all__ = [
     "DailyAttendanceRecord",
     "TrendAnalysis",
     "WeeklyAttendance",
+    "WeeklySummary",
     "MonthlyComparison",
     "MonthlyReport",
     "StudentMonthlySummary",
     "AttendanceComparison",
     "ComparisonItem",
+    "CustomReportConfig",
+    "ReportSchedule",
+    "DashboardData",
+    "ReportJobStatus",
     # Policy schemas
     "AttendancePolicy",
     "PolicyConfig",
     "PolicyUpdate",
     "PolicyViolation",
+    "ViolationSummary",
+    "PolicyTemplate",
     # Alert schemas
     "AttendanceAlert",
     "AlertConfig",
@@ -103,4 +123,9 @@ __all__ = [
     "AttendanceFilterParams",
     "DateRangeRequest",
     "AttendanceExportRequest",
+    # Check-in schemas
+    "CheckInResponse",
+    "CheckInStatus",
+    "CheckInSession",
+    "CheckInHistory",
 ]

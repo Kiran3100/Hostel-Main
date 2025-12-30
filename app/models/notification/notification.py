@@ -189,8 +189,9 @@ class Notification(BaseModel, TimestampMixin, SoftDeleteMixin):
         comment="When any link in notification was clicked",
     )
 
-    # Metadata and context
-    metadata = Column(
+    # Metadata and context - RENAMED FROM 'metadata' to 'metadata_'
+    metadata_ = Column(
+        "metadata",  # Database column name remains 'metadata'
         JSONB,
         nullable=False,
         default=dict,
@@ -367,7 +368,8 @@ class NotificationStatusHistory(BaseModel, TimestampMixin):
         nullable=True,
         comment="Reason for status change",
     )
-    metadata = Column(
+    metadata_ = Column(
+        "metadata",
         JSONB,
         nullable=False,
         default=dict,

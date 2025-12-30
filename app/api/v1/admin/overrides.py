@@ -48,7 +48,7 @@ class OverrideFilterParams(BaseModel):
     urgency: Optional[List[OverrideUrgency]] = None
     hostel_ids: Optional[List[str]] = None
     admin_ids: Optional[List[str]] = None
-    date_range: Optional[str] = Field(None, regex="^(1d|7d|30d|90d|custom)$")
+    date_range: Optional[str] = Field(None, pattern="^(1d|7d|30d|90d|custom)$")
     start_date: Optional[datetime] = None
     end_date: Optional[datetime] = None
     categories: Optional[List[str]] = None
@@ -61,7 +61,7 @@ class EnhancedOverrideRequest(BaseModel):
     category: str = Field(..., min_length=1, max_length=100)
     urgency: OverrideUrgency = Field(default=OverrideUrgency.MEDIUM)
     hostel_id: str = Field(..., min_length=1)
-    target_entity_type: str = Field(..., regex="^(booking|payment|guest|room|policy)$")
+    target_entity_type: str = Field(..., pattern="^(booking|payment|guest|room|policy)$")
     target_entity_id: str = Field(..., min_length=1)
     requested_change: Dict[str, Any] = Field(...)
     business_justification: str = Field(..., min_length=50, max_length=1000)
@@ -117,10 +117,10 @@ def get_override_service(
 async def create_override(
     payload: EnhancedOverrideRequest,
     background_tasks: BackgroundTasks,
-    auto_escalate: bool = Query(False, description="Auto-escalate if urgency is high/critical"),
-    validate_business_rules: bool = Query(True, description="Validate against business rules"),
     current_admin=Depends(deps.get_admin_user),
     service: AdminOverrideService = Depends(get_override_service),
+    auto_escalate: bool = Query(False, description="Auto-escalate if urgency is high/critical"),
+    validate_business_rules: bool = Query(True, description="Validate against business rules"),
 ) -> OverrideLog:
     """
     Create comprehensive override request with enhanced validation and workflow automation.
@@ -195,18 +195,18 @@ async def create_override(
 )
 @cache_result(expire_time=180)  # Cache for 3 minutes
 async def list_overrides(
-    status_filter: Optional[str] = Query(None, regex="^(pending|approved|rejected|expired|cancelled)$"),
-    urgency_filter: Optional[str] = Query(None, regex="^(low|medium|high|critical)$"),
+    current_admin=Depends(deps.get_admin_user),
+    service: AdminOverrideService = Depends(get_override_service),
+    status_filter: Optional[str] = Query(None, pattern="^(pending|approved|rejected|expired|cancelled)$"),
+    urgency_filter: Optional[str] = Query(None, pattern="^(low|medium|high|critical)$"),
     hostel_id: Optional[str] = Query(None, description="Filter by hostel ID"),
     category: Optional[str] = Query(None, description="Filter by override category"),
     days: int = Query(30, ge=1, le=365, description="Days to look back"),
     page: int = Query(1, ge=1, description="Page number"),
     limit: int = Query(50, ge=1, le=100, description="Items per page"),
     sort_by: str = Query("created_at", description="Sort field"),
-    sort_order: str = Query("desc", regex="^(asc|desc)$", description="Sort order"),
+    sort_order: str = Query("desc", pattern="^(asc|desc)$", description="Sort order"),
     include_metadata: bool = Query(True, description="Include detailed metadata"),
-    current_admin=Depends(deps.get_admin_user),
-    service: AdminOverrideService = Depends(get_override_service),
 ) -> List[OverrideLog]:
     """
     List overrides with advanced filtering, pagination, and sorting.
@@ -248,10 +248,10 @@ async def list_overrides(
 )
 async def get_override_detail(
     override_id: str,
-    include_audit_trail: bool = Query(True, description="Include detailed audit trail"),
-    include_related_overrides: bool = Query(False, description="Include related/similar overrides"),
     current_admin=Depends(deps.get_admin_user),
     service: AdminOverrideService = Depends(get_override_service),
+    include_audit_trail: bool = Query(True, description="Include detailed audit trail"),
+    include_related_overrides: bool = Query(False, description="Include related/similar overrides"),
 ) -> OverrideLog:
     """
     Get comprehensive override details with enhanced information.
@@ -433,14 +433,14 @@ async def reject_override(
 )
 @cache_result(expire_time=60)  # Cache for 1 minute (more frequent updates for pending)
 async def list_pending_overrides(
-    urgency_filter: Optional[str] = Query(None, regex="^(low|medium|high|critical)$"),
+    current_admin=Depends(deps.get_super_admin_user),
+    service: AdminOverrideService = Depends(get_override_service),
+    urgency_filter: Optional[str] = Query(None, pattern="^(low|medium|high|critical)$"),
     hostel_id: Optional[str] = Query(None, description="Filter by hostel ID"),
     category: Optional[str] = Query(None, description="Filter by category"),
     sort_by_priority: bool = Query(True, description="Sort by priority (urgency + age)"),
     include_expired: bool = Query(False, description="Include expired pending overrides"),
     limit: int = Query(100, ge=1, le=200, description="Maximum results"),
-    current_admin=Depends(deps.get_super_admin_user),
-    service: AdminOverrideService = Depends(get_override_service),
 ) -> List[OverrideLog]:
     """
     Get pending overrides with intelligent prioritization and filtering.
@@ -473,13 +473,13 @@ async def list_pending_overrides(
 )
 @cache_result(expire_time=600)  # Cache for 10 minutes
 async def get_override_summary(
-    hostel_id: Optional[str] = Query(None, description="Filter by hostel ID"),
-    days: int = Query(30, ge=1, le=365, description="Summary period in days"),
-    breakdown_by: str = Query("category", regex="^(category|urgency|status|admin)$", description="Breakdown dimension"),
-    include_trends: bool = Query(True, description="Include trend analysis"),
-    include_comparisons: bool = Query(True, description="Include period comparisons"),
     current_admin=Depends(deps.get_admin_user),
     service: AdminOverrideService = Depends(get_override_service),
+    hostel_id: Optional[str] = Query(None, description="Filter by hostel ID"),
+    days: int = Query(30, ge=1, le=365, description="Summary period in days"),
+    breakdown_by: str = Query("category", pattern="^(category|urgency|status|admin)$", description="Breakdown dimension"),
+    include_trends: bool = Query(True, description="Include trend analysis"),
+    include_comparisons: bool = Query(True, description="Include period comparisons"),
 ) -> OverrideSummary:
     """
     Get comprehensive override summary with trends and analytics.
@@ -513,11 +513,11 @@ async def get_override_summary(
 @cache_result(expire_time=300)  # Cache for 5 minutes
 async def get_supervisor_override_stats(
     supervisor_id: str,
+    current_admin=Depends(deps.get_admin_user),
+    service: AdminOverrideService = Depends(get_override_service),
     period_days: int = Query(90, ge=1, le=365, description="Statistics period in days"),
     include_team_stats: bool = Query(True, description="Include team member statistics"),
     include_trends: bool = Query(True, description="Include approval trends"),
-    current_admin=Depends(deps.get_admin_user),
-    service: AdminOverrideService = Depends(get_override_service),
 ) -> SupervisorOverrideStats:
     """
     Get comprehensive supervisor override statistics with team analytics.
@@ -561,11 +561,11 @@ async def get_supervisor_override_stats(
 )
 @cache_result(expire_time=3600)  # Cache for 1 hour
 async def list_override_reasons(
+    current_admin=Depends(deps.get_admin_user),
+    service: AdminOverrideService = Depends(get_override_service),
     category: Optional[str] = Query(None, description="Filter by category"),
     include_usage_stats: bool = Query(True, description="Include usage statistics"),
     include_inactive: bool = Query(False, description="Include inactive reasons"),
-    current_admin=Depends(deps.get_admin_user),
-    service: AdminOverrideService = Depends(get_override_service),
 ) -> List[OverrideReason]:
     """
     Get standard override reasons with usage statistics and categorization.
@@ -595,11 +595,11 @@ async def list_override_reasons(
 )
 async def cancel_override(
     override_id: str,
-    cancellation_reason: str = Query(..., min_length=10, max_length=500),
-    notify_stakeholders: bool = Query(True, description="Notify relevant stakeholders"),
     background_tasks: BackgroundTasks,
     current_admin=Depends(deps.get_admin_user),
     service: AdminOverrideService = Depends(get_override_service),
+    cancellation_reason: str = Query(..., min_length=10, max_length=500),
+    notify_stakeholders: bool = Query(True, description="Notify relevant stakeholders"),
 ) -> OverrideLog:
     """
     Cancel pending override with proper validation and notifications.
@@ -659,13 +659,13 @@ async def cancel_override(
 )
 @cache_result(expire_time=1800)  # Cache for 30 minutes
 async def get_override_trends(
+    current_admin=Depends(deps.get_admin_user),
+    service: AdminOverrideService = Depends(get_override_service),
     period_days: int = Query(90, ge=7, le=365, description="Analysis period in days"),
-    granularity: str = Query("daily", regex="^(hourly|daily|weekly|monthly)$", description="Data granularity"),
+    granularity: str = Query("daily", pattern="^(hourly|daily|weekly|monthly)$", description="Data granularity"),
     metrics: str = Query("count,approval_rate,avg_resolution_time", description="Comma-separated metrics"),
     hostel_ids: Optional[str] = Query(None, description="Comma-separated hostel IDs"),
     categories: Optional[str] = Query(None, description="Comma-separated categories"),
-    current_admin=Depends(deps.get_admin_user),
-    service: AdminOverrideService = Depends(get_override_service),
 ) -> Dict[str, Any]:
     """
     Get advanced override trend analytics with customizable metrics and granularity.

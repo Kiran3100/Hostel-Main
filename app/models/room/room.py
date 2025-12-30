@@ -1,4 +1,3 @@
-# app/models/room/room.py
 """
 Room models with comprehensive tracking and management.
 
@@ -45,7 +44,7 @@ __all__ = [
 ]
 
 
-class Room(BaseModel, UUIDMixin, TimestampModel, SoftDeleteMixin, AuditMixin):
+class Room(UUIDMixin, TimestampModel, SoftDeleteMixin, AuditMixin, BaseModel):
     """
     Core room entity with comprehensive details.
     
@@ -338,7 +337,7 @@ class Room(BaseModel, UUIDMixin, TimestampModel, SoftDeleteMixin, AuditMixin):
         return self.available_beds >= beds_required and self.is_available_for_booking
 
 
-class RoomSpecification(BaseModel, UUIDMixin, TimestampModel):
+class RoomSpecification(UUIDMixin, TimestampModel, BaseModel):
     """
     Detailed room specifications and features.
     
@@ -555,7 +554,7 @@ class RoomSpecification(BaseModel, UUIDMixin, TimestampModel):
         return f"<RoomSpecification(room_id={self.room_id})>"
 
 
-class RoomPricingHistory(BaseModel, UUIDMixin, TimestampModel, AuditMixin):
+class RoomPricingHistory(UUIDMixin, TimestampModel, AuditMixin, BaseModel):
     """
     Historical pricing data for rooms with effective dates.
     
@@ -657,7 +656,7 @@ class RoomPricingHistory(BaseModel, UUIDMixin, TimestampModel, AuditMixin):
         )
 
 
-class RoomMaintenanceStatus(BaseModel, UUIDMixin, TimestampModel):
+class RoomMaintenanceStatus(UUIDMixin, TimestampModel, BaseModel):
     """
     Real-time maintenance and availability status for rooms.
     
@@ -821,7 +820,7 @@ class RoomMaintenanceStatus(BaseModel, UUIDMixin, TimestampModel):
         )
 
 
-class RoomAccessControl(BaseModel, UUIDMixin, TimestampModel):
+class RoomAccessControl(UUIDMixin, TimestampModel, BaseModel):
     """
     Access control and security features for rooms.
     
@@ -988,7 +987,7 @@ class RoomAccessControl(BaseModel, UUIDMixin, TimestampModel):
         )
 
 
-class RoomOccupancyLimit(BaseModel, UUIDMixin, TimestampModel):
+class RoomOccupancyLimit(UUIDMixin, TimestampModel, BaseModel):
     """
     Occupancy limits and enforcement rules for rooms.
     

@@ -728,6 +728,82 @@ class BaseRepository(Generic[ModelType]):
         
         return self.count({"hostel_id": hostel_id}, include_deleted)
     
+        # ==================== Pagination Methods ====================
+    
+    def paginate_query(
+        self,
+        query: Query,
+        pagination: 'PaginationParams'
+    ) -> 'PaginatedResult[ModelType]':
+        """
+        Paginate a query using pagination parameters.
+        
+        Args:
+            query: SQLAlchemy query to paginate
+            pagination: Pagination parameters
+            
+        Returns:
+            Paginated result
+        """
+        try:
+            # Get total count
+            total_count = query.count()
+            
+            # Apply pagination
+            if pagination.skip:
+                query = query.offset(pagination.skip)
+            if pagination.limit:
+                query = query.limit(pagination.limit)
+            
+            # Apply ordering if specified
+            if pagination.order_by and hasattr(self.model, pagination.order_by):
+                order_column = getattr(self.model, pagination.order_by)
+                if pagination.order_direction.lower() == 'desc':
+                    query = query.order_by(order_column.desc())
+                else:
+                    query = query.order_by(order_column.asc())
+            
+            # Execute query
+            items = query.all()
+            
+            # Create pagination result
+            from app.repositories.base.pagination import PaginatedResult
+            return PaginatedResult(
+                items=items,
+                total_count=total_count,
+                page=pagination.page,
+                page_size=pagination.per_page
+            )
+            
+        except SQLAlchemyError as e:
+            raise RepositoryError(f"Pagination failed: {str(e)}") from e
+    
+    def find_by_specification(self, specification: 'Specification') -> List[ModelType]:
+        """
+        Find entities matching a specification.
+        
+        Args:
+            specification: Specification to apply
+            
+        Returns:
+            List of matching entities
+        """
+        try:
+            query = self.db.query(self.model)
+            
+            # Apply the specification
+            if hasattr(specification, 'is_satisfied_by'):
+                query = specification.is_satisfied_by(query)
+            else:
+                # Fallback to expression-based specification
+                expression = specification.to_expression(self.model)
+                query = query.filter(expression)
+            
+            return query.all()
+            
+        except SQLAlchemyError as e:
+            raise RepositoryError(f"Specification query failed: {str(e)}") from e
+    
     # ==================== Utility Methods ====================
     
     def refresh(self, entity: ModelType) -> ModelType:
