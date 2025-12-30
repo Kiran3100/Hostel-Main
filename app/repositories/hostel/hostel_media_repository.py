@@ -11,7 +11,7 @@ from sqlalchemy.orm import selectinload
 from app.models.hostel.hostel_media import HostelMedia, MediaCategory
 from app.repositories.base.base_repository import BaseRepository
 from app.repositories.base.specifications import Specification
-from app.repositories.base.pagination import PaginationRequest, PaginationResult
+from app.repositories.base.pagination import PaginationParams, PaginatedResult
 
 
 class ActiveMediaSpecification(Specification[HostelMedia]):
@@ -323,8 +323,8 @@ class HostelMediaRepository(BaseRepository[HostelMedia]):
         search_query: str,
         media_type: Optional[str] = None,
         category: Optional[str] = None,
-        pagination: Optional[PaginationRequest] = None
-    ) -> PaginationResult[HostelMedia]:
+        pagination: Optional[PaginationParams] = None
+    ) -> PaginatedResult[HostelMedia]:
         """Search media with text query."""
         criteria = {"hostel_id": hostel_id}
         

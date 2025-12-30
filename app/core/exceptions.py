@@ -29,6 +29,7 @@ class ErrorCode(str, Enum):
     
     # Validation errors
     VALIDATION_ERROR = "VALIDATION_ERROR"
+    SETTINGS_VALIDATION_ERROR = "SETTINGS_VALIDATION_ERROR"
     MISSING_REQUIRED_FIELD = "MISSING_REQUIRED_FIELD"
     INVALID_FORMAT = "INVALID_FORMAT"
     CONSTRAINT_VIOLATION = "CONSTRAINT_VIOLATION"
@@ -42,6 +43,7 @@ class ErrorCode(str, Enum):
     OPTIMISTIC_LOCK_ERROR = "OPTIMISTIC_LOCK_ERROR"
     
     # Business logic errors
+    BUSINESS_LOGIC_ERROR = "BUSINESS_LOGIC_ERROR"
     BOOKING_CONFLICT = "BOOKING_CONFLICT"
     ROOM_UNAVAILABLE = "ROOM_UNAVAILABLE"
     INSUFFICIENT_CAPACITY = "INSUFFICIENT_CAPACITY"
@@ -49,6 +51,9 @@ class ErrorCode(str, Enum):
     PAYMENT_FAILED = "PAYMENT_FAILED"
     GUEST_ALREADY_CHECKED_IN = "GUEST_ALREADY_CHECKED_IN"
     GUEST_NOT_CHECKED_IN = "GUEST_NOT_CHECKED_IN"
+    CONTEXT_SWITCH_FAILED = "CONTEXT_SWITCH_FAILED"
+    ASSIGNMENT_NOT_FOUND = "ASSIGNMENT_NOT_FOUND"
+    DUPLICATE_ASSIGNMENT = "DUPLICATE_ASSIGNMENT"
     
     # User/Staff specific errors
     USER_NOT_FOUND = "USER_NOT_FOUND"
@@ -58,16 +63,39 @@ class ErrorCode(str, Enum):
     HOSTEL_NOT_FOUND = "HOSTEL_NOT_FOUND"
     ROOM_NOT_FOUND = "ROOM_NOT_FOUND"
     
+    # Permission-specific errors
+    PERMISSION_NOT_FOUND = "PERMISSION_NOT_FOUND"
+    INVALID_PERMISSION = "INVALID_PERMISSION"
+    PERMISSION_DENIED = "PERMISSION_DENIED"
+    PERMISSION_CONFLICT = "PERMISSION_CONFLICT"
+    
+    # Override-specific errors
+    OVERRIDE_NOT_FOUND = "OVERRIDE_NOT_FOUND"
+    INVALID_OVERRIDE = "INVALID_OVERRIDE"
+    OVERRIDE_CONFLICT = "OVERRIDE_CONFLICT"
+    OVERRIDE_EXPIRED = "OVERRIDE_EXPIRED"
+    OVERRIDE_PERMISSION_DENIED = "OVERRIDE_PERMISSION_DENIED"
+    OVERRIDE_ALREADY_PROCESSED = "OVERRIDE_ALREADY_PROCESSED"
+    
     # External service errors
     EXTERNAL_SERVICE_ERROR = "EXTERNAL_SERVICE_ERROR"
     PAYMENT_GATEWAY_ERROR = "PAYMENT_GATEWAY_ERROR"
     EMAIL_SERVICE_ERROR = "EMAIL_SERVICE_ERROR"
     SMS_SERVICE_ERROR = "SMS_SERVICE_ERROR"
+    NOTIFICATION_ERROR = "NOTIFICATION_ERROR"
+    PUSH_NOTIFICATION_ERROR = "PUSH_NOTIFICATION_ERROR"
     
     # Cache and performance errors
     CACHE_ERROR = "CACHE_ERROR"
     TIMEOUT_ERROR = "TIMEOUT_ERROR"
     RATE_LIMIT_EXCEEDED = "RATE_LIMIT_EXCEEDED"
+    
+    # Task/Background job errors
+    TASK_EXECUTION_ERROR = "TASK_EXECUTION_ERROR"
+    TASK_TIMEOUT_ERROR = "TASK_TIMEOUT_ERROR"
+    TASK_RETRY_EXHAUSTED = "TASK_RETRY_EXHAUSTED"
+    TASK_NOT_FOUND = "TASK_NOT_FOUND"
+    TASK_CANCELLED = "TASK_CANCELLED"
     
     # Configuration errors
     CONFIGURATION_ERROR = "CONFIGURATION_ERROR"
@@ -145,6 +173,34 @@ class ValidationError(BaseAppException):
         super().__init__(message, error_code, details, status_code)
 
 
+class SettingsValidationError(ValidationError):
+    """Exception raised when hostel settings validation fails"""
+    
+    def __init__(
+        self,
+        message: str = "Settings validation failed",
+        setting_name: Optional[str] = None,
+        setting_value: Optional[Any] = None,
+        validation_rule: Optional[str] = None,
+        field_errors: Optional[Dict[str, List[str]]] = None
+    ):
+        details = {
+            "setting_name": setting_name,
+            "setting_value": str(setting_value) if setting_value is not None else None,
+            "validation_rule": validation_rule
+        }
+        if field_errors:
+            details["field_errors"] = field_errors
+        
+        super().__init__(
+            message=message,
+            field_errors=field_errors,
+            error_code=ErrorCode.SETTINGS_VALIDATION_ERROR,
+            status_code=422
+        )
+        self.details.update(details)
+
+
 class ResourceNotFoundError(BaseAppException):
     """Exception raised when a requested resource is not found"""
     
@@ -164,6 +220,21 @@ class ResourceNotFoundError(BaseAppException):
             "resource_id": resource_id
         }
         super().__init__(message, ErrorCode.RESOURCE_NOT_FOUND, details, 404)
+
+
+class NotFoundError(ResourceNotFoundError):
+    """Generic not found error - alias for ResourceNotFoundError"""
+    
+    def __init__(
+        self,
+        message: str = "Resource not found",
+        resource_type: Optional[str] = None,
+        resource_id: Optional[str] = None
+    ):
+        if resource_type or resource_id:
+            super().__init__(resource_type or "Resource", resource_id, message)
+        else:
+            super().__init__("Resource", None, message)
 
 
 class DuplicateError(BaseAppException):
@@ -333,6 +404,22 @@ class RoomNotFoundError(ResourceNotFoundError):
         self.error_code = ErrorCode.ROOM_NOT_FOUND
 
 
+class AssignmentNotFoundError(ResourceNotFoundError):
+    """Exception raised when an assignment is not found"""
+    
+    def __init__(
+        self,
+        assignment_id: Optional[str] = None,
+        message: Optional[str] = None
+    ):
+        if not message:
+            message = "Assignment not found"
+            if assignment_id:
+                message += f" (ID: {assignment_id})"
+        super().__init__("Assignment", assignment_id, message)
+        self.error_code = ErrorCode.ASSIGNMENT_NOT_FOUND
+
+
 # ========================================
 # Authentication & Authorization Exceptions
 # ========================================
@@ -433,6 +520,97 @@ class PermissionError(AuthorizationError):
         }
         super().__init__(message, required_permission, ErrorCode.AUTHORIZATION_FAILED)
         self.details.update(details)
+
+
+# ========================================
+# Permission Exceptions
+# ========================================
+
+class PermissionNotFoundError(ResourceNotFoundError):
+    """Exception raised when a permission is not found"""
+    
+    def __init__(
+        self,
+        message: Optional[str] = None,
+        permission_id: Optional[str] = None,
+        admin_id: Optional[str] = None,
+        hostel_id: Optional[str] = None
+    ):
+        if not message:
+            message = "Permission not found"
+            if admin_id and hostel_id:
+                message = f"Permission not found for admin '{admin_id}' in hostel '{hostel_id}'"
+            elif permission_id:
+                message += f" (ID: {permission_id})"
+        
+        details = {
+            "permission_id": permission_id,
+            "admin_id": admin_id,
+            "hostel_id": hostel_id
+        }
+        super().__init__("Permission", permission_id, message)
+        self.error_code = ErrorCode.PERMISSION_NOT_FOUND
+        self.details.update(details)
+
+
+class InvalidPermissionError(ValidationError):
+    """Exception raised when permission data is invalid"""
+    
+    def __init__(
+        self,
+        message: str = "Invalid permission",
+        permission_type: Optional[str] = None,
+        permission_value: Optional[Any] = None,
+        validation_errors: Optional[Dict[str, List[str]]] = None,
+        reason: Optional[str] = None
+    ):
+        details = {
+            "permission_type": permission_type,
+            "permission_value": str(permission_value) if permission_value is not None else None,
+            "reason": reason
+        }
+        super().__init__(
+            message=message,
+            field_errors=validation_errors,
+            error_code=ErrorCode.INVALID_PERMISSION,
+            status_code=422
+        )
+        self.details.update(details)
+
+
+class PermissionDeniedError(AuthorizationError):
+    """Exception raised when permission is explicitly denied"""
+    
+    def __init__(
+        self,
+        message: str = "Permission denied",
+        resource: Optional[str] = None,
+        action: Optional[str] = None,
+        reason: Optional[str] = None
+    ):
+        details = {
+            "resource": resource,
+            "action": action,
+            "reason": reason
+        }
+        super().__init__(message, error_code=ErrorCode.PERMISSION_DENIED)
+        self.details.update(details)
+
+
+class PermissionConflictError(BaseAppException):
+    """Exception raised when permission conflicts occur"""
+    
+    def __init__(
+        self,
+        message: str = "Permission conflict detected",
+        conflicting_permissions: Optional[List[str]] = None,
+        reason: Optional[str] = None
+    ):
+        details = {
+            "conflicting_permissions": conflicting_permissions,
+            "reason": reason
+        }
+        super().__init__(message, ErrorCode.PERMISSION_CONFLICT, details, 409)
 
 
 # ========================================
@@ -709,6 +887,19 @@ class RepositoryDeleteError(RepositoryError):
 # Business Logic Exceptions
 # ========================================
 
+class BusinessLogicError(BaseAppException):
+    """Exception raised when business logic rules are violated"""
+    
+    def __init__(
+        self,
+        message: str = "Business logic error",
+        error_code: ErrorCode = ErrorCode.BUSINESS_LOGIC_ERROR,
+        details: Optional[Dict[str, Any]] = None,
+        status_code: int = 422
+    ):
+        super().__init__(message, error_code, details, status_code)
+
+
 class BookingError(BaseAppException):
     """Base class for booking-related exceptions"""
     
@@ -836,6 +1027,228 @@ class GuestNotCheckedInError(GuestError):
         super().__init__(message, ErrorCode.GUEST_NOT_CHECKED_IN, guest_id, 409)
 
 
+class DuplicateAssignmentError(DuplicateError):
+    """Exception raised when duplicate assignment is detected"""
+    
+    def __init__(
+        self,
+        message: str = "Duplicate assignment detected",
+        admin_id: Optional[str] = None,
+        hostel_id: Optional[str] = None
+    ):
+        details = {
+            "admin_id": admin_id,
+            "hostel_id": hostel_id
+        }
+        super().__init__(
+            message=message,
+            resource_type="Assignment",
+            error_code=ErrorCode.DUPLICATE_ASSIGNMENT,
+            status_code=409
+        )
+        self.details.update(details)
+
+
+class BusinessRuleViolationError(BaseAppException):
+    """Exception raised when a business rule is violated"""
+    
+    def __init__(
+        self,
+        message: str = "Business rule violation",
+        rule_name: Optional[str] = None,
+        rule_description: Optional[str] = None,
+        violation_details: Optional[Dict[str, Any]] = None,
+        error_code: ErrorCode = ErrorCode.CONSTRAINT_VIOLATION,
+        status_code: int = 422
+    ):
+        details = {
+            "rule_name": rule_name,
+            "rule_description": rule_description,
+            "violation_details": violation_details or {}
+        }
+        super().__init__(message, error_code, details, status_code)
+
+
+# ========================================
+# Override Exceptions
+# ========================================
+
+class OverrideError(BaseAppException):
+    """Base class for override-related exceptions"""
+    
+    def __init__(
+        self,
+        message: str,
+        error_code: ErrorCode,
+        override_id: Optional[str] = None,
+        hostel_id: Optional[str] = None,
+        status_code: int = 400
+    ):
+        details = {
+            "override_id": override_id,
+            "hostel_id": hostel_id
+        }
+        super().__init__(message, error_code, details, status_code)
+
+
+class OverrideNotFoundError(OverrideError):
+    """Exception raised when an override is not found"""
+    
+    def __init__(
+        self,
+        message: str = "Override not found",
+        override_id: Optional[str] = None
+    ):
+        if override_id and (not message or message == "Override not found"):
+            message = f"Override with ID '{override_id}' not found"
+        
+        super().__init__(
+            message,
+            ErrorCode.OVERRIDE_NOT_FOUND,
+            override_id=override_id,
+            status_code=404
+        )
+
+
+class InvalidOverrideError(OverrideError):
+    """Exception raised when override request is invalid"""
+    
+    def __init__(
+        self,
+        message: str = "Invalid override request",
+        override_id: Optional[str] = None,
+        validation_errors: Optional[Dict[str, List[str]]] = None,
+        reason: Optional[str] = None
+    ):
+        details = {
+            "validation_errors": validation_errors,
+            "reason": reason
+        }
+        super().__init__(
+            message,
+            ErrorCode.INVALID_OVERRIDE,
+            override_id=override_id,
+            status_code=422
+        )
+        self.details.update(details)
+
+
+class OverrideConflictError(OverrideError):
+    """Exception raised when override conflicts with existing overrides"""
+    
+    def __init__(
+        self,
+        message: str = "Override conflict detected",
+        override_id: Optional[str] = None,
+        conflicting_override_id: Optional[str] = None,
+        conflict_reason: Optional[str] = None
+    ):
+        details = {
+            "conflicting_override_id": conflicting_override_id,
+            "conflict_reason": conflict_reason
+        }
+        super().__init__(
+            message,
+            ErrorCode.OVERRIDE_CONFLICT,
+            override_id=override_id,
+            status_code=409
+        )
+        self.details.update(details)
+
+
+class OverrideExpiredError(OverrideError):
+    """Exception raised when override has expired"""
+    
+    def __init__(
+        self,
+        message: str = "Override has expired",
+        override_id: Optional[str] = None,
+        expired_at: Optional[str] = None
+    ):
+        details = {"expired_at": expired_at} if expired_at else {}
+        super().__init__(
+            message,
+            ErrorCode.OVERRIDE_EXPIRED,
+            override_id=override_id,
+            status_code=410
+        )
+        self.details.update(details)
+
+
+class OverridePermissionError(OverrideError):
+    """Exception raised when user lacks permission for override operation"""
+    
+    def __init__(
+        self,
+        message: str = "Insufficient permissions for override operation",
+        override_id: Optional[str] = None,
+        required_permission: Optional[str] = None,
+        operation: Optional[str] = None
+    ):
+        details = {
+            "required_permission": required_permission,
+            "operation": operation
+        }
+        super().__init__(
+            message,
+            ErrorCode.OVERRIDE_PERMISSION_DENIED,
+            override_id=override_id,
+            status_code=403
+        )
+        self.details.update(details)
+
+
+class OverrideAlreadyProcessedError(OverrideError):
+    """Exception raised when override has already been processed"""
+    
+    def __init__(
+        self,
+        message: str = "Override has already been processed",
+        override_id: Optional[str] = None,
+        current_status: Optional[str] = None,
+        processed_at: Optional[str] = None,
+        processed_by: Optional[str] = None
+    ):
+        details = {
+            "current_status": current_status,
+            "processed_at": processed_at,
+            "processed_by": processed_by
+        }
+        super().__init__(
+            message,
+            ErrorCode.OVERRIDE_ALREADY_PROCESSED,
+            override_id=override_id,
+            status_code=409
+        )
+        self.details.update(details)
+
+
+# ========================================
+# Context Management Exceptions
+# ========================================
+
+class ContextSwitchError(BaseAppException):
+    """Exception raised when hostel context switching fails"""
+    
+    def __init__(
+        self,
+        message: str = "Context switch failed",
+        from_hostel_id: Optional[str] = None,
+        to_hostel_id: Optional[str] = None,
+        admin_id: Optional[str] = None,
+        reason: Optional[str] = None,
+        error_code: ErrorCode = ErrorCode.CONTEXT_SWITCH_FAILED,
+        status_code: int = 400
+    ):
+        details = {
+            "from_hostel_id": from_hostel_id,
+            "to_hostel_id": to_hostel_id,
+            "admin_id": admin_id,
+            "reason": reason
+        }
+        super().__init__(message, error_code, details, status_code)
+
+
 # ========================================
 # Payment Exceptions
 # ========================================
@@ -908,7 +1321,8 @@ class EmailServiceError(ExternalServiceError):
         **kwargs
     ):
         details = {"recipient": recipient} if recipient else {}
-        super().__init__(message, error_code=ErrorCode.EMAIL_SERVICE_ERROR, **kwargs)
+        super().__init__(message, service_name="email", **kwargs)
+        self.error_code = ErrorCode.EMAIL_SERVICE_ERROR
         self.details.update(details)
 
 
@@ -922,7 +1336,104 @@ class SMSServiceError(ExternalServiceError):
         **kwargs
     ):
         details = {"phone_number": phone_number} if phone_number else {}
-        super().__init__(message, error_code=ErrorCode.SMS_SERVICE_ERROR, **kwargs)
+        super().__init__(message, service_name="sms", **kwargs)
+        self.error_code = ErrorCode.SMS_SERVICE_ERROR
+        self.details.update(details)
+
+
+# ========================================
+# Notification Exceptions
+# ========================================
+
+class NotificationError(BaseAppException):
+    """Exception raised when notification operations fail"""
+    
+    def __init__(
+        self,
+        message: str = "Notification operation failed",
+        notification_id: Optional[str] = None,
+        channel: Optional[str] = None,
+        recipient: Optional[str] = None,
+        error_code: ErrorCode = ErrorCode.NOTIFICATION_ERROR,
+        status_code: int = 500
+    ):
+        details = {
+            "notification_id": notification_id,
+            "channel": channel,
+            "recipient": recipient
+        }
+        super().__init__(message, error_code, details, status_code)
+
+
+class EmailDeliveryError(NotificationError):
+    """Exception raised when email delivery fails"""
+    
+    def __init__(
+        self,
+        message: str = "Email delivery failed",
+        recipient: Optional[str] = None,
+        smtp_error: Optional[str] = None,
+        notification_id: Optional[str] = None
+    ):
+        details = {
+            "smtp_error": smtp_error
+        }
+        super().__init__(
+            message=message,
+            notification_id=notification_id,
+            channel="email",
+            recipient=recipient,
+            error_code=ErrorCode.EMAIL_SERVICE_ERROR,
+            status_code=500
+        )
+        self.details.update(details)
+
+
+class SMSDeliveryError(NotificationError):
+    """Exception raised when SMS delivery fails"""
+    
+    def __init__(
+        self,
+        message: str = "SMS delivery failed",
+        phone_number: Optional[str] = None,
+        provider_error: Optional[str] = None,
+        notification_id: Optional[str] = None
+    ):
+        details = {
+            "provider_error": provider_error
+        }
+        super().__init__(
+            message=message,
+            notification_id=notification_id,
+            channel="sms",
+            recipient=phone_number,
+            error_code=ErrorCode.SMS_SERVICE_ERROR,
+            status_code=500
+        )
+        self.details.update(details)
+
+
+class PushNotificationError(NotificationError):
+    """Exception raised when push notification delivery fails"""
+    
+    def __init__(
+        self,
+        message: str = "Push notification delivery failed",
+        device_token: Optional[str] = None,
+        fcm_error: Optional[str] = None,
+        notification_id: Optional[str] = None
+    ):
+        details = {
+            "fcm_error": fcm_error
+        }
+        super().__init__(
+            message=message,
+            notification_id=notification_id,
+            channel="push",
+            recipient=device_token,
+            error_code=ErrorCode.PUSH_NOTIFICATION_ERROR,
+            status_code=500
+        )
         self.details.update(details)
 
 
@@ -985,6 +1496,112 @@ RateLimitExceeded = RateLimitExceededError
 
 
 # ========================================
+# Background Task Exceptions
+# ========================================
+
+class TaskExecutionError(BaseAppException):
+    """Exception raised when background task execution fails"""
+    
+    def __init__(
+        self,
+        message: str = "Task execution failed",
+        task_id: Optional[str] = None,
+        task_name: Optional[str] = None,
+        error_details: Optional[str] = None,
+        error_code: ErrorCode = ErrorCode.TASK_EXECUTION_ERROR,
+        status_code: int = 500
+    ):
+        details = {
+            "task_id": task_id,
+            "task_name": task_name,
+            "error_details": error_details
+        }
+        super().__init__(message, error_code, details, status_code)
+
+
+class TaskTimeoutError(TaskExecutionError):
+    """Exception raised when a background task times out"""
+    
+    def __init__(
+        self,
+        message: str = "Task execution timed out",
+        task_id: Optional[str] = None,
+        task_name: Optional[str] = None,
+        timeout_seconds: Optional[float] = None
+    ):
+        details = {
+            "task_id": task_id,
+            "task_name": task_name,
+            "timeout_seconds": timeout_seconds
+        }
+        super().__init__(
+            message=message,
+            task_id=task_id,
+            task_name=task_name,
+            error_code=ErrorCode.TASK_TIMEOUT_ERROR,
+            status_code=504
+        )
+        self.details.update(details)
+
+
+class TaskRetryExhaustedError(TaskExecutionError):
+    """Exception raised when all task retry attempts are exhausted"""
+    
+    def __init__(
+        self,
+        message: str = "Task retry attempts exhausted",
+        task_id: Optional[str] = None,
+        task_name: Optional[str] = None,
+        max_retries: Optional[int] = None,
+        last_error: Optional[str] = None
+    ):
+        details = {
+            "task_id": task_id,
+            "task_name": task_name,
+            "max_retries": max_retries,
+            "last_error": last_error
+        }
+        super().__init__(
+            message=message,
+            task_id=task_id,
+            task_name=task_name,
+            error_code=ErrorCode.TASK_RETRY_EXHAUSTED,
+            status_code=500
+        )
+        self.details.update(details)
+
+
+class TaskNotFoundError(BaseAppException):
+    """Exception raised when a task is not found"""
+    
+    def __init__(
+        self,
+        message: str = "Task not found",
+        task_id: Optional[str] = None
+    ):
+        details = {"task_id": task_id}
+        super().__init__(message, ErrorCode.TASK_NOT_FOUND, details, 404)
+
+
+class TaskCancelledError(BaseAppException):
+    """Exception raised when a task is cancelled"""
+    
+    def __init__(
+        self,
+        message: str = "Task was cancelled",
+        task_id: Optional[str] = None,
+        task_name: Optional[str] = None,
+        cancelled_by: Optional[str] = None
+    ):
+        details = {
+            "task_id": task_id,
+            "task_name": task_name,
+            "cancelled_by": cancelled_by
+        }
+        super().__init__(message, ErrorCode.TASK_CANCELLED, details, 410)
+
+
+# ========================================
 # Configuration Exceptions
 # ========================================
 
@@ -1039,6 +1656,7 @@ class InvalidConfigurationError(ConfigurationError):
         )
         self.details.update(details)
         
+
 class ConflictError(BaseAppException):
     """Exception raised when a conflict occurs (generic conflict handler)"""
     
@@ -1055,26 +1673,6 @@ class ConflictError(BaseAppException):
             "resource_type": resource_type,
             "resource_id": resource_id,
             "conflict_reason": conflict_reason
-        }
-        super().__init__(message, error_code, details, status_code)
-
-
-class BusinessRuleViolationError(BaseAppException):
-    """Exception raised when a business rule is violated"""
-    
-    def __init__(
-        self,
-        message: str = "Business rule violation",
-        rule_name: Optional[str] = None,
-        rule_description: Optional[str] = None,
-        violation_details: Optional[Dict[str, Any]] = None,
-        error_code: ErrorCode = ErrorCode.CONSTRAINT_VIOLATION,
-        status_code: int = 422
-    ):
-        details = {
-            "rule_name": rule_name,
-            "rule_description": rule_description,
-            "violation_details": violation_details or {}
         }
         super().__init__(message, error_code, details, status_code)
 
@@ -1115,7 +1713,9 @@ __all__ = [
     # General exceptions
     'OperationError',
     'ValidationError',
+    'SettingsValidationError',
     'ResourceNotFoundError',
+    'NotFoundError',  # Added this
     'DuplicateError',
     'AdminAPIException',
     'MaintenanceMode',
@@ -1128,6 +1728,7 @@ __all__ = [
     'SupervisorNotFoundError',
     'HostelNotFoundError',
     'RoomNotFoundError',
+    'AssignmentNotFoundError',
     
     # Auth exceptions
     'AuthenticationError',
@@ -1137,6 +1738,12 @@ __all__ = [
     'TokenExpiredError',
     'InvalidTokenError',
     'PermissionError',
+    
+    # Permission exceptions
+    'PermissionNotFoundError',
+    'InvalidPermissionError',
+    'PermissionDeniedError',
+    'PermissionConflictError',
     
     # Database exceptions
     'DatabaseError',
@@ -1155,6 +1762,7 @@ __all__ = [
     'RepositoryDeleteError',
     
     # Business logic exceptions
+    'BusinessLogicError',
     'BookingError',
     'BookingConflictError',
     'RoomUnavailableError',
@@ -1163,6 +1771,20 @@ __all__ = [
     'GuestError',
     'GuestAlreadyCheckedInError',
     'GuestNotCheckedInError',
+    'DuplicateAssignmentError',
+    'BusinessRuleViolationError',
+    
+    # Override exceptions
+    'OverrideError',
+    'OverrideNotFoundError',
+    'InvalidOverrideError',
+    'OverrideConflictError',
+    'OverrideExpiredError',
+    'OverridePermissionError',
+    'OverrideAlreadyProcessedError',
+    
+    # Context management exceptions
+    'ContextSwitchError',
     
     # Payment exceptions
     'PaymentError',
@@ -1173,18 +1795,30 @@ __all__ = [
     'EmailServiceError',
     'SMSServiceError',
     
+    # Notification exceptions
+    'NotificationError',
+    'EmailDeliveryError',
+    'SMSDeliveryError',
+    'PushNotificationError',
+    
     # Cache and performance exceptions
     'CacheError',
     'TimeoutError',
     'RateLimitExceededError',
     'RateLimitExceeded',  # Backward compatibility alias
     
+    # Background task exceptions
+    'TaskExecutionError',
+    'TaskTimeoutError',
+    'TaskRetryExhaustedError',
+    'TaskNotFoundError',
+    'TaskCancelledError',
+    
     # Configuration exceptions
     'ConfigurationError',
     'MissingConfigurationError',
     'InvalidConfigurationError',
     'ConflictError',
-    'BusinessRuleViolationError',
     
     # Utility functions
     'handle_database_exception',

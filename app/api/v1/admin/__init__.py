@@ -13,11 +13,11 @@ Features:
 - API versioning compatibility
 """
 
-from typing import List
+from typing import List, Callable
 import time
 from functools import wraps
 
-from fastapi import APIRouter, Request, Response, HTTPException, status
+from fastapi import APIRouter, Request, Response, HTTPException, status, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
@@ -61,206 +61,203 @@ router = APIRouter(
 )
 
 
-def performance_monitoring_middleware():
+async def performance_monitoring_dependency(request: Request):
     """
-    Enhanced middleware for API performance monitoring and logging.
+    Dependency for API performance monitoring and logging.
+    Use this as a dependency in endpoints instead of middleware on routers.
     """
-    def decorator(func):
-        @wraps(func)
-        async def wrapper(request: Request, *args, **kwargs):
-            start_time = time.time()
-            endpoint = f"{request.method} {request.url.path}"
-            
-            try:
-                # Log request
-                logger.debug(f"API Request: {endpoint}", extra={
-                    "method": request.method,
-                    "path": request.url.path,
-                    "query_params": dict(request.query_params),
-                    "client_host": request.client.host if request.client else None,
-                    "user_agent": request.headers.get("user-agent"),
-                })
-                
-                # Execute the actual endpoint function
-                response = await func(request, *args, **kwargs)
-                
-                # Calculate execution time
-                execution_time = time.time() - start_time
-                
-                # Track performance metrics
-                await track_api_performance(
-                    endpoint=endpoint,
-                    execution_time=execution_time,
-                    status_code=getattr(response, 'status_code', 200),
-                    request_size=len(await request.body()) if hasattr(request, 'body') else 0,
-                    response_size=len(response) if hasattr(response, '__len__') else 0
-                )
-                
-                # Log successful response
-                logger.info(f"API Response: {endpoint}", extra={
-                    "execution_time": execution_time,
-                    "status_code": getattr(response, 'status_code', 200),
-                    "success": True
-                })
-                
-                return response
-                
-            except HTTPException as e:
-                execution_time = time.time() - start_time
-                
-                # Log HTTP exceptions
-                logger.warning(f"API HTTP Error: {endpoint}", extra={
-                    "execution_time": execution_time,
-                    "status_code": e.status_code,
-                    "error_detail": e.detail,
-                    "success": False
-                })
-                
-                raise
-                
-            except Exception as e:
-                execution_time = time.time() - start_time
-                
-                # Log unexpected errors
-                logger.error(f"API Unexpected Error: {endpoint}", extra={
-                    "execution_time": execution_time,
-                    "error_type": type(e).__name__,
-                    "error_message": str(e),
-                    "success": False
-                }, exc_info=True)
-                
-                # Return generic error response for security
-                raise HTTPException(
-                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                    detail="Internal server error occurred"
-                )
-                
-        return wrapper
-    return decorator
+    start_time = time.time()
+    endpoint = f"{request.method} {request.url.path}"
+    
+    # Log request
+    logger.debug(f"API Request: {endpoint}", extra={
+        "method": request.method,
+        "path": request.url.path,
+        "query_params": dict(request.query_params),
+        "client_host": request.client.host if request.client else None,
+        "user_agent": request.headers.get("user-agent"),
+    })
+    
+    # Store start time in request state for later use
+    request.state.start_time = start_time
+    request.state.endpoint = endpoint
 
 
-def enhanced_exception_handler():
+async def log_performance(request: Request, response: Response = None):
+    """
+    Log performance metrics after request completion.
+    This should be called in a response dependency or event handler.
+    """
+    if not hasattr(request.state, "start_time"):
+        return
+    
+    execution_time = time.time() - request.state.start_time
+    endpoint = request.state.endpoint
+    
+    try:
+        # Track performance metrics
+        await track_api_performance(
+            endpoint=endpoint,
+            execution_time=execution_time,
+            status_code=response.status_code if response else 200,
+            request_size=0,  # Can be enhanced to track actual size
+            response_size=0  # Can be enhanced to track actual size
+        )
+        
+        # Log successful response
+        logger.info(f"API Response: {endpoint}", extra={
+            "execution_time": execution_time,
+            "status_code": response.status_code if response else 200,
+            "success": True
+        })
+    except Exception as e:
+        logger.error(f"Error logging performance: {str(e)}", exc_info=True)
+
+
+def get_performance_dependencies() -> List[Callable]:
+    """
+    Get list of performance monitoring dependencies if enabled.
+    """
+    if hasattr(settings, 'api') and hasattr(settings.api, 'ENABLE_API_MONITORING'):
+        if settings.api.ENABLE_API_MONITORING:
+            return [Depends(performance_monitoring_dependency)]
+    return []
+
+
+async def enhanced_exception_handler(request: Request, exc: Exception) -> JSONResponse:
     """
     Enhanced exception handler for admin API specific exceptions.
+    
+    Note: This handler should be registered at the FastAPI app level,
+    not on the router. Use: app.add_exception_handler(ExceptionType, handler)
     """
-    async def handler(request: Request, exc: Exception) -> JSONResponse:
-        """Handle admin API specific exceptions with detailed responses."""
-        
-        if isinstance(exc, AdminAPIException):
-            logger.warning(f"Admin API Exception: {exc.detail}", extra={
-                "exception_type": type(exc).__name__,
-                "endpoint": f"{request.method} {request.url.path}",
-                "error_code": getattr(exc, 'error_code', None)
-            })
-            
-            return JSONResponse(
-                status_code=exc.status_code,
-                content={
-                    "detail": exc.detail,
-                    "error_code": getattr(exc, 'error_code', None),
-                    "timestamp": time.time(),
-                    "path": request.url.path
-                }
-            )
-        
-        elif isinstance(exc, RateLimitExceeded):
-            logger.warning(f"Rate limit exceeded: {request.url.path}", extra={
-                "client_host": request.client.host if request.client else None,
-                "endpoint": f"{request.method} {request.url.path}"
-            })
-            
-            return JSONResponse(
-                status_code=status.HTTP_429_TOO_MANY_REQUESTS,
-                content={
-                    "detail": "Rate limit exceeded. Please try again later.",
-                    "retry_after": getattr(exc, 'retry_after', 60),
-                    "timestamp": time.time(),
-                    "path": request.url.path
-                },
-                headers={"Retry-After": str(getattr(exc, 'retry_after', 60))}
-            )
-        
-        elif isinstance(exc, MaintenanceMode):
-            logger.info(f"Maintenance mode active: {request.url.path}")
-            
-            return JSONResponse(
-                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-                content={
-                    "detail": "Service temporarily unavailable due to maintenance.",
-                    "maintenance_window": getattr(exc, 'maintenance_window', None),
-                    "estimated_completion": getattr(exc, 'estimated_completion', None),
-                    "timestamp": time.time(),
-                    "path": request.url.path
-                },
-                headers={"Retry-After": str(getattr(exc, 'retry_after', 3600))}
-            )
-        
-        elif isinstance(exc, APIDeprecated):
-            logger.warning(f"Deprecated API accessed: {request.url.path}", extra={
-                "deprecation_date": getattr(exc, 'deprecation_date', None),
-                "removal_date": getattr(exc, 'removal_date', None)
-            })
-            
-            return JSONResponse(
-                status_code=status.HTTP_410_GONE,
-                content={
-                    "detail": exc.detail,
-                    "deprecation_date": getattr(exc, 'deprecation_date', None),
-                    "removal_date": getattr(exc, 'removal_date', None),
-                    "migration_guide": getattr(exc, 'migration_guide', None),
-                    "timestamp": time.time(),
-                    "path": request.url.path
-                }
-            )
-        
-        # Generic exception handling
-        logger.error(f"Unhandled exception in admin API: {str(exc)}", extra={
+    
+    if isinstance(exc, AdminAPIException):
+        logger.warning(f"Admin API Exception: {exc.detail}", extra={
             "exception_type": type(exc).__name__,
-            "endpoint": f"{request.method} {request.url.path}"
-        }, exc_info=True)
+            "endpoint": f"{request.method} {request.url.path}",
+            "error_code": getattr(exc, 'error_code', None)
+        })
         
         return JSONResponse(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            status_code=exc.status_code,
             content={
-                "detail": "An unexpected error occurred. Please contact support.",
-                "error_id": f"admin-{int(time.time())}",
+                "detail": exc.detail,
+                "error_code": getattr(exc, 'error_code', None),
                 "timestamp": time.time(),
                 "path": request.url.path
             }
         )
     
-    return handler
+    elif isinstance(exc, RateLimitExceeded):
+        logger.warning(f"Rate limit exceeded: {request.url.path}", extra={
+            "client_host": request.client.host if request.client else None,
+            "endpoint": f"{request.method} {request.url.path}"
+        })
+        
+        return JSONResponse(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            content={
+                "detail": "Rate limit exceeded. Please try again later.",
+                "retry_after": getattr(exc, 'retry_after', 60),
+                "timestamp": time.time(),
+                "path": request.url.path
+            },
+            headers={"Retry-After": str(getattr(exc, 'retry_after', 60))}
+        )
+    
+    elif isinstance(exc, MaintenanceMode):
+        logger.info(f"Maintenance mode active: {request.url.path}")
+        
+        return JSONResponse(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            content={
+                "detail": "Service temporarily unavailable due to maintenance.",
+                "maintenance_window": getattr(exc, 'maintenance_window', None),
+                "estimated_completion": getattr(exc, 'estimated_completion', None),
+                "timestamp": time.time(),
+                "path": request.url.path
+            },
+            headers={"Retry-After": str(getattr(exc, 'retry_after', 3600))}
+        )
+    
+    elif isinstance(exc, APIDeprecated):
+        logger.warning(f"Deprecated API accessed: {request.url.path}", extra={
+            "deprecation_date": getattr(exc, 'deprecation_date', None),
+            "removal_date": getattr(exc, 'removal_date', None)
+        })
+        
+        return JSONResponse(
+            status_code=status.HTTP_410_GONE,
+            content={
+                "detail": exc.detail,
+                "deprecation_date": getattr(exc, 'deprecation_date', None),
+                "removal_date": getattr(exc, 'removal_date', None),
+                "migration_guide": getattr(exc, 'migration_guide', None),
+                "timestamp": time.time(),
+                "path": request.url.path
+            }
+        )
+    
+    # Generic exception handling
+    logger.error(f"Unhandled exception in admin API: {str(exc)}", extra={
+        "exception_type": type(exc).__name__,
+        "endpoint": f"{request.method} {request.url.path}"
+    }, exc_info=True)
+    
+    return JSONResponse(
+        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        content={
+            "detail": "An unexpected error occurred. Please contact support.",
+            "error_id": f"admin-{int(time.time())}",
+            "timestamp": time.time(),
+            "path": request.url.path
+        }
+    )
 
 
-# Configure router middleware and exception handlers
-if settings.ENABLE_API_MONITORING:
-    router.middleware("http")(performance_monitoring_middleware())
+def register_exception_handlers(app):
+    """
+    Register exception handlers on the FastAPI app instance.
+    
+    This should be called from app/main.py after creating the FastAPI app:
+    
+    Example:
+        from app.api.v1.admin import register_exception_handlers
+        
+        app = FastAPI()
+        register_exception_handlers(app)
+    """
+    app.add_exception_handler(AdminAPIException, enhanced_exception_handler)
+    app.add_exception_handler(RateLimitExceeded, enhanced_exception_handler)
+    app.add_exception_handler(MaintenanceMode, enhanced_exception_handler)
+    app.add_exception_handler(APIDeprecated, enhanced_exception_handler)
+    logger.info("Admin API exception handlers registered successfully")
 
-if settings.ENABLE_RATE_LIMITING:
-    router.middleware("http")(rate_limit_middleware(
-        requests_per_minute=settings.ADMIN_API_RATE_LIMIT,
-        burst_size=settings.ADMIN_API_BURST_SIZE
-    ))
-
-# Add exception handler
-router.add_exception_handler(Exception, enhanced_exception_handler())
 
 # Health check endpoint for admin API
 @router.get(
     "/health",
     tags=["admin:system"],
     summary="Admin API health check",
-    description="Check the health status of admin API services"
+    description="Check the health status of admin API services",
+    dependencies=get_performance_dependencies()
 )
 async def admin_api_health_check() -> dict:
     """
     Comprehensive health check for admin API services.
     """
     try:
+        # Safely access settings
+        api_version = getattr(settings.api, 'API_VERSION', '1.0.0') if hasattr(settings, 'api') else '1.0.0'
+        environment = getattr(settings, 'ENVIRONMENT', 'development')
+        maintenance_mode = getattr(settings, 'MAINTENANCE_MODE', False)
+        
         health_status = {
             "status": "healthy",
             "timestamp": time.time(),
-            "version": settings.API_VERSION,
+            "version": api_version,
+            "environment": environment,
             "services": {
                 "admin_users": "healthy",
                 "hostel_assignments": "healthy", 
@@ -273,18 +270,23 @@ async def admin_api_health_check() -> dict:
                 "avg_response_time_ms": await get_avg_response_time(),
                 "error_rate_percent": await get_error_rate(),
                 "active_connections": await get_active_connections()
-            }
+            },
+            "maintenance_mode": maintenance_mode
         }
         
         return health_status
         
     except Exception as e:
         logger.error(f"Health check failed: {str(e)}")
+        api_version = getattr(settings.api, 'API_VERSION', '1.0.0') if hasattr(settings, 'api') else '1.0.0'
+        environment = getattr(settings, 'ENVIRONMENT', 'development')
+        
         return {
             "status": "unhealthy",
             "timestamp": time.time(),
             "error": "Health check failed",
-            "version": settings.API_VERSION
+            "version": api_version,
+            "environment": environment
         }
 
 
@@ -309,7 +311,7 @@ async def get_active_connections() -> int:
 # Include all admin sub-routers with enhanced configuration
 router.include_router(
     admins.router,
-    dependencies=[],
+    dependencies=get_performance_dependencies(),
     responses={
         404: {"description": "Admin not found"},
         409: {"description": "Admin already exists"}
@@ -318,7 +320,7 @@ router.include_router(
 
 router.include_router(
     hostel_assignments.router,
-    dependencies=[],
+    dependencies=get_performance_dependencies(),
     responses={
         404: {"description": "Assignment not found"},
         409: {"description": "Assignment conflict"}
@@ -327,7 +329,7 @@ router.include_router(
 
 router.include_router(
     overrides.router,
-    dependencies=[],
+    dependencies=get_performance_dependencies(),
     responses={
         404: {"description": "Override not found"},
         409: {"description": "Override conflict"}
@@ -336,7 +338,7 @@ router.include_router(
 
 router.include_router(
     permissions.router,
-    dependencies=[],
+    dependencies=get_performance_dependencies(),
     responses={
         404: {"description": "Permission not found"},
         403: {"description": "Permission denied"}
@@ -345,7 +347,7 @@ router.include_router(
 
 router.include_router(
     context.router,
-    dependencies=[],
+    dependencies=get_performance_dependencies(),
     responses={
         404: {"description": "Context not found"},
         409: {"description": "Context switch conflict"}
@@ -354,7 +356,7 @@ router.include_router(
 
 router.include_router(
     dashboard.router,
-    dependencies=[],
+    dependencies=get_performance_dependencies(),
     responses={
         503: {"description": "Dashboard service unavailable"}
     }
@@ -363,8 +365,10 @@ router.include_router(
 # Export router and metadata
 __all__ = [
     "router",
-    "performance_monitoring_middleware",
-    "enhanced_exception_handler"
+    "performance_monitoring_dependency",
+    "enhanced_exception_handler",
+    "get_performance_dependencies",
+    "register_exception_handlers"  # Added to exports
 ]
 
 # Router metadata for documentation

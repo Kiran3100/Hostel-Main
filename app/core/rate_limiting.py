@@ -12,9 +12,11 @@ from typing import Any, Dict, List, Optional, Union, Callable
 from datetime import datetime, timedelta
 from enum import Enum
 from dataclasses import dataclass
+from functools import wraps
+import inspect
 
 import redis.asyncio as redis
-from fastapi import Request, HTTPException, status
+from fastapi import Request, HTTPException, status, Depends
 
 from .config import settings
 from .exceptions import RateLimitExceeded
@@ -80,8 +82,8 @@ class TokenBucketLimiter:
         bucket_size = burst_size or limit
         refill_rate = limit / period  # tokens per second
         
-        async with self.redis.pipeline() as pipe:
-            try:
+        try:
+            async with self.redis.pipeline() as pipe:
                 pipe.multi()
                 
                 # Get current bucket state
@@ -131,18 +133,18 @@ class TokenBucketLimiter:
                         key=key
                     )
                     
-            except Exception as e:
-                logger.error(f"Token bucket rate limit check failed: {str(e)}")
-                # Fail open on errors
-                return RateLimitResult(
-                    allowed=True,
-                    limit=limit,
-                    remaining=limit,
-                    reset_time=datetime.fromtimestamp(now + period),
-                    retry_after=0,
-                    total_hits=0,
-                    key=key
-                )
+        except Exception as e:
+            logger.error(f"Token bucket rate limit check failed: {str(e)}")
+            # Fail open on errors
+            return RateLimitResult(
+                allowed=True,
+                limit=limit,
+                remaining=limit,
+                reset_time=datetime.fromtimestamp(now + period),
+                retry_after=0,
+                total_hits=0,
+                key=key
+            )
 
 
 class SlidingWindowLimiter:
@@ -364,6 +366,133 @@ class RateLimiter:
         self.rate_limits[name] = rate_limit
         logger.info(f"Added rate limit: {name} - {rate_limit.limit}/{rate_limit.period}s")
     
+    def _parse_rate_string(self, rate_string: str) -> tuple[int, int]:
+        """Parse rate string like '10/minute' into (limit, period_seconds)"""
+        try:
+            limit_str, period_str = rate_string.split('/')
+            limit_value = int(limit_str)
+            
+            period_mapping = {
+                'second': 1,
+                'minute': 60,
+                'hour': 3600,
+                'day': 86400,
+                'sec': 1,
+                'min': 60,
+                'hr': 3600,
+                's': 1,
+                'm': 60,
+                'h': 3600,
+                'd': 86400
+            }
+            
+            period_seconds = period_mapping.get(period_str.lower(), 60)
+            return limit_value, period_seconds
+            
+        except (ValueError, KeyError) as e:
+            logger.error(f"Invalid rate string format: {rate_string}")
+            return 60, 60  # Default fallback
+    
+    def limit(self, rate_string: str, scope: RateLimitScope = RateLimitScope.IP, 
+              algorithm: RateLimitAlgorithm = RateLimitAlgorithm.SLIDING_WINDOW):
+        """
+        Decorator for rate limiting endpoints with string format like "10/minute"
+        
+        Args:
+            rate_string: Rate limit in format "N/period" (e.g., "10/minute", "100/hour")
+            scope: Rate limiting scope (IP, USER, etc.)
+            algorithm: Rate limiting algorithm to use
+        """
+        def decorator(func):
+            # Parse rate string
+            limit_value, period_seconds = self._parse_rate_string(rate_string)
+            
+            # Create unique limit name for this endpoint
+            func_name = func.__name__
+            limit_name = f"decorator_{func_name}_{rate_string.replace('/', '_')}"
+            
+            # Store rate limit info on function for later use
+            if not hasattr(func, '_rate_limits'):
+                func._rate_limits = []
+            
+            func._rate_limits.append({
+                'name': limit_name,
+                'rate_string': rate_string,
+                'limit': limit_value,
+                'period': period_seconds,
+                'scope': scope,
+                'algorithm': algorithm
+            })
+            
+            # Add rate limit configuration
+            self.add_rate_limit(
+                limit_name,
+                RateLimit(
+                    key=func_name,
+                    limit=limit_value,
+                    period=period_seconds,
+                    algorithm=algorithm,
+                    scope=scope,
+                    description=f"Rate limit for {func_name}: {rate_string}"
+                )
+            )
+            
+            @wraps(func)
+            async def wrapper(*args, **kwargs):
+                # Extract request object from function arguments
+                request = None
+                
+                # Look for Request object in args
+                for arg in args:
+                    if hasattr(arg, 'client') and hasattr(arg, 'url'):
+                        request = arg
+                        break
+                
+                # Look for Request object in kwargs
+                if not request:
+                    for value in kwargs.values():
+                        if hasattr(value, 'client') and hasattr(value, 'url'):
+                            request = value
+                            break
+                
+                # If no request found, try to get from FastAPI dependency context
+                if not request:
+                    # For FastAPI endpoints, we might need to inject request as dependency
+                    # This is a fallback - ideally request should be available
+                    identifier = "unknown"
+                else:
+                    identifier = extract_identifier(request, scope)
+                
+                # Check rate limit
+                result = await self.check_rate_limit(limit_name, identifier)
+                
+                if not result.allowed:
+                    # Raise HTTP 429 Too Many Requests
+                    raise HTTPException(
+                        status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+                        detail=f"Rate limit exceeded: {rate_string}. Try again in {result.retry_after} seconds.",
+                        headers={
+                            "X-RateLimit-Limit": str(result.limit),
+                            "X-RateLimit-Remaining": str(result.remaining),
+                            "X-RateLimit-Reset": str(int(result.reset_time.timestamp())),
+                            "Retry-After": str(result.retry_after)
+                        }
+                    )
+                
+                # Call original function
+                response = await func(*args, **kwargs)
+                
+                # Add rate limit headers if response supports it
+                if hasattr(response, 'headers'):
+                    response.headers["X-RateLimit-Limit"] = str(result.limit)
+                    response.headers["X-RateLimit-Remaining"] = str(result.remaining)
+                    response.headers["X-RateLimit-Reset"] = str(int(result.reset_time.timestamp()))
+                
+                return response
+            
+            return wrapper
+        return decorator
+    
     async def check_rate_limit(
         self,
         limit_name: str,
@@ -515,7 +644,10 @@ def extract_identifier(request: Request, scope: RateLimitScope) -> str:
     elif scope == RateLimitScope.USER:
         # Extract user ID from request (you'll need to implement based on your auth system)
         # This is a placeholder - implement based on your authentication
-        return request.headers.get("X-User-ID", "anonymous")
+        user_id = request.headers.get("X-User-ID")
+        if not user_id and hasattr(request.state, 'user'):
+            user_id = getattr(request.state.user, 'id', None)
+        return str(user_id) if user_id else "anonymous"
     
     elif scope == RateLimitScope.API_KEY:
         # Extract API key
@@ -527,6 +659,58 @@ def extract_identifier(request: Request, scope: RateLimitScope) -> str:
     
     else:  # GLOBAL
         return "global"
+
+
+def create_rate_limit_dependency(
+    rate_string: str, 
+    scope: RateLimitScope = RateLimitScope.IP,
+    algorithm: RateLimitAlgorithm = RateLimitAlgorithm.SLIDING_WINDOW
+):
+    """Create a FastAPI dependency for rate limiting"""
+    
+    async def rate_limit_dependency(request: Request):
+        # Parse rate string
+        limit_value, period_seconds = rate_limiter._parse_rate_string(rate_string)
+        
+        # Create unique limit name
+        endpoint_name = request.url.path.replace('/', '_').replace('-', '_')
+        limit_name = f"dependency{endpoint_name}_{rate_string.replace('/', '_')}"
+        
+        # Add rate limit if not exists
+        if limit_name not in rate_limiter.rate_limits:
+            rate_limiter.add_rate_limit(
+                limit_name,
+                RateLimit(
+                    key=endpoint_name,
+                    limit=limit_value,
+                    period=period_seconds,
+                    algorithm=algorithm,
+                    scope=scope,
+                    description=f"Dependency rate limit for {endpoint_name}: {rate_string}"
+                )
+            )
+        
+        # Extract identifier
+        identifier = extract_identifier(request, scope)
+        
+        # Check rate limit
+        result = await rate_limiter.check_rate_limit(limit_name, identifier)
+        
+        if not result.allowed:
+            raise HTTPException(
+                status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+                detail=f"Rate limit exceeded: {rate_string}. Try again in {result.retry_after} seconds.",
+                headers={
+                    "X-RateLimit-Limit": str(result.limit),
+                    "X-RateLimit-Remaining": str(result.remaining),
+                    "X-RateLimit-Reset": str(int(result.reset_time.timestamp())),
+                    "Retry-After": str(result.retry_after)
+                }
+            )
+        
+        return result
+    
+    return rate_limit_dependency
 
 
 def rate_limit_middleware(
@@ -642,5 +826,6 @@ __all__ = [
     'rate_limiter',
     'rate_limit_middleware',
     'rate_limit',
-    'extract_identifier'
+    'extract_identifier',
+    'create_rate_limit_dependency'
 ]

@@ -9,6 +9,7 @@ import sys
 import json
 import logging
 import logging.handlers
+import asyncio  # Added missing import
 from typing import Any, Dict, Optional, Union
 from datetime import datetime
 from pathlib import Path
@@ -419,6 +420,127 @@ def log_execution_time(logger_name: Optional[str] = None):
     return decorator
 
 
+def log_endpoint_call(func):
+    """
+    Decorator to log API endpoint calls with request/response details.
+    
+    Logs:
+    - Endpoint name and method
+    - Request parameters
+    - Execution time
+    - Response status
+    - Any errors
+    """
+    logger = get_logger(func.__module__)
+    
+    @wraps(func)
+    async def async_wrapper(*args, **kwargs):
+        start_time = datetime.utcnow()
+        endpoint_name = func.__name__
+        
+        # Extract current user if available
+        current_user = kwargs.get('current_user')
+        user_identifier = None
+        if current_user:
+            if isinstance(current_user, dict):
+                user_identifier = current_user.get('id') or current_user.get('username')
+            else:
+                user_identifier = getattr(current_user, 'id', None) or getattr(current_user, 'username', None)
+        
+        try:
+            logger.info(f"API endpoint called: {endpoint_name}", extra={
+                'endpoint': endpoint_name,
+                'module': func.__module__,
+                'user_id': user_identifier,
+                'timestamp': start_time.isoformat()
+            })
+            
+            # Execute the endpoint function
+            result = await func(*args, **kwargs)
+            
+            execution_time = (datetime.utcnow() - start_time).total_seconds()
+            
+            logger.info(f"API endpoint completed: {endpoint_name}", extra={
+                'endpoint': endpoint_name,
+                'execution_time': execution_time,
+                'duration_ms': round(execution_time * 1000, 2),
+                'status': 'success',
+                'user_id': user_identifier
+            })
+            
+            return result
+            
+        except Exception as e:
+            execution_time = (datetime.utcnow() - start_time).total_seconds()
+            
+            logger.error(f"API endpoint failed: {endpoint_name}", extra={
+                'endpoint': endpoint_name,
+                'execution_time': execution_time,
+                'duration_ms': round(execution_time * 1000, 2),
+                'status': 'error',
+                'error_type': type(e).__name__,
+                'error_message': str(e),
+                'user_id': user_identifier
+            }, exc_info=True)
+            
+            raise
+    
+    @wraps(func)
+    def sync_wrapper(*args, **kwargs):
+        start_time = datetime.utcnow()
+        endpoint_name = func.__name__
+        
+        current_user = kwargs.get('current_user')
+        user_identifier = None
+        if current_user:
+            if isinstance(current_user, dict):
+                user_identifier = current_user.get('id') or current_user.get('username')
+            else:
+                user_identifier = getattr(current_user, 'id', None) or getattr(current_user, 'username', None)
+        
+        try:
+            logger.info(f"API endpoint called: {endpoint_name}", extra={
+                'endpoint': endpoint_name,
+                'module': func.__module__,
+                'user_id': user_identifier
+            })
+            
+            result = func(*args, **kwargs)
+            
+            execution_time = (datetime.utcnow() - start_time).total_seconds()
+            
+            logger.info(f"API endpoint completed: {endpoint_name}", extra={
+                'endpoint': endpoint_name,
+                'execution_time': execution_time,
+                'duration_ms': round(execution_time * 1000, 2),
+                'status': 'success',
+                'user_id': user_identifier
+            })
+            
+            return result
+            
+        except Exception as e:
+            execution_time = (datetime.utcnow() - start_time).total_seconds()
+            
+            logger.error(f"API endpoint failed: {endpoint_name}", extra={
+                'endpoint': endpoint_name,
+                'execution_time': execution_time,
+                'duration_ms': round(execution_time * 1000, 2),
+                'status': 'error',
+                'error_type': type(e).__name__,
+                'error_message': str(e),
+                'user_id': user_identifier
+            }, exc_info=True)
+            
+            raise
+    
+    # Return appropriate wrapper based on function type
+    if asyncio.iscoroutinefunction(func):
+        return async_wrapper
+    else:
+        return sync_wrapper
+
+
 def setup_logging():
     """Initialize logging configuration"""
     try:
@@ -451,6 +573,7 @@ __all__ = [
     'get_logger',
     'setup_logging',
     'log_execution_time',
+    'log_endpoint_call',  # Added this export
     'LoggerAdapter',
     'LoggingConfig',
     'request_id',

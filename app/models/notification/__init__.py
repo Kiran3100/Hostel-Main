@@ -279,3 +279,4 @@ Common Usage Patterns:
        track_opens=True,
        track_clicks=True
    )
+   """

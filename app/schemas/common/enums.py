@@ -322,16 +322,20 @@ class NotificationType(str, Enum):
     EMAIL = "email"
     SMS = "sms"
     PUSH = "push"
+    IN_APP = "in_app"
 
 
 class NotificationStatus(str, Enum):
     """Notification delivery status."""
 
-    QUEUED = "queued"
-    PROCESSING = "processing"
-    SENT = "sent"
-    FAILED = "failed"
-    CANCELLED = "cancelled"
+    PENDING = "pending"          # Initial state, notification created
+    QUEUED = "queued"            # Queued for processing
+    PROCESSING = "processing"    # Currently being processed
+    SENT = "sent"                # Sent to provider
+    DELIVERED = "delivered"      # Delivered to recipient
+    COMPLETED = "completed"      # Fully completed
+    FAILED = "failed"            # Delivery failed
+    CANCELLED = "cancelled"      # Cancelled before sending
 
 
 class SubscriptionPlan(str, Enum):

@@ -1,4 +1,4 @@
-from typing import Any, List, Optional
+from typing import Any, Dict, List, Optional
 from functools import lru_cache
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status

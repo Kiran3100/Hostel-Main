@@ -20,6 +20,8 @@ __all__ = [
     "PolicyConfig",
     "PolicyUpdate",
     "PolicyViolation",
+    "ViolationSummary",
+    "PolicyTemplate",
 ]
 
 
@@ -599,6 +601,330 @@ class PolicyViolation(BaseSchema):
         if self.warning_issued and self.warning_issued_at is None:
             raise ValueError(
                 "warning_issued_at is required when warning_issued is True"
+            )
+
+        return self
+
+
+class ViolationSummary(BaseSchema):
+    """
+    Summary of policy violations for analytics and dashboards.
+    
+    Provides aggregated violation metrics and trends for a hostel
+    over a specified period.
+    """
+
+    hostel_id: UUID = Field(
+        ...,
+        description="Hostel unique identifier",
+    )
+    hostel_name: str = Field(
+        ...,
+        description="Hostel name",
+    )
+    period_start: Date = Field(
+        ...,
+        description="Summary period start date",
+    )
+    period_end: Date = Field(
+        ...,
+        description="Summary period end date",
+    )
+
+    # Overall violation counts
+    total_violations: int = Field(
+        ...,
+        ge=0,
+        description="Total violations in period",
+    )
+    active_violations: int = Field(
+        ...,
+        ge=0,
+        description="Currently active violations",
+    )
+    resolved_violations: int = Field(
+        ...,
+        ge=0,
+        description="Resolved violations in period",
+    )
+
+    # Violation breakdown by type
+    low_attendance_violations: int = Field(
+        ...,
+        ge=0,
+        description="Low attendance violations",
+    )
+    consecutive_absence_violations: int = Field(
+        ...,
+        ge=0,
+        description="Consecutive absence violations",
+    )
+    excessive_late_violations: int = Field(
+        ...,
+        ge=0,
+        description="Excessive late entry violations",
+    )
+    unauthorized_absence_violations: int = Field(
+        default=0,
+        ge=0,
+        description="Unauthorized absence violations",
+    )
+
+    # Severity breakdown
+    critical_violations: int = Field(
+        ...,
+        ge=0,
+        description="Critical severity violations",
+    )
+    high_violations: int = Field(
+        ...,
+        ge=0,
+        description="High severity violations",
+    )
+    medium_violations: int = Field(
+        ...,
+        ge=0,
+        description="Medium severity violations",
+    )
+    low_violations: int = Field(
+        ...,
+        ge=0,
+        description="Low severity violations",
+    )
+
+    # Student impact
+    students_with_violations: int = Field(
+        ...,
+        ge=0,
+        description="Number of students with violations",
+    )
+    repeat_offenders: int = Field(
+        default=0,
+        ge=0,
+        description="Students with multiple violations",
+    )
+
+    # Trends and analytics
+    violation_trend: str = Field(
+        default="stable",
+        pattern=r"^(increasing|decreasing|stable)$",
+        description="Overall violation trend",
+    )
+    average_resolution_days: Union[Decimal, None] = Field(
+        None,
+        ge=Decimal("0"),
+        description="Average days to resolve violations",
+    )
+    resolution_rate: Decimal = Field(
+        default=Decimal("0.00"),
+        ge=Decimal("0"),
+        le=Decimal("100"),
+        description="Percentage of violations resolved",
+    )
+
+    # Top patterns
+    most_common_violation_type: Union[str, None] = Field(
+        None,
+        description="Most frequent violation type",
+    )
+    most_affected_room: Union[str, None] = Field(
+        None,
+        description="Room with most violations",
+    )
+    peak_violation_day: Union[str, None] = Field(
+        None,
+        description="Day of week with most violations",
+    )
+
+    # Intervention effectiveness
+    interventions_successful: int = Field(
+        default=0,
+        ge=0,
+        description="Number of successful interventions",
+    )
+    interventions_failed: int = Field(
+        default=0,
+        ge=0,
+        description="Number of failed interventions",
+    )
+
+    @field_validator("resolution_rate")
+    @classmethod
+    def round_rate(cls, v: Decimal) -> Decimal:
+        """Round resolution rate to 2 decimal places."""
+        return round(v, 2)
+
+    @field_validator("period_end")
+    @classmethod
+    def validate_period(cls, v: Date, info) -> Date:
+        """Validate period dates are logical."""
+        if info.data.get("period_start"):
+            if v < info.data["period_start"]:
+                raise ValueError("period_end must be after period_start")
+        return v
+
+
+class PolicyTemplate(BaseSchema):
+    """
+    Pre-configured attendance policy template.
+    
+    Provides standardized policy configurations for different
+    hostel types and educational levels.
+    """
+
+    template_id: UUID = Field(
+        ...,
+        description="Template unique identifier",
+    )
+    template_name: str = Field(
+        ...,
+        description="Template display name",
+    )
+    description: str = Field(
+        ...,
+        max_length=1000,
+        description="Template description and use cases",
+    )
+
+    # Template categorization
+    hostel_type: str = Field(
+        ...,
+        pattern=r"^(residential|day|mixed|boarding)$",
+        description="Target hostel type",
+    )
+    student_level: str = Field(
+        ...,
+        pattern=r"^(elementary|middle|high|college|university)$",
+        description="Target student level",
+    )
+    institution_type: str = Field(
+        default="academic",
+        pattern=r"^(academic|vocational|professional)$",
+        description="Type of educational institution",
+    )
+
+    # Core policy settings
+    minimum_attendance_percentage: Decimal = Field(
+        ...,
+        ge=Decimal("0"),
+        le=Decimal("100"),
+        description="Template minimum attendance percentage",
+    )
+    late_entry_threshold_minutes: int = Field(
+        ...,
+        ge=0,
+        le=240,
+        description="Template late entry threshold",
+    )
+    grace_period_minutes: int = Field(
+        ...,
+        ge=0,
+        le=30,
+        description="Template grace period",
+    )
+    consecutive_absence_alert_days: int = Field(
+        ...,
+        ge=1,
+        le=30,
+        description="Template consecutive absence alert threshold",
+    )
+
+    # Notification defaults
+    notify_guardian_on_absence: bool = Field(
+        default=True,
+        description="Default guardian notification setting",
+    )
+    notify_admin_on_low_attendance: bool = Field(
+        default=True,
+        description="Default admin notification setting",
+    )
+    low_attendance_threshold: Decimal = Field(
+        default=Decimal("75.00"),
+        ge=Decimal("0"),
+        le=Decimal("100"),
+        description="Default low attendance threshold",
+    )
+
+    # Template metadata
+    is_recommended: bool = Field(
+        default=False,
+        description="Whether this is a recommended template",
+    )
+    is_default: bool = Field(
+        default=False,
+        description="Whether this is a default template for the category",
+    )
+    popularity_score: int = Field(
+        default=0,
+        ge=0,
+        description="Usage popularity score",
+    )
+    usage_count: int = Field(
+        default=0,
+        ge=0,
+        description="Number of times template has been used",
+    )
+
+    # Template versioning
+    version: str = Field(
+        default="1.0",
+        description="Template version",
+    )
+    created_by: str = Field(
+        default="system",
+        description="Template creator",
+    )
+    created_at: Union[datetime, None] = Field(
+        None,
+        description="Template creation timestamp",
+    )
+    last_updated: Union[datetime, None] = Field(
+        None,
+        description="Last template update timestamp",
+    )
+
+    # Customization guidance
+    customization_notes: Union[str, None] = Field(
+        None,
+        max_length=2000,
+        description="Notes for customizing this template",
+    )
+    implementation_tips: Union[str, None] = Field(
+        None,
+        max_length=2000,
+        description="Tips for implementing this template",
+    )
+    regulatory_compliance: Union[str, None] = Field(
+        None,
+        max_length=500,
+        description="Regulatory standards this template meets",
+    )
+
+    # Template tags for filtering
+    tags: List[str] = Field(
+        default_factory=list,
+        description="Template tags for categorization and search",
+    )
+
+    @field_validator("minimum_attendance_percentage", "low_attendance_threshold")
+    @classmethod
+    def round_percentage(cls, v: Decimal) -> Decimal:
+        """Round percentage to 2 decimal places."""
+        return round(v, 2)
+
+    @field_validator("template_name", "description")
+    @classmethod
+    def validate_text_fields(cls, v: str) -> str:
+        """Normalize text fields."""
+        return v.strip()
+
+    @model_validator(mode="after")
+    def validate_template_consistency(self) -> "PolicyTemplate":
+        """Validate template configuration consistency."""
+        # Low attendance threshold should be less than minimum
+        if self.low_attendance_threshold > self.minimum_attendance_percentage:
+            raise ValueError(
+                "low_attendance_threshold should be less than minimum_attendance_percentage"
             )
 
         return self

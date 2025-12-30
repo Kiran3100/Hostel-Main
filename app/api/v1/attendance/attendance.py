@@ -2,7 +2,7 @@ from typing import Any, List, Optional
 import logging
 from datetime import datetime
 
-from fastapi import APIRouter, Depends, Query, status, HTTPException, BackgroundTasks
+from fastapi import APIRouter, Depends, Query, status, HTTPException, BackgroundTasks, Request
 from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 
@@ -10,7 +10,7 @@ from app.api import deps
 from app.core.exceptions import ValidationError, NotFoundError, PermissionError
 from app.core.logging import get_logger
 from app.core.cache import cache_response, invalidate_cache
-from app.core.rate_limiting import RateLimiter
+from app.core.rate_limiting import rate_limit, RateLimitScope
 from app.schemas.attendance import (
     AttendanceRecordRequest,
     BulkAttendanceRequest,
@@ -28,7 +28,6 @@ from app.services.attendance.attendance_correction_service import AttendanceCorr
 
 logger = get_logger(__name__)
 router = APIRouter(prefix="/attendance", tags=["attendance"])
-rate_limiter = RateLimiter()
 
 
 # ---------------------------------------------------------------------------
@@ -83,6 +82,7 @@ def get_correction_service(
     }
 )
 async def mark_attendance(
+    request: Request,
     payload: AttendanceRecordRequest,
     background_tasks: BackgroundTasks,
     _supervisor=Depends(deps.get_supervisor_user),
@@ -154,10 +154,12 @@ async def mark_attendance(
         400: {"description": "Invalid bulk attendance data"},
         403: {"description": "Insufficient permissions"},
         413: {"description": "Request payload too large"},
+        429: {"description": "Rate limit exceeded"},
     }
 )
-@rate_limiter.limit("10/minute")  # Prevent abuse of bulk operations
+@rate_limit("bulk_attendance", requests_per_period=10, period_seconds=60, scope=RateLimitScope.USER)
 async def bulk_mark_attendance(
+    request: Request,
     payload: BulkAttendanceRequest,
     background_tasks: BackgroundTasks,
     _supervisor=Depends(deps.get_supervisor_user),
@@ -181,7 +183,7 @@ async def bulk_mark_attendance(
 
     **Limitations:**
     - Maximum 100 students per batch
-    - Rate limited to prevent system overload
+    - Rate limited to prevent system overload (10 requests per minute)
 
     **Access:** Supervisor and Admin users
     """
@@ -236,10 +238,12 @@ async def bulk_mark_attendance(
         201: {"description": "Quick mark operation completed successfully"},
         400: {"description": "Invalid quick mark parameters"},
         403: {"description": "Insufficient permissions"},
+        429: {"description": "Rate limit exceeded"},
     }
 )
-@rate_limiter.limit("5/minute")  # More restrictive for broad operations
+@rate_limit("quick_mark_all", requests_per_period=5, period_seconds=60, scope=RateLimitScope.USER)
 async def quick_mark_all(
+    request: Request,
     payload: QuickAttendanceMarkAll,
     background_tasks: BackgroundTasks,
     _supervisor=Depends(deps.get_supervisor_user),
@@ -264,6 +268,10 @@ async def quick_mark_all(
     - Optimized for common attendance patterns
     - Minimal API calls required
     - Bulk processing efficiencies
+
+    **Rate Limiting:**
+    - Limited to 5 requests per minute per user
+    - More restrictive for broad operations
 
     **Access:** Supervisor and Admin users
     """
@@ -325,7 +333,7 @@ async def quick_mark_all(
     }
 )
 async def update_attendance_record(
-    attendance_id: str = Query(..., description="Unique attendance record identifier"),
+    attendance_id: str,
     payload: AttendanceUpdate,
     background_tasks: BackgroundTasks,
     _supervisor=Depends(deps.get_supervisor_user),
@@ -478,6 +486,8 @@ async def list_attendance(
 )
 @cache_response(ttl=300)  # Cache for 5 minutes
 async def get_daily_attendance_summary(
+    _admin=Depends(deps.get_admin_user),
+    service: AttendanceService = Depends(get_attendance_service),
     hostel_id: Optional[str] = Query(
         None, 
         description="Specific hostel ID, or all hostels if not provided"
@@ -496,8 +506,6 @@ async def get_daily_attendance_summary(
         False, 
         description="Include room-level and status breakdown details"
     ),
-    _admin=Depends(deps.get_admin_user),
-    service: AttendanceService = Depends(get_attendance_service),
 ) -> Any:
     """
     Generate comprehensive daily attendance summary with analytics.
@@ -563,7 +571,9 @@ async def get_daily_attendance_summary(
     }
 )
 async def get_student_attendance(
-    student_id: str = Query(..., description="Unique student identifier"),
+    student_id: str,
+    _admin=Depends(deps.get_admin_user),
+    service: AttendanceService = Depends(get_attendance_service),
     start_date: Optional[str] = Query(
         None, 
         description="Start date for history (YYYY-MM-DD)",
@@ -578,8 +588,6 @@ async def get_student_attendance(
         False, 
         description="Include attendance analytics and patterns"
     ),
-    _admin=Depends(deps.get_admin_user),
-    service: AttendanceService = Depends(get_attendance_service),
 ) -> Any:
     """
     Get comprehensive attendance history for a specific student.
@@ -724,7 +732,7 @@ async def submit_correction(
     }
 )
 async def get_correction_history(
-    attendance_id: str = Query(..., description="Attendance record identifier"),
+    attendance_id: str,
     _admin=Depends(deps.get_admin_user),
     service: AttendanceCorrectionService = Depends(get_correction_service),
 ) -> Any:
@@ -783,15 +791,15 @@ async def get_correction_history(
     }
 )
 async def approve_correction(
-    correction_id: str = Query(..., description="Correction request identifier"),
+    correction_id: str,
+    background_tasks: BackgroundTasks,
+    _admin=Depends(deps.get_admin_user),
+    service: AttendanceCorrectionService = Depends(get_correction_service),
     approval_notes: Optional[str] = Query(
         None, 
         description="Additional approval notes",
         max_length=500
     ),
-    background_tasks: BackgroundTasks,
-    _admin=Depends(deps.get_admin_user),
-    service: AttendanceCorrectionService = Depends(get_correction_service),
 ) -> Any:
     """
     Approve a pending correction request and apply changes automatically.
@@ -864,15 +872,15 @@ async def approve_correction(
     }
 )
 async def reject_correction(
-    correction_id: str = Query(..., description="Correction request identifier"),
+    correction_id: str,
+    background_tasks: BackgroundTasks,
+    _admin=Depends(deps.get_admin_user),
+    service: AttendanceCorrectionService = Depends(get_correction_service),
     reason: Optional[str] = Query(
         None, 
         description="Detailed rejection reason and feedback",
         max_length=1000
     ),
-    background_tasks: BackgroundTasks,
-    _admin=Depends(deps.get_admin_user),
-    service: AttendanceCorrectionService = Depends(get_correction_service),
 ) -> Any:
     """
     Reject a pending correction request with comprehensive feedback.
@@ -940,10 +948,10 @@ async def reject_correction(
 )
 @cache_response(ttl=1800)  # Cache for 30 minutes
 async def get_attendance_patterns(
-    hostel_id: Optional[str] = Query(None),
-    days: int = Query(30, ge=7, le=365),
     _admin=Depends(deps.get_admin_user),
     service: AttendanceService = Depends(get_attendance_service),
+    hostel_id: Optional[str] = Query(None),
+    days: int = Query(30, ge=7, le=365),
 ) -> Any:
     """
     Analyze attendance patterns for insights and predictive analytics.
@@ -979,9 +987,9 @@ async def get_attendance_patterns(
     }
 )
 async def get_real_time_attendance_status(
-    hostel_id: Optional[str] = Query(None),
     _admin=Depends(deps.get_admin_user),
     service: AttendanceService = Depends(get_attendance_service),
+    hostel_id: Optional[str] = Query(None),
 ) -> Any:
     """
     Get real-time attendance status for live monitoring and dashboards.

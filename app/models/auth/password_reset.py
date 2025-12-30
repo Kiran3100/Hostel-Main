@@ -142,7 +142,7 @@ class PasswordReset(TimestampModel):
     )
 
     # Metadata
-    metadata: Mapped[Optional[dict]] = mapped_column(
+    meta_data: Mapped[Optional[dict]] = mapped_column(
         JSONB,
         nullable=True,
         comment="Additional reset metadata",
@@ -247,7 +247,7 @@ class PasswordHistory(TimestampModel):
     )
 
     # Metadata
-    metadata: Mapped[Optional[dict]] = mapped_column(
+    meta_data: Mapped[Optional[dict]] = mapped_column(
         JSONB,
         nullable=True,
         comment="Additional password change metadata",
@@ -412,7 +412,7 @@ class PasswordPolicy(TimestampModel):
     )
 
     # Metadata
-    metadata: Mapped[Optional[dict]] = mapped_column(
+    meta_data: Mapped[Optional[dict]] = mapped_column(
         JSONB,
         nullable=True,
         comment="Additional policy configuration",
@@ -482,7 +482,7 @@ class PasswordAttempt(TimestampModel):
     )
 
     # Metadata
-    metadata: Mapped[Optional[dict]] = mapped_column(
+    meta_data: Mapped[Optional[dict]] = mapped_column(
         JSONB,
         nullable=True,
         comment="Additional attempt metadata",

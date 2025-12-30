@@ -175,7 +175,7 @@ class OTPToken(TimestampModel):
     )
 
     # Metadata
-    metadata: Mapped[Optional[dict]] = mapped_column(
+    meta: Mapped[Optional[dict]] = mapped_column(
         JSONB,
         nullable=True,
         comment="Additional OTP metadata",
@@ -321,7 +321,7 @@ class OTPTemplate(TimestampModel):
         comment="Template description",
     )
 
-    metadata: Mapped[Optional[dict]] = mapped_column(
+    meta: Mapped[Optional[dict]] = mapped_column(
         JSONB,
         nullable=True,
         comment="Additional template metadata",
@@ -451,7 +451,7 @@ class OTPDelivery(TimestampModel):
         comment="Full provider response data",
     )
 
-    metadata: Mapped[Optional[dict]] = mapped_column(
+    meta: Mapped[Optional[dict]] = mapped_column(
         JSONB,
         nullable=True,
         comment="Additional delivery metadata",
@@ -581,7 +581,7 @@ class OTPThrottling(TimestampModel):
     )
 
     # Metadata
-    metadata: Mapped[Optional[dict]] = mapped_column(
+    meta: Mapped[Optional[dict]] = mapped_column(
         JSONB,
         nullable=True,
         comment="Additional throttling metadata",

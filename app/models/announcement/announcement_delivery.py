@@ -67,7 +67,7 @@ class DeliveryStrategy:
     BATCHED = "batched"
 
 
-class AnnouncementDelivery(BaseModel, UUIDMixin, TimestampModel):
+class AnnouncementDelivery(UUIDMixin, TimestampModel, BaseModel):
     """
     Announcement delivery tracking.
     
@@ -251,7 +251,7 @@ class AnnouncementDelivery(BaseModel, UUIDMixin, TimestampModel):
     )
     
     # Metadata
-    metadata: Mapped[Optional[dict]] = mapped_column(
+    meta_data: Mapped[Optional[dict]] = mapped_column(
         JSONB,
         nullable=True,
         comment="Additional delivery metadata",
@@ -329,7 +329,7 @@ class AnnouncementDelivery(BaseModel, UUIDMixin, TimestampModel):
         )
 
 
-class DeliveryChannel(BaseModel, UUIDMixin, TimestampModel):
+class DeliveryChannel(UUIDMixin, TimestampModel, BaseModel):
     """
     Delivery channel configuration.
     
@@ -473,7 +473,7 @@ class DeliveryChannel(BaseModel, UUIDMixin, TimestampModel):
     )
     
     # Metadata
-    metadata: Mapped[Optional[dict]] = mapped_column(
+    meta_data: Mapped[Optional[dict]] = mapped_column(
         JSONB,
         nullable=True,
         comment="Additional channel metadata",
@@ -536,7 +536,7 @@ class DeliveryChannel(BaseModel, UUIDMixin, TimestampModel):
         )
 
 
-class DeliveryBatch(BaseModel, UUIDMixin, TimestampModel):
+class DeliveryBatch(UUIDMixin, TimestampModel, BaseModel):
     """
     Delivery batch for processing.
     
@@ -664,7 +664,7 @@ class DeliveryBatch(BaseModel, UUIDMixin, TimestampModel):
     )
     
     # Metadata
-    metadata: Mapped[Optional[dict]] = mapped_column(
+    meta_data: Mapped[Optional[dict]] = mapped_column(
         JSONB,
         nullable=True,
         comment="Additional batch metadata",
@@ -731,7 +731,7 @@ class DeliveryBatch(BaseModel, UUIDMixin, TimestampModel):
         )
 
 
-class DeliveryFailure(BaseModel, UUIDMixin, TimestampModel):
+class DeliveryFailure(UUIDMixin, TimestampModel, BaseModel):
     """
     Delivery failure tracking.
     
@@ -859,7 +859,7 @@ class DeliveryFailure(BaseModel, UUIDMixin, TimestampModel):
     )
     
     # Metadata
-    metadata: Mapped[Optional[dict]] = mapped_column(
+    meta_data: Mapped[Optional[dict]] = mapped_column(
         JSONB,
         nullable=True,
         comment="Additional failure metadata",
@@ -902,7 +902,7 @@ class DeliveryFailure(BaseModel, UUIDMixin, TimestampModel):
         )
 
 
-class DeliveryRetry(BaseModel, UUIDMixin, TimestampModel):
+class DeliveryRetry(UUIDMixin, TimestampModel, BaseModel):
     """
     Delivery retry attempts.
     
@@ -999,7 +999,7 @@ class DeliveryRetry(BaseModel, UUIDMixin, TimestampModel):
     )
     
     # Metadata
-    metadata: Mapped[Optional[dict]] = mapped_column(
+    meta_data: Mapped[Optional[dict]] = mapped_column(
         JSONB,
         nullable=True,
         comment="Additional retry metadata",

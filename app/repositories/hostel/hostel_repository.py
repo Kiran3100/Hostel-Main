@@ -14,7 +14,7 @@ from app.models.base.enums import HostelStatus, HostelType
 from app.repositories.base.base_repository import BaseRepository
 from app.repositories.base.specifications import Specification
 from app.repositories.base.query_builder import QueryBuilder
-from app.repositories.base.pagination import PaginationRequest, PaginationResult
+from app.repositories.base.pagination import PaginationParams, PaginatedResult
 from app.repositories.base.filtering import FilterCriteria
 
 
@@ -147,9 +147,9 @@ class HostelRepository(BaseRepository[Hostel]):
     async def search_hostels(
         self,
         filters: FilterCriteria,
-        pagination: PaginationRequest,
+        pagination: PaginationParams,
         include_stats: bool = True
-    ) -> PaginationResult[Hostel]:
+    ) -> PaginatedResult[Hostel]:
         """
         Advanced hostel search with comprehensive filtering and sorting.
         """
@@ -224,7 +224,7 @@ class HostelRepository(BaseRepository[Hostel]):
                 selectinload(Hostel.amenity_details)
             )
         
-        return await self.paginate(query_builder.build(), pagination)
+        return await self.paginate_with_params(query_builder.build(), pagination)
     
     async def find_nearby_hostels(
         self,
@@ -504,6 +504,37 @@ class HostelRepository(BaseRepository[Hostel]):
             custom_filter=Hostel.occupancy_percentage < threshold,
             order_by=[asc(Hostel.occupancy_percentage)]
         )
+    
+    # ===== Pagination Integration =====
+    
+    async def paginate_with_params(self, query, params: PaginationParams) -> PaginatedResult[Hostel]:
+        """
+        Paginate query using PaginationParams.
+        """
+        # Create PaginationManager with the query
+        from app.repositories.base.pagination import PaginationManager, PaginationStrategy
+        
+        pagination_manager = PaginationManager(
+            query=query,
+            model=Hostel,
+            strategy=PaginationStrategy.HYBRID,
+            default_page_size=params.per_page
+        )
+        
+        # Use the appropriate pagination method based on available parameters
+        if params.cursor:
+            return pagination_manager.paginate_cursor(
+                cursor=params.cursor,
+                per_page=params.per_page,
+                order_by=params.order_by or "id",
+                order_direction=params.order_direction
+            )
+        else:
+            return pagination_manager.paginate_offset(
+                page=params.page,
+                per_page=params.per_page,
+                count_items=True
+            )
     
     # ===== Cache Management =====
     

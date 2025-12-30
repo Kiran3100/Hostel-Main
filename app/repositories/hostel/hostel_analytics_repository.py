@@ -11,7 +11,7 @@ from sqlalchemy.orm import selectinload
 
 from app.models.hostel.hostel_analytics import HostelAnalytic, OccupancyTrend, RevenueTrend
 from app.repositories.base.base_repository import BaseRepository
-from app.repositories.base.pagination import PaginationRequest, PaginationResult
+from app.repositories.base.pagination import PaginationParams, PaginatedResult
 
 
 class HostelAnalyticsRepository(BaseRepository[HostelAnalytic]):

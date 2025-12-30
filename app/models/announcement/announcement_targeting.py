@@ -1,4 +1,3 @@
-# --- File: app/models/announcement/announcement_targeting.py ---
 """
 Announcement targeting models.
 
@@ -40,7 +39,7 @@ __all__ = [
 ]
 
 
-class AnnouncementTarget(BaseModel, UUIDMixin, TimestampModel):
+class AnnouncementTarget(UUIDMixin, TimestampModel, BaseModel):
     """
     Announcement targeting configuration.
     
@@ -161,8 +160,8 @@ class AnnouncementTarget(BaseModel, UUIDMixin, TimestampModel):
         comment="When targeting was last validated",
     )
     
-    # Metadata
-    metadata: Mapped[Optional[dict]] = mapped_column(
+    # Metadata (renamed from metadata to avoid SQLAlchemy conflict)
+    meta_data: Mapped[Optional[dict]] = mapped_column(
         JSONB,
         nullable=True,
         comment="Additional targeting metadata",
@@ -205,7 +204,7 @@ class AnnouncementTarget(BaseModel, UUIDMixin, TimestampModel):
         )
 
 
-class TargetingRule(BaseModel, UUIDMixin, TimestampModel):
+class TargetingRule(UUIDMixin, TimestampModel, BaseModel):
     """
     Individual targeting rules.
     
@@ -300,7 +299,7 @@ class TargetingRule(BaseModel, UUIDMixin, TimestampModel):
         )
 
 
-class TargetAudienceCache(BaseModel, UUIDMixin, TimestampModel):
+class TargetAudienceCache(UUIDMixin, TimestampModel, BaseModel):
     """
     Cached audience calculation results.
     
@@ -413,7 +412,7 @@ class TargetAudienceCache(BaseModel, UUIDMixin, TimestampModel):
         )
 
 
-class BulkTargetingRule(BaseModel, UUIDMixin, TimestampModel):
+class BulkTargetingRule(UUIDMixin, TimestampModel, BaseModel):
     """
     Bulk targeting with multiple rule combinations.
     
@@ -491,8 +490,8 @@ class BulkTargetingRule(BaseModel, UUIDMixin, TimestampModel):
         comment="When bulk targeting was processed",
     )
     
-    # Metadata
-    metadata: Mapped[Optional[dict]] = mapped_column(
+    # Metadata (renamed from metadata to avoid SQLAlchemy conflict)
+    meta_data: Mapped[Optional[dict]] = mapped_column(
         JSONB,
         nullable=True,
         comment="Additional metadata",

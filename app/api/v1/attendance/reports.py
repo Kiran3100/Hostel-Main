@@ -46,11 +46,11 @@ class ReportConfig:
 # Request Models
 class HostelReportQuery(BaseModel):
     hostel_id: str = Field(..., description="Unique hostel identifier")
-    start_date: str = Field(..., regex=ReportConfig.DATE_REGEX, description="Report start date (YYYY-MM-DD)")
-    end_date: str = Field(..., regex=ReportConfig.DATE_REGEX, description="Report end date (YYYY-MM-DD)")
+    start_date: str = Field(..., pattern=ReportConfig.DATE_REGEX, description="Report start date (YYYY-MM-DD)")
+    end_date: str = Field(..., pattern=ReportConfig.DATE_REGEX, description="Report end date (YYYY-MM-DD)")
     include_analytics: bool = Field(True, description="Include advanced analytics and trends")
     include_comparisons: bool = Field(False, description="Include peer hostel comparisons")
-    granularity: str = Field("daily", regex=ReportConfig.GRANULARITY_REGEX, description="Report granularity")
+    granularity: str = Field("daily", pattern=ReportConfig.GRANULARITY_REGEX, description="Report granularity")
 
 class MonthlyReportQuery(BaseModel):
     hostel_id: str = Field(..., description="Hostel identifier")
@@ -70,21 +70,21 @@ class StudentReportQuery(BaseModel):
 
 class WeeklySummaryQuery(BaseModel):
     hostel_id: str = Field(..., description="Hostel identifier")
-    week_start: str = Field(..., regex=ReportConfig.DATE_REGEX, description="Week start date (YYYY-MM-DD, should be Monday)")
+    week_start: str = Field(..., pattern=ReportConfig.DATE_REGEX, description="Week start date (YYYY-MM-DD, should be Monday)")
     include_daily_breakdown: bool = Field(True, description="Include day-by-day detailed breakdown")
     include_trends: bool = Field(True, description="Include week-over-week trend analysis")
 
 class TrendAnalysisQuery(BaseModel):
     hostel_id: str = Field(..., description="Hostel identifier")
-    start_date: str = Field(..., regex=ReportConfig.DATE_REGEX, description="Analysis start date (YYYY-MM-DD)")
-    end_date: str = Field(..., regex=ReportConfig.DATE_REGEX, description="Analysis end date (YYYY-MM-DD)")
-    trend_type: str = Field("comprehensive", regex=ReportConfig.TREND_TYPE_REGEX, description="Type of trend analysis")
+    start_date: str = Field(..., pattern=ReportConfig.DATE_REGEX, description="Analysis start date (YYYY-MM-DD)")
+    end_date: str = Field(..., pattern=ReportConfig.DATE_REGEX, description="Analysis end date (YYYY-MM-DD)")
+    trend_type: str = Field("comprehensive", pattern=ReportConfig.TREND_TYPE_REGEX, description="Type of trend analysis")
     include_predictions: bool = Field(True, description="Include predictive modeling and forecasting")
     include_seasonal: bool = Field(True, description="Include seasonal pattern analysis")
 
 class DashboardQuery(BaseModel):
     hostel_id: Optional[str] = Field(None, description="Specific hostel filter")
-    time_range: str = Field("today", regex=ReportConfig.TIME_RANGE_REGEX, description="Time range for analytics")
+    time_range: str = Field("today", pattern=ReportConfig.TIME_RANGE_REGEX, description="Time range for analytics")
 
 # Setup
 logger = get_logger(__name__)
@@ -142,11 +142,11 @@ def handle_attendance_errors(func):
 @handle_attendance_errors
 async def generate_hostel_report(
     hostel_id: str = Query(..., description="Unique hostel identifier"),
-    start_date: str = Query(..., description="Report start date (YYYY-MM-DD)", regex=ReportConfig.DATE_REGEX),
-    end_date: str = Query(..., description="Report end date (YYYY-MM-DD)", regex=ReportConfig.DATE_REGEX),
+    start_date: str = Query(..., description="Report start date (YYYY-MM-DD)", pattern=ReportConfig.DATE_REGEX),
+    end_date: str = Query(..., description="Report end date (YYYY-MM-DD)", pattern=ReportConfig.DATE_REGEX),
     include_analytics: bool = Query(True, description="Include advanced analytics and trends"),
     include_comparisons: bool = Query(False, description="Include peer hostel comparisons"),
-    granularity: str = Query("daily", description="Report granularity", regex=ReportConfig.GRANULARITY_REGEX),
+    granularity: str = Query("daily", description="Report granularity", pattern=ReportConfig.GRANULARITY_REGEX),
     _admin=Depends(deps.get_admin_user),
     service: AttendanceReportService = Depends(get_report_service),
 ) -> Any:
@@ -355,7 +355,7 @@ async def compare_attendance(
 @handle_attendance_errors
 async def get_weekly_summary(
     hostel_id: str = Query(..., description="Hostel identifier"),
-    week_start: str = Query(..., description="Week start date (YYYY-MM-DD, should be Monday)", regex=ReportConfig.DATE_REGEX),
+    week_start: str = Query(..., description="Week start date (YYYY-MM-DD, should be Monday)", pattern=ReportConfig.DATE_REGEX),
     include_daily_breakdown: bool = Query(True, description="Include day-by-day detailed breakdown"),
     include_trends: bool = Query(True, description="Include week-over-week trend analysis"),
     _admin=Depends(deps.get_admin_user),
@@ -401,9 +401,9 @@ async def get_weekly_summary(
 @handle_attendance_errors
 async def get_trend_analysis(
     hostel_id: str = Query(..., description="Hostel identifier"),
-    start_date: str = Query(..., description="Analysis start date (YYYY-MM-DD)", regex=ReportConfig.DATE_REGEX),
-    end_date: str = Query(..., description="Analysis end date (YYYY-MM-DD)", regex=ReportConfig.DATE_REGEX),
-    trend_type: str = Query("comprehensive", description="Type of trend analysis", regex=ReportConfig.TREND_TYPE_REGEX),
+    start_date: str = Query(..., description="Analysis start date (YYYY-MM-DD)", pattern=ReportConfig.DATE_REGEX),
+    end_date: str = Query(..., description="Analysis end date (YYYY-MM-DD)", pattern=ReportConfig.DATE_REGEX),
+    trend_type: str = Query("comprehensive", description="Type of trend analysis", pattern=ReportConfig.TREND_TYPE_REGEX),
     include_predictions: bool = Query(True, description="Include predictive modeling and forecasting"),
     include_seasonal: bool = Query(True, description="Include seasonal pattern analysis"),
     _admin=Depends(deps.get_admin_user),
@@ -664,7 +664,7 @@ async def delete_report_schedule(
 @handle_attendance_errors
 async def get_dashboard_analytics(
     hostel_id: Optional[str] = Query(None, description="Specific hostel filter"),
-    time_range: str = Query("today", description="Time range for analytics", regex=ReportConfig.TIME_RANGE_REGEX),
+    time_range: str = Query("today", description="Time range for analytics", pattern=ReportConfig.TIME_RANGE_REGEX),
     _admin=Depends(deps.get_admin_user),
     service: AttendanceReportService = Depends(get_report_service),
 ) -> DashboardData:

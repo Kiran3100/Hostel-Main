@@ -441,6 +441,53 @@ def cache_result(
     return decorator
 
 
+def cache_response(ttl: Optional[int] = None):
+    """
+    Decorator specifically for caching HTTP responses.
+    
+    Args:
+        ttl: Time to live in seconds
+    """
+    def decorator(func):
+        @wraps(func)
+        async def wrapper(*args, **kwargs):
+            # Generate cache key from function name and arguments
+            func_name = f"response:{func.__module__}.{func.__name__}"
+            arg_hash = cache_key_from_args(*args, **kwargs)
+            cache_key = f"{func_name}:{arg_hash}"
+            
+            # Try to get from cache
+            try:
+                cached_result = await cache_manager.get(cache_key)
+                if cached_result is not None:
+                    logger.debug(f"Response cache hit for key: {cache_key}")
+                    cache_stats.record_hit()
+                    return cached_result
+            except Exception as e:
+                logger.warning(f"Response cache get failed: {str(e)}")
+                cache_stats.record_error()
+            
+            cache_stats.record_miss()
+            
+            # Execute function
+            result = await func(*args, **kwargs)
+            
+            # Cache result
+            try:
+                cache_expire = ttl or settings.cache.CACHE_DEFAULT_TIMEOUT
+                await cache_manager.set(cache_key, value=result, expire=cache_expire)
+                logger.debug(f"Response cached for key: {cache_key}")
+                cache_stats.record_set()
+            except Exception as e:
+                logger.warning(f"Response cache set failed: {str(e)}")
+                cache_stats.record_error()
+            
+            return result
+        
+        return wrapper
+    return decorator
+
+
 async def invalidate_cache(*key_parts: str) -> bool:
     """Convenience function to invalidate cache"""
     try:
@@ -527,6 +574,7 @@ __all__ = [
     "cache_manager",
     "cache_stats",
     "cache_result",
+    "cache_response",
     "invalidate_cache",
     "clear_cache_pattern",
     "cache_context",

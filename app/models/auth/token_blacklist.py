@@ -9,6 +9,7 @@ from typing import Optional
 from uuid import UUID, uuid4
 
 from sqlalchemy import (
+    Boolean,
     DateTime,
     Enum as SQLEnum,
     ForeignKey,
@@ -127,7 +128,7 @@ class BlacklistedToken(TimestampModel):
     )
 
     # Metadata
-    metadata: Mapped[Optional[dict]] = mapped_column(
+    extra_metadata: Mapped[Optional[dict]] = mapped_column(
         JSONB,
         nullable=True,
         comment="Additional revocation metadata",
@@ -254,7 +255,7 @@ class TokenRevocation(TimestampModel):
         comment="List of affected token JTIs",
     )
 
-    metadata: Mapped[Optional[dict]] = mapped_column(
+    extra_metadata: Mapped[Optional[dict]] = mapped_column(
         JSONB,
         nullable=True,
         comment="Additional revocation metadata",
@@ -420,7 +421,7 @@ class SecurityEvent(TimestampModel):
         comment="Calculated risk score (0-100)",
     )
 
-    metadata: Mapped[Optional[dict]] = mapped_column(
+    extra_metadata: Mapped[Optional[dict]] = mapped_column(
         JSONB,
         nullable=True,
         comment="Additional event metadata",

@@ -6,7 +6,6 @@ import os
 import shutil
 import tempfile
 import mimetypes
-import magic
 import hashlib
 from pathlib import Path
 from typing import Optional, List, Dict, Any, Union, Tuple
@@ -16,6 +15,14 @@ import tarfile
 import json
 from urllib.parse import urlparse
 import requests
+
+# Try to import magic, but make it optional
+try:
+    import magic
+    MAGIC_AVAILABLE = True
+except ImportError:
+    MAGIC_AVAILABLE = False
+    print("Warning: python-magic not available. Falling back to mimetypes for file type detection.")
 
 class FileHelper:
     """General file manipulation utilities"""
@@ -49,7 +56,7 @@ class FileHelper:
             'is_file': path.is_file(),
             'is_directory': path.is_dir(),
             'absolute_path': str(path.absolute()),
-            'mime_type': mimetypes.guess_type(file_path)[0]
+            'mime_type': FileTypeDetector.detect_mime_type(file_path)
         }
     
     @staticmethod
@@ -282,14 +289,91 @@ class DirectoryManager:
 class FileTypeDetector:
     """File type detection utilities"""
     
+    # Enhanced MIME type mappings for better fallback support
+    MIME_MAPPINGS = {
+        # Images
+        '.jpg': 'image/jpeg',
+        '.jpeg': 'image/jpeg',
+        '.png': 'image/png',
+        '.gif': 'image/gif',
+        '.bmp': 'image/bmp',
+        '.webp': 'image/webp',
+        '.ico': 'image/x-icon',
+        '.svg': 'image/svg+xml',
+        '.tiff': 'image/tiff',
+        '.tif': 'image/tiff',
+        
+        # Documents
+        '.pdf': 'application/pdf',
+        '.doc': 'application/msword',
+        '.docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        '.xls': 'application/vnd.ms-excel',
+        '.xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        '.ppt': 'application/vnd.ms-powerpoint',
+        '.pptx': 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+        '.txt': 'text/plain',
+        '.csv': 'text/csv',
+        '.rtf': 'application/rtf',
+        '.odt': 'application/vnd.oasis.opendocument.text',
+        '.ods': 'application/vnd.oasis.opendocument.spreadsheet',
+        
+        # Video
+        '.mp4': 'video/mp4',
+        '.avi': 'video/x-msvideo',
+        '.mov': 'video/quicktime',
+        '.wmv': 'video/x-ms-wmv',
+        '.flv': 'video/x-flv',
+        '.webm': 'video/webm',
+        '.mkv': 'video/x-matroska',
+        '.m4v': 'video/x-m4v',
+        
+        # Audio
+        '.mp3': 'audio/mpeg',
+        '.wav': 'audio/wav',
+        '.flac': 'audio/flac',
+        '.aac': 'audio/aac',
+        '.ogg': 'audio/ogg',
+        '.wma': 'audio/x-ms-wma',
+        '.m4a': 'audio/mp4',
+        
+        # Archives
+        '.zip': 'application/zip',
+        '.rar': 'application/x-rar-compressed',
+        '.7z': 'application/x-7z-compressed',
+        '.tar': 'application/x-tar',
+        '.gz': 'application/gzip',
+        '.bz2': 'application/x-bzip2',
+        
+        # Other
+        '.json': 'application/json',
+        '.xml': 'application/xml',
+        '.html': 'text/html',
+        '.htm': 'text/html',
+        '.css': 'text/css',
+        '.js': 'application/javascript',
+        '.py': 'text/x-python',
+        '.sql': 'application/sql',
+    }
+    
     @staticmethod
     def detect_mime_type(file_path: str) -> Optional[str]:
-        """Detect MIME type using python-magic"""
-        try:
-            return magic.from_file(file_path, mime=True)
-        except:
-            # Fallback to mimetypes
-            return mimetypes.guess_type(file_path)[0]
+        """Detect MIME type using python-magic or fallback to mimetypes"""
+        if MAGIC_AVAILABLE:
+            try:
+                return magic.from_file(file_path, mime=True)
+            except Exception as e:
+                print(f"Warning: Magic detection failed for {file_path}: {e}")
+        
+        # Get extension
+        ext = Path(file_path).suffix.lower()
+        
+        # Try custom mapping first
+        if ext in FileTypeDetector.MIME_MAPPINGS:
+            return FileTypeDetector.MIME_MAPPINGS[ext]
+        
+        # Fallback to mimetypes
+        mime_type, encoding = mimetypes.guess_type(file_path)
+        return mime_type
     
     @staticmethod
     def is_image(file_path: str) -> bool:
@@ -306,8 +390,13 @@ class FileTypeDetector:
             'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
             'application/vnd.ms-excel',
             'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'application/vnd.ms-powerpoint',
+            'application/vnd.openxmlformats-officedocument.presentationml.presentation',
             'text/plain',
-            'text/csv'
+            'text/csv',
+            'application/rtf',
+            'application/vnd.oasis.opendocument.text',
+            'application/vnd.oasis.opendocument.spreadsheet'
         ]
         mime_type = FileTypeDetector.detect_mime_type(file_path)
         return mime_type in document_types
@@ -325,6 +414,20 @@ class FileTypeDetector:
         return mime_type and mime_type.startswith('audio/')
     
     @staticmethod
+    def is_archive(file_path: str) -> bool:
+        """Check if file is an archive"""
+        archive_types = [
+            'application/zip',
+            'application/x-rar-compressed',
+            'application/x-7z-compressed',
+            'application/x-tar',
+            'application/gzip',
+            'application/x-bzip2'
+        ]
+        mime_type = FileTypeDetector.detect_mime_type(file_path)
+        return mime_type in archive_types
+    
+    @staticmethod
     def get_file_category(file_path: str) -> str:
         """Get general file category"""
         if FileTypeDetector.is_image(file_path):
@@ -335,19 +438,26 @@ class FileTypeDetector:
             return 'video'
         elif FileTypeDetector.is_audio(file_path):
             return 'audio'
+        elif FileTypeDetector.is_archive(file_path):
+            return 'archive'
         else:
             return 'other'
 
 class FileValidator:
     """File validation utilities"""
     
-    ALLOWED_IMAGE_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.gif', '.bmp', '.webp']
-    ALLOWED_DOCUMENT_EXTENSIONS = ['.pdf', '.doc', '.docx', '.txt', '.csv', '.xls', '.xlsx']
+    ALLOWED_IMAGE_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.gif', '.bmp', '.webp', '.ico', '.svg', '.tiff', '.tif']
+    ALLOWED_DOCUMENT_EXTENSIONS = ['.pdf', '.doc', '.docx', '.txt', '.csv', '.xls', '.xlsx', '.ppt', '.pptx', '.rtf', '.odt', '.ods']
+    ALLOWED_VIDEO_EXTENSIONS = ['.mp4', '.avi', '.mov', '.wmv', '.flv', '.webm', '.mkv', '.m4v']
+    ALLOWED_AUDIO_EXTENSIONS = ['.mp3', '.wav', '.flac', '.aac', '.ogg', '.wma', '.m4a']
     
     MAX_FILE_SIZES = {
         'image': 10 * 1024 * 1024,  # 10MB
         'document': 50 * 1024 * 1024,  # 50MB
         'video': 500 * 1024 * 1024,  # 500MB
+        'audio': 100 * 1024 * 1024,  # 100MB
+        'archive': 200 * 1024 * 1024,  # 200MB
+        'other': 25 * 1024 * 1024,  # 25MB
     }
     
     @classmethod
@@ -398,6 +508,29 @@ class FileValidator:
         if not cls.validate_file_size(file_path, cls.MAX_FILE_SIZES['document']):
             result['valid'] = False
             result['errors'].append('Document file too large')
+        
+        return result
+    
+    @classmethod
+    def validate_file_by_category(cls, file_path: str) -> Dict[str, Any]:
+        """Validate file based on its detected category"""
+        category = FileTypeDetector.get_file_category(file_path)
+        
+        validation_methods = {
+            'image': cls.validate_image_file,
+            'document': cls.validate_document_file,
+        }
+        
+        if category in validation_methods:
+            return validation_methods[category](file_path)
+        
+        # Generic validation for other categories
+        result = {'valid': True, 'errors': []}
+        max_size = cls.MAX_FILE_SIZES.get(category, cls.MAX_FILE_SIZES['other'])
+        
+        if not cls.validate_file_size(file_path, max_size):
+            result['valid'] = False
+            result['errors'].append(f'{category.title()} file too large')
         
         return result
     
@@ -558,10 +691,14 @@ class FileDownloader:
     """File download utilities"""
     
     @staticmethod
-    def download_file(url: str, destination: str = None, chunk_size: int = 8192) -> str:
+    def download_file(url: str, destination: str = None, chunk_size: int = 8192, 
+                     timeout: int = 30) -> str:
         """Download file from URL"""
-        response = requests.get(url, stream=True)
-        response.raise_for_status()
+        try:
+            response = requests.get(url, stream=True, timeout=timeout)
+            response.raise_for_status()
+        except requests.RequestException as e:
+            raise Exception(f"Failed to download file from {url}: {e}")
         
         if destination is None:
             # Generate filename from URL
@@ -571,19 +708,29 @@ class FileDownloader:
         
         FileHelper.ensure_directory(os.path.dirname(destination))
         
-        with open(destination, 'wb') as file:
-            for chunk in response.iter_content(chunk_size=chunk_size):
-                if chunk:
-                    file.write(chunk)
+        try:
+            with open(destination, 'wb') as file:
+                for chunk in response.iter_content(chunk_size=chunk_size):
+                    if chunk:
+                        file.write(chunk)
+        except IOError as e:
+            # Clean up partial file
+            if os.path.exists(destination):
+                os.unlink(destination)
+            raise Exception(f"Failed to write downloaded file to {destination}: {e}")
         
         return destination
     
     @staticmethod
     def download_with_progress(url: str, destination: str = None, 
-                              progress_callback: callable = None) -> str:
+                              progress_callback: callable = None,
+                              timeout: int = 30) -> str:
         """Download file with progress tracking"""
-        response = requests.get(url, stream=True)
-        response.raise_for_status()
+        try:
+            response = requests.get(url, stream=True, timeout=timeout)
+            response.raise_for_status()
+        except requests.RequestException as e:
+            raise Exception(f"Failed to download file from {url}: {e}")
         
         total_size = int(response.headers.get('content-length', 0))
         
@@ -595,14 +742,38 @@ class FileDownloader:
         FileHelper.ensure_directory(os.path.dirname(destination))
         
         downloaded_size = 0
-        with open(destination, 'wb') as file:
-            for chunk in response.iter_content(chunk_size=8192):
-                if chunk:
-                    file.write(chunk)
-                    downloaded_size += len(chunk)
-                    
-                    if progress_callback and total_size > 0:
-                        progress = (downloaded_size / total_size) * 100
-                        progress_callback(progress, downloaded_size, total_size)
+        try:
+            with open(destination, 'wb') as file:
+                for chunk in response.iter_content(chunk_size=8192):
+                    if chunk:
+                        file.write(chunk)
+                        downloaded_size += len(chunk)
+                        
+                        if progress_callback and total_size > 0:
+                            progress = (downloaded_size / total_size) * 100
+                            progress_callback(progress, downloaded_size, total_size)
+        except IOError as e:
+            # Clean up partial file
+            if os.path.exists(destination):
+                os.unlink(destination)
+            raise Exception(f"Failed to write downloaded file to {destination}: {e}")
         
         return destination
+
+# Utility functions for easy access
+def get_file_info(file_path: str) -> Dict[str, Any]:
+    """Quick access to file information"""
+    return FileHelper.get_file_info(file_path)
+
+def detect_file_type(file_path: str) -> str:
+    """Quick access to file type detection"""
+    return FileTypeDetector.get_file_category(file_path)
+
+def validate_upload_file(file_path: str) -> Dict[str, Any]:
+    """Quick validation for uploaded files"""
+    return FileValidator.validate_file_by_category(file_path)
+
+def create_temp_file(content: str = None, suffix: str = None) -> str:
+    """Quick temporary file creation"""
+    temp_manager = TempFileManager()
+    return temp_manager.create_temp_file(content=content, suffix=suffix)

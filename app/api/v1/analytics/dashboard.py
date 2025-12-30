@@ -105,6 +105,7 @@ def get_dashboard_metrics(
     },
 )
 def get_role_specific_dashboard(
+    service: DashboardService,
     role: Annotated[
         Optional[str],
         Query(
@@ -113,7 +114,6 @@ def get_role_specific_dashboard(
         ),
     ] = None,
     current_user: CurrentUserWithRoles = None,
-    service: DashboardService = Depends(get_dashboard_analytics_service),
 ) -> RoleSpecificDashboard:
     """
     Get role-specific dashboard configuration.
