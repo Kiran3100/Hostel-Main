@@ -278,7 +278,7 @@ class ComplaintResolution(BaseModel, TimestampMixin):
     )
 
     # Metadata
-    metadata: Mapped[dict] = mapped_column(
+    resolution_metadata: Mapped[dict] = mapped_column(
         JSONB,
         nullable=False,
         default=dict,

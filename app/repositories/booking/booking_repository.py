@@ -14,7 +14,7 @@ from uuid import UUID
 from sqlalchemy import and_, func, or_, select
 from sqlalchemy.orm import Session, joinedload, selectinload
 
-from app.core1.exceptions import EntityNotFoundError, ValidationError
+from app.core.exceptions import EntityNotFoundError, ValidationError
 from app.models.booking.booking import Booking, BookingNote, BookingStatusHistory
 from app.models.base.enums import BookingSource, BookingStatus, RoomType
 from app.repositories.base.base_repository import (

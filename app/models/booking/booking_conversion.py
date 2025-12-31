@@ -17,6 +17,7 @@ from sqlalchemy import (
     DateTime,
     ForeignKey,
     Index,
+    Integer,  # Added missing Integer import
     JSON,
     Numeric,
     String,
@@ -300,7 +301,10 @@ class BookingConversion(UUIDMixin, TimestampModel, SoftDeleteMixin):
         Index("ix_conversion_check_in", "actual_check_in_date"),
         UniqueConstraint("booking_id", name="uq_conversion_booking"),
         UniqueConstraint("student_profile_id", name="uq_conversion_student"),
-        {"comment": "Booking to student conversion records"},
+        {
+            "comment": "Booking to student conversion records",
+            "extend_existing": True,
+        },
     )
 
     # Validators
@@ -535,7 +539,10 @@ class ConversionChecklist(UUIDMixin, TimestampModel, SoftDeleteMixin):
         Index("ix_checklist_booking", "booking_id"),
         UniqueConstraint("conversion_id", name="uq_checklist_conversion"),
         UniqueConstraint("booking_id", name="uq_checklist_booking"),
-        {"comment": "Pre-conversion checklist validation"},
+        {
+            "comment": "Pre-conversion checklist validation",
+            "extend_existing": True,
+        },
     )
 
     # Properties
@@ -711,7 +718,10 @@ class ChecklistItem(UUIDMixin, TimestampModel, SoftDeleteMixin):
         Index("ix_item_completed", "is_completed"),
         Index("ix_item_required", "is_required"),
         Index("ix_item_order", "item_order"),
-        {"comment": "Individual checklist items for conversion"},
+        {
+            "comment": "Individual checklist items for conversion",
+            "extend_existing": True,
+        },
     )
 
     # Validators
@@ -766,4 +776,3 @@ class ChecklistItem(UUIDMixin, TimestampModel, SoftDeleteMixin):
             f"<ChecklistItem(name={self.item_name}, "
             f"completed={self.is_completed}, required={self.is_required})>"
         )
-    

@@ -189,7 +189,10 @@ class BookingAssignment(UUIDMixin, TimestampModel, SoftDeleteMixin):
         Index("ix_assignment_booking", "booking_id"),
         Index("ix_assignment_active", "is_active"),
         UniqueConstraint("booking_id", name="uq_assignment_booking"),
-        {"comment": "Room and bed assignments for bookings"},
+        {
+            "comment": "Room and bed assignments for bookings",
+            "extend_existing": True,
+        },
     )
 
     # Methods
@@ -365,7 +368,10 @@ class AssignmentHistory(UUIDMixin, TimestampModel):
     __table_args__ = (
         Index("ix_history_assignment_changed", "assignment_id", "changed_at"),
         Index("ix_history_booking_changed", "booking_id", "changed_at"),
-        {"comment": "Assignment change history for audit trail"},
+        {
+            "comment": "Assignment change history for audit trail",
+            "extend_existing": True,
+        },
     )
 
     # Validators

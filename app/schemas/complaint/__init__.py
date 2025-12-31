@@ -23,6 +23,7 @@ from app.schemas.complaint.complaint_assignment import (
     AssignmentRequest,
     AssignmentResponse,
     BulkAssignment,
+    BulkAssignmentResponse,
     ReassignmentRequest,
     UnassignRequest,
 )
@@ -92,6 +93,7 @@ __all__ = [
     "AssignmentResponse",
     "ReassignmentRequest",
     "BulkAssignment",
+    "BulkAssignmentResponse",
     "UnassignRequest",
     "AssignmentHistory",
     # Resolution schemas

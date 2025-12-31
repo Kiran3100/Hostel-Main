@@ -1,4 +1,3 @@
-# --- File: C:\Hostel-Main\app\models\payment\gateway_transaction.py ---
 """
 Gateway transaction model.
 
@@ -6,9 +5,10 @@ Detailed tracking of payment gateway interactions including
 requests, responses, webhooks, and transaction lifecycle.
 """
 
-from datetime import datetime
-from decimal import Decimal
-from typing import TYPE_CHECKING
+from datetime import datetime, timezone
+from decimal import Decimal, ROUND_HALF_UP
+from enum import Enum
+from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
 from sqlalchemy import (
     Boolean,
@@ -20,9 +20,12 @@ from sqlalchemy import (
     Numeric,
     String,
     Text,
+    func,
+    event,
 )
 from sqlalchemy.dialects.postgresql import JSONB, UUID
-from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy.orm import Mapped, mapped_column, relationship, validates
+from sqlalchemy.ext.hybrid import hybrid_property
 
 from app.models.base.base_model import TimestampModel
 from app.models.base.mixins import SoftDeleteMixin, UUIDMixin
@@ -45,6 +48,18 @@ class GatewayTransactionStatus(str, Enum):
     REFUND_PENDING = "refund_pending"
     REFUNDED = "refunded"
     REFUND_FAILED = "refund_failed"
+    DISPUTED = "disputed"
+    CHARGEBACK = "chargeback"
+
+    @classmethod
+    def get_terminal_statuses(cls) -> List["GatewayTransactionStatus"]:
+        """Get list of terminal statuses that don't change."""
+        return [cls.SUCCESS, cls.FAILED, cls.CANCELLED, cls.REFUNDED, cls.REFUND_FAILED]
+
+    @classmethod
+    def get_pending_statuses(cls) -> List["GatewayTransactionStatus"]:
+        """Get list of pending statuses."""
+        return [cls.INITIATED, cls.PENDING, cls.PROCESSING, cls.REFUND_INITIATED, cls.REFUND_PENDING]
 
 
 class GatewayTransactionType(str, Enum):
@@ -56,6 +71,8 @@ class GatewayTransactionType(str, Enum):
     CAPTURE = "capture"
     AUTHORIZATION = "authorization"
     VOID = "void"
+    PARTIAL_REFUND = "partial_refund"
+    SETTLEMENT = "settlement"
 
 
 class GatewayProvider(str, Enum):
@@ -68,10 +85,30 @@ class GatewayProvider(str, Enum):
     CASHFREE = "cashfree"
     INSTAMOJO = "instamojo"
     PAYPAL = "paypal"
+    GPAY = "gpay"
+    AMAZONPAY = "amazonpay"
     MANUAL = "manual"
 
+    @classmethod
+    def get_upi_providers(cls) -> List["GatewayProvider"]:
+        """Get UPI supporting providers."""
+        return [cls.RAZORPAY, cls.PAYTM, cls.PHONEPE, cls.CASHFREE]
 
-class GatewayTransaction(TimestampModel, UUIDMixin, SoftDeleteMixin):
+
+class PaymentMethodType(str, Enum):
+    """Payment method type enum."""
+    
+    CARD = "card"
+    UPI = "upi"
+    NETBANKING = "netbanking"
+    WALLET = "wallet"
+    EMI = "emi"
+    BANK_TRANSFER = "bank_transfer"
+    CASH = "cash"
+    CRYPTO = "crypto"
+
+
+class GatewayTransaction(UUIDMixin, TimestampModel, SoftDeleteMixin):
     """
     Gateway transaction model for tracking payment gateway interactions.
     
@@ -153,7 +190,7 @@ class GatewayTransaction(TimestampModel, UUIDMixin, SoftDeleteMixin):
 
     # ==================== Amount Details ====================
     transaction_amount: Mapped[Decimal] = mapped_column(
-        Numeric(precision=10, scale=2),
+        Numeric(precision=12, scale=2),  # Increased precision for larger amounts
         nullable=False,
         comment="Transaction amount",
     )
@@ -178,7 +215,7 @@ class GatewayTransaction(TimestampModel, UUIDMixin, SoftDeleteMixin):
     )
     
     net_amount: Mapped[Decimal | None] = mapped_column(
-        Numeric(precision=10, scale=2),
+        Numeric(precision=12, scale=2),
         nullable=True,
         comment="Net amount after deducting fees",
     )
@@ -280,11 +317,11 @@ class GatewayTransaction(TimestampModel, UUIDMixin, SoftDeleteMixin):
     )
 
     # ==================== Payment Method Details ====================
-    payment_method_used: Mapped[str | None] = mapped_column(
-        String(50),
+    payment_method_used: Mapped[PaymentMethodType | None] = mapped_column(
+        SQLEnum(PaymentMethodType, name="payment_method_type_enum", create_type=True),
         nullable=True,
         index=True,
-        comment="Actual payment method used (card, upi, netbanking, wallet)",
+        comment="Actual payment method used",
     )
     
     # Card Details (if applicable)
@@ -554,7 +591,7 @@ class GatewayTransaction(TimestampModel, UUIDMixin, SoftDeleteMixin):
     )
     
     settlement_amount: Mapped[Decimal | None] = mapped_column(
-        Numeric(precision=10, scale=2),
+        Numeric(precision=12, scale=2),
         nullable=True,
         comment="Actual settled amount",
     )
@@ -592,7 +629,7 @@ class GatewayTransaction(TimestampModel, UUIDMixin, SoftDeleteMixin):
         comment="Additional notes",
     )
     
-    metadata: Mapped[dict | None] = mapped_column(
+    additional_metadata: Mapped[dict | None] = mapped_column(
         JSONB,
         nullable=True,
         comment="Additional metadata",
@@ -626,22 +663,66 @@ class GatewayTransaction(TimestampModel, UUIDMixin, SoftDeleteMixin):
         Index("idx_gateway_reconciled", "is_reconciled"),
         Index("idx_gateway_webhook_event", "webhook_event_type"),
         Index("idx_gateway_payment_method", "payment_method_used"),
-        Index("idx_gateway_reference_lower", "lower(transaction_reference)"),
+        Index("idx_gateway_reference_lower", func.lower(transaction_reference)),
+        Index("idx_gateway_completed_at", "completed_at"),
+        Index("idx_gateway_amount", "transaction_amount"),
+        Index("idx_gateway_currency", "currency"),
         {"comment": "Payment gateway transaction records and lifecycle tracking"},
     )
 
-    # ==================== Properties ====================
-    @property
+    # ==================== Validators ====================
+    @validates('transaction_amount', 'gateway_fee', 'tax_amount', 'net_amount', 'settlement_amount')
+    def validate_amounts(self, key: str, value: Optional[Decimal]) -> Optional[Decimal]:
+        """Validate and round amount fields to 2 decimal places."""
+        if value is not None:
+            if value < 0:
+                raise ValueError(f"{key} cannot be negative")
+            return value.quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+        return value
+
+    @validates('card_last4')
+    def validate_card_last4(self, key: str, value: Optional[str]) -> Optional[str]:
+        """Validate card last 4 digits."""
+        if value is not None:
+            if not value.isdigit() or len(value) != 4:
+                raise ValueError("Card last4 must be exactly 4 digits")
+        return value
+
+    @validates('card_first6')
+    def validate_card_first6(self, key: str, value: Optional[str]) -> Optional[str]:
+        """Validate card first 6 digits."""
+        if value is not None:
+            if not value.isdigit() or len(value) != 6:
+                raise ValueError("Card first6 must be exactly 6 digits")
+        return value
+
+    @validates('currency')
+    def validate_currency(self, key: str, value: str) -> str:
+        """Validate currency code."""
+        if len(value) != 3 or not value.isupper():
+            raise ValueError("Currency must be a 3-letter uppercase code")
+        return value
+
+    # ==================== Hybrid Properties ====================
+    @hybrid_property
     def is_success(self) -> bool:
         """Check if transaction was successful."""
         return self.transaction_status == GatewayTransactionStatus.SUCCESS
 
-    @property
+    @is_success.expression
+    def is_success(cls):
+        return cls.transaction_status == GatewayTransactionStatus.SUCCESS
+
+    @hybrid_property
     def is_failed(self) -> bool:
         """Check if transaction failed."""
         return self.transaction_status == GatewayTransactionStatus.FAILED
 
-    @property
+    @is_failed.expression
+    def is_failed(cls):
+        return cls.transaction_status == GatewayTransactionStatus.FAILED
+
+    @hybrid_property
     def is_pending(self) -> bool:
         """Check if transaction is pending."""
         return self.transaction_status in [
@@ -650,10 +731,19 @@ class GatewayTransaction(TimestampModel, UUIDMixin, SoftDeleteMixin):
             GatewayTransactionStatus.PROCESSING,
         ]
 
+    @hybrid_property
+    def is_terminal_status(self) -> bool:
+        """Check if transaction is in a terminal status."""
+        return self.transaction_status in GatewayTransactionStatus.get_terminal_statuses()
+
+    # ==================== Properties ====================
     @property
     def is_refund_transaction(self) -> bool:
         """Check if this is a refund transaction."""
-        return self.transaction_type == GatewayTransactionType.REFUND
+        return self.transaction_type in [
+            GatewayTransactionType.REFUND,
+            GatewayTransactionType.PARTIAL_REFUND
+        ]
 
     @property
     def processing_duration_ms(self) -> int | None:
@@ -669,6 +759,7 @@ class GatewayTransaction(TimestampModel, UUIDMixin, SoftDeleteMixin):
         return (
             self.is_failed
             and self.retry_count < self.max_retries
+            and not self.is_terminal_status
         )
 
     @property
@@ -687,6 +778,34 @@ class GatewayTransaction(TimestampModel, UUIDMixin, SoftDeleteMixin):
         if self.tax_amount:
             total += self.tax_amount
         return total
+
+    @property
+    def fee_percentage(self) -> Decimal | None:
+        """Calculate fee percentage of transaction amount."""
+        if self.total_fees > 0 and self.transaction_amount > 0:
+            return (self.total_fees / self.transaction_amount * 100).quantize(
+                Decimal('0.01'), rounding=ROUND_HALF_UP
+            )
+        return None
+
+    @property
+    def is_card_payment(self) -> bool:
+        """Check if this is a card payment."""
+        return self.payment_method_used == PaymentMethodType.CARD
+
+    @property
+    def is_upi_payment(self) -> bool:
+        """Check if this is a UPI payment."""
+        return self.payment_method_used == PaymentMethodType.UPI
+
+    @property
+    def masked_card_number(self) -> str | None:
+        """Get masked card number if available."""
+        if self.card_first6 and self.card_last4:
+            return f"{self.card_first6}****{self.card_last4}"
+        elif self.card_last4:
+            return f"****{self.card_last4}"
+        return None
 
     # ==================== Methods ====================
     def __repr__(self) -> str:
@@ -714,26 +833,169 @@ class GatewayTransaction(TimestampModel, UUIDMixin, SoftDeleteMixin):
             "transaction_status": self.transaction_status.value,
             "transaction_amount": float(self.transaction_amount),
             "currency": self.currency,
-            "payment_method_used": self.payment_method_used,
+            "payment_method_used": self.payment_method_used.value if self.payment_method_used else None,
             "initiated_at": self.initiated_at.isoformat(),
             "completed_at": self.completed_at.isoformat() if self.completed_at else None,
             "is_verified": self.is_verified,
+            "is_reconciled": self.is_reconciled,
+            "processing_duration_ms": self.processing_duration_ms,
             "created_at": self.created_at.isoformat(),
+            "updated_at": self.updated_at.isoformat(),
         }
 
-    def mark_verified(self) -> None:
+    def to_summary_dict(self) -> dict:
+        """Convert to summary dictionary with essential fields only."""
+        return {
+            "id": str(self.id),
+            "gateway_name": self.gateway_name.value,
+            "transaction_type": self.transaction_type.value,
+            "transaction_status": self.transaction_status.value,
+            "transaction_amount": float(self.transaction_amount),
+            "currency": self.currency,
+            "payment_method_used": self.payment_method_used.value if self.payment_method_used else None,
+            "initiated_at": self.initiated_at.isoformat(),
+            "completed_at": self.completed_at.isoformat() if self.completed_at else None,
+        }
+
+    def mark_verified(self, method: str = "api_call") -> None:
         """Mark transaction as verified."""
         self.is_verified = True
-        self.verified_at = datetime.utcnow()
+        self.verified_at = datetime.now(timezone.utc)
+        self.verification_method = method
 
     def mark_reconciled(self, reference: str | None = None) -> None:
         """Mark transaction as reconciled."""
         self.is_reconciled = True
-        self.reconciled_at = datetime.utcnow()
+        self.reconciled_at = datetime.now(timezone.utc)
         if reference:
             self.reconciliation_reference = reference
 
-    def increment_retry(self) -> None:
+    def increment_retry(self, next_retry_delay_minutes: int = 5) -> None:
         """Increment retry count and update timestamp."""
         self.retry_count += 1
-        self.last_retry_at = datetime.utcnow()
+        self.last_retry_at = datetime.now(timezone.utc)
+        if self.retry_count < self.max_retries:
+            from datetime import timedelta
+            self.next_retry_at = self.last_retry_at + timedelta(minutes=next_retry_delay_minutes)
+
+    def update_status(
+        self, 
+        status: GatewayTransactionStatus, 
+        error_code: str = None,
+        error_message: str = None
+    ) -> None:
+        """Update transaction status with timestamp."""
+        old_status = self.transaction_status
+        self.transaction_status = status
+        now = datetime.now(timezone.utc)
+
+        # Update appropriate timestamp based on status
+        if status == GatewayTransactionStatus.PROCESSING:
+            self.processing_started_at = now
+        elif status == GatewayTransactionStatus.SUCCESS:
+            self.completed_at = now
+        elif status == GatewayTransactionStatus.FAILED:
+            self.failed_at = now
+            if error_code:
+                self.error_code = error_code
+            if error_message:
+                self.error_message = error_message
+        elif status == GatewayTransactionStatus.CANCELLED:
+            self.cancelled_at = now
+        elif status == GatewayTransactionStatus.TIMEOUT:
+            self.timeout_at = now
+
+    def add_webhook_data(self, payload: Dict[str, Any], event_type: str, signature: str = None) -> None:
+        """Add webhook data to transaction."""
+        self.webhook_payload = payload
+        self.webhook_event_type = event_type
+        self.webhook_signature = signature
+        self.webhook_received_at = datetime.now(timezone.utc)
+
+    def add_callback_data(self, payload: Dict[str, Any], callback_url: str = None) -> None:
+        """Add callback data to transaction."""
+        self.callback_payload = payload
+        self.callback_url = callback_url
+        self.callback_received_at = datetime.now(timezone.utc)
+
+    def set_payment_method_details(
+        self,
+        method_type: PaymentMethodType,
+        **details
+    ) -> None:
+        """Set payment method specific details."""
+        self.payment_method_used = method_type
+        
+        if method_type == PaymentMethodType.CARD:
+            self.card_last4 = details.get('last4')
+            self.card_first6 = details.get('first6')
+            self.card_network = details.get('network')
+            self.card_type = details.get('type')
+            self.card_issuer = details.get('issuer')
+            self.card_country = details.get('country')
+        
+        elif method_type == PaymentMethodType.UPI:
+            self.upi_id = details.get('upi_id')
+            self.upi_transaction_id = details.get('transaction_id')
+            self.bank_name = details.get('bank_name')
+        
+        elif method_type == PaymentMethodType.WALLET:
+            self.wallet_name = details.get('wallet_name')
+            self.wallet_transaction_id = details.get('transaction_id')
+        
+        elif method_type == PaymentMethodType.NETBANKING:
+            self.bank_name = details.get('bank_name')
+            self.bank_code = details.get('bank_code')
+
+    def calculate_fees(self, gateway_fee_rate: Decimal = None, tax_rate: Decimal = None) -> None:
+        """Calculate gateway fee and tax amount."""
+        if gateway_fee_rate is not None:
+            self.gateway_fee = (self.transaction_amount * gateway_fee_rate / 100).quantize(
+                Decimal('0.01'), rounding=ROUND_HALF_UP
+            )
+        
+        if tax_rate is not None and self.gateway_fee:
+            self.tax_amount = (self.gateway_fee * tax_rate / 100).quantize(
+                Decimal('0.01'), rounding=ROUND_HALF_UP
+            )
+        
+        # Calculate net amount
+        if self.gateway_fee is not None:
+            total_deduction = self.gateway_fee + (self.tax_amount or Decimal('0'))
+            self.net_amount = self.transaction_amount - total_deduction
+
+    def is_duplicate_webhook(self, event_type: str, payload: Dict[str, Any]) -> bool:
+        """Check if webhook is duplicate based on event type and payload."""
+        return (
+            self.webhook_event_type == event_type
+            and self.webhook_payload == payload
+        )
+
+    @classmethod
+    def get_by_gateway_order_id(cls, session, gateway_order_id: str) -> Optional["GatewayTransaction"]:
+        """Get transaction by gateway order ID."""
+        return session.query(cls).filter(
+            cls.gateway_order_id == gateway_order_id
+        ).first()
+
+    @classmethod
+    def get_by_gateway_transaction_id(cls, session, gateway_transaction_id: str) -> Optional["GatewayTransaction"]:
+        """Get transaction by gateway transaction ID."""
+        return session.query(cls).filter(
+            cls.gateway_transaction_id == gateway_transaction_id
+        ).first()
+
+
+# ==================== Event Listeners ====================
+@event.listens_for(GatewayTransaction, 'before_insert')
+def set_initiated_at(mapper, connection, target):
+    """Set initiated_at timestamp on insert if not already set."""
+    if not target.initiated_at:
+        target.initiated_at = datetime.now(timezone.utc)
+
+
+@event.listens_for(GatewayTransaction, 'before_update')
+def update_timestamps_on_status_change(mapper, connection, target):
+    """Update appropriate timestamps when status changes."""
+    # This is handled in the update_status method, but kept for consistency
+    pass

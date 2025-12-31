@@ -22,6 +22,7 @@ from sqlalchemy import (
     String,
     Text,
     UniqueConstraint,
+    text,
 )
 from sqlalchemy.dialects.postgresql import UUID as PG_UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -57,11 +58,11 @@ class Subscription(UUIDMixin, TimestampModel, SoftDeleteMixin, AuditMixin):
             "subscription_reference",
             name="uq_subscription_reference",
         ),
-        UniqueConstraint(
+        Index(
+            "uq_subscription_hostel_active",
             "hostel_id",
-            "is_deleted",
-            name="uq_subscription_hostel_active",
-            postgresql_where=Column("is_deleted") == False,
+            unique=True,
+            postgresql_where=text("is_deleted = false"),
         ),
         CheckConstraint(
             "end_date >= start_date",

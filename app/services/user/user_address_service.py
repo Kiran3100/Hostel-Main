@@ -5,10 +5,8 @@ Manages user addresses (primary + additional addresses).
 Enhanced with validation, geocoding support, and improved error handling.
 """
 
-from __future__ import annotations
-
 import logging
-from typing import List, Optional, Dict, Any
+from typing import List, Union, Dict, Any
 from uuid import UUID
 
 from sqlalchemy.orm import Session
@@ -16,10 +14,10 @@ from sqlalchemy.exc import SQLAlchemyError
 
 from app.repositories.user import UserAddressRepository
 from app.schemas.user import UserAddressUpdate
-from app.core1.exceptions import (
-    ValidationException,
-    BusinessLogicException,
-    NotFoundException,
+from app.core.exceptions import (
+    ValidationError,
+    BusinessLogicError,
+    NotFoundError,
 )
 from app.models.user.user_address import UserAddress
 
@@ -55,7 +53,7 @@ class UserAddressService:
         self,
         db: Session,
         user_id: UUID,
-        address_type: Optional[str] = None,
+        address_type: Union[str, None] = None,
     ) -> List[UserAddress]:
         """
         Get all addresses for a user, optionally filtered by type.
@@ -82,13 +80,13 @@ class UserAddressService:
 
         except SQLAlchemyError as e:
             logger.error(f"Database error listing addresses for user {user_id}: {str(e)}")
-            raise BusinessLogicException("Failed to retrieve addresses")
+            raise BusinessLogicError("Failed to retrieve addresses")
 
     def get_address(
         self,
         db: Session,
         address_id: UUID,
-        user_id: Optional[UUID] = None,
+        user_id: Union[UUID, None] = None,
     ) -> UserAddress:
         """
         Get an address by ID with optional user ownership verification.
@@ -102,16 +100,16 @@ class UserAddressService:
             UserAddress instance
 
         Raises:
-            NotFoundException: If address doesn't exist
-            ValidationException: If user_id provided and doesn't match
+            NotFoundError: If address doesn't exist
+            ValidationError: If user_id provided and doesn't match
         """
         address = self.address_repo.get_by_id(db, address_id)
         if not address:
-            raise NotFoundException(f"Address {address_id} not found")
+            raise NotFoundError(f"Address {address_id} not found")
 
         # Verify ownership if user_id provided
         if user_id and address.user_id != user_id:
-            raise ValidationException("Address does not belong to the specified user")
+            raise ValidationError("Address does not belong to the specified user")
 
         return address
 
@@ -119,7 +117,7 @@ class UserAddressService:
         self,
         db: Session,
         user_id: UUID,
-    ) -> Optional[UserAddress]:
+    ) -> Union[UserAddress, None]:
         """
         Get the primary address for a user.
 
@@ -177,8 +175,8 @@ class UserAddressService:
             Created UserAddress instance
 
         Raises:
-            ValidationException: If validation fails
-            BusinessLogicException: If business rules violated
+            ValidationError: If validation fails
+            BusinessLogicError: If business rules violated
         """
         # Validate address data
         self._validate_address_data(data)
@@ -186,7 +184,7 @@ class UserAddressService:
         # Check address limit
         existing_addresses = self.list_addresses(db, user_id)
         if len(existing_addresses) >= self.MAX_ADDRESSES_PER_USER:
-            raise BusinessLogicException(
+            raise BusinessLogicError(
                 f"Maximum {self.MAX_ADDRESSES_PER_USER} addresses allowed per user"
             )
 
@@ -218,7 +216,7 @@ class UserAddressService:
         except SQLAlchemyError as e:
             logger.error(f"Database error creating address for user {user_id}: {str(e)}")
             db.rollback()
-            raise BusinessLogicException("Failed to create address")
+            raise BusinessLogicError("Failed to create address")
 
     def update_address(
         self,
@@ -226,8 +224,8 @@ class UserAddressService:
         address_id: UUID,
         user_id: UUID,
         data: UserAddressUpdate,
-        is_primary: Optional[bool] = None,
-        address_type: Optional[str] = None,
+        is_primary: Union[bool, None] = None,
+        address_type: Union[str, None] = None,
     ) -> UserAddress:
         """
         Update an existing address.
@@ -244,8 +242,8 @@ class UserAddressService:
             Updated UserAddress instance
 
         Raises:
-            NotFoundException: If address doesn't exist
-            ValidationException: If validation fails
+            NotFoundError: If address doesn't exist
+            ValidationError: If validation fails
         """
         # Verify address exists and belongs to user
         address = self.get_address(db, address_id, user_id)
@@ -278,7 +276,7 @@ class UserAddressService:
         except SQLAlchemyError as e:
             logger.error(f"Database error updating address {address_id}: {str(e)}")
             db.rollback()
-            raise BusinessLogicException("Failed to update address")
+            raise BusinessLogicError("Failed to update address")
 
     def delete_address(
         self,
@@ -298,7 +296,7 @@ class UserAddressService:
             user_id: User identifier (for ownership verification)
 
         Raises:
-            NotFoundException: If address doesn't exist
+            NotFoundError: If address doesn't exist
         """
         # Verify address exists and belongs to user
         address = self.get_address(db, address_id, user_id)
@@ -328,7 +326,7 @@ class UserAddressService:
         except SQLAlchemyError as e:
             logger.error(f"Database error deleting address {address_id}: {str(e)}")
             db.rollback()
-            raise BusinessLogicException("Failed to delete address")
+            raise BusinessLogicError("Failed to delete address")
 
     # -------------------------------------------------------------------------
     # Primary Address Management
@@ -352,7 +350,7 @@ class UserAddressService:
             Updated UserAddress instance
 
         Raises:
-            NotFoundException: If address doesn't exist
+            NotFoundError: If address doesn't exist
         """
         # Verify address exists and belongs to user
         address = self.get_address(db, address_id, user_id)
@@ -379,7 +377,7 @@ class UserAddressService:
         except SQLAlchemyError as e:
             logger.error(f"Database error setting primary address {address_id}: {str(e)}")
             db.rollback()
-            raise BusinessLogicException("Failed to set primary address")
+            raise BusinessLogicError("Failed to set primary address")
 
     # -------------------------------------------------------------------------
     # Bulk Operations
@@ -389,7 +387,7 @@ class UserAddressService:
         self,
         db: Session,
         user_id: UUID,
-        address_type: Optional[str] = None,
+        address_type: Union[str, None] = None,
     ) -> int:
         """
         Delete all addresses for a user, optionally filtered by type.
@@ -419,7 +417,7 @@ class UserAddressService:
         except SQLAlchemyError as e:
             logger.error(f"Database error deleting addresses for user {user_id}: {str(e)}")
             db.rollback()
-            raise BusinessLogicException("Failed to delete addresses")
+            raise BusinessLogicError("Failed to delete addresses")
 
     # -------------------------------------------------------------------------
     # Validation and Normalization Helpers
@@ -440,27 +438,27 @@ class UserAddressService:
         ]
 
         if not any(data_dict.get(field) for field in address_fields):
-            raise ValidationException("At least one address field must be provided")
+            raise ValidationError("At least one address field must be provided")
 
         # Validate postal code format if provided
         if data.postal_code and not self._is_valid_postal_code(data.postal_code):
-            raise ValidationException("Invalid postal code format")
+            raise ValidationError("Invalid postal code format")
 
         # Validate field lengths
         if data.address_line1 and len(data.address_line1) > 255:
-            raise ValidationException("Address line 1 must not exceed 255 characters")
+            raise ValidationError("Address line 1 must not exceed 255 characters")
 
         if data.address_line2 and len(data.address_line2) > 255:
-            raise ValidationException("Address line 2 must not exceed 255 characters")
+            raise ValidationError("Address line 2 must not exceed 255 characters")
 
         if data.city and len(data.city) > 100:
-            raise ValidationException("City must not exceed 100 characters")
+            raise ValidationError("City must not exceed 100 characters")
 
         if data.state and len(data.state) > 100:
-            raise ValidationException("State must not exceed 100 characters")
+            raise ValidationError("State must not exceed 100 characters")
 
         if data.country and len(data.country) > 100:
-            raise ValidationException("Country must not exceed 100 characters")
+            raise ValidationError("Country must not exceed 100 characters")
 
     def _normalize_address_data(self, data: Dict[str, Any]) -> Dict[str, Any]:
         """Normalize address data (trim, capitalize, etc.)."""

@@ -5,10 +5,8 @@ Handles email and phone verification flows, leveraging OTP services.
 Enhanced with rate limiting, verification tracking, and improved error handling.
 """
 
-from __future__ import annotations
-
 import logging
-from typing import Optional, Dict, Any
+from typing import Union, Dict, Any
 from uuid import UUID
 from datetime import datetime, timedelta
 
@@ -18,10 +16,10 @@ from sqlalchemy.exc import SQLAlchemyError
 from app.repositories.user import UserRepository
 from app.repositories.auth import OTPTokenRepository
 from app.schemas.common.enums import OTPType
-from app.core1.exceptions import (
-    ValidationException,
-    BusinessLogicException,
-    NotFoundException,
+from app.core.exceptions import (
+    ValidationError,
+    BusinessLogicError,
+    NotFoundError,
 )
 from app.utils.string_utils import StringHelper
 
@@ -66,7 +64,7 @@ class UserVerificationService:
         self,
         db: Session,
         user_id: UUID,
-        email: Optional[str] = None,
+        email: Union[str, None] = None,
     ) -> Dict[str, Any]:
         """
         Generate and send an OTP for email verification.
@@ -80,27 +78,27 @@ class UserVerificationService:
             Dictionary with verification details
 
         Raises:
-            NotFoundException: If user doesn't exist
-            ValidationException: If email is invalid or already verified
-            BusinessLogicException: If rate limit exceeded
+            NotFoundError: If user doesn't exist
+            ValidationError: If email is invalid or already verified
+            BusinessLogicError: If rate limit exceeded
         """
         try:
             user = self.user_repo.get_by_id(db, user_id)
             if not user:
-                raise NotFoundException(f"User {user_id} not found")
+                raise NotFoundError(f"User {user_id} not found")
 
             # Determine target email
             target_email = email or user.email
             if not target_email:
-                raise ValidationException("No email address available for verification")
+                raise ValidationError("No email address available for verification")
 
             # Validate email format
             if not StringHelper.is_valid_email(target_email):
-                raise ValidationException("Invalid email format")
+                raise ValidationError("Invalid email format")
 
             # Check if already verified (for primary email)
             if not email and user.email_verified:
-                raise BusinessLogicException("Email is already verified")
+                raise BusinessLogicError("Email is already verified")
 
             # Normalize email
             target_email = target_email.strip().lower()
@@ -136,21 +134,21 @@ class UserVerificationService:
                 "message": "Verification code sent to email",
             }
 
-        except (NotFoundException, ValidationException, BusinessLogicException):
+        except (NotFoundError, ValidationError, BusinessLogicError):
             raise
         except SQLAlchemyError as e:
             logger.error(
                 f"Database error initiating email verification for user {user_id}: {str(e)}"
             )
             db.rollback()
-            raise BusinessLogicException("Failed to initiate email verification")
+            raise BusinessLogicError("Failed to initiate email verification")
 
     def verify_email(
         self,
         db: Session,
         user_id: UUID,
         otp_code: str,
-        email: Optional[str] = None,
+        email: Union[str, None] = None,
     ) -> Dict[str, Any]:
         """
         Verify user's email using OTP.
@@ -165,19 +163,19 @@ class UserVerificationService:
             Dictionary with verification result
 
         Raises:
-            NotFoundException: If user doesn't exist
-            ValidationException: If OTP is invalid
-            BusinessLogicException: If verification fails
+            NotFoundError: If user doesn't exist
+            ValidationError: If OTP is invalid
+            BusinessLogicError: If verification fails
         """
         try:
             user = self.user_repo.get_by_id(db, user_id)
             if not user:
-                raise NotFoundException(f"User {user_id} not found")
+                raise NotFoundError(f"User {user_id} not found")
 
             # Determine target email
             target_email = email or user.email
             if not target_email:
-                raise ValidationException("No email address available for verification")
+                raise ValidationError("No email address available for verification")
 
             # Normalize email
             target_email = target_email.strip().lower()
@@ -196,7 +194,7 @@ class UserVerificationService:
 
             if not is_valid:
                 remaining = self._get_remaining_attempts(attempt_key)
-                raise BusinessLogicException(
+                raise BusinessLogicError(
                     f"Invalid or expired verification code. "
                     f"{remaining} attempts remaining"
                 )
@@ -220,14 +218,14 @@ class UserVerificationService:
                 "message": "Email successfully verified",
             }
 
-        except (NotFoundException, ValidationException, BusinessLogicException):
+        except (NotFoundError, ValidationError, BusinessLogicError):
             raise
         except SQLAlchemyError as e:
             logger.error(
                 f"Database error verifying email for user {user_id}: {str(e)}"
             )
             db.rollback()
-            raise BusinessLogicException("Failed to verify email")
+            raise BusinessLogicError("Failed to verify email")
 
     # -------------------------------------------------------------------------
     # Phone Verification
@@ -237,7 +235,7 @@ class UserVerificationService:
         self,
         db: Session,
         user_id: UUID,
-        phone: Optional[str] = None,
+        phone: Union[str, None] = None,
     ) -> Dict[str, Any]:
         """
         Generate and send OTP for phone verification.
@@ -251,30 +249,30 @@ class UserVerificationService:
             Dictionary with verification details
 
         Raises:
-            NotFoundException: If user doesn't exist
-            ValidationException: If phone is invalid or already verified
-            BusinessLogicException: If rate limit exceeded
+            NotFoundError: If user doesn't exist
+            ValidationError: If phone is invalid or already verified
+            BusinessLogicError: If rate limit exceeded
         """
         try:
             user = self.user_repo.get_by_id(db, user_id)
             if not user:
-                raise NotFoundException(f"User {user_id} not found")
+                raise NotFoundError(f"User {user_id} not found")
 
             # Determine target phone
             target_phone = phone or user.phone
             if not target_phone:
-                raise ValidationException("No phone number available for verification")
+                raise ValidationError("No phone number available for verification")
 
             # Normalize phone
             target_phone = StringHelper.normalize_phone(target_phone)
 
             # Validate phone
             if len(target_phone) < 10 or len(target_phone) > 15:
-                raise ValidationException("Invalid phone number format")
+                raise ValidationError("Invalid phone number format")
 
             # Check if already verified (for primary phone)
             if not phone and user.phone_verified:
-                raise BusinessLogicException("Phone number is already verified")
+                raise BusinessLogicError("Phone number is already verified")
 
             # Check rate limiting
             self._check_rate_limit(f"phone_{user_id}_{target_phone}")
@@ -307,21 +305,21 @@ class UserVerificationService:
                 "message": "Verification code sent to phone",
             }
 
-        except (NotFoundException, ValidationException, BusinessLogicException):
+        except (NotFoundError, ValidationError, BusinessLogicError):
             raise
         except SQLAlchemyError as e:
             logger.error(
                 f"Database error initiating phone verification for user {user_id}: {str(e)}"
             )
             db.rollback()
-            raise BusinessLogicException("Failed to initiate phone verification")
+            raise BusinessLogicError("Failed to initiate phone verification")
 
     def verify_phone(
         self,
         db: Session,
         user_id: UUID,
         otp_code: str,
-        phone: Optional[str] = None,
+        phone: Union[str, None] = None,
     ) -> Dict[str, Any]:
         """
         Verify user's phone using OTP.
@@ -336,19 +334,19 @@ class UserVerificationService:
             Dictionary with verification result
 
         Raises:
-            NotFoundException: If user doesn't exist
-            ValidationException: If OTP is invalid
-            BusinessLogicException: If verification fails
+            NotFoundError: If user doesn't exist
+            ValidationError: If OTP is invalid
+            BusinessLogicError: If verification fails
         """
         try:
             user = self.user_repo.get_by_id(db, user_id)
             if not user:
-                raise NotFoundException(f"User {user_id} not found")
+                raise NotFoundError(f"User {user_id} not found")
 
             # Determine target phone
             target_phone = phone or user.phone
             if not target_phone:
-                raise ValidationException("No phone number available for verification")
+                raise ValidationError("No phone number available for verification")
 
             # Normalize phone
             target_phone = StringHelper.normalize_phone(target_phone)
@@ -367,7 +365,7 @@ class UserVerificationService:
 
             if not is_valid:
                 remaining = self._get_remaining_attempts(attempt_key)
-                raise BusinessLogicException(
+                raise BusinessLogicError(
                     f"Invalid or expired verification code. "
                     f"{remaining} attempts remaining"
                 )
@@ -394,14 +392,14 @@ class UserVerificationService:
                 "message": "Phone successfully verified",
             }
 
-        except (NotFoundException, ValidationException, BusinessLogicException):
+        except (NotFoundError, ValidationError, BusinessLogicError):
             raise
         except SQLAlchemyError as e:
             logger.error(
                 f"Database error verifying phone for user {user_id}: {str(e)}"
             )
             db.rollback()
-            raise BusinessLogicException("Failed to verify phone")
+            raise BusinessLogicError("Failed to verify phone")
 
     # -------------------------------------------------------------------------
     # Resend and Status
@@ -412,7 +410,7 @@ class UserVerificationService:
         db: Session,
         user_id: UUID,
         verification_type: str,
-        target: Optional[str] = None,
+        target: Union[str, None] = None,
     ) -> Dict[str, Any]:
         """
         Resend verification code.
@@ -427,14 +425,14 @@ class UserVerificationService:
             Dictionary with resend details
 
         Raises:
-            ValidationException: If invalid type or cooldown not elapsed
+            ValidationError: If invalid type or cooldown not elapsed
         """
         if verification_type == "email":
             return self.initiate_email_verification(db, user_id, target)
         elif verification_type == "phone":
             return self.initiate_phone_verification(db, user_id, target)
         else:
-            raise ValidationException(
+            raise ValidationError(
                 "Invalid verification type. Must be 'email' or 'phone'"
             )
 
@@ -454,12 +452,12 @@ class UserVerificationService:
             Dictionary with verification status
 
         Raises:
-            NotFoundException: If user doesn't exist
+            NotFoundError: If user doesn't exist
         """
         try:
             user = self.user_repo.get_by_id(db, user_id)
             if not user:
-                raise NotFoundException(f"User {user_id} not found")
+                raise NotFoundError(f"User {user_id} not found")
 
             return {
                 "email": {
@@ -475,13 +473,13 @@ class UserVerificationService:
                 "is_fully_verified": user.email_verified and user.phone_verified,
             }
 
-        except NotFoundException:
+        except NotFoundError:
             raise
         except SQLAlchemyError as e:
             logger.error(
                 f"Database error getting verification status for user {user_id}: {str(e)}"
             )
-            raise BusinessLogicException("Failed to get verification status")
+            raise BusinessLogicError("Failed to get verification status")
 
     # -------------------------------------------------------------------------
     # Rate Limiting and Attempt Tracking
@@ -500,7 +498,7 @@ class UserVerificationService:
         ]
 
         if len(recent_attempts) >= self.MAX_VERIFICATION_ATTEMPTS:
-            raise BusinessLogicException(
+            raise BusinessLogicError(
                 f"Too many verification attempts. "
                 f"Please try again in {self.VERIFICATION_ATTEMPT_WINDOW_MINUTES} minutes"
             )
@@ -515,7 +513,7 @@ class UserVerificationService:
 
         if elapsed < self.RESEND_COOLDOWN_SECONDS:
             remaining = int(self.RESEND_COOLDOWN_SECONDS - elapsed)
-            raise BusinessLogicException(
+            raise BusinessLogicError(
                 f"Please wait {remaining} seconds before requesting a new code"
             )
 
@@ -535,7 +533,7 @@ class UserVerificationService:
 
         # Check if limit exceeded
         if len(self._verification_attempts[key]) > self.MAX_VERIFICATION_ATTEMPTS:
-            raise BusinessLogicException(
+            raise BusinessLogicError(
                 f"Maximum verification attempts exceeded. "
                 f"Please try again in {self.VERIFICATION_ATTEMPT_WINDOW_MINUTES} minutes"
             )
@@ -564,7 +562,7 @@ class UserVerificationService:
     # Helper Methods
     # -------------------------------------------------------------------------
 
-    def _mask_phone(self, phone: Optional[str]) -> Optional[str]:
+    def _mask_phone(self, phone: Union[str, None]) -> Union[str, None]:
         """Mask phone number for privacy (show last 4 digits)."""
         if not phone or len(phone) < 4:
             return phone

@@ -75,7 +75,7 @@ class ComplaintAnalyticSnapshot(BaseModel, TimestampMixin):
         priority_breakdown: Complaints by priority (JSONB)
         status_breakdown: Complaints by status (JSONB)
         
-        metadata: Additional analytics metadata
+        analytics_metadata: Additional analytics analytics_metadata
     """
 
     __tablename__ = "complaint_analytic_snapshots"
@@ -286,13 +286,13 @@ class ComplaintAnalyticSnapshot(BaseModel, TimestampMixin):
         comment="Complaints count by status",
     )
 
-    # Metadata
-    metadata: Mapped[dict] = mapped_column(
+    # analytics_metadata
+    analytics_metadata: Mapped[dict] = mapped_column(
         JSONB,
         nullable=False,
         default=dict,
         server_default=text("'{}'::jsonb"),
-        comment="Additional analytics metadata and trend data",
+        comment="Additional analytics analytics_metadata and trend data",
     )
 
     # Snapshot Generation
@@ -348,7 +348,7 @@ class ComplaintCategoryMetric(BaseModel, TimestampMixin):
         
         most_common_sub_category: Most frequent sub-category
         
-        metadata: Additional category-specific metrics
+        analytics_metadata: Additional category-specific metrics
     """
 
     __tablename__ = "complaint_category_metrics"
@@ -459,8 +459,8 @@ class ComplaintCategoryMetric(BaseModel, TimestampMixin):
         comment="Most frequent sub-category",
     )
 
-    # Metadata
-    metadata: Mapped[dict] = mapped_column(
+    # analytics_metadata
+    analytics_metadata: Mapped[dict] = mapped_column(
         JSONB,
         nullable=False,
         default=dict,
@@ -511,7 +511,7 @@ class ComplaintStaffPerformance(BaseModel, TimestampMixin):
         workload_score: Current workload score
         performance_score: Overall performance score
         
-        metadata: Additional performance metrics
+        analytics_metadata: Additional performance metrics
     """
 
     __tablename__ = "complaint_staff_performance"
@@ -661,8 +661,8 @@ class ComplaintStaffPerformance(BaseModel, TimestampMixin):
         comment="Overall performance score (0-100)",
     )
 
-    # Metadata
-    metadata: Mapped[dict] = mapped_column(
+    # analytics_metadata
+    analytics_metadata: Mapped[dict] = mapped_column(
         JSONB,
         nullable=False,
         default=dict,

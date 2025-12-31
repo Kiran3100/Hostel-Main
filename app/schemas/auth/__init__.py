@@ -58,6 +58,20 @@ from app.schemas.auth.token import (
     TokenValidationResponse,
 )
 
+from app.schemas.auth.session import (
+    SessionInfo,
+    SessionListResponse,
+    SessionStatistics,
+)
+
+from app.schemas.auth.security import (
+    SecurityEventType,
+    SecurityEventSeverity,
+    LoginAttemptSummary,
+    SecurityEventSummary,
+    ThreatAnalysis,
+)
+
 __all__ = [
     # Login
     "LoginRequest",
@@ -101,4 +115,15 @@ __all__ = [
     "FacebookAuthRequest",
     "SocialUserInfo",
     "SocialProfileData",
+    
+    "SessionInfo",
+    "SessionListResponse",
+    "SessionStatistics",
+    
+    
+    "SecurityEventType",
+    "SecurityEventSeverity",
+    "LoginAttemptSummary",
+    "SecurityEventSummary",
+    "ThreatAnalysis",
 ]

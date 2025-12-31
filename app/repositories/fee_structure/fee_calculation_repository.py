@@ -9,6 +9,7 @@ calculation logic and historical tracking.
 from datetime import date as Date, datetime
 from decimal import Decimal
 from typing import List, Optional, Dict, Any
+import typing
 from uuid import UUID
 
 from sqlalchemy import and_, or_, func, case, select, desc
@@ -17,11 +18,7 @@ from sqlalchemy.orm import Session, joinedload, selectinload
 from app.models.fee_structure.fee_calculation import FeeCalculation, FeeProjection
 from app.models.base.enums import RoomType, FeeType
 from app.repositories.base.base_repository import BaseRepository
-from app.core1.exceptions import (
-    NotFoundException,
-    ValidationException,
-)
-
+from app.core.exceptions import NotFoundError, ValidationError
 
 class FeeCalculationRepository(BaseRepository[FeeCalculation]):
     """
@@ -597,7 +594,7 @@ class FeeCalculationRepository(BaseRepository[FeeCalculation]):
         other_charges: Decimal,
         discount: Decimal,
         tax_percentage: Decimal
-    ) -> Tuple[Decimal, Decimal, Decimal, Decimal]:
+    ) -> typing.Tuple[Decimal, Decimal, Decimal, Decimal]:
         """
         Calculate total amounts for fee calculation.
         

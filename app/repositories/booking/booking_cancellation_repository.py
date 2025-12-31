@@ -1,4 +1,3 @@
-# app/repositories/booking/booking_cancellation_repository.py
 """
 Booking cancellation repository for cancellation and refund management.
 
@@ -8,13 +7,13 @@ and refund processing workflows.
 
 from datetime import date, datetime, timedelta
 from decimal import Decimal
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Tuple as TypingTuple
 from uuid import UUID
 
 from sqlalchemy import and_, func, or_, select
 from sqlalchemy.orm import Session, joinedload
 
-from app.core1.exceptions import EntityNotFoundError, ValidationError
+from app.core.exceptions import EntityNotFoundError, ValidationError
 from app.models.booking.booking_cancellation import (
     BookingCancellation,
     CancellationPolicy,
@@ -99,7 +98,7 @@ class BookingCancellationRepository(BaseRepository[BookingCancellation]):
         self,
         booking: Booking,
         cancellation_policy: Optional[CancellationPolicy] = None,
-    ) -> Tuple[Decimal, Decimal, Decimal]:
+    ) -> TypingTuple[Decimal, Decimal, Decimal]:
         """
         Calculate refund amount based on policy.
         

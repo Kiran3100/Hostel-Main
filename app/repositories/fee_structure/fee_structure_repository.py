@@ -1,4 +1,3 @@
-# --- File: C:\Hostel-Main\app\repositories\fee_structure\fee_structure_repository.py ---
 """
 Fee Structure Repository
 
@@ -18,10 +17,10 @@ from app.models.fee_structure.fee_structure import FeeStructure, FeeApproval
 from app.models.base.enums import RoomType, FeeType, ChargeType
 from app.repositories.base.base_repository import BaseRepository
 from app.repositories.base.specifications import Specification
-from app.core1.exceptions import (
-    NotFoundException,
-    ValidationException,
-    ConflictException,
+from app.core.exceptions import (
+    NotFoundError,
+    ValidationError,
+    ConflictError,
 )
 
 
@@ -68,8 +67,8 @@ class FeeStructureRepository(BaseRepository[FeeStructure]):
             Created FeeStructure instance
             
         Raises:
-            ValidationException: If validation fails
-            ConflictException: If overlapping active fee structure exists
+            ValidationError: If validation fails
+            ConflictError: If overlapping active fee structure exists
         """
         # Validate amounts
         self._validate_amounts(amount, security_deposit, kwargs)
@@ -133,12 +132,12 @@ class FeeStructureRepository(BaseRepository[FeeStructure]):
             Updated or new FeeStructure instance
             
         Raises:
-            NotFoundException: If fee structure not found
-            ValidationException: If validation fails
+            NotFoundError: If fee structure not found
+            ValidationError: If validation fails
         """
         fee_structure = self.find_by_id(fee_structure_id)
         if not fee_structure:
-            raise NotFoundException(f"Fee structure {fee_structure_id} not found")
+            raise NotFoundError(f"Fee structure {fee_structure_id} not found")
         
         # Validate update data
         if 'amount' in update_data or 'security_deposit' in update_data:
@@ -674,15 +673,15 @@ class FeeStructureRepository(BaseRepository[FeeStructure]):
     ) -> None:
         """Validate fee amounts and related fields."""
         if amount < Decimal('500.00') or amount > Decimal('100000.00'):
-            raise ValidationException(
+            raise ValidationError(
                 "Amount must be between 500.00 and 100000.00"
             )
         
         if security_deposit < Decimal('0'):
-            raise ValidationException("Security deposit cannot be negative")
+            raise ValidationError("Security deposit cannot be negative")
         
         if security_deposit > (amount * 3):
-            raise ValidationException(
+            raise ValidationError(
                 "Security deposit cannot exceed 3 times the monthly amount"
             )
         
@@ -690,12 +689,12 @@ class FeeStructureRepository(BaseRepository[FeeStructure]):
         includes_mess = additional_data.get('includes_mess', False)
         
         if includes_mess and mess_charges > Decimal('0'):
-            raise ValidationException(
+            raise ValidationError(
                 "Cannot have both includes_mess=True and mess_charges_monthly > 0"
             )
         
         if mess_charges > Decimal('10000.00'):
-            raise ValidationException(
+            raise ValidationError(
                 "Mess charges cannot exceed 10000.00"
             )
     
@@ -753,7 +752,7 @@ class FeeStructureRepository(BaseRepository[FeeStructure]):
             )
         
         if query.first():
-            raise ConflictException(
+            raise ConflictError(
                 f"Overlapping fee structure exists for {hostel_id}/{room_type.value}/{fee_type.value}"
             )
     

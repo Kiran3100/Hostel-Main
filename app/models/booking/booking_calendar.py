@@ -32,6 +32,7 @@ if TYPE_CHECKING:
     from app.models.hostel.hostel import Hostel
     from app.models.room.bed import Bed
     from app.models.room.room import Room
+    from app.models.user.user import User
 
 __all__ = [
     "BookingCalendarEvent",
@@ -62,7 +63,7 @@ class BookingCalendarEvent(UUIDMixin, TimestampModel, SoftDeleteMixin):
         is_all_day: Whether this is an all-day event
         start_time: Event start time (if not all-day)
         end_time: Event end time (if not all-day)
-        metadata: Additional event metadata (JSON)
+        event_metadata: Additional event metadata (JSON)
     """
 
     __tablename__ = "booking_calendar_events"
@@ -166,8 +167,8 @@ class BookingCalendarEvent(UUIDMixin, TimestampModel, SoftDeleteMixin):
         comment="Event end time (if not all-day)",
     )
 
-    # Additional Data
-    metadata: Mapped[Optional[dict]] = mapped_column(
+    # Additional Data (renamed from metadata to avoid SQLAlchemy conflict)
+    event_metadata: Mapped[Optional[dict]] = mapped_column(
         JSON,
         nullable=True,
         comment="Additional event metadata (JSON)",
@@ -212,7 +213,10 @@ class BookingCalendarEvent(UUIDMixin, TimestampModel, SoftDeleteMixin):
         Index("ix_event_type_date", "event_type", "event_date"),
         Index("ix_event_booking", "booking_id"),
         Index("ix_event_priority", "is_high_priority"),
-        {"comment": "Booking calendar events for visualization"},
+        {
+            "comment": "Booking calendar events for visualization",
+            "extend_existing": True,
+        },
     )
 
     # Validators
@@ -443,7 +447,10 @@ class DayAvailability(UUIDMixin, TimestampModel):
         Index("ix_availability_hostel_date", "hostel_id", "availability_date"),
         Index("ix_availability_room_date", "room_id", "availability_date"),
         Index("ix_availability_fully_booked", "is_fully_booked"),
-        {"comment": "Daily bed availability tracking"},
+        {
+            "comment": "Daily bed availability tracking",
+            "extend_existing": True,
+        },
     )
 
     # Properties
@@ -717,7 +724,10 @@ class CalendarBlock(UUIDMixin, TimestampModel, SoftDeleteMixin):
         Index("ix_block_room_dates", "room_id", "start_date", "end_date"),
         Index("ix_block_type", "block_type"),
         Index("ix_block_active", "is_active"),
-        {"comment": "Calendar blocking for maintenance and unavailability"},
+        {
+            "comment": "Calendar blocking for maintenance and unavailability",
+            "extend_existing": True,
+        },
     )
 
     # Validators

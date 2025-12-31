@@ -5,10 +5,8 @@ Manages user sessions at the application level (for UI and security screens).
 Enhanced with session analytics, device tracking, and security features.
 """
 
-from __future__ import annotations
-
 import logging
-from typing import Optional, List, Dict, Any
+from typing import Union, List, Dict, Any
 from uuid import UUID
 from datetime import datetime, timedelta
 
@@ -28,10 +26,10 @@ from app.schemas.user import (
     RevokeAllSessionsRequest,
     CreateSessionRequest,
 )
-from app.core1.exceptions import (
-    ValidationException,
-    BusinessLogicException,
-    NotFoundException,
+from app.core.exceptions import (
+    ValidationError,
+    BusinessLogicError,
+    NotFoundError,
 )
 
 logger = logging.getLogger(__name__)
@@ -73,7 +71,7 @@ class UserSessionService:
         self,
         db: Session,
         user_id: UUID,
-        current_session_id: Optional[UUID] = None,
+        current_session_id: Union[UUID, None] = None,
         include_expired: bool = False,
     ) -> ActiveSessionsList:
         """
@@ -132,13 +130,13 @@ class UserSessionService:
             logger.error(
                 f"Database error listing sessions for user {user_id}: {str(e)}"
             )
-            raise BusinessLogicException("Failed to retrieve user sessions")
+            raise BusinessLogicError("Failed to retrieve user sessions")
 
     def get_session(
         self,
         db: Session,
         session_id: UUID,
-        user_id: Optional[UUID] = None,
+        user_id: Union[UUID, None] = None,
     ) -> UserSession:
         """
         Get a specific session by ID.
@@ -152,16 +150,16 @@ class UserSessionService:
             UserSession schema
 
         Raises:
-            NotFoundException: If session doesn't exist
-            ValidationException: If user_id provided and doesn't match
+            NotFoundError: If session doesn't exist
+            ValidationError: If user_id provided and doesn't match
         """
         session = self.session_repo.get_by_id(db, session_id)
         if not session:
-            raise NotFoundException(f"Session {session_id} not found")
+            raise NotFoundError(f"Session {session_id} not found")
 
         # Verify ownership if user_id provided
         if user_id and session.user_id != user_id:
-            raise ValidationException("Session does not belong to the specified user")
+            raise ValidationError("Session does not belong to the specified user")
 
         return UserSession.model_validate(session)
 
@@ -235,7 +233,7 @@ class UserSessionService:
             logger.error(
                 f"Database error getting session analytics for user {user_id}: {str(e)}"
             )
-            raise BusinessLogicException("Failed to retrieve session analytics")
+            raise BusinessLogicError("Failed to retrieve session analytics")
 
     # -------------------------------------------------------------------------
     # Session Creation
@@ -257,8 +255,8 @@ class UserSessionService:
             Created UserSession schema
 
         Raises:
-            ValidationException: If validation fails
-            BusinessLogicException: If session limit exceeded
+            ValidationError: If validation fails
+            BusinessLogicError: If session limit exceeded
         """
         # Validate session data
         self._validate_session_data(data)
@@ -292,20 +290,20 @@ class UserSessionService:
 
             return UserSession.model_validate(session)
 
-        except ValidationException:
+        except ValidationError:
             raise
         except SQLAlchemyError as e:
             logger.error(
                 f"Database error creating session for user {data.user_id}: {str(e)}"
             )
             db.rollback()
-            raise BusinessLogicException("Failed to create session")
+            raise BusinessLogicError("Failed to create session")
 
     def update_session_activity(
         self,
         db: Session,
         session_id: UUID,
-        ip_address: Optional[str] = None,
+        ip_address: Union[str, None] = None,
     ) -> UserSession:
         """
         Update last activity timestamp for a session.
@@ -319,12 +317,12 @@ class UserSessionService:
             Updated UserSession schema
 
         Raises:
-            NotFoundException: If session doesn't exist
+            NotFoundError: If session doesn't exist
         """
         try:
             session = self.session_repo.get_by_id(db, session_id)
             if not session:
-                raise NotFoundException(f"Session {session_id} not found")
+                raise NotFoundError(f"Session {session_id} not found")
 
             update_data: Dict[str, Any] = {
                 "last_activity": datetime.utcnow(),
@@ -337,14 +335,14 @@ class UserSessionService:
 
             return UserSession.model_validate(updated)
 
-        except NotFoundException:
+        except NotFoundError:
             raise
         except SQLAlchemyError as e:
             logger.error(
                 f"Database error updating session activity {session_id}: {str(e)}"
             )
             db.rollback()
-            raise BusinessLogicException("Failed to update session activity")
+            raise BusinessLogicError("Failed to update session activity")
 
     # -------------------------------------------------------------------------
     # Session Revocation
@@ -365,16 +363,16 @@ class UserSessionService:
             request: Revocation request data
 
         Raises:
-            NotFoundException: If session doesn't exist
-            ValidationException: If session doesn't belong to user
+            NotFoundError: If session doesn't exist
+            ValidationError: If session doesn't belong to user
         """
         try:
             session = self.session_repo.get_by_id(db, request.session_id)
             if not session:
-                raise NotFoundException(f"Session {request.session_id} not found")
+                raise NotFoundError(f"Session {request.session_id} not found")
 
             if session.user_id != user_id:
-                raise ValidationException("Session does not belong to the specified user")
+                raise ValidationError("Session does not belong to the specified user")
 
             # Revoke tokens associated with this session
             self.session_token_repo.revoke_tokens_for_session(db, session.id)
@@ -388,21 +386,21 @@ class UserSessionService:
                 f"Reason: {request.reason or 'User initiated'}"
             )
 
-        except (NotFoundException, ValidationException):
+        except (NotFoundError, ValidationError):
             raise
         except SQLAlchemyError as e:
             logger.error(
                 f"Database error revoking session {request.session_id}: {str(e)}"
             )
             db.rollback()
-            raise BusinessLogicException("Failed to revoke session")
+            raise BusinessLogicError("Failed to revoke session")
 
     def revoke_all_sessions(
         self,
         db: Session,
         user_id: UUID,
         request: RevokeAllSessionsRequest,
-        current_session_id: Optional[UUID] = None,
+        current_session_id: Union[UUID, None] = None,
     ) -> int:
         """
         Revoke all sessions (and tokens) for a user.
@@ -417,7 +415,7 @@ class UserSessionService:
             Number of sessions revoked
 
         Raises:
-            BusinessLogicException: If revocation fails
+            BusinessLogicError: If revocation fails
         """
         try:
             sessions = self.session_repo.get_active_sessions_by_user(db, user_id)
@@ -449,12 +447,12 @@ class UserSessionService:
                 f"Database error revoking all sessions for user {user_id}: {str(e)}"
             )
             db.rollback()
-            raise BusinessLogicException("Failed to revoke sessions")
+            raise BusinessLogicError("Failed to revoke sessions")
 
     def revoke_expired_sessions(
         self,
         db: Session,
-        user_id: Optional[UUID] = None,
+        user_id: Union[UUID, None] = None,
     ) -> int:
         """
         Revoke all expired sessions (cleanup job).
@@ -501,13 +499,13 @@ class UserSessionService:
         except SQLAlchemyError as e:
             logger.error(f"Database error revoking expired sessions: {str(e)}")
             db.rollback()
-            raise BusinessLogicException("Failed to revoke expired sessions")
+            raise BusinessLogicError("Failed to revoke expired sessions")
 
     def revoke_inactive_sessions(
         self,
         db: Session,
         user_id: UUID,
-        days: int = None,
+        days: Union[int, None] = None,
     ) -> int:
         """
         Revoke sessions inactive for a specified number of days.
@@ -562,7 +560,7 @@ class UserSessionService:
                 f"Database error revoking inactive sessions for user {user_id}: {str(e)}"
             )
             db.rollback()
-            raise BusinessLogicException("Failed to revoke inactive sessions")
+            raise BusinessLogicError("Failed to revoke inactive sessions")
 
     # -------------------------------------------------------------------------
     # Security and Detection
@@ -630,7 +628,7 @@ class UserSessionService:
             logger.error(
                 f"Database error detecting suspicious sessions for user {user_id}: {str(e)}"
             )
-            raise BusinessLogicException("Failed to detect suspicious sessions")
+            raise BusinessLogicError("Failed to detect suspicious sessions")
 
     # -------------------------------------------------------------------------
     # Helper Methods
@@ -639,13 +637,13 @@ class UserSessionService:
     def _validate_session_data(self, data: CreateSessionRequest) -> None:
         """Validate session creation data."""
         if not data.user_id:
-            raise ValidationException("User ID is required")
+            raise ValidationError("User ID is required")
 
         if data.device_name and len(data.device_name) > 100:
-            raise ValidationException("Device name must not exceed 100 characters")
+            raise ValidationError("Device name must not exceed 100 characters")
 
         if data.ip_address and not self._is_valid_ip(data.ip_address):
-            raise ValidationException("Invalid IP address format")
+            raise ValidationError("Invalid IP address format")
 
     def _is_valid_ip(self, ip: str) -> bool:
         """Basic IP address validation."""

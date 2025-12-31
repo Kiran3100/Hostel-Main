@@ -23,7 +23,7 @@ from app.repositories.visitor import (
 from app.repositories.booking import BookingRepository
 from app.repositories.student import StudentRepository
 from app.schemas.visitor import VisitorDetail
-from app.core1.exceptions import (
+from app.core.exceptions import (
     ValidationException,
     NotFoundException,
     ServiceException,

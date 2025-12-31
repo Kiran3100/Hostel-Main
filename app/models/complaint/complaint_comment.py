@@ -170,7 +170,7 @@ class ComplaintComment(BaseModel, TimestampMixin, SoftDeleteMixin):
     )
 
     # Metadata
-    metadata: Mapped[dict] = mapped_column(
+    comment_metadata: Mapped[dict] = mapped_column(
         JSONB,
         nullable=False,
         default=dict,

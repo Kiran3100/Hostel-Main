@@ -5,10 +5,8 @@ Manages user profile CRUD operations and preferences that live in profile.
 Enhanced with comprehensive validation, profile completeness tracking, and image handling.
 """
 
-from __future__ import annotations
-
 import logging
-from typing import Optional, Dict, Any
+from typing import Union, Dict, Any
 from uuid import UUID
 
 from sqlalchemy.orm import Session
@@ -24,10 +22,10 @@ from app.schemas.user import (
     ContactInfoUpdate,
     UserDetail,
 )
-from app.core1.exceptions import (
-    ValidationException,
-    BusinessLogicException,
-    NotFoundException,
+from app.core.exceptions import (
+    ValidationError,
+    BusinessLogicError,
+    NotFoundError,
 )
 from app.utils.string_utils import StringHelper
 from app.utils.file_utils import FileHelper
@@ -88,18 +86,18 @@ class UserProfileService:
             UserDetail schema
 
         Raises:
-            NotFoundException: If user doesn't exist
+            NotFoundError: If user doesn't exist
         """
         try:
             user = self.user_repo.get_full_user(db, user_id)
             if not user:
-                raise NotFoundException(f"User {user_id} not found")
+                raise NotFoundError(f"User {user_id} not found")
 
             return UserDetail.model_validate(user)
 
         except SQLAlchemyError as e:
             logger.error(f"Database error getting profile for user {user_id}: {str(e)}")
-            raise BusinessLogicException("Failed to retrieve user profile")
+            raise BusinessLogicError("Failed to retrieve user profile")
 
     def get_profile_completeness(
         self,
@@ -142,13 +140,13 @@ class UserProfileService:
                 "completed_fields": len(self.PROFILE_FIELD_WEIGHTS) - len(missing_fields),
             }
 
-        except NotFoundException:
+        except NotFoundError:
             raise
         except Exception as e:
             logger.error(
                 f"Error calculating profile completeness for user {user_id}: {str(e)}"
             )
-            raise BusinessLogicException("Failed to calculate profile completeness")
+            raise BusinessLogicError("Failed to calculate profile completeness")
 
     # -------------------------------------------------------------------------
     # Profile Updates
@@ -172,8 +170,8 @@ class UserProfileService:
             Updated UserDetail schema
 
         Raises:
-            NotFoundException: If user doesn't exist
-            ValidationException: If validation fails
+            NotFoundError: If user doesn't exist
+            ValidationError: If validation fails
         """
         # Validate update data
         self._validate_profile_update(data)
@@ -181,7 +179,7 @@ class UserProfileService:
         try:
             user = self.user_repo.get_by_id(db, user_id)
             if not user:
-                raise NotFoundException(f"User {user_id} not found")
+                raise NotFoundError(f"User {user_id} not found")
 
             profile = self.profile_repo.get_by_user_id(db, user_id)
 
@@ -224,12 +222,12 @@ class UserProfileService:
             full = self.user_repo.get_full_user(db, user_id)
             return UserDetail.model_validate(full)
 
-        except (NotFoundException, ValidationException):
+        except (NotFoundError, ValidationError):
             raise
         except SQLAlchemyError as e:
             logger.error(f"Database error updating profile for user {user_id}: {str(e)}")
             db.rollback()
-            raise BusinessLogicException("Failed to update profile")
+            raise BusinessLogicError("Failed to update profile")
 
     def update_profile_image(
         self,
@@ -249,8 +247,8 @@ class UserProfileService:
             Updated UserDetail schema
 
         Raises:
-            NotFoundException: If user doesn't exist
-            ValidationException: If image URL is invalid
+            NotFoundError: If user doesn't exist
+            ValidationError: If image URL is invalid
         """
         # Validate image URL
         self._validate_image_url(data.profile_image_url)
@@ -258,7 +256,7 @@ class UserProfileService:
         try:
             user = self.user_repo.get_by_id(db, user_id)
             if not user:
-                raise NotFoundException(f"User {user_id} not found")
+                raise NotFoundError(f"User {user_id} not found")
 
             self.user_repo.update(
                 db,
@@ -272,14 +270,14 @@ class UserProfileService:
             full = self.user_repo.get_full_user(db, user_id)
             return UserDetail.model_validate(full)
 
-        except (NotFoundException, ValidationException):
+        except (NotFoundError, ValidationError):
             raise
         except SQLAlchemyError as e:
             logger.error(
                 f"Database error updating profile image for user {user_id}: {str(e)}"
             )
             db.rollback()
-            raise BusinessLogicException("Failed to update profile image")
+            raise BusinessLogicError("Failed to update profile image")
 
     def remove_profile_image(
         self,
@@ -297,12 +295,12 @@ class UserProfileService:
             Updated UserDetail schema
 
         Raises:
-            NotFoundException: If user doesn't exist
+            NotFoundError: If user doesn't exist
         """
         try:
             user = self.user_repo.get_by_id(db, user_id)
             if not user:
-                raise NotFoundException(f"User {user_id} not found")
+                raise NotFoundError(f"User {user_id} not found")
 
             self.user_repo.update(
                 db,
@@ -315,14 +313,14 @@ class UserProfileService:
             full = self.user_repo.get_full_user(db, user_id)
             return UserDetail.model_validate(full)
 
-        except NotFoundException:
+        except NotFoundError:
             raise
         except SQLAlchemyError as e:
             logger.error(
                 f"Database error removing profile image for user {user_id}: {str(e)}"
             )
             db.rollback()
-            raise BusinessLogicException("Failed to remove profile image")
+            raise BusinessLogicError("Failed to remove profile image")
 
     def update_contact_info(
         self,
@@ -342,8 +340,8 @@ class UserProfileService:
             Updated UserDetail schema
 
         Raises:
-            NotFoundException: If user doesn't exist
-            ValidationException: If validation fails
+            NotFoundError: If user doesn't exist
+            ValidationError: If validation fails
         """
         # Validate contact info
         self._validate_contact_info(data)
@@ -351,7 +349,7 @@ class UserProfileService:
         try:
             user = self.user_repo.get_by_id(db, user_id)
             if not user:
-                raise NotFoundException(f"User {user_id} not found")
+                raise NotFoundError(f"User {user_id} not found")
 
             payload = data.model_dump(exclude_none=True)
 
@@ -373,12 +371,12 @@ class UserProfileService:
             if "email" in payload and payload["email"] != user.email:
                 existing = self.user_repo.get_by_email(db, payload["email"])
                 if existing and existing.id != user_id:
-                    raise ValidationException("Email already in use by another user")
+                    raise ValidationError("Email already in use by another user")
 
             if "phone" in payload and payload["phone"] != user.phone:
                 existing = self.user_repo.get_by_phone(db, payload["phone"])
                 if existing and existing.id != user_id:
-                    raise ValidationException("Phone number already in use by another user")
+                    raise ValidationError("Phone number already in use by another user")
 
             self.user_repo.update(db, user, payload)
 
@@ -388,12 +386,12 @@ class UserProfileService:
             full = self.user_repo.get_full_user(db, user_id)
             return UserDetail.model_validate(full)
 
-        except (NotFoundException, ValidationException):
+        except (NotFoundError, ValidationError):
             raise
         except SQLAlchemyError as e:
             logger.error(f"Database error updating contact info for user {user_id}: {str(e)}")
             db.rollback()
-            raise BusinessLogicException("Failed to update contact info")
+            raise BusinessLogicError("Failed to update contact info")
 
     # -------------------------------------------------------------------------
     # Validation Helpers
@@ -407,15 +405,15 @@ class UserProfileService:
         if "full_name" in data_dict:
             name = data_dict["full_name"]
             if not name or len(name.strip()) < 2:
-                raise ValidationException("Full name must be at least 2 characters")
+                raise ValidationError("Full name must be at least 2 characters")
             if len(name) > 100:
-                raise ValidationException("Full name must not exceed 100 characters")
+                raise ValidationError("Full name must not exceed 100 characters")
 
         # Validate gender if provided
         if "gender" in data_dict:
             valid_genders = ["male", "female", "other", "prefer_not_to_say"]
             if data_dict["gender"] and data_dict["gender"].lower() not in valid_genders:
-                raise ValidationException(
+                raise ValidationError(
                     f"Invalid gender. Must be one of: {valid_genders}"
                 )
 
@@ -425,13 +423,13 @@ class UserProfileService:
             dob = data_dict["date_of_birth"]
             
             if dob >= date.today():
-                raise ValidationException("Date of birth must be in the past")
+                raise ValidationError("Date of birth must be in the past")
             
             # Check minimum age (e.g., 13 years)
             min_age = 13
             age = (date.today() - dob).days // 365
             if age < min_age:
-                raise ValidationException(f"User must be at least {min_age} years old")
+                raise ValidationError(f"User must be at least {min_age} years old")
 
     def _validate_contact_info(self, data: ContactInfoUpdate) -> None:
         """Validate contact info update data."""
@@ -440,19 +438,19 @@ class UserProfileService:
         # Validate email if provided
         if "email" in data_dict and data_dict["email"]:
             if not StringHelper.is_valid_email(data_dict["email"]):
-                raise ValidationException("Invalid email format")
+                raise ValidationError("Invalid email format")
 
         # Validate phone if provided
         if "phone" in data_dict and data_dict["phone"]:
             normalized = StringHelper.normalize_phone(data_dict["phone"])
             if len(normalized) < 10 or len(normalized) > 15:
-                raise ValidationException("Phone number must be between 10 and 15 digits")
+                raise ValidationError("Phone number must be between 10 and 15 digits")
 
         # Validate emergency contact phone if provided
         if "emergency_contact_phone" in data_dict and data_dict["emergency_contact_phone"]:
             normalized = StringHelper.normalize_phone(data_dict["emergency_contact_phone"])
             if len(normalized) < 10 or len(normalized) > 15:
-                raise ValidationException(
+                raise ValidationError(
                     "Emergency contact phone must be between 10 and 15 digits"
                 )
 
@@ -460,33 +458,33 @@ class UserProfileService:
         if "emergency_contact_name" in data_dict and data_dict["emergency_contact_name"]:
             name = data_dict["emergency_contact_name"]
             if len(name.strip()) < 2:
-                raise ValidationException(
+                raise ValidationError(
                     "Emergency contact name must be at least 2 characters"
                 )
             if len(name) > 100:
-                raise ValidationException(
+                raise ValidationError(
                     "Emergency contact name must not exceed 100 characters"
                 )
 
-    def _validate_image_url(self, url: Optional[str]) -> None:
+    def _validate_image_url(self, url: Union[str, None]) -> None:
         """Validate profile image URL."""
         if not url:
             return
 
         # Basic URL validation
         if not url.startswith(("http://", "https://")):
-            raise ValidationException("Image URL must be a valid HTTP(S) URL")
+            raise ValidationError("Image URL must be a valid HTTP(S) URL")
 
         # Check file extension
         valid_extensions = [".jpg", ".jpeg", ".png", ".gif", ".webp"]
         if not any(url.lower().endswith(ext) for ext in valid_extensions):
-            raise ValidationException(
+            raise ValidationError(
                 f"Image URL must end with one of: {', '.join(valid_extensions)}"
             )
 
         # Check URL length
         if len(url) > 500:
-            raise ValidationException("Image URL must not exceed 500 characters")
+            raise ValidationError("Image URL must not exceed 500 characters")
 
     def _normalize_name(self, name: str) -> str:
         """Normalize a person's name."""

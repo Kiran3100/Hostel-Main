@@ -1,8 +1,10 @@
+# File: C:\Hostel-Main\app\core\security\__init__.py
 """Security module for authentication and authorization."""
 
 from .password_hasher import PasswordHasher
 from .jwt_handler import JWTManager
 from .permission_validator import PermissionValidator, PermissionLevel, require_permissions
+from .two_factor import TwoFactorAuthentication  # Add this line
 from .auth import (
     verify_token,
     get_current_user,
@@ -24,6 +26,7 @@ __all__ = [
     "PermissionValidator",
     "PermissionLevel",
     "require_permissions",
+    "TwoFactorAuthentication",  # Add this line
     "verify_token",
     "get_current_user",
     "create_access_token",

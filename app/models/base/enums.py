@@ -374,3 +374,44 @@ class DietaryPreference(str, enum.Enum):
     JAIN = "jain"
     EGGETARIAN = "eggetarian"
     NO_PREFERENCE = "no_preference"
+    
+    
+    
+class BookingSource(str, enum.Enum):
+    """Booking source channels."""
+    WEBSITE = "website"
+    MOBILE_APP = "mobile_app"
+    ADMIN_PORTAL = "admin_portal"
+    PHONE = "phone"
+    WALK_IN = "walk_in"
+    REFERRAL = "referral"
+    AGENT = "agent"
+    OTHER = "other"
+    
+class WaitlistStatus(str, enum.Enum):
+    """Waitlist entry status."""
+    WAITING = "waiting"
+    NOTIFIED = "notified"
+    CONVERTED = "converted"
+    CANCELLED = "cancelled"
+    EXPIRED = "expired"
+    
+    
+class FeeType(str, enum.Enum):
+    """Fee type categorization for fee structures."""
+    MONTHLY_RENT = "monthly_rent"
+    SECURITY_DEPOSIT = "security_deposit"
+    MESS_FEE = "mess_fee"
+    UTILITY_CHARGE = "utility_charge"
+    MAINTENANCE_FEE = "maintenance_fee"
+    REGISTRATION_FEE = "registration_fee"
+    PROCESSING_FEE = "processing_fee"
+    LATE_FEE = "late_fee"
+    OTHER = "other"
+    
+    
+class ChargeType(str, enum.Enum):
+    """Utility charge calculation type."""
+    INCLUDED = "included"        # Included in base rent
+    FIXED_MONTHLY = "fixed"      # Fixed monthly amount
+    ACTUAL = "actual"           # Based on actual usage/meter reading

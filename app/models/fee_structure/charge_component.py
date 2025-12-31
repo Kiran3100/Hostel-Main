@@ -1,4 +1,3 @@
-# --- File: C:\Hostel-Main\app\models\fee_structure\charge_component.py ---
 """
 Charge Component Model
 
@@ -28,7 +27,18 @@ from app.models.base.base_model import BaseModel, TimestampModel
 from app.models.base.mixins import SoftDeleteMixin, UUIDMixin
 
 
-class ChargeComponent(BaseModel, TimestampModel, UUIDMixin, SoftDeleteMixin):
+# Combined base class to resolve MRO conflicts
+class CombinedBaseModel(UUIDMixin, TimestampModel, BaseModel):
+    """Combined base model with UUID, timestamp, and base functionality."""
+    __abstract__ = True
+
+
+class CombinedSoftDeleteModel(UUIDMixin, TimestampModel, SoftDeleteMixin, BaseModel):
+    """Combined base model with UUID, timestamp, soft delete, and base functionality."""
+    __abstract__ = True
+
+
+class ChargeComponent(CombinedSoftDeleteModel):
     """
     Charge Component Model
     
@@ -213,7 +223,7 @@ class ChargeComponent(BaseModel, TimestampModel, UUIDMixin, SoftDeleteMixin):
         return (self.amount * self.tax_percentage / 100).quantize(Decimal("0.01"))
 
 
-class ChargeRule(BaseModel, TimestampModel, UUIDMixin):
+class ChargeRule(CombinedBaseModel):
     """
     Charge Rule Model
     
@@ -290,7 +300,7 @@ class ChargeRule(BaseModel, TimestampModel, UUIDMixin):
         )
 
 
-class DiscountConfiguration(BaseModel, TimestampModel, UUIDMixin, SoftDeleteMixin):
+class DiscountConfiguration(CombinedSoftDeleteModel):
     """
     Discount Configuration Model
     
