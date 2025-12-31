@@ -50,8 +50,8 @@ class Settings(BaseSettings):
     DB_HOST: str = "localhost"
     DB_PORT: int = 5432
     DB_USER: str = "postgres"
-    DB_PASSWORD: str = "password"
-    DB_NAME: str = "hostel_management"
+    DB_PASSWORD: str = "0987654321"
+    DB_NAME: str = "HostelDb"
     DB_POOL_SIZE: int = 20
     DB_POOL_OVERFLOW: int = 10  # Fixed: was DB_MAX_OVERFLOW
     DB_ECHO: bool = False

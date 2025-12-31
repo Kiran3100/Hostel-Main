@@ -1,4 +1,3 @@
-# --- File: C:\Hostel-Main\app\models\fee_structure\fee_calculation.py ---
 """
 Fee Calculation Model
 
@@ -31,7 +30,12 @@ from app.models.base.enums import FeeType, RoomType
 from app.models.base.mixins import UUIDMixin
 
 
-class FeeCalculation(BaseModel, TimestampModel, UUIDMixin):
+class FeeBaseModel(UUIDMixin, TimestampModel, BaseModel):
+    """Combined base model for fee-related entities."""
+    __abstract__ = True
+
+
+class FeeCalculation(FeeBaseModel):
     """
     Fee Calculation Model
     
@@ -372,7 +376,7 @@ class FeeCalculation(BaseModel, TimestampModel, UUIDMixin):
         )
 
 
-class FeeProjection(BaseModel, TimestampModel, UUIDMixin):
+class FeeProjection(FeeBaseModel):
     """
     Fee Projection Model
     

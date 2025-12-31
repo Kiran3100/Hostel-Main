@@ -21,6 +21,7 @@ from sqlalchemy import (
     String,
     Text,
     UniqueConstraint,
+    Numeric,
 )
 from sqlalchemy.dialects.postgresql import ARRAY, JSONB, UUID as PG_UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -42,7 +43,7 @@ __all__ = [
 ]
 
 
-class DietaryOption(BaseModel, UUIDMixin, TimestampMixin, SoftDeleteModel):
+class DietaryOption(UUIDMixin, TimestampMixin, SoftDeleteModel, BaseModel):
     """
     Hostel-level dietary options configuration.
     
@@ -279,7 +280,7 @@ class DietaryOption(BaseModel, UUIDMixin, TimestampMixin, SoftDeleteModel):
         return options
 
 
-class StudentDietaryPreference(BaseModel, UUIDMixin, TimestampMixin, SoftDeleteModel):
+class StudentDietaryPreference(UUIDMixin, TimestampMixin, SoftDeleteModel, BaseModel):
     """
     Individual student dietary preferences.
     
@@ -523,7 +524,7 @@ class StudentDietaryPreference(BaseModel, UUIDMixin, TimestampMixin, SoftDeleteM
         return tags
 
 
-class AllergenProfile(BaseModel, UUIDMixin, TimestampMixin):
+class AllergenProfile(UUIDMixin, TimestampMixin, BaseModel):
     """
     Student allergen profile and sensitivity tracking.
     
@@ -738,7 +739,7 @@ class AllergenProfile(BaseModel, UUIDMixin, TimestampMixin):
         return allergens
 
 
-class DietaryRestriction(BaseModel, UUIDMixin, TimestampMixin, SoftDeleteModel):
+class DietaryRestriction(UUIDMixin, TimestampMixin, SoftDeleteModel, BaseModel):
     """
     Medical and religious dietary restrictions.
     
@@ -889,7 +890,7 @@ class DietaryRestriction(BaseModel, UUIDMixin, TimestampMixin, SoftDeleteModel):
         return True
 
 
-class MealCustomization(BaseModel, UUIDMixin, TimestampMixin):
+class MealCustomization(UUIDMixin, TimestampMixin, BaseModel):
     """
     Student meal customization requests.
     

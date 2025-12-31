@@ -1,4 +1,3 @@
-# --- File: C:\Hostel-Main\app\models\fee_structure\fee_structure.py ---
 """
 Fee Structure Model
 
@@ -29,7 +28,7 @@ from app.models.base.enums import ChargeType, FeeType, RoomType
 from app.models.base.mixins import AuditMixin, SoftDeleteMixin, UUIDMixin
 
 
-class FeeStructure(BaseModel, TimestampModel, UUIDMixin, SoftDeleteMixin, AuditMixin):
+class FeeStructure(UUIDMixin, TimestampModel, SoftDeleteMixin, AuditMixin, BaseModel):
     """
     Fee Structure Model
     
@@ -316,7 +315,7 @@ class FeeStructure(BaseModel, TimestampModel, UUIDMixin, SoftDeleteMixin, AuditM
         )
 
 
-class FeeApproval(BaseModel, TimestampModel, UUIDMixin):
+class FeeApproval(UUIDMixin, TimestampModel, BaseModel):
     """
     Fee Approval Model
     
@@ -373,7 +372,8 @@ class FeeApproval(BaseModel, TimestampModel, UUIDMixin):
     
     # Relationships
     fee_structure = relationship(
-        "FeeStructure",         back_populates="approvals",
+        "FeeStructure",
+        back_populates="approvals",
     )
     
     approved_by = relationship(

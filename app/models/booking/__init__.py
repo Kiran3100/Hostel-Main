@@ -47,6 +47,7 @@ from app.models.booking.booking_waitlist import (
     WaitlistNotification,
 )
 
+
 __all__ = [
     # Core Booking
     "Booking",

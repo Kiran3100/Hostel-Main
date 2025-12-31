@@ -5,10 +5,8 @@ Core user creation/update and generic operations.
 Enhanced with comprehensive validation, search capabilities, and statistics.
 """
 
-from __future__ import annotations
-
 import logging
-from typing import List, Optional, Dict, Any
+from typing import List, Union, Dict, Any
 from uuid import UUID
 
 from sqlalchemy.orm import Session
@@ -27,10 +25,10 @@ from app.schemas.user import (
     UserListItem,
     UserStats,
 )
-from app.core1.exceptions import (
-    ValidationException,
-    BusinessLogicException,
-    NotFoundException,
+from app.core.exceptions import (
+    ValidationError,
+    BusinessLogicError,
+    NotFoundError,
 )
 from app.utils.string_utils import StringHelper
 from app.utils.password_utils import PasswordHelper
@@ -80,8 +78,8 @@ class UserService:
             UserResponse schema
 
         Raises:
-            ValidationException: If validation fails
-            BusinessLogicException: If user already exists
+            ValidationError: If validation fails
+            BusinessLogicError: If user already exists
         """
         # Validate user data
         self._validate_user_create(data)
@@ -91,7 +89,7 @@ class UserService:
             if data.email:
                 existing = self.user_repo.get_by_email(db, data.email)
                 if existing:
-                    raise BusinessLogicException(
+                    raise BusinessLogicError(
                         f"User with email {data.email} already exists"
                     )
 
@@ -100,7 +98,7 @@ class UserService:
                 normalized_phone = StringHelper.normalize_phone(data.phone)
                 existing = self.user_repo.get_by_phone(db, normalized_phone)
                 if existing:
-                    raise BusinessLogicException(
+                    raise BusinessLogicError(
                         f"User with phone {normalized_phone} already exists"
                     )
 
@@ -128,18 +126,18 @@ class UserService:
 
             return UserResponse.model_validate(user)
 
-        except (ValidationException, BusinessLogicException):
+        except (ValidationError, BusinessLogicError):
             raise
         except IntegrityError as e:
             logger.error(f"Integrity error creating user: {str(e)}")
             db.rollback()
-            raise BusinessLogicException(
+            raise BusinessLogicError(
                 "User with this email or phone already exists"
             )
         except SQLAlchemyError as e:
             logger.error(f"Database error creating user: {str(e)}")
             db.rollback()
-            raise BusinessLogicException("Failed to create user")
+            raise BusinessLogicError("Failed to create user")
 
     def update_user(
         self,
@@ -159,8 +157,8 @@ class UserService:
             Updated UserResponse schema
 
         Raises:
-            NotFoundException: If user doesn't exist
-            ValidationException: If validation fails
+            NotFoundError: If user doesn't exist
+            ValidationError: If validation fails
         """
         # Validate update data
         self._validate_user_update(data)
@@ -168,7 +166,7 @@ class UserService:
         try:
             user = self.user_repo.get_by_id(db, user_id)
             if not user:
-                raise NotFoundException(f"User {user_id} not found")
+                raise NotFoundError(f"User {user_id} not found")
 
             update_dict = data.model_dump(exclude_none=True)
 
@@ -180,7 +178,7 @@ class UserService:
                 if update_dict["email"] != user.email:
                     existing = self.user_repo.get_by_email(db, update_dict["email"])
                     if existing and existing.id != user_id:
-                        raise ValidationException("Email already in use by another user")
+                        raise ValidationError("Email already in use by another user")
 
             # Normalize phone if provided
             if "phone" in update_dict and update_dict["phone"]:
@@ -190,7 +188,7 @@ class UserService:
                 if update_dict["phone"] != user.phone:
                     existing = self.user_repo.get_by_phone(db, update_dict["phone"])
                     if existing and existing.id != user_id:
-                        raise ValidationException(
+                        raise ValidationError(
                             "Phone number already in use by another user"
                         )
 
@@ -204,22 +202,22 @@ class UserService:
 
             return UserResponse.model_validate(updated)
 
-        except (NotFoundException, ValidationException):
+        except (NotFoundError, ValidationError):
             raise
         except IntegrityError as e:
             logger.error(f"Integrity error updating user {user_id}: {str(e)}")
             db.rollback()
-            raise BusinessLogicException("Email or phone already in use")
+            raise BusinessLogicError("Email or phone already in use")
         except SQLAlchemyError as e:
             logger.error(f"Database error updating user {user_id}: {str(e)}")
             db.rollback()
-            raise BusinessLogicException("Failed to update user")
+            raise BusinessLogicError("Failed to update user")
 
     def deactivate_user(
         self,
         db: Session,
         user_id: UUID,
-        reason: Optional[str] = None,
+        reason: Union[str, None] = None,
     ) -> None:
         """
         Deactivate a user account.
@@ -230,16 +228,16 @@ class UserService:
             reason: Optional deactivation reason
 
         Raises:
-            NotFoundException: If user doesn't exist
-            BusinessLogicException: If user is already inactive
+            NotFoundError: If user doesn't exist
+            BusinessLogicError: If user is already inactive
         """
         try:
             user = self.user_repo.get_by_id(db, user_id)
             if not user:
-                raise NotFoundException(f"User {user_id} not found")
+                raise NotFoundError(f"User {user_id} not found")
 
             if not user.is_active:
-                raise BusinessLogicException("User is already deactivated")
+                raise BusinessLogicError("User is already deactivated")
 
             self.user_repo.deactivate_user(db, user, reason)
 
@@ -247,12 +245,12 @@ class UserService:
                 f"Deactivated user {user_id}" + (f" - Reason: {reason}" if reason else "")
             )
 
-        except (NotFoundException, BusinessLogicException):
+        except (NotFoundError, BusinessLogicError):
             raise
         except SQLAlchemyError as e:
             logger.error(f"Database error deactivating user {user_id}: {str(e)}")
             db.rollback()
-            raise BusinessLogicException("Failed to deactivate user")
+            raise BusinessLogicError("Failed to deactivate user")
 
     def activate_user(
         self,
@@ -267,27 +265,27 @@ class UserService:
             user_id: User identifier
 
         Raises:
-            NotFoundException: If user doesn't exist
-            BusinessLogicException: If user is already active
+            NotFoundError: If user doesn't exist
+            BusinessLogicError: If user is already active
         """
         try:
             user = self.user_repo.get_by_id(db, user_id)
             if not user:
-                raise NotFoundException(f"User {user_id} not found")
+                raise NotFoundError(f"User {user_id} not found")
 
             if user.is_active:
-                raise BusinessLogicException("User is already active")
+                raise BusinessLogicError("User is already active")
 
             self.user_repo.activate_user(db, user)
 
             logger.info(f"Activated user {user_id}")
 
-        except (NotFoundException, BusinessLogicException):
+        except (NotFoundError, BusinessLogicError):
             raise
         except SQLAlchemyError as e:
             logger.error(f"Database error activating user {user_id}: {str(e)}")
             db.rollback()
-            raise BusinessLogicException("Failed to activate user")
+            raise BusinessLogicError("Failed to activate user")
 
     def delete_user(
         self,
@@ -304,12 +302,12 @@ class UserService:
             soft_delete: If True, marks as deleted; if False, permanently removes
 
         Raises:
-            NotFoundException: If user doesn't exist
+            NotFoundError: If user doesn't exist
         """
         try:
             user = self.user_repo.get_by_id(db, user_id)
             if not user:
-                raise NotFoundException(f"User {user_id} not found")
+                raise NotFoundError(f"User {user_id} not found")
 
             if soft_delete:
                 # Mark as deleted (deactivate)
@@ -320,12 +318,12 @@ class UserService:
                 self.user_repo.delete(db, user)
                 logger.info(f"Hard deleted user {user_id}")
 
-        except NotFoundException:
+        except NotFoundError:
             raise
         except SQLAlchemyError as e:
             logger.error(f"Database error deleting user {user_id}: {str(e)}")
             db.rollback()
-            raise BusinessLogicException("Failed to delete user")
+            raise BusinessLogicError("Failed to delete user")
 
     # -------------------------------------------------------------------------
     # Retrieval Operations
@@ -349,30 +347,30 @@ class UserService:
             UserDetail schema
 
         Raises:
-            NotFoundException: If user doesn't exist
+            NotFoundError: If user doesn't exist
         """
         try:
             user = self.user_repo.get_full_user(db, user_id)
             if not user:
-                raise NotFoundException(f"User {user_id} not found")
+                raise NotFoundError(f"User {user_id} not found")
 
             if not include_inactive and not user.is_active:
-                raise NotFoundException(f"User {user_id} is inactive")
+                raise NotFoundError(f"User {user_id} is inactive")
 
             return UserDetail.model_validate(user)
 
-        except NotFoundException:
+        except NotFoundError:
             raise
         except SQLAlchemyError as e:
             logger.error(f"Database error getting user {user_id}: {str(e)}")
-            raise BusinessLogicException("Failed to retrieve user")
+            raise BusinessLogicError("Failed to retrieve user")
 
     def get_user_by_email(
         self,
         db: Session,
         email: str,
         include_inactive: bool = False,
-    ) -> Optional[UserDetail]:
+    ) -> Union[UserDetail, None]:
         """
         Get user by email.
 
@@ -399,14 +397,14 @@ class UserService:
 
         except SQLAlchemyError as e:
             logger.error(f"Database error getting user by email {email}: {str(e)}")
-            raise BusinessLogicException("Failed to retrieve user")
+            raise BusinessLogicError("Failed to retrieve user")
 
     def get_user_by_phone(
         self,
         db: Session,
         phone: str,
         include_inactive: bool = False,
-    ) -> Optional[UserDetail]:
+    ) -> Union[UserDetail, None]:
         """
         Get user by phone number.
 
@@ -433,16 +431,16 @@ class UserService:
 
         except SQLAlchemyError as e:
             logger.error(f"Database error getting user by phone {phone}: {str(e)}")
-            raise BusinessLogicException("Failed to retrieve user")
+            raise BusinessLogicError("Failed to retrieve user")
 
     def list_users(
         self,
         db: Session,
         skip: int = 0,
         limit: int = 50,
-        role: Optional[str] = None,
-        is_active: Optional[bool] = None,
-        search: Optional[str] = None,
+        role: Union[str, None] = None,
+        is_active: Union[bool, None] = None,
+        search: Union[str, None] = None,
     ) -> List[UserListItem]:
         """
         List users with optional filtering.
@@ -490,13 +488,13 @@ class UserService:
 
         except SQLAlchemyError as e:
             logger.error(f"Database error listing users: {str(e)}")
-            raise BusinessLogicException("Failed to retrieve users")
+            raise BusinessLogicError("Failed to retrieve users")
 
     def count_users(
         self,
         db: Session,
-        role: Optional[str] = None,
-        is_active: Optional[bool] = None,
+        role: Union[str, None] = None,
+        is_active: Union[bool, None] = None,
     ) -> int:
         """
         Count users with optional filtering.
@@ -525,7 +523,7 @@ class UserService:
 
         except SQLAlchemyError as e:
             logger.error(f"Database error counting users: {str(e)}")
-            raise BusinessLogicException("Failed to count users")
+            raise BusinessLogicError("Failed to count users")
 
     def get_user_stats(
         self,
@@ -543,20 +541,20 @@ class UserService:
             UserStats schema
 
         Raises:
-            NotFoundException: If user or stats don't exist
+            NotFoundError: If user or stats don't exist
         """
         try:
             stats = self.aggregate_repo.get_user_statistics(db, user_id)
             if not stats:
-                raise NotFoundException(f"No statistics available for user {user_id}")
+                raise NotFoundError(f"No statistics available for user {user_id}")
 
             return UserStats.model_validate(stats)
 
-        except NotFoundException:
+        except NotFoundError:
             raise
         except SQLAlchemyError as e:
             logger.error(f"Database error getting stats for user {user_id}: {str(e)}")
-            raise BusinessLogicException("Failed to retrieve user statistics")
+            raise BusinessLogicError("Failed to retrieve user statistics")
 
     # -------------------------------------------------------------------------
     # Search Operations
@@ -606,7 +604,7 @@ class UserService:
 
         except SQLAlchemyError as e:
             logger.error(f"Database error searching users with query '{query}': {str(e)}")
-            raise BusinessLogicException("Failed to search users")
+            raise BusinessLogicError("Failed to search users")
 
     # -------------------------------------------------------------------------
     # Validation Helpers
@@ -616,32 +614,32 @@ class UserService:
         """Validate user creation data."""
         # Validate email
         if not data.email:
-            raise ValidationException("Email is required")
+            raise ValidationError("Email is required")
 
         if not StringHelper.is_valid_email(data.email):
-            raise ValidationException("Invalid email format")
+            raise ValidationError("Invalid email format")
 
         # Validate phone if provided
         if data.phone:
             normalized_phone = StringHelper.normalize_phone(data.phone)
             if len(normalized_phone) < 10 or len(normalized_phone) > 15:
-                raise ValidationException("Phone number must be between 10 and 15 digits")
+                raise ValidationError("Phone number must be between 10 and 15 digits")
 
         # Validate password
         if not data.password or len(data.password) < 8:
-            raise ValidationException("Password must be at least 8 characters")
+            raise ValidationError("Password must be at least 8 characters")
 
         # Validate full name
         if not data.full_name or len(data.full_name.strip()) < 2:
-            raise ValidationException("Full name must be at least 2 characters")
+            raise ValidationError("Full name must be at least 2 characters")
 
         if len(data.full_name) > 100:
-            raise ValidationException("Full name must not exceed 100 characters")
+            raise ValidationError("Full name must not exceed 100 characters")
 
         # Validate role
         valid_roles = ["admin", "staff", "student", "guest"]
         if data.role and data.role not in valid_roles:
-            raise ValidationException(f"Invalid role. Must be one of: {valid_roles}")
+            raise ValidationError(f"Invalid role. Must be one of: {valid_roles}")
 
     def _validate_user_update(self, data: UserUpdate) -> None:
         """Validate user update data."""
@@ -650,26 +648,26 @@ class UserService:
         # Validate email if provided
         if "email" in data_dict and data_dict["email"]:
             if not StringHelper.is_valid_email(data_dict["email"]):
-                raise ValidationException("Invalid email format")
+                raise ValidationError("Invalid email format")
 
         # Validate phone if provided
         if "phone" in data_dict and data_dict["phone"]:
             normalized_phone = StringHelper.normalize_phone(data_dict["phone"])
             if len(normalized_phone) < 10 or len(normalized_phone) > 15:
-                raise ValidationException("Phone number must be between 10 and 15 digits")
+                raise ValidationError("Phone number must be between 10 and 15 digits")
 
         # Validate full name if provided
         if "full_name" in data_dict and data_dict["full_name"]:
             if len(data_dict["full_name"].strip()) < 2:
-                raise ValidationException("Full name must be at least 2 characters")
+                raise ValidationError("Full name must be at least 2 characters")
             if len(data_dict["full_name"]) > 100:
-                raise ValidationException("Full name must not exceed 100 characters")
+                raise ValidationError("Full name must not exceed 100 characters")
 
         # Validate role if provided
         if "role" in data_dict and data_dict["role"]:
             valid_roles = ["admin", "staff", "student", "guest"]
             if data_dict["role"] not in valid_roles:
-                raise ValidationException(f"Invalid role. Must be one of: {valid_roles}")
+                raise ValidationError(f"Invalid role. Must be one of: {valid_roles}")
 
     def _normalize_name(self, name: str) -> str:
         """Normalize a person's name."""

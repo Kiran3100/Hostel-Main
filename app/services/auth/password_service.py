@@ -36,7 +36,7 @@ from app.schemas.auth.password import (
     PasswordValidator,
 )
 from app.models.user.user import User
-from app.core1.security.password_hasher import PasswordHasher
+from app.core.security.password_hasher import PasswordHasher
 
 logger = logging.getLogger(__name__)
 

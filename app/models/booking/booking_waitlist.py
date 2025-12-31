@@ -18,6 +18,7 @@ from sqlalchemy import (
     ForeignKey,
     Index,
     Integer,
+    JSON,  # Added JSON import for notification_channels
     String,
     Text,
 )
@@ -240,7 +241,10 @@ class BookingWaitlist(UUIDMixin, TimestampModel, SoftDeleteMixin):
         Index("ix_waitlist_visitor_status", "visitor_id", "status"),
         Index("ix_waitlist_status_priority", "status", "priority"),
         Index("ix_waitlist_check_in_date", "preferred_check_in_date"),
-        {"comment": "Waitlist entries for fully booked periods"},
+        {
+            "comment": "Waitlist entries for fully booked periods",
+            "extend_existing": True,
+        },
     )
 
     # Validators
@@ -468,8 +472,9 @@ class WaitlistNotification(UUIDMixin, TimestampModel):
         comment="Whether visitor proceeded with booking",
     )
 
-    # Delivery
+    # Delivery (Fixed: Added JSON type)
     notification_channels: Mapped[Optional[list]] = mapped_column(
+        JSON,
         nullable=True,
         comment="Channels used for notification (email, sms, push)",
     )
@@ -504,7 +509,10 @@ class WaitlistNotification(UUIDMixin, TimestampModel):
         Index("ix_notification_waitlist", "waitlist_id"),
         Index("ix_notification_sent_at", "sent_at"),
         Index("ix_notification_response", "visitor_response"),
-        {"comment": "Waitlist availability notifications"},
+        {
+            "comment": "Waitlist availability notifications",
+            "extend_existing": True,
+        },
     )
 
     # Validators

@@ -33,8 +33,8 @@ from app.schemas.auth.login import (
 )
 from app.schemas.auth.token import RefreshTokenRequest, RefreshTokenResponse
 from app.models.user.user import User
-from app.core1.security.password_hasher import PasswordHasher
-from app.core1.security.jwt_handler import JWTManager
+from app.core.security.password_hasher import PasswordHasher
+from app.core.security.jwt_handler import JWTManager
 
 logger = logging.getLogger(__name__)
 

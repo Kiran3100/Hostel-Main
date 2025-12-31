@@ -4,6 +4,7 @@ Social authentication schemas with provider-specific validation.
 Pydantic v2 compliant.
 """
 
+from enum import Enum
 from typing import Union
 from uuid import UUID
 
@@ -12,7 +13,17 @@ from pydantic import EmailStr, Field, HttpUrl, field_validator
 from app.schemas.common.base import BaseCreateSchema, BaseSchema
 from app.schemas.common.enums import Gender, UserRole
 
+
+class SocialProvider(str, Enum):
+    """Social authentication provider types."""
+    
+    GOOGLE = "google"
+    FACEBOOK = "facebook"
+    APPLE = "apple"
+
+
 __all__ = [
+    "SocialProvider",
     "SocialAuthRequest",
     "GoogleAuthRequest",
     "FacebookAuthRequest",
@@ -195,6 +206,10 @@ class SocialProfileData(BaseSchema):
         description="User locale/language preference",
         examples=["en_US", "hi_IN"],
     )
+    raw_data: Union[dict, None] = Field(
+        default=None,
+        description="Raw profile data from provider",
+    )
 
     @field_validator("email", mode="after")
     @classmethod
@@ -235,4 +250,8 @@ class SocialAuthResponse(BaseSchema):
     is_new_user: bool = Field(
         ...,
         description="Whether this is a new user (first-time registration)",
+    )
+    provider: str = Field(
+        ...,
+        description="Social authentication provider used",
     )

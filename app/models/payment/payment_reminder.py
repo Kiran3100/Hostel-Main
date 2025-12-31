@@ -1,4 +1,3 @@
-# --- File: C:\Hostel-Main\app\models\payment\payment_reminder.py ---
 """
 Payment reminder model.
 
@@ -6,17 +5,19 @@ Manages payment reminder configuration and delivery tracking.
 """
 
 from datetime import datetime
+from enum import Enum
 from typing import TYPE_CHECKING
 
 from sqlalchemy import (
     Boolean,
     DateTime,
-    Enum,
+    Enum as SQLEnum,
     ForeignKey,
     Index,
     Integer,
     String,
     Text,
+    func,
 )
 from sqlalchemy.dialects.postgresql import ARRAY, JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -89,7 +90,7 @@ class PaymentReminder(TimestampModel, UUIDMixin, SoftDeleteMixin):
     )
     
     reminder_type: Mapped[ReminderType] = mapped_column(
-        Enum(ReminderType, name="reminder_type_enum", create_type=True),
+        SQLEnum(ReminderType, name="reminder_type_enum", create_type=True),
         nullable=False,
         index=True,
         comment="Type of reminder",
@@ -122,18 +123,21 @@ class PaymentReminder(TimestampModel, UUIDMixin, SoftDeleteMixin):
 
     # ==================== Delivery Channels ====================
     sent_via_email: Mapped[bool] = mapped_column(
+        Boolean,
         nullable=False,
         default=False,
         comment="Whether sent via email",
     )
     
     sent_via_sms: Mapped[bool] = mapped_column(
+        Boolean,
         nullable=False,
         default=False,
         comment="Whether sent via SMS",
     )
     
     sent_via_push: Mapped[bool] = mapped_column(
+        Boolean,
         nullable=False,
         default=False,
         comment="Whether sent via push notification",
@@ -141,7 +145,7 @@ class PaymentReminder(TimestampModel, UUIDMixin, SoftDeleteMixin):
 
     # ==================== Status ====================
     reminder_status: Mapped[ReminderStatus] = mapped_column(
-        Enum(ReminderStatus, name="reminder_status_enum", create_type=True),
+        SQLEnum(ReminderStatus, name="reminder_status_enum", create_type=True),
         nullable=False,
         default=ReminderStatus.PENDING,
         index=True,
@@ -170,12 +174,14 @@ class PaymentReminder(TimestampModel, UUIDMixin, SoftDeleteMixin):
     )
     
     email_opened: Mapped[bool] = mapped_column(
+        Boolean,
         nullable=False,
         default=False,
         comment="Whether email was opened",
     )
     
     email_clicked: Mapped[bool] = mapped_column(
+        Boolean,
         nullable=False,
         default=False,
         comment="Whether email link was clicked",
@@ -201,6 +207,7 @@ class PaymentReminder(TimestampModel, UUIDMixin, SoftDeleteMixin):
     )
     
     sms_delivered: Mapped[bool] = mapped_column(
+        Boolean,
         nullable=False,
         default=False,
         comment="Whether SMS was delivered",
@@ -220,12 +227,14 @@ class PaymentReminder(TimestampModel, UUIDMixin, SoftDeleteMixin):
     )
     
     push_delivered: Mapped[bool] = mapped_column(
+        Boolean,
         nullable=False,
         default=False,
         comment="Whether push was delivered",
     )
     
     push_clicked: Mapped[bool] = mapped_column(
+        Boolean,
         nullable=False,
         default=False,
         comment="Whether push was clicked",
@@ -271,7 +280,7 @@ class PaymentReminder(TimestampModel, UUIDMixin, SoftDeleteMixin):
         comment="Additional notes",
     )
     
-    metadata: Mapped[dict | None] = mapped_column(
+    extra_metadata: Mapped[dict | None] = mapped_column(
         JSONB,
         nullable=True,
         comment="Additional metadata",
@@ -303,7 +312,7 @@ class PaymentReminder(TimestampModel, UUIDMixin, SoftDeleteMixin):
         Index("idx_reminder_scheduled_for", "scheduled_for"),
         Index("idx_reminder_sent_at", "sent_at"),
         Index("idx_reminder_status", "reminder_status"),
-        Index("idx_reminder_reference_lower", "lower(reminder_reference)"),
+        Index("idx_reminder_reference_lower", func.lower(reminder_reference)),
         {"comment": "Payment reminder delivery tracking"},
     )
 

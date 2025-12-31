@@ -5,20 +5,18 @@ Manages user-level emergency contacts (separate from student-specific contacts).
 Enhanced with validation, bulk operations, and improved error handling.
 """
 
-from __future__ import annotations
-
 import logging
-from typing import List, Optional, Dict, Any
+from typing import List, Union, Dict, Any
 from uuid import UUID
 
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError
 
 from app.repositories.user import EmergencyContactRepository
-from app.core1.exceptions import (
-    ValidationException,
-    BusinessLogicException,
-    NotFoundException,
+from app.core.exceptions import (
+    ValidationError,
+    BusinessLogicError,
+    NotFoundError,
 )
 from app.models.user.emergency_contact import EmergencyContact
 from app.utils.string_utils import StringHelper
@@ -79,13 +77,13 @@ class EmergencyContactService:
             return contacts
         except SQLAlchemyError as e:
             logger.error(f"Database error listing contacts for user {user_id}: {str(e)}")
-            raise BusinessLogicException("Failed to retrieve emergency contacts")
+            raise BusinessLogicError("Failed to retrieve emergency contacts")
 
     def get_contact(
         self,
         db: Session,
         contact_id: UUID,
-        user_id: Optional[UUID] = None,
+        user_id: Union[UUID, None] = None,
     ) -> EmergencyContact:
         """
         Get an emergency contact by ID with optional user ownership verification.
@@ -99,16 +97,16 @@ class EmergencyContactService:
             EmergencyContact instance
 
         Raises:
-            NotFoundException: If contact doesn't exist
-            ValidationException: If user_id provided and doesn't match
+            NotFoundError: If contact doesn't exist
+            ValidationError: If user_id provided and doesn't match
         """
         contact = self.emergency_contact_repo.get_by_id(db, contact_id)
         if not contact:
-            raise NotFoundException(f"Emergency contact {contact_id} not found")
+            raise NotFoundError(f"Emergency contact {contact_id} not found")
 
         # Verify ownership if user_id provided
         if user_id and contact.user_id != user_id:
-            raise ValidationException("Contact does not belong to the specified user")
+            raise ValidationError("Contact does not belong to the specified user")
 
         return contact
 
@@ -116,7 +114,7 @@ class EmergencyContactService:
         self,
         db: Session,
         user_id: UUID,
-    ) -> Optional[EmergencyContact]:
+    ) -> Union[EmergencyContact, None]:
         """
         Get the primary emergency contact for a user.
 
@@ -138,8 +136,8 @@ class EmergencyContactService:
         phone: str,
         relation: str,
         is_primary: bool = False,
-        email: Optional[str] = None,
-        address: Optional[str] = None,
+        email: Union[str, None] = None,
+        address: Union[str, None] = None,
     ) -> EmergencyContact:
         """
         Create a new emergency contact for a user.
@@ -158,8 +156,8 @@ class EmergencyContactService:
             Created EmergencyContact instance
 
         Raises:
-            ValidationException: If validation fails
-            BusinessLogicException: If business rules violated
+            ValidationError: If validation fails
+            BusinessLogicError: If business rules violated
         """
         # Validate inputs
         self._validate_contact_data(name, phone, relation, email)
@@ -167,7 +165,7 @@ class EmergencyContactService:
         # Check contact limit
         existing_contacts = self.list_contacts(db, user_id)
         if len(existing_contacts) >= self.MAX_CONTACTS_PER_USER:
-            raise BusinessLogicException(
+            raise BusinessLogicError(
                 f"Maximum {self.MAX_CONTACTS_PER_USER} emergency contacts allowed per user"
             )
 
@@ -184,7 +182,7 @@ class EmergencyContactService:
 
             # Check for duplicate phone numbers for this user
             if self._is_duplicate_phone(db, user_id, normalized_phone):
-                raise ValidationException(
+                raise ValidationError(
                     "A contact with this phone number already exists for this user"
                 )
 
@@ -210,19 +208,19 @@ class EmergencyContactService:
         except SQLAlchemyError as e:
             logger.error(f"Database error creating contact for user {user_id}: {str(e)}")
             db.rollback()
-            raise BusinessLogicException("Failed to create emergency contact")
+            raise BusinessLogicError("Failed to create emergency contact")
 
     def update_contact(
         self,
         db: Session,
         contact_id: UUID,
         user_id: UUID,
-        name: Optional[str] = None,
-        phone: Optional[str] = None,
-        relation: Optional[str] = None,
-        is_primary: Optional[bool] = None,
-        email: Optional[str] = None,
-        address: Optional[str] = None,
+        name: Union[str, None] = None,
+        phone: Union[str, None] = None,
+        relation: Union[str, None] = None,
+        is_primary: Union[bool, None] = None,
+        email: Union[str, None] = None,
+        address: Union[str, None] = None,
     ) -> EmergencyContact:
         """
         Update an existing emergency contact.
@@ -242,8 +240,8 @@ class EmergencyContactService:
             Updated EmergencyContact instance
 
         Raises:
-            NotFoundException: If contact doesn't exist
-            ValidationException: If validation fails
+            NotFoundError: If contact doesn't exist
+            ValidationError: If validation fails
         """
         # Verify contact exists and belongs to user
         contact = self.get_contact(db, contact_id, user_id)
@@ -253,7 +251,7 @@ class EmergencyContactService:
 
         if name is not None:
             if not name.strip():
-                raise ValidationException("Contact name cannot be empty")
+                raise ValidationError("Contact name cannot be empty")
             update_data["name"] = name.strip()
 
         if phone is not None:
@@ -262,7 +260,7 @@ class EmergencyContactService:
             
             # Check for duplicates (excluding current contact)
             if self._is_duplicate_phone(db, user_id, normalized_phone, exclude_id=contact_id):
-                raise ValidationException(
+                raise ValidationError(
                     "A contact with this phone number already exists for this user"
                 )
             
@@ -270,7 +268,7 @@ class EmergencyContactService:
 
         if relation is not None:
             if not relation.strip():
-                raise ValidationException("Relation cannot be empty")
+                raise ValidationError("Relation cannot be empty")
             update_data["relation"] = relation.strip()
 
         if email is not None:
@@ -302,7 +300,7 @@ class EmergencyContactService:
         except SQLAlchemyError as e:
             logger.error(f"Database error updating contact {contact_id}: {str(e)}")
             db.rollback()
-            raise BusinessLogicException("Failed to update emergency contact")
+            raise BusinessLogicError("Failed to update emergency contact")
 
     def delete_contact(
         self,
@@ -322,8 +320,8 @@ class EmergencyContactService:
             user_id: User identifier (for ownership verification)
 
         Raises:
-            NotFoundException: If contact doesn't exist
-            BusinessLogicException: If trying to delete the last contact
+            NotFoundError: If contact doesn't exist
+            BusinessLogicError: If trying to delete the last contact
         """
         # Verify contact exists and belongs to user
         contact = self.get_contact(db, contact_id, user_id)
@@ -353,7 +351,7 @@ class EmergencyContactService:
         except SQLAlchemyError as e:
             logger.error(f"Database error deleting contact {contact_id}: {str(e)}")
             db.rollback()
-            raise BusinessLogicException("Failed to delete emergency contact")
+            raise BusinessLogicError("Failed to delete emergency contact")
 
     # -------------------------------------------------------------------------
     # Primary Contact Management
@@ -377,7 +375,7 @@ class EmergencyContactService:
             Updated EmergencyContact instance
 
         Raises:
-            NotFoundException: If contact doesn't exist
+            NotFoundError: If contact doesn't exist
         """
         # Verify contact exists and belongs to user
         contact = self.get_contact(db, contact_id, user_id)
@@ -404,7 +402,7 @@ class EmergencyContactService:
         except SQLAlchemyError as e:
             logger.error(f"Database error setting primary contact {contact_id}: {str(e)}")
             db.rollback()
-            raise BusinessLogicException("Failed to set primary contact")
+            raise BusinessLogicError("Failed to set primary contact")
 
     # -------------------------------------------------------------------------
     # Bulk Operations
@@ -428,8 +426,8 @@ class EmergencyContactService:
             List of created EmergencyContact instances
 
         Raises:
-            ValidationException: If validation fails
-            BusinessLogicException: If business rules violated
+            ValidationError: If validation fails
+            BusinessLogicError: If business rules violated
         """
         if not contacts_data:
             return []
@@ -437,7 +435,7 @@ class EmergencyContactService:
         # Check total limit
         existing_count = len(self.list_contacts(db, user_id))
         if existing_count + len(contacts_data) > self.MAX_CONTACTS_PER_USER:
-            raise BusinessLogicException(
+            raise BusinessLogicError(
                 f"Cannot create {len(contacts_data)} contacts. "
                 f"Maximum {self.MAX_CONTACTS_PER_USER} contacts allowed per user"
             )
@@ -505,7 +503,7 @@ class EmergencyContactService:
         except SQLAlchemyError as e:
             logger.error(f"Database error deleting all contacts for user {user_id}: {str(e)}")
             db.rollback()
-            raise BusinessLogicException("Failed to delete emergency contacts")
+            raise BusinessLogicError("Failed to delete emergency contacts")
 
     # -------------------------------------------------------------------------
     # Validation Helpers
@@ -516,25 +514,25 @@ class EmergencyContactService:
         name: str,
         phone: str,
         relation: str,
-        email: Optional[str] = None,
+        email: Union[str, None] = None,
     ) -> None:
         """Validate contact data before creation/update."""
         if not name or not name.strip():
-            raise ValidationException("Contact name is required")
+            raise ValidationError("Contact name is required")
 
         if len(name.strip()) < 2:
-            raise ValidationException("Contact name must be at least 2 characters")
+            raise ValidationError("Contact name must be at least 2 characters")
 
         if len(name.strip()) > 100:
-            raise ValidationException("Contact name must not exceed 100 characters")
+            raise ValidationError("Contact name must not exceed 100 characters")
 
         self._validate_phone(phone)
 
         if not relation or not relation.strip():
-            raise ValidationException("Relation is required")
+            raise ValidationError("Relation is required")
 
         if len(relation.strip()) > 50:
-            raise ValidationException("Relation must not exceed 50 characters")
+            raise ValidationError("Relation must not exceed 50 characters")
 
         if email:
             self._validate_email(email)
@@ -542,34 +540,34 @@ class EmergencyContactService:
     def _validate_phone(self, phone: str) -> None:
         """Validate phone number format."""
         if not phone or not phone.strip():
-            raise ValidationException("Phone number is required")
+            raise ValidationError("Phone number is required")
 
         normalized = StringHelper.normalize_phone(phone)
         
         if len(normalized) < self.MIN_PHONE_LENGTH:
-            raise ValidationException(
+            raise ValidationError(
                 f"Phone number must be at least {self.MIN_PHONE_LENGTH} digits"
             )
 
         if len(normalized) > self.MAX_PHONE_LENGTH:
-            raise ValidationException(
+            raise ValidationError(
                 f"Phone number must not exceed {self.MAX_PHONE_LENGTH} digits"
             )
 
         if not normalized.isdigit():
-            raise ValidationException("Phone number must contain only digits")
+            raise ValidationError("Phone number must contain only digits")
 
     def _validate_email(self, email: str) -> None:
         """Validate email format."""
         if not StringHelper.is_valid_email(email):
-            raise ValidationException("Invalid email format")
+            raise ValidationError("Invalid email format")
 
     def _is_duplicate_phone(
         self,
         db: Session,
         user_id: UUID,
         phone: str,
-        exclude_id: Optional[UUID] = None,
+        exclude_id: Union[UUID, None] = None,
     ) -> bool:
         """Check if phone number already exists for user."""
         contacts = self.list_contacts(db, user_id)

@@ -5,20 +5,18 @@ Manages user-level preferences (notification settings, quiet hours, etc.).
 Enhanced with validation, default preferences, and preference categories.
 """
 
-from __future__ import annotations
-
 import logging
-from typing import Optional, Dict, Any
+from typing import Union, Dict, Any
 from uuid import UUID
 from datetime import time
 
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError
 
-from app.repositories.notification import NotificationPreferenceRepository
+from app.repositories.notification import NotificationPreferencesRepository
 from app.schemas.user import NotificationPreferencesUpdate
 from app.models.notification.notification_preferences import NotificationPreference
-from app.core1.exceptions import ValidationException, BusinessLogicException, NotFoundException
+from app.core.exceptions import ValidationError, BusinessLogicError, NotFoundError
 
 logger = logging.getLogger(__name__)
 
@@ -51,7 +49,7 @@ class UserPreferenceService:
 
     def __init__(
         self,
-        notification_pref_repo: NotificationPreferenceRepository,
+        notification_pref_repo: NotificationPreferencesRepository,
     ) -> None:
         self.notification_pref_repo = notification_pref_repo
 
@@ -64,7 +62,7 @@ class UserPreferenceService:
         db: Session,
         user_id: UUID,
         create_if_missing: bool = False,
-    ) -> Optional[NotificationPreference]:
+    ) -> Union[NotificationPreference, None]:
         """
         Get user notification preferences.
 
@@ -88,7 +86,7 @@ class UserPreferenceService:
             logger.error(
                 f"Database error getting notification preferences for user {user_id}: {str(e)}"
             )
-            raise BusinessLogicException("Failed to retrieve notification preferences")
+            raise BusinessLogicError("Failed to retrieve notification preferences")
 
     def update_notification_preferences(
         self,
@@ -108,7 +106,7 @@ class UserPreferenceService:
             Updated NotificationPreference instance
 
         Raises:
-            ValidationException: If validation fails
+            ValidationError: If validation fails
         """
         # Validate the update data
         self._validate_preferences(update)
@@ -135,7 +133,7 @@ class UserPreferenceService:
                 f"Database error updating notification preferences for user {user_id}: {str(e)}"
             )
             db.rollback()
-            raise BusinessLogicException("Failed to update notification preferences")
+            raise BusinessLogicError("Failed to update notification preferences")
 
     def reset_to_defaults(
         self,
@@ -171,7 +169,7 @@ class UserPreferenceService:
                 f"Database error resetting preferences for user {user_id}: {str(e)}"
             )
             db.rollback()
-            raise BusinessLogicException("Failed to reset notification preferences")
+            raise BusinessLogicError("Failed to reset notification preferences")
 
     # -------------------------------------------------------------------------
     # Quiet Hours Management
@@ -199,11 +197,11 @@ class UserPreferenceService:
             Updated NotificationPreference instance
 
         Raises:
-            ValidationException: If validation fails
+            ValidationError: If validation fails
         """
         # Validate quiet hours
         if start_time == end_time:
-            raise ValidationException("Quiet hours start and end times cannot be the same")
+            raise ValidationError("Quiet hours start and end times cannot be the same")
 
         try:
             existing = self.notification_pref_repo.get_by_user_id(db, user_id)
@@ -232,7 +230,7 @@ class UserPreferenceService:
         except SQLAlchemyError as e:
             logger.error(f"Database error setting quiet hours for user {user_id}: {str(e)}")
             db.rollback()
-            raise BusinessLogicException("Failed to set quiet hours")
+            raise BusinessLogicError("Failed to set quiet hours")
 
     def disable_quiet_hours(
         self,
@@ -253,7 +251,7 @@ class UserPreferenceService:
             existing = self.notification_pref_repo.get_by_user_id(db, user_id)
 
             if not existing:
-                raise NotFoundException("No notification preferences found for user")
+                raise NotFoundError("No notification preferences found for user")
 
             pref = self.notification_pref_repo.update(
                 db,
@@ -270,13 +268,13 @@ class UserPreferenceService:
                 f"Database error disabling quiet hours for user {user_id}: {str(e)}"
             )
             db.rollback()
-            raise BusinessLogicException("Failed to disable quiet hours")
+            raise BusinessLogicError("Failed to disable quiet hours")
 
     def is_in_quiet_hours(
         self,
         db: Session,
         user_id: UUID,
-        check_time: Optional[time] = None,
+        check_time: Union[time, None] = None,
     ) -> bool:
         """
         Check if current time (or specified time) is within user's quiet hours.
@@ -333,11 +331,11 @@ class UserPreferenceService:
             Updated NotificationPreference instance
 
         Raises:
-            ValidationException: If channel is invalid
+            ValidationError: If channel is invalid
         """
         valid_channels = ["email", "sms", "push", "in_app"]
         if channel not in valid_channels:
-            raise ValidationException(f"Invalid channel. Must be one of: {valid_channels}")
+            raise ValidationError(f"Invalid channel. Must be one of: {valid_channels}")
 
         field_name = f"{channel}_notifications"
         
@@ -361,7 +359,7 @@ class UserPreferenceService:
                 f"Database error enabling {channel} for user {user_id}: {str(e)}"
             )
             db.rollback()
-            raise BusinessLogicException(f"Failed to enable {channel} notifications")
+            raise BusinessLogicError(f"Failed to enable {channel} notifications")
 
     def disable_channel(
         self,
@@ -381,11 +379,11 @@ class UserPreferenceService:
             Updated NotificationPreference instance
 
         Raises:
-            ValidationException: If channel is invalid
+            ValidationError: If channel is invalid
         """
         valid_channels = ["email", "sms", "push", "in_app"]
         if channel not in valid_channels:
-            raise ValidationException(f"Invalid channel. Must be one of: {valid_channels}")
+            raise ValidationError(f"Invalid channel. Must be one of: {valid_channels}")
 
         field_name = f"{channel}_notifications"
 
@@ -393,7 +391,7 @@ class UserPreferenceService:
             existing = self.notification_pref_repo.get_by_user_id(db, user_id)
 
             if not existing:
-                raise NotFoundException("No notification preferences found for user")
+                raise NotFoundError("No notification preferences found for user")
 
             pref = self.notification_pref_repo.update(
                 db,
@@ -410,7 +408,7 @@ class UserPreferenceService:
                 f"Database error disabling {channel} for user {user_id}: {str(e)}"
             )
             db.rollback()
-            raise BusinessLogicException(f"Failed to disable {channel} notifications")
+            raise BusinessLogicError(f"Failed to disable {channel} notifications")
 
     # -------------------------------------------------------------------------
     # Helper Methods
@@ -437,14 +435,14 @@ class UserPreferenceService:
         if "digest_frequency" in data:
             valid_frequencies = ["realtime", "hourly", "daily", "weekly", "never"]
             if data["digest_frequency"] not in valid_frequencies:
-                raise ValidationException(
+                raise ValidationError(
                     f"Invalid digest frequency. Must be one of: {valid_frequencies}"
                 )
 
         # Validate quiet hours if provided
         if "quiet_hours_enabled" in data and data["quiet_hours_enabled"]:
             if "quiet_hours_start" not in data or "quiet_hours_end" not in data:
-                raise ValidationException(
+                raise ValidationError(
                     "Both quiet_hours_start and quiet_hours_end must be provided "
                     "when enabling quiet hours"
                 )
@@ -454,4 +452,4 @@ class UserPreferenceService:
         channel_values = [data.get(ch) for ch in channels if ch in data]
         
         if channel_values and not any(channel_values):
-            raise ValidationException("At least one notification channel must be enabled")
+            raise ValidationError("At least one notification channel must be enabled")

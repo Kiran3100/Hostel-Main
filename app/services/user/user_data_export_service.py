@@ -5,10 +5,8 @@ Exports user-related data for reporting / compliance (GDPR, account export, etc.
 Enhanced with better error handling, data sanitization, and format validation.
 """
 
-from __future__ import annotations
-
 import logging
-from typing import Literal, Dict, Any, List, Optional
+from typing import Literal, Dict, Any, List, Union
 from uuid import UUID
 from io import BytesIO
 from datetime import datetime
@@ -21,10 +19,10 @@ from app.schemas.user import UserDetail, UserStats
 from app.utils.excel_utils import ExcelReportGenerator
 from app.utils.pdf_utils import PDFReportGenerator
 from app.utils.file_utils import FileHelper
-from app.core1.exceptions import (
-    ValidationException,
-    BusinessLogicException,
-    NotFoundException,
+from app.core.exceptions import (
+    ValidationError,
+    BusinessLogicError,
+    NotFoundError,
 )
 
 logger = logging.getLogger(__name__)
@@ -83,14 +81,14 @@ class UserDataExportService:
             For other formats returns raw bytes.
 
         Raises:
-            NotFoundException: If user doesn't exist
-            ValidationException: If format is unsupported
+            NotFoundError: If user doesn't exist
+            ValidationError: If format is unsupported
         """
         try:
             # Get user profile
             profile = self.aggregate_repo.get_full_user_profile(db, user_id)
             if not profile:
-                raise NotFoundException(f"User {user_id} not found")
+                raise NotFoundError(f"User {user_id} not found")
 
             # Get statistics if requested
             stats = None
@@ -118,16 +116,16 @@ class UserDataExportService:
             elif fmt == "csv":
                 return self._export_to_csv(data, user_id)
             else:
-                raise ValidationException(f"Unsupported export format: {fmt}")
+                raise ValidationError(f"Unsupported export format: {fmt}")
 
-        except (NotFoundException, ValidationException):
+        except (NotFoundError, ValidationError):
             raise
         except SQLAlchemyError as e:
             logger.error(f"Database error exporting data for user {user_id}: {str(e)}")
-            raise BusinessLogicException("Failed to export user data")
+            raise BusinessLogicError("Failed to export user data")
         except Exception as e:
             logger.error(f"Error exporting data for user {user_id}: {str(e)}")
-            raise BusinessLogicException("Failed to export user data")
+            raise BusinessLogicError("Failed to export user data")
 
     def export_multiple_users(
         self,
@@ -149,13 +147,13 @@ class UserDataExportService:
             Raw bytes of the export file
 
         Raises:
-            ValidationException: If format is JSON or unsupported
+            ValidationError: If format is JSON or unsupported
         """
         if fmt == "json":
-            raise ValidationException("JSON format not supported for multiple users")
+            raise ValidationError("JSON format not supported for multiple users")
 
         if not user_ids:
-            raise ValidationException("No user IDs provided")
+            raise ValidationError("No user IDs provided")
 
         try:
             # Collect data for all users
@@ -188,7 +186,7 @@ class UserDataExportService:
                     continue
 
             if not all_data:
-                raise BusinessLogicException("No valid user data to export")
+                raise BusinessLogicError("No valid user data to export")
 
             # Export based on format
             if fmt == "excel":
@@ -198,13 +196,13 @@ class UserDataExportService:
             elif fmt == "pdf":
                 return self._export_multiple_to_pdf(all_data)
             else:
-                raise ValidationException(f"Unsupported format for bulk export: {fmt}")
+                raise ValidationError(f"Unsupported format for bulk export: {fmt}")
 
-        except (ValidationException, BusinessLogicException):
+        except (ValidationError, BusinessLogicError):
             raise
         except Exception as e:
             logger.error(f"Error in bulk export: {str(e)}")
-            raise BusinessLogicException("Failed to export multiple users")
+            raise BusinessLogicError("Failed to export multiple users")
 
     def export_gdpr_package(
         self,
@@ -228,7 +226,7 @@ class UserDataExportService:
             PDF file as bytes
 
         Raises:
-            NotFoundException: If user doesn't exist
+            NotFoundError: If user doesn't exist
         """
         try:
             data = self.export_user_data(
@@ -254,11 +252,11 @@ class UserDataExportService:
 
             return self._export_gdpr_to_pdf(data, user_id)
 
-        except NotFoundException:
+        except NotFoundError:
             raise
         except Exception as e:
             logger.error(f"Error creating GDPR package for user {user_id}: {str(e)}")
-            raise BusinessLogicException("Failed to create GDPR data package")
+            raise BusinessLogicError("Failed to create GDPR data package")
 
     # -------------------------------------------------------------------------
     # Data Building and Sanitization
@@ -267,7 +265,7 @@ class UserDataExportService:
     def _build_export_data(
         self,
         profile: UserDetail,
-        stats: Optional[UserStats],
+        stats: Union[UserStats, None],
         include_sensitive: bool,
     ) -> Dict[str, Any]:
         """Build export data structure."""
@@ -351,7 +349,7 @@ class UserDataExportService:
 
         except Exception as e:
             logger.error(f"Error exporting to Excel for user {user_id}: {str(e)}")
-            raise BusinessLogicException("Failed to generate Excel export")
+            raise BusinessLogicError("Failed to generate Excel export")
 
     def _export_to_pdf(self, data: Dict[str, Any], user_id: UUID) -> bytes:
         """Convert user data to a PDF summary."""
@@ -384,7 +382,7 @@ class UserDataExportService:
 
         except Exception as e:
             logger.error(f"Error exporting to PDF for user {user_id}: {str(e)}")
-            raise BusinessLogicException("Failed to generate PDF export")
+            raise BusinessLogicError("Failed to generate PDF export")
 
     def _export_to_csv(self, data: Dict[str, Any], user_id: UUID) -> bytes:
         """Convert user data to CSV format."""
@@ -423,7 +421,7 @@ class UserDataExportService:
 
         except Exception as e:
             logger.error(f"Error exporting to CSV for user {user_id}: {str(e)}")
-            raise BusinessLogicException("Failed to generate CSV export")
+            raise BusinessLogicError("Failed to generate CSV export")
 
     def _export_gdpr_to_pdf(self, data: Dict[str, Any], user_id: UUID) -> bytes:
         """Create comprehensive GDPR-compliant PDF export."""
@@ -477,7 +475,7 @@ class UserDataExportService:
 
         except Exception as e:
             logger.error(f"Error creating GDPR PDF for user {user_id}: {str(e)}")
-            raise BusinessLogicException("Failed to generate GDPR package")
+            raise BusinessLogicError("Failed to generate GDPR package")
 
     # -------------------------------------------------------------------------
     # Bulk Export Methods
@@ -503,7 +501,7 @@ class UserDataExportService:
 
         except Exception as e:
             logger.error(f"Error in bulk Excel export: {str(e)}")
-            raise BusinessLogicException("Failed to generate bulk Excel export")
+            raise BusinessLogicError("Failed to generate bulk Excel export")
 
     def _export_multiple_to_csv(self, data_list: List[Dict[str, Any]]) -> bytes:
         """Export multiple users to CSV."""
@@ -540,7 +538,7 @@ class UserDataExportService:
 
         except Exception as e:
             logger.error(f"Error in bulk CSV export: {str(e)}")
-            raise BusinessLogicException("Failed to generate bulk CSV export")
+            raise BusinessLogicError("Failed to generate bulk CSV export")
 
     def _export_multiple_to_pdf(self, data_list: List[Dict[str, Any]]) -> bytes:
         """Export multiple users to PDF."""
@@ -565,4 +563,4 @@ class UserDataExportService:
 
         except Exception as e:
             logger.error(f"Error in bulk PDF export: {str(e)}")
-            raise BusinessLogicException("Failed to generate bulk PDF export")
+            raise BusinessLogicError("Failed to generate bulk PDF export")

@@ -1,4 +1,3 @@
-```python
 # app/repositories/booking/booking_modification_repository.py
 """
 Booking modification repository for modification request management.
@@ -15,7 +14,7 @@ from uuid import UUID
 from sqlalchemy import and_, func, or_, select
 from sqlalchemy.orm import Session, joinedload
 
-from app.core1.exceptions import EntityNotFoundError, ValidationError
+from app.core.exceptions import EntityNotFoundError, ValidationError
 from app.models.booking.booking_modification import (
     BookingModification,
     ModificationApprovalRecord,
@@ -589,7 +588,7 @@ from uuid import UUID
 from sqlalchemy import and_, func, or_, select
 from sqlalchemy.orm import Session, joinedload
 
-from app.core1.exceptions import EntityNotFoundError, ValidationError
+from app.core.exceptions import EntityNotFoundError, ValidationError
 from app.models.booking.booking_waitlist import (
     BookingWaitlist,
     WaitlistNotification,

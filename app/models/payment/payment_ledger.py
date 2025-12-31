@@ -1,4 +1,3 @@
-# --- File: C:\Hostel-Main\app\models\payment\payment_ledger.py ---
 """
 Payment ledger model.
 
@@ -7,17 +6,20 @@ Double-entry bookkeeping for payment transactions.
 
 from datetime import date as Date, datetime
 from decimal import Decimal
+from enum import Enum
 from typing import TYPE_CHECKING
 
 from sqlalchemy import (
+    Boolean,
     Date as SQLDate,
     DateTime,
-    Enum,
+    Enum as SQLEnum,
     ForeignKey,
     Index,
     Numeric,
     String,
     Text,
+    func,
 )
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -99,14 +101,14 @@ class PaymentLedger(TimestampModel, UUIDMixin, SoftDeleteMixin):
     )
     
     entry_type: Mapped[LedgerEntryType] = mapped_column(
-        Enum(LedgerEntryType, name="ledger_entry_type_enum", create_type=True),
+        SQLEnum(LedgerEntryType, name="ledger_entry_type_enum", create_type=True),
         nullable=False,
         index=True,
         comment="Type of ledger entry",
     )
     
     transaction_type: Mapped[TransactionType] = mapped_column(
-        Enum(TransactionType, name="transaction_type_enum", create_type=True),
+        SQLEnum(TransactionType, name="transaction_type_enum", create_type=True),
         nullable=False,
         index=True,
         comment="Specific transaction type",
@@ -183,6 +185,7 @@ class PaymentLedger(TimestampModel, UUIDMixin, SoftDeleteMixin):
 
     # ==================== Reconciliation ====================
     is_reconciled: Mapped[bool] = mapped_column(
+        Boolean,
         nullable=False,
         default=False,
         index=True,
@@ -203,6 +206,7 @@ class PaymentLedger(TimestampModel, UUIDMixin, SoftDeleteMixin):
 
     # ==================== Reversal Tracking ====================
     is_reversed: Mapped[bool] = mapped_column(
+        Boolean,
         nullable=False,
         default=False,
         index=True,
@@ -228,7 +232,7 @@ class PaymentLedger(TimestampModel, UUIDMixin, SoftDeleteMixin):
     )
 
     # ==================== Additional Data ====================
-    metadata: Mapped[dict | None] = mapped_column(
+    extra_metadata: Mapped[dict | None] = mapped_column(
         JSONB,
         nullable=True,
         comment="Additional metadata",
@@ -275,7 +279,7 @@ class PaymentLedger(TimestampModel, UUIDMixin, SoftDeleteMixin):
         Index("idx_ledger_posted_at", "posted_at"),
         Index("idx_ledger_reconciled", "is_reconciled"),
         Index("idx_ledger_reversed", "is_reversed"),
-        Index("idx_ledger_reference_lower", "lower(entry_reference)"),
+        Index("idx_ledger_reference_lower", func.lower(entry_reference)),
         {"comment": "Payment ledger for double-entry bookkeeping"},
     )
 
