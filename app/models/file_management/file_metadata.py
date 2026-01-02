@@ -40,7 +40,7 @@ __all__ = [
 ]
 
 
-class FileTag(BaseModel, TimestampModel, UUIDMixin):
+class FileTag(UUIDMixin, TimestampModel, BaseModel):
     """
     File tagging system for organization.
     
@@ -140,7 +140,7 @@ class FileTag(BaseModel, TimestampModel, UUIDMixin):
         return f"<FileTag(name={self.tag_name}, type={self.tag_type})>"
 
 
-class FileAccess(BaseModel, TimestampModel, UUIDMixin):
+class FileAccess(UUIDMixin, TimestampModel, BaseModel):
     """
     File access control and permissions.
     
@@ -294,7 +294,7 @@ class FileAccess(BaseModel, TimestampModel, UUIDMixin):
         return f"<FileAccess(file_id={self.file_id}, subject={self.subject_type}:{self.subject_id})>"
 
 
-class FileVersion(BaseModel, TimestampModel, UUIDMixin):
+class FileVersion(UUIDMixin, TimestampModel, BaseModel):
     """
     File version control and history.
     
@@ -410,7 +410,7 @@ class FileVersion(BaseModel, TimestampModel, UUIDMixin):
         return f"<FileVersion(file_id={self.file_id}, version={self.version_number})>"
 
 
-class FileAnalytics(BaseModel, TimestampModel, UUIDMixin):
+class FileAnalytics(UUIDMixin, TimestampModel, BaseModel):
     """
     File usage analytics and optimization.
     
@@ -574,7 +574,7 @@ class FileAnalytics(BaseModel, TimestampModel, UUIDMixin):
         return f"<FileAnalytics(file_id={self.file_id}, views={self.total_views}, downloads={self.total_downloads})>"
 
 
-class FileAccessLog(BaseModel, TimestampModel, UUIDMixin):
+class FileAccessLog(UUIDMixin, TimestampModel, BaseModel):
     """
     File access audit log entry.
     
@@ -750,7 +750,7 @@ class FileAccessLog(BaseModel, TimestampModel, UUIDMixin):
         return f"<FileAccessLog(file_id={self.file_id}, type={self.access_type}, success={self.success})>"
 
 
-class FileFavorite(BaseModel, TimestampModel, UUIDMixin):
+class FileFavorite(UUIDMixin, TimestampModel, BaseModel):
     """
     User favorite files tracking.
     

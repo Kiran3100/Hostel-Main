@@ -8,6 +8,7 @@ This module handles all fee-related calculations including:
 """
 
 from typing import Any
+from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
@@ -72,6 +73,16 @@ def get_projection_service(
     - Prospective customer inquiries
     - Booking form price previews
     - Marketing campaign calculations
+    
+    **Request Body:**
+    - hostel_id: UUID of the hostel
+    - room_type: Type of room (SINGLE, DOUBLE, TRIPLE, etc.)
+    - check_in_date: Proposed check-in date
+    - check_out_date: Proposed check-out date
+    - number_of_guests: Number of guests (default: 1)
+    - discount_code: Optional promo/discount code
+    - include_mess: Override mess inclusion
+    - student_id: Optional student ID for personalized pricing
     """,
     responses={
         200: {
@@ -113,10 +124,17 @@ def calculate_quote(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(e)
         )
+    except LookupError as e:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(e)
+        )
     except Exception as e:
+        # Log the error for debugging
+        # logger.error(f"Quote calculation failed: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to calculate quote"
+            detail="Failed to calculate quote. Please try again later."
         )
 
 
@@ -128,6 +146,10 @@ def calculate_quote(
     description="""
     Fetch the complete fee breakdown for a specific booking.
     Requires authentication and booking ownership or admin privileges.
+    
+    **Authorization:**
+    - Students can view their own bookings
+    - Admins can view any booking
     """,
     responses={
         200: {
@@ -146,7 +168,7 @@ def calculate_quote(
     }
 )
 def get_booking_fees(
-    booking_id: str,
+    booking_id: UUID,
     current_user=Depends(deps.get_current_user),
     service: FeeCalculationService = Depends(get_calculation_service),
 ) -> Any:
@@ -180,7 +202,13 @@ def get_booking_fees(
         
     except HTTPException:
         raise
+    except PermissionError as e:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=str(e)
+        )
     except Exception as e:
+        # logger.error(f"Failed to retrieve booking fees: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to retrieve booking fees"
@@ -198,9 +226,15 @@ def get_booking_fees(
     
     **Features:**
     - Configurable projection period (1-60 months)
-    - Historical data analysis
+    - Historical data analysis (optional)
     - Seasonal trend consideration
     - Occupancy rate projections
+    - Monthly breakdown of revenue streams
+    
+    **Query Parameters:**
+    - hostel_id: UUID of the hostel
+    - months: Number of months to project (1-60, default: 12)
+    - include_historical: Include historical comparison (default: true)
     """,
     responses={
         200: {
@@ -219,11 +253,9 @@ def get_booking_fees(
     }
 )
 def get_fee_projections(
-    hostel_id: str = Query(
+    hostel_id: UUID = Query(
         ...,
-        description="Unique identifier of the hostel",
-        min_length=1,
-        max_length=100
+        description="Unique identifier of the hostel"
     ),
     months: int = Query(
         default=12,
@@ -276,8 +308,14 @@ def get_fee_projections(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(e)
         )
+    except LookupError as e:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(e)
+        )
     except Exception as e:
+        # logger.error(f"Failed to generate projections: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to generate projections"
+            detail="Failed to generate projections. Please try again later."
         )

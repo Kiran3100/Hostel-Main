@@ -11,6 +11,8 @@ from app.api import deps
 from app.schemas.hostel.hostel_base import (
     HostelCreate,
     HostelUpdate,
+)
+from app.schemas.hostel.hostel_admin import (
     HostelStatusUpdate,
 )
 from app.schemas.hostel.hostel_response import (
@@ -346,12 +348,12 @@ def list_hostels(
     sort_by: str = Query(
         "created_at",
         description="Field to sort by",
-        regex="^(created_at|name|city|rating|price)$"
+        pattern="^(created_at|name|city|rating|price)$"
     ),
     sort_order: str = Query(
         "desc",
         description="Sort order",
-        regex="^(asc|desc)$"
+        pattern="^(asc|desc)$"
     ),
     service: HostelService = Depends(get_hostel_service),
 ) -> PaginatedResponse[HostelListItem]:
@@ -381,7 +383,7 @@ def list_hostels(
     """
     try:
         logger.info(
-            f"Listing hostels with filters: {filters.dict(exclude_unset=True)}"
+            f"Listing hostels with filters: {filters.model_dump(exclude_unset=True)}"
         )
         
         result = service.list_hostels(
@@ -393,7 +395,7 @@ def list_hostels(
         
         logger.info(
             f"Retrieved {len(result.items)} hostels "
-            f"(page {pagination.page} of {result.total_pages})"
+            f"(page {pagination.page} of {result.meta.total_pages})"
         )
         return result
         
@@ -504,10 +506,10 @@ def set_hostel_status(
     Update hostel status.
     
     Valid statuses:
-    - active: Hostel is operational
-    - inactive: Hostel temporarily closed
-    - maintenance: Under maintenance
-    - archived: Permanently closed
+    - ACTIVE: Hostel is operational
+    - INACTIVE: Hostel temporarily closed
+    - UNDER_MAINTENANCE: Under maintenance
+    - CLOSED: Permanently closed
     
     Args:
         hostel_id: The hostel identifier
@@ -530,7 +532,9 @@ def set_hostel_status(
         updated_hostel = service.set_status(
             hostel_id=hostel_id,
             status=status_payload.status,
-            reason=status_payload.reason
+            is_active=status_payload.is_active,
+            reason=status_payload.reason,
+            effective_date=status_payload.effective_date
         )
         
         if not updated_hostel:
@@ -581,7 +585,7 @@ def check_availability(
         ...,
         description="End date (YYYY-MM-DD)"
     ),
-    room_type: str | None = Query(
+    room_type: Optional[str] = Query(
         None,
         description="Filter by room type"
     ),

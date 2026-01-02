@@ -9,7 +9,7 @@ from uuid import uuid4
 import asyncio
 
 from app.core.logging import get_logger
-from app.core.events4.event_bus import EventBus
+from app.core.events.event_bus import EventBus
 from app.schemas.core.domain_events import BaseDomainEvent
 
 

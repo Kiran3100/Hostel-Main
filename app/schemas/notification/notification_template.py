@@ -30,6 +30,11 @@ __all__ = [
     "TemplateList",
     "TemplateCategory",
     "TemplateCopyRequest",
+    # Aliases for API
+    "NotificationTemplate",
+    "NotificationTemplateCreate",
+    "NotificationTemplateUpdate",
+    "TemplatePreviewRequest",
 ]
 
 
@@ -509,3 +514,10 @@ class TemplateCopyRequest(BaseCreateSchema):
         default=True,
         description="Copy category, tags, and description",
     )
+
+
+# Type aliases for API consistency
+NotificationTemplate = TemplateResponse
+NotificationTemplateCreate = TemplateCreate
+NotificationTemplateUpdate = TemplateUpdate
+TemplatePreviewRequest = TemplatePreview

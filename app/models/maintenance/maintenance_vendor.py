@@ -37,7 +37,7 @@ from app.models.base.mixins import (
 )
 
 
-class MaintenanceVendor(BaseModel, UUIDMixin, TimestampModel, SoftDeleteMixin, ContactMixin, AddressMixin, AuditMixin):
+class MaintenanceVendor(UUIDMixin, TimestampModel, SoftDeleteMixin, ContactMixin, AddressMixin, AuditMixin, BaseModel):
     """
     Maintenance vendor/contractor master record.
     
@@ -356,8 +356,8 @@ class MaintenanceVendor(BaseModel, UUIDMixin, TimestampModel, SoftDeleteMixin, C
         comment="Special instructions for working with vendor",
     )
     
-    # Metadata
-    metadata = Column(
+    # Metadata - renamed from 'metadata' to avoid conflict
+    additional_data = Column(
         JSONB,
         nullable=True,
         default={},
@@ -504,7 +504,7 @@ class MaintenanceVendor(BaseModel, UUIDMixin, TimestampModel, SoftDeleteMixin, C
             self.performance_tier = "needs_improvement"
 
 
-class VendorContract(BaseModel, UUIDMixin, TimestampModel, SoftDeleteMixin, AuditMixin):
+class VendorContract(UUIDMixin, TimestampModel, SoftDeleteMixin, AuditMixin, BaseModel):
     """
     Vendor contract management.
     
@@ -709,8 +709,8 @@ class VendorContract(BaseModel, UUIDMixin, TimestampModel, SoftDeleteMixin, Audi
         comment="Contract notes and remarks",
     )
     
-    # Metadata
-    metadata = Column(
+    # Metadata - renamed from 'metadata' to avoid conflict
+    additional_data = Column(
         JSONB,
         nullable=True,
         default={},
@@ -785,7 +785,7 @@ class VendorContract(BaseModel, UUIDMixin, TimestampModel, SoftDeleteMixin, Audi
         return (self.end_date - date.today()).days
 
 
-class VendorPerformanceReview(BaseModel, UUIDMixin, TimestampModel):
+class VendorPerformanceReview(UUIDMixin, TimestampModel, BaseModel):
     """
     Vendor performance review records.
     
@@ -961,8 +961,8 @@ class VendorPerformanceReview(BaseModel, UUIDMixin, TimestampModel):
         comment="Detailed review notes",
     )
     
-    # Metadata
-    metadata = Column(
+    # Metadata - renamed from 'metadata' to avoid conflict
+    additional_data = Column(
         JSONB,
         nullable=True,
         default={},

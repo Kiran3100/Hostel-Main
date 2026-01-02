@@ -41,7 +41,7 @@ __all__ = [
 ]
 
 
-class DocumentUpload(BaseModel, TimestampModel, UUIDMixin):
+class DocumentUpload(UUIDMixin, TimestampModel, BaseModel):  # ✅ FIXED ORDER
     """
     Document-specific upload and validation.
     
@@ -286,7 +286,7 @@ class DocumentUpload(BaseModel, TimestampModel, UUIDMixin):
         return f"<DocumentUpload(document_id={self.document_id}, type={self.document_type})>"
 
 
-class DocumentType(BaseModel, TimestampModel, UUIDMixin):
+class DocumentType(UUIDMixin, TimestampModel, BaseModel):  # ✅ FIXED ORDER
     """
     Document type definitions and requirements.
     
@@ -428,7 +428,7 @@ class DocumentType(BaseModel, TimestampModel, UUIDMixin):
         return f"<DocumentType(name={self.type_name}, category={self.category})>"
 
 
-class DocumentValidation(BaseModel, TimestampModel, UUIDMixin):
+class DocumentValidation(UUIDMixin, TimestampModel, BaseModel):  # ✅ FIXED ORDER
     """
     Document validation results and checks.
     
@@ -556,7 +556,7 @@ class DocumentValidation(BaseModel, TimestampModel, UUIDMixin):
         return f"<DocumentValidation(document_id={self.document_id}, valid={self.is_valid})>"
 
 
-class DocumentOCR(BaseModel, TimestampModel, UUIDMixin):
+class DocumentOCR(UUIDMixin, TimestampModel, BaseModel):  # ✅ FIXED ORDER
     """
     OCR (Optical Character Recognition) result.
     
@@ -707,7 +707,7 @@ class DocumentOCR(BaseModel, TimestampModel, UUIDMixin):
         return f"<DocumentOCR(document_id={self.document_id}, status={self.ocr_status})>"
 
 
-class DocumentVerification(BaseModel, TimestampModel, UUIDMixin):
+class DocumentVerification(UUIDMixin, TimestampModel, BaseModel):  # ✅ FIXED ORDER
     """
     Document verification history.
     
@@ -829,7 +829,7 @@ class DocumentVerification(BaseModel, TimestampModel, UUIDMixin):
         return f"<DocumentVerification(document_id={self.document_id}, status={self.verification_status})>"
 
 
-class DocumentExpiry(BaseModel, TimestampModel, UUIDMixin):
+class DocumentExpiry(UUIDMixin, TimestampModel, BaseModel):  # ✅ FIXED ORDER
     """
     Document expiry tracking and alerting.
     

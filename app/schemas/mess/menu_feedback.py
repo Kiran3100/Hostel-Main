@@ -20,7 +20,9 @@ from app.schemas.common.filters import DateRangeFilter
 __all__ = [
     "FeedbackRequest",
     "FeedbackResponse",
+    "FeedbackCreate",
     "RatingsSummary",
+    "FeedbackSummary",
     "QualityMetrics",
     "ItemRating",
     "FeedbackAnalysis",
@@ -177,6 +179,10 @@ class FeedbackRequest(BaseCreateSchema):
                 )
         
         return self
+
+
+# Alias for backward compatibility
+FeedbackCreate = FeedbackRequest
 
 
 class FeedbackResponse(BaseResponseSchema):
@@ -523,6 +529,10 @@ class RatingsSummary(BaseSchema):
             return "needs_improvement"
         else:
             return "poor"
+
+
+# Alias for backward compatibility
+FeedbackSummary = RatingsSummary
 
 
 class SentimentAnalysis(BaseSchema):

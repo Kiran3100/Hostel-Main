@@ -1,4 +1,3 @@
-# --- File: app/schemas/leave/leave_response.py ---
 """
 Leave response schemas for API responses.
 
@@ -7,7 +6,7 @@ detailed, summary, and list views with computed fields.
 """
 
 from datetime import date as Date, datetime
-from typing import Union
+from typing import List, Union
 
 from pydantic import ConfigDict, Field, computed_field
 from uuid import UUID
@@ -20,6 +19,7 @@ __all__ = [
     "LeaveDetail",
     "LeaveListItem",
     "LeaveSummary",
+    "PaginatedLeaveResponse",
 ]
 
 
@@ -552,3 +552,32 @@ class LeaveSummary(BaseSchema):
         if total_decided == 0:
             return 0.0
         return round((self.approved_count / total_decided) * 100, 2)
+
+
+class PaginatedLeaveResponse(BaseSchema):
+    """
+    Paginated response for leave application listings.
+    """
+    
+    model_config = ConfigDict(
+        json_schema_extra={
+            "example": {
+                "items": [],
+                "total": 150,
+                "page": 1,
+                "page_size": 20,
+                "total_pages": 8,
+                "has_next": True,
+                "has_prev": False
+            }
+        }
+    )
+
+    items: List[LeaveListItem] = Field(..., description="Leave applications for current page")
+    total: int = Field(..., description="Total number of applications")
+    page: int = Field(..., description="Current page number")
+    page_size: int = Field(..., description="Items per page")
+    total_pages: int = Field(..., description="Total number of pages")
+    has_next: bool = Field(..., description="Whether there is a next page")
+    has_prev: bool = Field(..., description="Whether there is a previous page")
+    filters_applied: Union[dict, None] = Field(None, description="Applied filters")

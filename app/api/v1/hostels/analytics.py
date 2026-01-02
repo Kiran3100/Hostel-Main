@@ -4,6 +4,7 @@ Provides analytics and statistical data for hostels
 """
 from typing import Any, Dict, List
 from datetime import date
+from enum import Enum
 
 from fastapi import APIRouter, Depends, Query, HTTPException, status, Path
 from sqlalchemy.orm import Session
@@ -11,10 +12,12 @@ from sqlalchemy.orm import Session
 from app.api import deps
 from app.schemas.hostel.hostel_analytics import (
     HostelAnalytics,
-    OccupancyStats,
-    RevenueStats,
-    AnalyticsPeriod,
-    TrendData,
+    HostelOccupancyStats,
+    HostelRevenueStats,
+    OccupancyDataPoint,
+    RevenueDataPoint,
+    BookingDataPoint,
+    AnalyticsRequest,
 )
 from app.services.hostel.hostel_analytics_service import HostelAnalyticsService
 from app.core.logging import get_logger
@@ -22,6 +25,28 @@ from app.core.logging import get_logger
 logger = get_logger(__name__)
 
 router = APIRouter(prefix="/hostels/analytics", tags=["hostels:analytics"])
+
+
+class AnalyticsPeriod(str, Enum):
+    """Analytics aggregation periods."""
+    DAILY = "daily"
+    WEEKLY = "weekly"
+    MONTHLY = "monthly"
+    QUARTERLY = "quarterly"
+    YEARLY = "yearly"
+
+
+class TrendData(BaseSchema):
+    """Trend data point for time series analysis."""
+    model_config = ConfigDict(from_attributes=True)
+    
+    timestamp: date = Field(..., description="Data point timestamp")
+    value: Decimal = Field(..., description="Metric value")
+    metric_type: str = Field(..., description="Type of metric")
+    change_percentage: Union[Decimal, None] = Field(
+        default=None, 
+        description="Percentage change from previous period"
+    )
 
 
 def get_analytics_service(
@@ -81,8 +106,8 @@ def get_dashboard(
     - Occupancy rates
     - Revenue statistics
     - Booking trends
-    - Popular room types
-    - Student demographics
+    - Complaint analytics
+    - Review analytics
     
     Args:
         hostel_id: The hostel identifier
@@ -140,7 +165,7 @@ def get_dashboard(
 
 @router.get(
     "/occupancy",
-    response_model=OccupancyStats,
+    response_model=HostelOccupancyStats,
     summary="Get occupancy statistics",
     description="Retrieve detailed occupancy statistics for a hostel",
     responses={
@@ -173,7 +198,7 @@ def get_occupancy_stats(
     ),
     admin=Depends(deps.get_admin_user),
     service: HostelAnalyticsService = Depends(get_analytics_service),
-) -> OccupancyStats:
+) -> HostelOccupancyStats:
     """
     Get detailed occupancy statistics.
     
@@ -182,7 +207,8 @@ def get_occupancy_stats(
     - Available beds
     - Occupied beds
     - Historical trends
-    - Peak occupancy periods
+    - Occupancy by room type
+    - Projections
     
     Args:
         hostel_id: The hostel identifier
@@ -204,7 +230,7 @@ def get_occupancy_stats(
             f"with period {period}"
         )
         
-        stats = service.occupancy_stats(
+        stats = service.get_occupancy_stats(
             hostel_id=hostel_id,
             period=period,
             room_type=room_type,
@@ -236,7 +262,7 @@ def get_occupancy_stats(
 
 @router.get(
     "/revenue",
-    response_model=RevenueStats,
+    response_model=HostelRevenueStats,
     summary="Get revenue statistics",
     description="Retrieve detailed revenue statistics for a hostel",
     responses={
@@ -268,17 +294,17 @@ def get_revenue_stats(
     ),
     admin=Depends(deps.get_admin_user),
     service: HostelAnalyticsService = Depends(get_analytics_service),
-) -> RevenueStats:
+) -> HostelRevenueStats:
     """
     Get detailed revenue statistics.
     
     Provides:
-    - Total revenue
-    - Revenue by room type
-    - Revenue trends
-    - Payment method breakdown
-    - Outstanding payments
-    - Projected revenue
+    - Total revenue and expenses
+    - Revenue by type breakdown
+    - Collection efficiency
+    - Monthly revenue breakdown
+    - Growth metrics
+    - Net profit calculations
     
     Args:
         hostel_id: The hostel identifier
@@ -300,7 +326,7 @@ def get_revenue_stats(
             f"with period {period}"
         )
         
-        stats = service.revenue_stats(
+        stats = service.get_revenue_stats(
             hostel_id=hostel_id,
             period=period,
             include_projections=include_projections,
@@ -351,7 +377,7 @@ def get_trends(
     metric: str = Query(
         ...,
         description="Metric to analyze (occupancy, revenue, bookings)",
-        regex="^(occupancy|revenue|bookings|complaints|maintenance)$"
+        pattern="^(occupancy|revenue|bookings|complaints|reviews)$"
     ),
     period: AnalyticsPeriod = Query(
         AnalyticsPeriod.MONTHLY,
@@ -408,6 +434,59 @@ def get_trends(
         )
 
 
+@router.post(
+    "/generate",
+    response_model=HostelAnalytics,
+    summary="Generate custom analytics",
+    description="Generate analytics for custom date range and parameters",
+    responses={
+        200: {"description": "Analytics generated successfully"},
+        400: {"description": "Invalid parameters"},
+        401: {"description": "Not authenticated"},
+        403: {"description": "Not authorized (admin required)"},
+    },
+)
+def generate_analytics(
+    request: AnalyticsRequest,
+    admin=Depends(deps.get_admin_user),
+    service: HostelAnalyticsService = Depends(get_analytics_service),
+) -> HostelAnalytics:
+    """
+    Generate analytics for custom parameters.
+    
+    Args:
+        request: Analytics generation request
+        admin: Current admin user
+        service: Analytics service instance
+        
+    Returns:
+        Generated analytics data
+    """
+    try:
+        logger.info(
+            f"Admin {admin.id} generating analytics for hostel {request.hostel_id} "
+            f"from {request.start_date} to {request.end_date}"
+        )
+        
+        analytics = service.generate_analytics(request)
+        
+        logger.info(f"Analytics generated for hostel {request.hostel_id}")
+        return analytics
+        
+    except ValueError as e:
+        logger.error(f"Validation error: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e)
+        )
+    except Exception as e:
+        logger.error(f"Error generating analytics: {str(e)}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to generate analytics"
+        )
+
+
 @router.get(
     "/{hostel_id}/export",
     summary="Export analytics data",
@@ -428,11 +507,19 @@ def export_analytics(
     format: str = Query(
         "csv",
         description="Export format",
-        regex="^(csv|excel|pdf)$"
+        pattern="^(csv|excel|pdf)$"
     ),
     period: AnalyticsPeriod = Query(
         AnalyticsPeriod.MONTHLY,
         description="Time period for export"
+    ),
+    start_date: date | None = Query(
+        None,
+        description="Start date for export range"
+    ),
+    end_date: date | None = Query(
+        None,
+        description="End date for export range"
     ),
     admin=Depends(deps.get_admin_user),
     service: HostelAnalyticsService = Depends(get_analytics_service),
@@ -444,6 +531,8 @@ def export_analytics(
         hostel_id: The hostel identifier
         format: Export file format
         period: Time period for data
+        start_date: Optional start date
+        end_date: Optional end date
         admin: Current admin user
         service: Analytics service instance
         
@@ -459,7 +548,9 @@ def export_analytics(
         export_file = service.export_analytics(
             hostel_id=hostel_id,
             format=format,
-            period=period
+            period=period,
+            start_date=start_date,
+            end_date=end_date
         )
         
         return export_file

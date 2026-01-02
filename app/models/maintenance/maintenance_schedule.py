@@ -34,7 +34,7 @@ from app.models.base.mixins import SoftDeleteMixin, UUIDMixin, AuditMixin
 from app.schemas.common.enums import MaintenanceCategory, MaintenanceRecurrence
 
 
-class MaintenanceSchedule(BaseModel, UUIDMixin, TimestampModel, SoftDeleteMixin, AuditMixin):
+class MaintenanceSchedule(UUIDMixin, TimestampModel, SoftDeleteMixin, AuditMixin, BaseModel):
     """
     Preventive maintenance schedule.
     
@@ -202,8 +202,8 @@ class MaintenanceSchedule(BaseModel, UUIDMixin, TimestampModel, SoftDeleteMixin,
         comment="Maintenance checklist items",
     )
     
-    # Metadata
-    metadata = Column(
+    # Metadata - renamed from 'metadata' to avoid conflict
+    additional_data = Column(
         JSONB,
         nullable=True,
         default={},
@@ -315,7 +315,7 @@ class MaintenanceSchedule(BaseModel, UUIDMixin, TimestampModel, SoftDeleteMixin,
             return current_due + relativedelta(days=30)  # Default to monthly
 
 
-class ScheduleExecution(BaseModel, UUIDMixin, TimestampModel, AuditMixin):
+class ScheduleExecution(UUIDMixin, TimestampModel, AuditMixin, BaseModel):
     """
     Schedule execution record.
     
@@ -459,8 +459,8 @@ class ScheduleExecution(BaseModel, UUIDMixin, TimestampModel, AuditMixin):
         comment="Reschedule next occurrence to specific date",
     )
     
-    # Metadata
-    metadata = Column(
+    # Metadata - renamed from 'metadata' to avoid conflict
+    additional_data = Column(
         JSONB,
         nullable=True,
         default={},

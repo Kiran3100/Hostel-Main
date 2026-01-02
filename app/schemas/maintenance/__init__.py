@@ -20,17 +20,21 @@ from app.schemas.maintenance.maintenance_analytics import (
     VendorPerformance,
 )
 from app.schemas.maintenance.maintenance_approval import (
+    ApprovalHistory,
     ApprovalRequest,
     ApprovalResponse,
     ApprovalWorkflow,
+    BulkApprovalRequest,
     RejectionRequest,
     ThresholdConfig,
 )
 from app.schemas.maintenance.maintenance_assignment import (
     AssignmentEntry,
     AssignmentHistory,
+    AssignmentResponse,
     AssignmentUpdate,
     BulkAssignment,
+    ReassignmentRequest,
     TaskAssignment,
     VendorAssignment,
 )
@@ -45,8 +49,10 @@ from app.schemas.maintenance.maintenance_completion import (
     CompletionCertificate,
     CompletionRequest,
     CompletionResponse,
+    CompletionVerification,
     MaterialItem,
     QualityCheck,
+    WorkSummary,
 )
 from app.schemas.maintenance.maintenance_cost import (
     BudgetAllocation,
@@ -84,8 +90,20 @@ from app.schemas.maintenance.maintenance_schedule import (
     ScheduleChecklistItem,
     ScheduleCreate,
     ScheduleExecution,
+    ScheduleExecutionCreate,
     ScheduleHistory,
     ScheduleUpdate,
+    UpcomingSchedule,
+)
+from app.schemas.maintenance.maintenance_vendor import (
+    MaintenanceVendor,
+    VendorContract,
+    VendorContractCreate,
+    VendorCreate,
+    VendorMetrics,
+    VendorPerformanceCreate,
+    VendorPerformanceReview,
+    VendorUpdate,
 )
 
 __all__ = [
@@ -110,12 +128,16 @@ __all__ = [
     "BulkAssignment",
     "AssignmentEntry",
     "AssignmentHistory",
+    "AssignmentResponse",
+    "ReassignmentRequest",
     # Approval schemas
     "ApprovalRequest",
     "ApprovalResponse",
     "ApprovalWorkflow",
     "RejectionRequest",
     "ThresholdConfig",
+    "ApprovalHistory",
+    "BulkApprovalRequest",
     # Completion schemas
     "CompletionRequest",
     "CompletionResponse",
@@ -123,6 +145,8 @@ __all__ = [
     "MaterialItem",
     "QualityCheck",
     "ChecklistItem",
+    "CompletionVerification",
+    "WorkSummary",
     # Schedule schemas
     "PreventiveSchedule",
     "ScheduleCreate",
@@ -130,9 +154,11 @@ __all__ = [
     "ScheduleChecklistItem",
     "RecurrenceConfig",
     "ScheduleExecution",
+    "ScheduleExecutionCreate",
     "ChecklistResult",
     "ScheduleHistory",
     "ExecutionHistoryItem",
+    "UpcomingSchedule",
     # Cost schemas
     "CostTracking",
     "BudgetAllocation",
@@ -156,4 +182,13 @@ __all__ = [
     "VendorPerformance",
     "PerformanceMetrics",
     "ProductivityMetrics",
+    # Vendor schemas
+    "MaintenanceVendor",
+    "VendorCreate",
+    "VendorUpdate",
+    "VendorPerformanceReview",
+    "VendorPerformanceCreate",
+    "VendorMetrics",
+    "VendorContract",
+    "VendorContractCreate",
 ]

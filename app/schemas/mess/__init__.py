@@ -14,6 +14,10 @@ from app.schemas.mess.meal_items import (
     MealItems,
     MenuItem,
     NutritionalInfo,
+    MealItemCreate,
+    MealItemUpdate,
+    MealItemResponse,
+    MealItemDetail,
 )
 from app.schemas.mess.menu_approval import (
     ApprovalAttempt,
@@ -22,6 +26,7 @@ from app.schemas.mess.menu_approval import (
     BulkApproval,
     MenuApprovalRequest,
     MenuApprovalResponse,
+    MenuRejectionRequest,
 )
 from app.schemas.mess.menu_duplication import (
     BulkMenuCreate,
@@ -34,9 +39,11 @@ from app.schemas.mess.menu_feedback import (
     FeedbackAnalysis,
     FeedbackRequest,
     FeedbackResponse,
+    FeedbackCreate,
     ItemRating,
     QualityMetrics,
     RatingsSummary,
+    FeedbackSummary,
     SentimentAnalysis,
 )
 from app.schemas.mess.menu_planning import (
@@ -44,15 +51,22 @@ from app.schemas.mess.menu_planning import (
     MenuPlanRequest,
     MenuSuggestion,
     MenuTemplate,
+    MenuTemplateCreate,
+    MenuTemplateUpdate,
     MonthlyPlan,
+    MonthlyPlanCreate,
     SpecialDayMenu,
     SpecialMenu,
     WeeklyPlan,
+    WeeklyPlanCreate,
+    SuggestionCriteria,
 )
 from app.schemas.mess.mess_menu_base import (
     MessMenuBase,
     MessMenuCreate,
     MessMenuUpdate,
+    MenuCreate,
+    MenuUpdate,
 )
 from app.schemas.mess.mess_menu_response import (
     DailyMenuSummary,
@@ -63,12 +77,28 @@ from app.schemas.mess.mess_menu_response import (
     TodayMenu,
     WeeklyMenu,
 )
+from app.schemas.mess.dietary_options import (
+    DietaryOption,
+    DietaryOptionUpdate,
+    StudentDietaryPreference,
+    StudentPreferenceUpdate,
+    MealCustomization,
+    CustomizationCreate,
+)
+from app.schemas.mess.menu_stats import (
+    MenuStats,
+    ItemPopularity,
+    MealTypeStats,
+    DietaryDistribution,
+)
 
 __all__ = [
     # Base schemas
     "MessMenuBase",
     "MessMenuCreate",
     "MessMenuUpdate",
+    "MenuCreate",
+    "MenuUpdate",
     # Response schemas
     "MenuResponse",
     "MenuDetail",
@@ -85,19 +115,30 @@ __all__ = [
     "AllergenInfo",
     "ItemMasterList",
     "ItemCategory",
+    "MealItemCreate",
+    "MealItemUpdate",
+    "MealItemResponse",
+    "MealItemDetail",
     # Planning
     "MenuPlanRequest",
     "WeeklyPlan",
+    "WeeklyPlanCreate",
     "DailyMenuPlan",
     "MonthlyPlan",
+    "MonthlyPlanCreate",
     "SpecialMenu",
     "SpecialDayMenu",
     "MenuTemplate",
+    "MenuTemplateCreate",
+    "MenuTemplateUpdate",
     "MenuSuggestion",
+    "SuggestionCriteria",
     # Feedback
     "FeedbackRequest",
     "FeedbackResponse",
+    "FeedbackCreate",
     "RatingsSummary",
+    "FeedbackSummary",
     "ItemRating",
     "QualityMetrics",
     "FeedbackAnalysis",
@@ -105,6 +146,7 @@ __all__ = [
     # Approval
     "MenuApprovalRequest",
     "MenuApprovalResponse",
+    "MenuRejectionRequest",
     "ApprovalWorkflow",
     "BulkApproval",
     "ApprovalHistory",
@@ -115,4 +157,16 @@ __all__ = [
     "DuplicateResponse",
     "CrossHostelDuplication",
     "MenuCloneConfig",
+    # Dietary
+    "DietaryOption",
+    "DietaryOptionUpdate",
+    "StudentDietaryPreference",
+    "StudentPreferenceUpdate",
+    "MealCustomization",
+    "CustomizationCreate",
+    # Stats
+    "MenuStats",
+    "ItemPopularity",
+    "MealTypeStats",
+    "DietaryDistribution",
 ]

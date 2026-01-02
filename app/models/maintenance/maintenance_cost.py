@@ -31,7 +31,7 @@ from app.models.base.base_model import BaseModel, TimestampModel
 from app.models.base.mixins import SoftDeleteMixin, UUIDMixin, AuditMixin
 
 
-class MaintenanceCost(BaseModel, UUIDMixin, TimestampModel, SoftDeleteMixin, AuditMixin):
+class MaintenanceCost(UUIDMixin, TimestampModel, SoftDeleteMixin, AuditMixin, BaseModel):
     """
     Cost tracking for maintenance requests.
     
@@ -145,8 +145,8 @@ class MaintenanceCost(BaseModel, UUIDMixin, TimestampModel, SoftDeleteMixin, Aud
         comment="Cost center code",
     )
     
-    # Metadata
-    metadata = Column(
+    # Metadata - renamed from 'metadata' to avoid conflict
+    additional_data = Column(
         JSONB,
         nullable=True,
         default={},
@@ -230,7 +230,7 @@ class MaintenanceCost(BaseModel, UUIDMixin, TimestampModel, SoftDeleteMixin, Aud
             self.within_budget = self.actual_cost <= self.approved_cost
 
 
-class BudgetAllocation(BaseModel, UUIDMixin, TimestampModel):
+class BudgetAllocation(UUIDMixin, TimestampModel, BaseModel):
     """
     Budget allocation for hostel maintenance.
     
@@ -346,8 +346,8 @@ class BudgetAllocation(BaseModel, UUIDMixin, TimestampModel):
         comment="Whether this budget is active",
     )
     
-    # Metadata
-    metadata = Column(
+    # Metadata - renamed from 'metadata' to avoid conflict
+    additional_data = Column(
         JSONB,
         nullable=True,
         default={},
@@ -414,7 +414,7 @@ class BudgetAllocation(BaseModel, UUIDMixin, TimestampModel):
             self.utilization_percentage = Decimal("0.00")
 
 
-class CategoryBudget(BaseModel, UUIDMixin, TimestampModel):
+class CategoryBudget(UUIDMixin, TimestampModel, BaseModel):
     """
     Budget allocation for specific maintenance category.
     
@@ -493,8 +493,8 @@ class CategoryBudget(BaseModel, UUIDMixin, TimestampModel):
         comment="Average cost per request",
     )
     
-    # Metadata
-    metadata = Column(
+    # Metadata - renamed from 'metadata' to avoid conflict
+    additional_data = Column(
         JSONB,
         nullable=True,
         default={},
@@ -569,7 +569,7 @@ class CategoryBudget(BaseModel, UUIDMixin, TimestampModel):
             self.average_cost = Decimal("0.00")
 
 
-class VendorInvoice(BaseModel, UUIDMixin, TimestampModel, SoftDeleteMixin, AuditMixin):
+class VendorInvoice(UUIDMixin, TimestampModel, SoftDeleteMixin, AuditMixin, BaseModel):
     """
     Vendor invoice for maintenance work.
     
@@ -726,8 +726,8 @@ class VendorInvoice(BaseModel, UUIDMixin, TimestampModel, SoftDeleteMixin, Audit
         comment="Additional notes",
     )
     
-    # Metadata
-    metadata = Column(
+    # Metadata - renamed from 'metadata' to avoid conflict
+    additional_data = Column(
         JSONB,
         nullable=True,
         default={},
@@ -814,7 +814,7 @@ class VendorInvoice(BaseModel, UUIDMixin, TimestampModel, SoftDeleteMixin, Audit
             self.payment_status = "overdue"
 
 
-class ExpenseReport(BaseModel, UUIDMixin, TimestampModel):
+class ExpenseReport(UUIDMixin, TimestampModel, BaseModel):
     """
     Maintenance expense report.
     
@@ -950,8 +950,8 @@ class ExpenseReport(BaseModel, UUIDMixin, TimestampModel):
         comment="Complete report data",
     )
     
-    # Metadata
-    metadata = Column(
+    # Metadata - renamed from 'metadata' to avoid conflict
+    additional_data = Column(
         JSONB,
         nullable=True,
         default={},

@@ -33,7 +33,7 @@ from app.models.base.mixins import SoftDeleteMixin, UUIDMixin, AuditMixin
 from app.schemas.common.enums import MaintenanceStatus
 
 
-class MaintenanceAssignment(BaseModel, UUIDMixin, TimestampModel, SoftDeleteMixin, AuditMixin):
+class MaintenanceAssignment(UUIDMixin, TimestampModel, SoftDeleteMixin, AuditMixin, BaseModel):
     """
     Task assignment tracking for maintenance requests.
     
@@ -192,8 +192,8 @@ class MaintenanceAssignment(BaseModel, UUIDMixin, TimestampModel, SoftDeleteMixi
         comment="Tools/equipment required",
     )
     
-    # Metadata
-    metadata = Column(
+    # Metadata - renamed from 'metadata' to avoid conflict with SQLAlchemy
+    additional_data = Column(
         JSONB,
         nullable=True,
         default={},
@@ -331,7 +331,7 @@ class MaintenanceAssignment(BaseModel, UUIDMixin, TimestampModel, SoftDeleteMixi
         return new_assignment
 
 
-class VendorAssignment(BaseModel, UUIDMixin, TimestampModel, SoftDeleteMixin, AuditMixin):
+class VendorAssignment(UUIDMixin, TimestampModel, SoftDeleteMixin, AuditMixin, BaseModel):
     """
     Vendor/contractor assignment for maintenance work.
     
@@ -552,8 +552,8 @@ class VendorAssignment(BaseModel, UUIDMixin, TimestampModel, SoftDeleteMixin, Au
         comment="Vendor performance notes",
     )
     
-    # Metadata
-    metadata = Column(
+    # Metadata - renamed from 'metadata' to avoid conflict with SQLAlchemy
+    additional_data = Column(
         JSONB,
         nullable=True,
         default={},

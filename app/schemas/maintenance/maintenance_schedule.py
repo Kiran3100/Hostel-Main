@@ -8,7 +8,7 @@ execution tracking, and checklist management.
 
 from datetime import date as Date, datetime
 from decimal import Decimal
-from typing import Annotated, List, Union
+from typing import Annotated, List, Optional, Union
 
 from pydantic import ConfigDict, Field, computed_field, field_validator, model_validator
 from uuid import UUID
@@ -31,6 +31,8 @@ __all__ = [
     "ScheduleUpdate",
     "ScheduleHistory",
     "ExecutionHistoryItem",
+    "ScheduleExecutionCreate",
+    "UpcomingSchedule",
 ]
 
 
@@ -970,3 +972,285 @@ class ScheduleHistory(BaseSchema):
             Decimal(self.on_time_executions) / Decimal(self.completed_executions) * 100,
             2,
         )
+        
+
+class ScheduleExecutionCreate(BaseCreateSchema):
+    """
+    Create schedule execution record.
+    
+    Simplified schema for recording preventive maintenance execution.
+    """
+    
+    model_config = ConfigDict(
+        json_schema_extra={
+            "example": {
+                "executed_by": "123e4567-e89b-12d3-a456-426614174222",
+                "execution_date": "2024-01-15",
+                "completed": True,
+                "findings": "All systems normal",
+                "next_action_required": False
+            }
+        }
+    )
+
+    executed_by: UUID = Field(
+        ...,
+        description="User who executed the schedule",
+    )
+    execution_date: Date = Field(
+        ...,
+        description="Date of execution",
+    )
+    completed: bool = Field(
+        ...,
+        description="Whether execution was completed",
+    )
+    
+    # Execution details
+    findings: str = Field(
+        ...,
+        min_length=10,
+        max_length=2000,
+        description="Findings from execution",
+    )
+    actions_taken: Optional[str] = Field(
+        None,
+        max_length=1000,
+        description="Actions taken during execution",
+    )
+    
+    # Checklist results
+    checklist_completed: bool = Field(
+        default=True,
+        description="Whether checklist was completed",
+    )
+    checklist_results: List[ChecklistResult] = Field(
+        default_factory=list,
+        description="Individual checklist item results",
+    )
+    
+    # Issues and follow-up
+    issues_identified: Optional[str] = Field(
+        None,
+        max_length=1000,
+        description="Issues identified during execution",
+    )
+    next_action_required: bool = Field(
+        default=False,
+        description="Whether follow-up action is required",
+    )
+    next_action_details: Optional[str] = Field(
+        None,
+        max_length=500,
+        description="Details of required follow-up action",
+    )
+    
+    # Cost and time
+    actual_duration_hours: Union[Annotated[Decimal, Field(ge=0, decimal_places=2)], None] = Field(
+        None,
+        description="Actual duration in hours",
+    )
+    actual_cost: Union[Annotated[Decimal, Field(ge=0, decimal_places=2)], None] = Field(
+        None,
+        description="Actual cost incurred",
+    )
+    materials_used: Optional[List[dict]] = Field(
+        None,
+        description="Materials used during execution",
+    )
+    
+    # Photos
+    execution_photos: List[str] = Field(
+        default_factory=list,
+        max_length=20,
+        description="Execution photos URLs",
+    )
+    
+    # Next occurrence
+    skip_next_occurrence: bool = Field(
+        default=False,
+        description="Skip next scheduled occurrence",
+    )
+    reschedule_next_to: Optional[Date] = Field(
+        None,
+        description="Reschedule next occurrence to specific date",
+    )
+
+    @field_validator("execution_date")
+    @classmethod
+    def validate_execution_date(cls, v: Date) -> Date:
+        """Validate execution date is not in future."""
+        if v > Date.today():
+            raise ValueError("Execution date cannot be in the future")
+        return v
+
+    @field_validator("findings")
+    @classmethod
+    def validate_findings(cls, v: str) -> str:
+        """Validate findings are meaningful."""
+        v = v.strip()
+        if len(v) < 10:
+            raise ValueError("Findings must be at least 10 characters")
+        return v
+
+    @model_validator(mode="after")
+    def validate_follow_up_requirements(self):
+        """Validate follow-up action details."""
+        if self.next_action_required and not self.next_action_details:
+            raise ValueError(
+                "next_action_details is required when next_action_required is True"
+            )
+        
+        return self
+
+
+class UpcomingSchedule(BaseSchema):
+    """
+    Upcoming preventive maintenance schedule item.
+    
+    Represents a scheduled maintenance task coming up soon.
+    """
+    
+    model_config = ConfigDict(
+        json_schema_extra={
+            "example": {
+                "schedule_id": "123e4567-e89b-12d3-a456-426614174000",
+                "title": "Monthly electrical inspection",
+                "due_date": "2024-02-01",
+                "days_until_due": 5,
+                "is_overdue": False,
+                "priority": "medium"
+            }
+        }
+    )
+
+    schedule_id: UUID = Field(
+        ...,
+        description="Schedule unique identifier",
+    )
+    schedule_code: Optional[str] = Field(
+        None,
+        description="Schedule code",
+    )
+    title: str = Field(
+        ...,
+        description="Schedule title",
+    )
+    description: Optional[str] = Field(
+        None,
+        description="Schedule description",
+    )
+    category: str = Field(
+        ...,
+        description="Maintenance category",
+    )
+    
+    # Scheduling
+    due_date: Date = Field(
+        ...,
+        description="Next due date",
+    )
+    recurrence: str = Field(
+        ...,
+        description="Recurrence pattern (daily, weekly, monthly, etc.)",
+    )
+    
+    # Status
+    is_overdue: bool = Field(
+        ...,
+        description="Whether schedule is overdue",
+    )
+    days_until_due: int = Field(
+        ...,
+        description="Days until due (negative if overdue)",
+    )
+    days_overdue: int = Field(
+        default=0,
+        ge=0,
+        description="Days overdue (0 if not overdue)",
+    )
+    
+    # Assignment
+    assigned_to: Optional[UUID] = Field(
+        None,
+        description="Default assignee user ID",
+    )
+    assigned_to_name: Optional[str] = Field(
+        None,
+        description="Default assignee name",
+    )
+    
+    # Estimates
+    estimated_duration_hours: Union[Annotated[Decimal, Field(ge=0, decimal_places=2)], None] = Field(
+        None,
+        description="Estimated duration in hours",
+    )
+    estimated_cost: Union[Annotated[Decimal, Field(ge=0, decimal_places=2)], None] = Field(
+        None,
+        description="Estimated cost",
+    )
+    
+    # History
+    last_execution_date: Optional[Date] = Field(
+        None,
+        description="Last execution date",
+    )
+    last_execution_status: Optional[str] = Field(
+        None,
+        pattern=r"^(completed|incomplete|skipped)$",
+        description="Last execution status",
+    )
+    total_executions: int = Field(
+        default=0,
+        ge=0,
+        description="Total times executed",
+    )
+    
+    # Priority
+    priority: str = Field(
+        default="medium",
+        pattern=r"^(low|medium|high)$",
+        description="Schedule priority",
+    )
+    
+    # Checklist
+    has_checklist: bool = Field(
+        default=False,
+        description="Whether schedule has checklist",
+    )
+    checklist_items_count: int = Field(
+        default=0,
+        ge=0,
+        description="Number of checklist items",
+    )
+
+    @computed_field  # type: ignore[misc]
+    @property
+    def urgency_level(self) -> str:
+        """Calculate urgency level based on days until due."""
+        if self.is_overdue:
+            return "overdue"
+        elif self.days_until_due <= 1:
+            return "critical"
+        elif self.days_until_due <= 3:
+            return "high"
+        elif self.days_until_due <= 7:
+            return "medium"
+        else:
+            return "low"
+
+    @computed_field  # type: ignore[misc]
+    @property
+    def status_badge_color(self) -> str:
+        """Get color for status badge in UI."""
+        urgency = self.urgency_level
+        color_map = {
+            "overdue": "red",
+            "critical": "orange",
+            "high": "yellow",
+            "medium": "blue",
+            "low": "green",
+        }
+        return color_map.get(urgency, "gray")
+
+

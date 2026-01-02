@@ -7,25 +7,28 @@ This module provides comprehensive CRUD operations for:
 - Discount rule administration
 """
 
-from typing import Any, List
+from typing import Any, List, Union
+from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
 from app.api import deps
 from app.schemas.fee_structure import (
-    FeeStructureCreate,
-    FeeStructureUpdate,
-    FeeStructureResponse,
-    FeeStructureList,
-    FeeDetail,
     ChargeComponent,
     ChargeComponentCreate,
+    ChargeComponentUpdate,
     DiscountConfiguration,
     DiscountCreate,
+    DiscountUpdate,
+    FeeDetail,
+    FeeStructureCreate,
+    FeeStructureList,
+    FeeStructureResponse,
+    FeeStructureUpdate,
 )
-from app.services.fee_structure.fee_structure_service import FeeStructureService
 from app.services.fee_structure.charge_component_service import ChargeComponentService
+from app.services.fee_structure.fee_structure_service import FeeStructureService
 
 # Router configuration
 router = APIRouter(
@@ -80,13 +83,16 @@ def get_charge_service(
     
     **Required Fields:**
     - Hostel ID
-    - Structure name
-    - Base pricing configuration
+    - Room type
+    - Fee type (billing frequency)
+    - Base amount
+    - Effective from date
     
     **Optional Fields:**
-    - Seasonal adjustments
-    - Custom charge components
-    - Discount rules
+    - Security deposit
+    - Mess charges configuration
+    - Utility charges configuration
+    - Effective to date
     """,
     responses={
         201: {
@@ -136,7 +142,13 @@ def create_fee_structure(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(e)
         )
+    except LookupError as e:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(e)
+        )
     except Exception as e:
+        # logger.error(f"Failed to create fee structure: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to create fee structure"
@@ -152,8 +164,8 @@ def create_fee_structure(
     Fetch complete details of a specific fee structure including:
     - Base configuration
     - Charge components
-    - Discount rules
-    - Historical changes
+    - Calculated totals
+    - Availability information
     """,
     responses={
         200: {
@@ -169,7 +181,7 @@ def create_fee_structure(
     }
 )
 def get_fee_structure(
-    structure_id: str,
+    structure_id: UUID,
     _admin=Depends(deps.get_admin_user),
     service: FeeStructureService = Depends(get_fee_service),
 ) -> Any:
@@ -187,15 +199,25 @@ def get_fee_structure(
     Raises:
         HTTPException: If structure not found
     """
-    structure = service.get_structure_by_id(structure_id)
-    
-    if not structure:
+    try:
+        structure = service.get_structure_by_id(structure_id)
+        
+        if not structure:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Fee structure not found: {structure_id}"
+            )
+        
+        return structure
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        # logger.error(f"Failed to retrieve fee structure: {str(e)}")
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Fee structure not found: {structure_id}"
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to retrieve fee structure"
         )
-    
-    return structure
 
 
 @router.put(
@@ -207,8 +229,10 @@ def get_fee_structure(
     Update an existing fee structure. All changes are audited.
     
     **Updatable Fields:**
-    - Structure name
-    - Pricing configuration
+    - Base amount
+    - Security deposit
+    - Mess charges
+    - Utility charges
     - Active status
     - Effective dates
     
@@ -234,7 +258,7 @@ def get_fee_structure(
     }
 )
 def update_fee_structure(
-    structure_id: str,
+    structure_id: UUID,
     payload: FeeStructureUpdate,
     _admin=Depends(deps.get_admin_user),
     service: FeeStructureService = Depends(get_fee_service),
@@ -277,6 +301,7 @@ def update_fee_structure(
             detail=str(e)
         )
     except Exception as e:
+        # logger.error(f"Failed to update fee structure: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to update fee structure"
@@ -309,7 +334,7 @@ def update_fee_structure(
     }
 )
 def delete_fee_structure(
-    structure_id: str,
+    structure_id: UUID,
     force: bool = Query(
         default=False,
         description="Force deletion even with active references"
@@ -353,6 +378,7 @@ def delete_fee_structure(
             detail=str(e)
         )
     except Exception as e:
+        # logger.error(f"Failed to delete fee structure: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to delete fee structure"
@@ -369,13 +395,13 @@ def delete_fee_structure(
     
     **Filtering Options:**
     - Active/inactive status
-    - Date range
-    - Structure type
+    - Room type
+    - Fee type (billing frequency)
     
     **Sorting Options:**
     - Creation date
-    - Name
-    - Last modified
+    - Effective date
+    - Room type
     """,
     responses={
         200: {
@@ -391,17 +417,25 @@ def delete_fee_structure(
     }
 )
 def list_fee_structures(
-    hostel_id: str = Query(
+    hostel_id: UUID = Query(
         ...,
-        description="Hostel ID to filter structures",
-        min_length=1,
-        max_length=100
+        description="Hostel ID to filter structures"
     ),
     active_only: bool = Query(
         default=True,
         description="Return only active structures"
     ),
-    pagination=Depends(deps.get_pagination_params),
+    skip: int = Query(
+        default=0,
+        ge=0,
+        description="Number of records to skip"
+    ),
+    limit: int = Query(
+        default=50,
+        ge=1,
+        le=100,
+        description="Maximum number of records to return"
+    ),
     _admin=Depends(deps.get_admin_user),
     service: FeeStructureService = Depends(get_fee_service),
 ) -> Any:
@@ -411,7 +445,8 @@ def list_fee_structures(
     Args:
         hostel_id: Unique identifier of the hostel
         active_only: Filter for active structures only
-        pagination: Pagination parameters
+        skip: Number of records to skip
+        limit: Maximum number of records to return
         _admin: Authenticated admin user
         service: Fee structure service instance
         
@@ -425,7 +460,8 @@ def list_fee_structures(
         return service.list_structures(
             hostel_id=hostel_id,
             active_only=active_only,
-            pagination=pagination
+            skip=skip,
+            limit=limit
         )
     except ValueError as e:
         raise HTTPException(
@@ -433,6 +469,7 @@ def list_fee_structures(
             detail=str(e)
         )
     except Exception as e:
+        # logger.error(f"Failed to retrieve fee structures: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to retrieve fee structures"
@@ -454,7 +491,7 @@ def list_fee_structures(
     
     **Component Types:**
     - Base rent
-    - Utilities
+    - Utilities (electricity, water)
     - Maintenance fees
     - Security deposits
     - Additional services
@@ -473,9 +510,9 @@ def list_fee_structures(
     }
 )
 def list_components(
-    structure_id: str,
-    component_type: str = Query(
-        None,
+    structure_id: UUID,
+    component_type: Union[str, None] = Query(
+        default=None,
         description="Filter by component type"
     ),
     active_only: bool = Query(
@@ -515,6 +552,7 @@ def list_components(
             detail=str(e)
         )
     except Exception as e:
+        # logger.error(f"Failed to retrieve charge components: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to retrieve charge components"
@@ -531,12 +569,13 @@ def list_components(
     
     **Required Fields:**
     - Component name
-    - Charge type
-    - Amount or calculation method
+    - Component type
+    - Amount or percentage value
     
     **Optional Fields:**
     - Description
-    - Tax applicability
+    - Tax configuration
+    - Billing frequency
     - Conditional rules
     """,
     responses={
@@ -559,7 +598,7 @@ def list_components(
     }
 )
 def add_component(
-    structure_id: str,
+    structure_id: UUID,
     payload: ChargeComponentCreate,
     _admin=Depends(deps.get_admin_user),
     service: ChargeComponentService = Depends(get_charge_service),
@@ -580,8 +619,10 @@ def add_component(
         HTTPException: If creation fails
     """
     try:
+        # Ensure fee_structure_id matches path parameter
+        payload.fee_structure_id = structure_id
+        
         component = service.create_component(
-            structure_id=structure_id,
             payload=payload,
             creator_id=_admin.id
         )
@@ -592,7 +633,13 @@ def add_component(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(e)
         )
+    except LookupError as e:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(e)
+        )
     except Exception as e:
+        # logger.error(f"Failed to create charge component: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to create charge component"
@@ -622,9 +669,9 @@ def add_component(
     }
 )
 def update_component(
-    structure_id: str,
-    component_id: str,
-    payload: ChargeComponentCreate,
+    structure_id: UUID,
+    component_id: UUID,
+    payload: ChargeComponentUpdate,
     _admin=Depends(deps.get_admin_user),
     service: ChargeComponentService = Depends(get_charge_service),
 ) -> Any:
@@ -668,6 +715,7 @@ def update_component(
             detail=str(e)
         )
     except Exception as e:
+        # logger.error(f"Failed to update charge component: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to update charge component"
@@ -692,8 +740,8 @@ def update_component(
     }
 )
 def delete_component(
-    structure_id: str,
-    component_id: str,
+    structure_id: UUID,
+    component_id: UUID,
     _admin=Depends(deps.get_admin_user),
     service: ChargeComponentService = Depends(get_charge_service),
 ) -> None:
@@ -728,6 +776,7 @@ def delete_component(
     except HTTPException:
         raise
     except Exception as e:
+        # logger.error(f"Failed to delete charge component: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to delete charge component"
@@ -748,11 +797,16 @@ def delete_component(
     Retrieve all discount configurations for a hostel.
     
     **Discount Types:**
-    - Early bird discounts
-    - Long-stay discounts
-    - Seasonal promotions
-    - Referral discounts
-    - Custom promotional codes
+    - Percentage discounts
+    - Fixed amount discounts
+    - Complete waivers
+    
+    **Applicable To:**
+    - Base rent
+    - Mess charges
+    - Total bill
+    - Security deposit
+    - Utilities
     """,
     responses={
         200: {
@@ -768,18 +822,16 @@ def delete_component(
     }
 )
 def list_discounts(
-    hostel_id: str = Query(
+    hostel_id: UUID = Query(
         ...,
-        description="Hostel ID to filter discounts",
-        min_length=1,
-        max_length=100
+        description="Hostel ID to filter discounts"
     ),
     active_only: bool = Query(
         default=True,
         description="Return only active discounts"
     ),
-    discount_type: str = Query(
-        None,
+    discount_type: Union[str, None] = Query(
+        default=None,
         description="Filter by discount type"
     ),
     _admin=Depends(deps.get_admin_user),
@@ -815,6 +867,7 @@ def list_discounts(
             detail=str(e)
         )
     except Exception as e:
+        # logger.error(f"Failed to retrieve discounts: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to retrieve discounts"
@@ -832,9 +885,10 @@ def list_discounts(
     **Configuration Options:**
     - Percentage or fixed amount
     - Validity period
-    - Usage limits
-    - Applicable fee structures
-    - Stacking rules
+    - Usage limits (total and per student)
+    - Applicable room types
+    - Minimum/maximum stay requirements
+    - Stacking rules with other discounts
     """,
     responses={
         201: {
@@ -883,7 +937,13 @@ def create_discount(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(e)
         )
+    except LookupError as e:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(e)
+        )
     except Exception as e:
+        # logger.error(f"Failed to create discount: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to create discount"
@@ -913,8 +973,8 @@ def create_discount(
     }
 )
 def update_discount(
-    discount_id: str,
-    payload: DiscountCreate,
+    discount_id: UUID,
+    payload: DiscountUpdate,
     _admin=Depends(deps.get_admin_user),
     service: ChargeComponentService = Depends(get_charge_service),
 ) -> Any:
@@ -956,6 +1016,7 @@ def update_discount(
             detail=str(e)
         )
     except Exception as e:
+        # logger.error(f"Failed to update discount: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to update discount"
@@ -980,7 +1041,7 @@ def update_discount(
     }
 )
 def delete_discount(
-    discount_id: str,
+    discount_id: UUID,
     _admin=Depends(deps.get_admin_user),
     service: ChargeComponentService = Depends(get_charge_service),
 ) -> None:
@@ -1013,6 +1074,7 @@ def delete_discount(
     except HTTPException:
         raise
     except Exception as e:
+        # logger.error(f"Failed to delete discount: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to delete discount"
