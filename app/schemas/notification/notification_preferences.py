@@ -24,6 +24,9 @@ __all__ = [
     "PreferenceUpdate",
     "UnsubscribeRequest",
     "QuietHours",
+    # Aliases for API
+    "NotificationPreferences",
+    "NotificationPreferencesUpdate",
 ]
 
 
@@ -560,3 +563,8 @@ class UnsubscribeRequest(BaseSchema):
         if not v.replace("-", "").replace("_", "").isalnum():
             raise ValueError("Invalid unsubscribe token format")
         return v
+
+
+# Type aliases for API consistency
+NotificationPreferences = UserPreferences
+NotificationPreferencesUpdate = PreferenceUpdate

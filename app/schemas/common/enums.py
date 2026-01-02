@@ -1,4 +1,3 @@
-# --- File: app/schemas/common/enums.py ---
 """
 All enumeration types used across the application.
 
@@ -7,8 +6,10 @@ system (users, hostels, rooms, bookings, payments, complaints, etc.).
 """
 
 from enum import Enum
+from typing import Dict, Final
 
 __all__ = [
+    # Existing enums
     "UserRole",
     "Gender",
     "HostelType",
@@ -59,6 +60,34 @@ __all__ = [
     "OTPType",
     "AuditActionCategory",
     "ChargeType",
+    # New leave management enums
+    "WorkflowAction",
+    # Leave management constants
+    "LEAVE_TYPE_LIMITS",
+    "MAX_LEAVE_DURATION_DAYS",
+    "MIN_LEAVE_DURATION_DAYS",
+    "ADVANCE_BOOKING_DAYS",
+    "BACKDATED_LEAVE_LIMIT_DAYS",
+    "MAX_REASON_LENGTH",
+    "MIN_REASON_LENGTH",
+    "DOCUMENT_REQUIRED_AFTER_DAYS",
+    "CONTACT_REQUIRED_AFTER_DAYS",
+    "EMERGENCY_CONTACT_REQUIRED_AFTER_DAYS",
+    "DEFAULT_ANNUAL_QUOTAS",
+    "LEAVE_STATUS_DISPLAY",
+    "LEAVE_TYPE_DISPLAY",
+    "STATUS_BADGE_COLORS",
+    "LEAVE_TYPE_COLORS",
+    "PHONE_REGEX_PATTERN",
+    "EMAIL_REGEX_PATTERN",
+    "UUID_REGEX_PATTERN",
+    "ACADEMIC_YEAR_START_MONTH",
+    "ACADEMIC_YEAR_END_MONTH",
+    "SEMESTER_1_MONTHS",
+    "SEMESTER_2_MONTHS",
+    "MAX_FILE_SIZE_MB",
+    "ALLOWED_FILE_EXTENSIONS",
+    "SUPPORTED_DOCUMENT_TYPES",
 ]
 
 
@@ -268,6 +297,18 @@ class LeaveStatus(str, Enum):
     APPROVED = "approved"
     REJECTED = "rejected"
     CANCELLED = "cancelled"
+    ESCALATED = "escalated"
+    DELEGATED = "delegated"
+
+
+class WorkflowAction(str, Enum):
+    """Workflow actions for leave processing."""
+
+    APPROVE = "approve"
+    REJECT = "reject"
+    ESCALATE = "escalate"
+    DELEGATE = "delegate"
+    REQUEST_CHANGES = "request_changes"
 
 
 class MaintenanceCategory(str, Enum):
@@ -569,3 +610,104 @@ class ChargeType(str, Enum):
     INCLUDED = "included"
     ACTUAL = "actual"
     FIXED_MONTHLY = "fixed_monthly"
+
+
+# ============================================================================
+# Leave Management Business Constants
+# ============================================================================
+
+# Business rule constants
+MAX_LEAVE_DURATION_DAYS: Final[int] = 30
+MIN_LEAVE_DURATION_DAYS: Final[int] = 1
+ADVANCE_BOOKING_DAYS: Final[int] = 90
+BACKDATED_LEAVE_LIMIT_DAYS: Final[int] = 7
+MAX_REASON_LENGTH: Final[int] = 1000
+MIN_REASON_LENGTH: Final[int] = 10
+
+# Leave type specific limits
+LEAVE_TYPE_LIMITS: Final[Dict[LeaveType, int]] = {
+    LeaveType.CASUAL: 30,
+    LeaveType.SICK: 60,
+    LeaveType.EMERGENCY: 15,
+    LeaveType.VACATION: 90,
+    LeaveType.OTHER: 30,
+}
+
+# Document requirements
+DOCUMENT_REQUIRED_AFTER_DAYS: Final[Dict[LeaveType, int]] = {
+    LeaveType.SICK: 3,
+    LeaveType.EMERGENCY: 1,
+    LeaveType.VACATION: 15,
+}
+
+# Contact requirements
+CONTACT_REQUIRED_AFTER_DAYS: Final[int] = 7
+EMERGENCY_CONTACT_REQUIRED_AFTER_DAYS: Final[int] = 15
+
+# Balance and quota constants
+DEFAULT_ANNUAL_QUOTAS: Final[Dict[LeaveType, int]] = {
+    LeaveType.CASUAL: 15,
+    LeaveType.SICK: 30,
+    LeaveType.EMERGENCY: 10,
+    LeaveType.VACATION: 60,
+    LeaveType.OTHER: 5,
+}
+
+# Status display mappings
+LEAVE_STATUS_DISPLAY: Final[Dict[LeaveStatus, str]] = {
+    LeaveStatus.PENDING: "Pending Approval",
+    LeaveStatus.APPROVED: "Approved",
+    LeaveStatus.REJECTED: "Rejected",
+    LeaveStatus.CANCELLED: "Cancelled",
+    LeaveStatus.ESCALATED: "Escalated",
+    LeaveStatus.DELEGATED: "Delegated",
+}
+
+LEAVE_TYPE_DISPLAY: Final[Dict[LeaveType, str]] = {
+    LeaveType.CASUAL: "Casual Leave",
+    LeaveType.SICK: "Sick Leave",
+    LeaveType.EMERGENCY: "Emergency Leave",
+    LeaveType.VACATION: "Vacation",
+    LeaveType.OTHER: "Other Leave",
+}
+
+# Status badge colors for UI
+STATUS_BADGE_COLORS: Final[Dict[LeaveStatus, str]] = {
+    LeaveStatus.PENDING: "yellow",
+    LeaveStatus.APPROVED: "green",
+    LeaveStatus.REJECTED: "red",
+    LeaveStatus.CANCELLED: "gray",
+    LeaveStatus.ESCALATED: "orange",
+    LeaveStatus.DELEGATED: "blue",
+}
+
+# Leave type colors for UI
+LEAVE_TYPE_COLORS: Final[Dict[LeaveType, str]] = {
+    LeaveType.CASUAL: "blue",
+    LeaveType.SICK: "red",
+    LeaveType.EMERGENCY: "orange",
+    LeaveType.VACATION: "purple",
+    LeaveType.OTHER: "gray",
+}
+
+# Validation patterns
+PHONE_REGEX_PATTERN: Final[str] = r"^\+?[1-9]\d{9,14}$"
+EMAIL_REGEX_PATTERN: Final[str] = r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$"
+UUID_REGEX_PATTERN: Final[str] = r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+
+# Time and date constants
+ACADEMIC_YEAR_START_MONTH: Final[int] = 7  # July
+ACADEMIC_YEAR_END_MONTH: Final[int] = 6   # June
+SEMESTER_1_MONTHS: Final[tuple] = (7, 8, 9, 10, 11, 12)  # July to December
+SEMESTER_2_MONTHS: Final[tuple] = (1, 2, 3, 4, 5, 6)     # January to June
+
+# File upload constants
+MAX_FILE_SIZE_MB: Final[int] = 10
+ALLOWED_FILE_EXTENSIONS: Final[tuple] = ('.pdf', '.jpg', '.jpeg', '.png', '.doc', '.docx')
+SUPPORTED_DOCUMENT_TYPES: Final[tuple] = (
+    'medical_certificate',
+    'travel_document',
+    'invitation_letter',
+    'emergency_proof',
+    'other'
+)

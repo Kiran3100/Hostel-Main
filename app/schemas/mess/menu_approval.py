@@ -18,6 +18,7 @@ from app.schemas.common.base import BaseCreateSchema, BaseSchema
 __all__ = [
     "MenuApprovalRequest",
     "MenuApprovalResponse",
+    "MenuRejectionRequest",
     "ApprovalWorkflow",
     "BulkApproval",
     "ApprovalHistory",
@@ -54,7 +55,6 @@ class MenuApprovalRequest(BaseCreateSchema):
     )
     
     # Budget information
-    # Pydantic v2: Decimal fields with precision handled via field_validator
     estimated_cost_per_person: Union[Decimal, None] = Field(
         None,
         ge=0,
@@ -142,6 +142,56 @@ class MenuApprovalRequest(BaseCreateSchema):
                 )
         
         return self
+
+
+class MenuRejectionRequest(BaseCreateSchema):
+    """
+    Request to reject a menu with detailed reasoning.
+    
+    Provides structured rejection with reasons and suggestions.
+    """
+
+    menu_id: UUID = Field(
+        ...,
+        description="Menu unique identifier",
+    )
+    rejected_by: UUID = Field(
+        ...,
+        description="User ID of the rejector",
+    )
+    rejection_reason: str = Field(
+        ...,
+        min_length=10,
+        max_length=500,
+        description="Detailed reason for rejection",
+    )
+    rejection_category: str = Field(
+        default="other",
+        pattern=r"^(budget_exceeded|nutritional_issues|item_unavailability|policy_violation|quality_concerns|other)$",
+        description="Category of rejection reason",
+    )
+    suggested_changes: Union[str, None] = Field(
+        None,
+        max_length=1000,
+        description="Suggested modifications to menu",
+    )
+    requires_resubmission: bool = Field(
+        default=True,
+        description="Whether menu needs to be resubmitted after changes",
+    )
+    allow_minor_edits: bool = Field(
+        default=False,
+        description="Whether minor edits can be made without full resubmission",
+    )
+
+    @field_validator("rejection_reason", "suggested_changes", mode="before")
+    @classmethod
+    def normalize_text(cls, v: Union[str, None]) -> Union[str, None]:
+        """Normalize text fields."""
+        if v is not None:
+            v = v.strip()
+            return v if v else None
+        return None
 
 
 class MenuApprovalResponse(BaseSchema):

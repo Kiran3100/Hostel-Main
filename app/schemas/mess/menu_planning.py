@@ -13,17 +13,22 @@ from uuid import UUID
 
 from pydantic import Field, field_validator, model_validator, computed_field
 
-from app.schemas.common.base import BaseCreateSchema, BaseSchema
+from app.schemas.common.base import BaseCreateSchema, BaseSchema, BaseUpdateSchema
 
 __all__ = [
     "MenuPlanRequest",
     "WeeklyPlan",
+    "WeeklyPlanCreate",
     "DailyMenuPlan",
     "MonthlyPlan",
+    "MonthlyPlanCreate",
     "SpecialMenu",
     "SpecialDayMenu",
     "MenuTemplate",
+    "MenuTemplateCreate",
+    "MenuTemplateUpdate",
     "MenuSuggestion",
+    "SuggestionCriteria",
 ]
 
 
@@ -346,6 +351,42 @@ class WeeklyPlan(BaseCreateSchema):
         return v
 
 
+class WeeklyPlanCreate(BaseCreateSchema):
+    """
+    Create weekly menu plan.
+    
+    Plans menu for entire week (Monday-Sunday).
+    """
+
+    hostel_id: UUID = Field(..., description="Hostel unique identifier")
+    week_start_date: Date = Field(
+        ...,
+        description="Week start date (Monday)",
+    )
+    week_number: int = Field(..., ge=1, le=53)
+    year: int = Field(..., ge=2000)
+    
+    monday: DailyMenuPlan = Field(..., description="Monday menu")
+    tuesday: DailyMenuPlan = Field(..., description="Tuesday menu")
+    wednesday: DailyMenuPlan = Field(..., description="Wednesday menu")
+    thursday: DailyMenuPlan = Field(..., description="Thursday menu")
+    friday: DailyMenuPlan = Field(..., description="Friday menu")
+    saturday: DailyMenuPlan = Field(..., description="Saturday menu")
+    sunday: DailyMenuPlan = Field(..., description="Sunday menu")
+    
+    created_by: UUID = Field(..., description="Creator user ID")
+    plan_name: Union[str, None] = Field(None, max_length=255)
+    notes: Union[str, None] = Field(None, max_length=1000)
+
+    @field_validator("week_start_date", mode="after")
+    @classmethod
+    def validate_monday(cls, v: Date) -> Date:
+        """Ensure week starts on Monday."""
+        if v.weekday() != 0:
+            raise ValueError("Week must start on Monday")
+        return v
+
+
 class SpecialDayMenu(BaseSchema):
     """
     Special day menu in monthly plan.
@@ -473,6 +514,38 @@ class MonthlyPlan(BaseCreateSchema):
         
         return self
 
+
+class MonthlyPlanCreate(BaseCreateSchema):
+    """
+    Create monthly menu plan.
+    
+    Comprehensive planning for entire month.
+    """
+
+    hostel_id: UUID = Field(..., description="Hostel unique identifier")
+    month: str = Field(
+        ...,
+        pattern=r"^\d{4}-(0[1-9]|1[0-2])$",
+        description="Month in YYYY-MM format",
+    )
+    month_name: str = Field(..., description="Month name")
+    year: int = Field(..., ge=2000)
+    
+    weeks: List[WeeklyPlan] = Field(
+        ...,
+        min_length=4,
+        max_length=5,
+        description="Weekly plans",
+    )
+    special_days: List[SpecialDayMenu] = Field(
+        default_factory=list,
+        max_length=31,
+    )
+    
+    created_by: UUID = Field(..., description="Creator user ID")
+    notes: Union[str, None] = Field(None, max_length=2000)
+
+# --- Continuation of menu_planning.py ---
 
 class SpecialMenu(BaseCreateSchema):
     """
@@ -727,6 +800,71 @@ class MenuTemplate(BaseCreateSchema):
         return v
 
 
+class MenuTemplateCreate(BaseCreateSchema):
+    """
+    Create reusable menu template.
+    
+    Template can be applied to multiple dates for efficient planning.
+    """
+
+    hostel_id: UUID = Field(..., description="Hostel unique identifier")
+    template_name: str = Field(
+        ...,
+        min_length=3,
+        max_length=100,
+        description="Template name",
+    )
+    template_code: Union[str, None] = Field(
+        None,
+        max_length=50,
+        description="Template code/identifier",
+    )
+    description: Union[str, None] = Field(
+        None,
+        max_length=500,
+        description="Template description",
+    )
+    template_type: str = Field(
+        ...,
+        pattern=r"^(weekly|festival|summer|winter|monsoon|exam_period|vacation|regular)$",
+        description="Template type",
+    )
+    applicable_season: Union[str, None] = Field(
+        None,
+        pattern=r"^(spring|summer|monsoon|autumn|winter|all)$",
+    )
+    daily_menus: Dict[str, DailyMenuPlan] = Field(
+        ...,
+        description="Day-wise menu plans",
+    )
+    created_by: UUID = Field(..., description="Creator user ID")
+    is_active: bool = Field(default=True)
+    tags: List[str] = Field(default_factory=list, max_length=20)
+
+
+class MenuTemplateUpdate(BaseUpdateSchema):
+    """
+    Update existing menu template.
+    
+    All fields optional for partial updates.
+    """
+
+    template_name: Union[str, None] = Field(None, min_length=3, max_length=100)
+    template_code: Union[str, None] = Field(None, max_length=50)
+    description: Union[str, None] = Field(None, max_length=500)
+    template_type: Union[str, None] = Field(
+        None,
+        pattern=r"^(weekly|festival|summer|winter|monsoon|exam_period|vacation|regular)$",
+    )
+    applicable_season: Union[str, None] = Field(
+        None,
+        pattern=r"^(spring|summer|monsoon|autumn|winter|all)$",
+    )
+    daily_menus: Union[Dict[str, DailyMenuPlan], None] = None
+    is_active: Union[bool, None] = None
+    tags: Union[List[str], None] = Field(None, max_length=20)
+
+
 class MenuSuggestion(BaseSchema):
     """
     AI/system generated menu suggestions.
@@ -865,3 +1003,89 @@ class MenuSuggestion(BaseSchema):
             return "moderate"
         else:
             return "consider_alternatives"
+
+
+class SuggestionCriteria(BaseCreateSchema):
+    """
+    Criteria for AI menu suggestions.
+    
+    Defines parameters for generating intelligent menu recommendations.
+    """
+
+    hostel_id: UUID = Field(..., description="Hostel unique identifier")
+    
+    # Date range
+    start_date: Date = Field(..., description="Suggestion period start")
+    end_date: Date = Field(..., description="Suggestion period end")
+    
+    # Preferences
+    dietary_preferences: List[str] = Field(
+        default_factory=list,
+        max_length=10,
+        description="Dietary preferences to consider",
+    )
+    exclude_items: List[str] = Field(
+        default_factory=list,
+        max_length=30,
+        description="Items to exclude from suggestions",
+    )
+    preferred_cuisines: List[str] = Field(
+        default_factory=list,
+        max_length=10,
+        description="Preferred cuisine types",
+    )
+    
+    # Constraints
+    budget_per_person_max: Union[Decimal, None] = Field(
+        None,
+        ge=0,
+        description="Maximum budget per person",
+    )
+    ensure_variety: bool = Field(
+        default=True,
+        description="Ensure item variety",
+    )
+    min_days_between_repeat: int = Field(
+        default=3,
+        ge=1,
+        le=7,
+        description="Minimum days before repeating items",
+    )
+    
+    # Nutritional goals
+    target_calories_per_day: Union[int, None] = Field(
+        None,
+        ge=1000,
+        le=5000,
+    )
+    ensure_balanced_nutrition: bool = Field(default=True)
+    
+    # Seasonal preferences
+    prefer_seasonal_items: bool = Field(default=True)
+    
+    # Optimization goals
+    optimize_for: str = Field(
+        default="balanced",
+        pattern=r"^(cost|nutrition|variety|popularity|balanced)$",
+        description="Primary optimization goal",
+    )
+
+    @field_validator("budget_per_person_max", mode="after")
+    @classmethod
+    def round_budget(cls, v: Union[Decimal, None]) -> Union[Decimal, None]:
+        """Round budget to 2 decimal places."""
+        if v is not None:
+            return v.quantize(Decimal("0.01"))
+        return v
+
+    @model_validator(mode="after")
+    def validate_date_range(self) -> "SuggestionCriteria":
+        """Validate date range."""
+        if self.end_date < self.start_date:
+            raise ValueError("End date must be after start date")
+        
+        days_span = (self.end_date - self.start_date).days + 1
+        if days_span > 90:
+            raise ValueError("Suggestion period cannot exceed 90 days")
+        
+        return self

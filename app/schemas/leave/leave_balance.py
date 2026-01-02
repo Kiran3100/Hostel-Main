@@ -1,4 +1,3 @@
-# --- File: app/schemas/leave/leave_balance.py ---
 """
 Leave balance and quota management schemas.
 
@@ -6,7 +5,7 @@ Provides schemas for tracking leave entitlements, usage,
 and remaining balance with validation.
 """
 
-from datetime import date as Date
+from datetime import date as Date, datetime
 from decimal import Decimal
 from typing import List, Union
 
@@ -21,6 +20,9 @@ __all__ = [
     "LeaveBalanceSummary",
     "LeaveQuota",
     "LeaveUsageDetail",
+    "LeaveBalanceDetail",
+    "LeaveAdjustment",
+    "LeaveUsageHistory",
 ]
 
 
@@ -457,3 +459,97 @@ class LeaveUsageDetail(BaseSchema):
         if self.approved_at is None:
             return None
         return (self.approved_at - self.applied_at).days
+
+
+class LeaveBalanceDetail(BaseSchema):
+    """
+    Detailed balance information for a specific leave type.
+    
+    Comprehensive view of balance, usage, and policies for one leave type.
+    """
+    
+    model_config = ConfigDict(
+        json_schema_extra={
+            "example": {
+                "student_id": "123e4567-e89b-12d3-a456-426614174000",
+                "leave_type": "casual",
+                "allocated_days": 15,
+                "used_days": 5,
+                "pending_days": 2,
+                "remaining_days": 8,
+                "expires_at": "2024-12-31"
+            }
+        }
+    )
+
+    student_id: UUID = Field(..., description="Student ID")
+    student_name: str = Field(..., description="Student name")
+    leave_type: LeaveType = Field(..., description="Leave type")
+    allocated_days: int = Field(..., description="Total allocated days")
+    used_days: int = Field(..., description="Days used")
+    pending_days: int = Field(..., description="Days in pending applications")
+    remaining_days: int = Field(..., description="Days remaining")
+    carry_forward_days: int = Field(default=0, description="Carried forward from previous year")
+    expires_at: Union[datetime, None] = Field(None, description="Balance expiry date")
+    last_used_date: Union[datetime, None] = Field(None, description="Last leave date")
+    next_allocation_date: Union[datetime, None] = Field(None, description="Next allocation date")
+
+
+class LeaveAdjustment(BaseSchema):
+    """
+    Manual balance adjustment record for audit trail.
+    """
+    
+    model_config = ConfigDict(
+        json_schema_extra={
+            "example": {
+                "adjustment_id": "123e4567-e89b-12d3-a456-426614174000",
+                "student_id": "123e4567-e89b-12d3-a456-426614174001",
+                "leave_type": "casual",
+                "adjustment_days": 5,
+                "reason": "Special allocation for project work",
+                "performed_by": "Admin User",
+                "performed_at": "2024-01-15T14:30:00Z"
+            }
+        }
+    )
+
+    adjustment_id: UUID = Field(..., description="Adjustment record ID")
+    student_id: UUID = Field(..., description="Student ID")
+    leave_type: LeaveType = Field(..., description="Leave type adjusted")
+    adjustment_days: int = Field(..., description="Days adjusted (positive or negative)")
+    reason: str = Field(..., description="Reason for adjustment")
+    reference: Union[str, None] = Field(None, description="Reference document/number")
+    previous_balance: int = Field(..., description="Balance before adjustment")
+    new_balance: int = Field(..., description="Balance after adjustment")
+    performed_by: str = Field(..., description="User who made adjustment")
+    performed_by_id: UUID = Field(..., description="User ID who made adjustment")
+    performed_at: datetime = Field(..., description="Adjustment timestamp")
+
+
+class LeaveUsageHistory(BaseSchema):
+    """
+    Paginated leave usage history with metadata.
+    """
+    
+    model_config = ConfigDict(
+        json_schema_extra={
+            "example": {
+                "student_id": "123e4567-e89b-12d3-a456-426614174000",
+                "usage_records": [],
+                "total_count": 25,
+                "page": 1,
+                "page_size": 10
+            }
+        }
+    )
+
+    student_id: UUID = Field(..., description="Student ID")
+    student_name: str = Field(..., description="Student name")
+    usage_records: List[LeaveUsageDetail] = Field(..., description="Usage details")
+    total_count: int = Field(..., description="Total usage records")
+    page: int = Field(..., description="Current page")
+    page_size: int = Field(..., description="Records per page")
+    total_pages: int = Field(..., description="Total pages")
+    period_start: Union[datetime, None] = Field(None, description="Query period start")
+    period_end: Union[datetime, None] = Field(None, description="Query period end")

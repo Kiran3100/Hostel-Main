@@ -37,7 +37,7 @@ __all__ = [
 ]
 
 
-class ImageUpload(BaseModel, TimestampModel, UUIDMixin):
+class ImageUpload(UUIDMixin, TimestampModel, BaseModel):
     """
     Image-specific upload handling.
     
@@ -224,7 +224,8 @@ class ImageUpload(BaseModel, TimestampModel, UUIDMixin):
         uselist=False,
         cascade="all, delete-orphan",
     )
-    metadata: Mapped[Optional["ImageMetadata"]] = relationship(
+    # CHANGED: Renamed from 'metadata' to 'image_metadata'
+    image_metadata: Mapped[Optional["ImageMetadata"]] = relationship(
         "ImageMetadata",
         back_populates="image",
         uselist=False,
@@ -240,7 +241,7 @@ class ImageUpload(BaseModel, TimestampModel, UUIDMixin):
         return f"<ImageUpload(file_id={self.file_id}, usage={self.usage}, {self.original_width}x{self.original_height})>"
 
 
-class ImageVariant(BaseModel, TimestampModel, UUIDMixin):
+class ImageVariant(UUIDMixin, TimestampModel, BaseModel):
     """
     Generated image variant information.
     
@@ -346,7 +347,7 @@ class ImageVariant(BaseModel, TimestampModel, UUIDMixin):
         return f"<ImageVariant(variant={self.variant_name}, {self.width}x{self.height})>"
 
 
-class ImageProcessing(BaseModel, TimestampModel, UUIDMixin):
+class ImageProcessing(UUIDMixin, TimestampModel, BaseModel):
     """
     Image processing queue and status tracking.
     
@@ -488,7 +489,7 @@ class ImageProcessing(BaseModel, TimestampModel, UUIDMixin):
         return f"<ImageProcessing(image_id={self.image_id}, status={self.status}, progress={self.progress_percentage}%)>"
 
 
-class ImageOptimization(BaseModel, TimestampModel, UUIDMixin):
+class ImageOptimization(UUIDMixin, TimestampModel, BaseModel):
     """
     Image optimization settings and results.
     
@@ -628,7 +629,7 @@ class ImageOptimization(BaseModel, TimestampModel, UUIDMixin):
         return f"<ImageOptimization(image_id={self.image_id}, reduction={self.reduction_percentage:.1f}%)>"
 
 
-class ImageMetadata(BaseModel, TimestampModel, UUIDMixin):
+class ImageMetadata(UUIDMixin, TimestampModel, BaseModel):
     """
     Extended image metadata including EXIF data.
     
@@ -800,7 +801,7 @@ class ImageMetadata(BaseModel, TimestampModel, UUIDMixin):
     # Relationships
     image: Mapped["ImageUpload"] = relationship(
         "ImageUpload",
-        back_populates="metadata",
+        back_populates="image_metadata",  # CHANGED: Updated to match new relationship name
     )
 
     __table_args__ = (

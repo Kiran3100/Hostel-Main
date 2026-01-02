@@ -18,6 +18,8 @@ __all__ = [
     "MessMenuBase",
     "MessMenuCreate",
     "MessMenuUpdate",
+    "MenuCreate",
+    "MenuUpdate",
 ]
 
 
@@ -454,3 +456,16 @@ class MessMenuUpdate(BaseUpdateSchema):
             v = v.strip()
             return v if v else None
         return None
+
+
+# Aliases for backward compatibility with API endpoints
+MenuCreate = MessMenuCreate
+MenuUpdate = MessMenuUpdate
+
+__all__ = [
+    "MessMenuBase",
+    "MessMenuCreate",
+    "MessMenuUpdate",
+    "MenuCreate",
+    "MenuUpdate",
+]

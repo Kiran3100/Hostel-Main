@@ -1,11 +1,10 @@
-# --- File: app/schemas/hostel/hostel_comparison.py ---
 """
 Hostel comparison schemas for side-by-side analysis.
 """
 
 from datetime import datetime
 from decimal import Decimal
-from typing import Annotated, Dict, List, Union
+from typing import Annotated, Dict, List, Union, Optional
 from uuid import UUID
 
 from pydantic import ConfigDict, Field, field_validator
@@ -21,7 +20,34 @@ __all__ = [
     "ComparisonSummary",
     "PriceComparison",
     "AmenityComparison",
+    "ComparisonCriteria",
+    "HostelRecommendation",
+    "PricingComparison",
 ]
+
+
+class ComparisonCriteria(BaseSchema):
+    """
+    Criteria for hostel comparison and recommendations.
+    """
+    model_config = ConfigDict(from_attributes=True)
+    
+    city: Optional[str] = Field(None, description="City to search in")
+    budget_min: Optional[Decimal] = Field(None, ge=0, description="Minimum budget")
+    budget_max: Optional[Decimal] = Field(None, ge=0, description="Maximum budget")
+    room_type: Optional[str] = Field(None, description="Preferred room type")
+    amenities: List[str] = Field(default_factory=list, description="Required amenities")
+    gender_preference: Optional[str] = Field(None, description="Gender preference")
+    distance_from_university: Optional[Decimal] = Field(None, ge=0, le=50, description="Max distance from university in km")
+    
+    @field_validator("budget_min", "budget_max")
+    @classmethod
+    def validate_budget_range(cls, v, info):
+        if info.field_name == "budget_max" and hasattr(info, "data") and info.data.get("budget_min"):
+            budget_min = info.data.get("budget_min")
+            if v and budget_min and v < budget_min:
+                raise ValueError("budget_max must be greater than budget_min")
+        return v
 
 
 class HostelComparisonRequest(BaseCreateSchema):
@@ -38,6 +64,11 @@ class HostelComparisonRequest(BaseCreateSchema):
         max_length=4,
         description="2-4 hostel IDs to compare",
     )
+    
+    criteria: Optional[ComparisonCriteria] = Field(
+        None,
+        description="Additional comparison criteria"
+    )
 
     @field_validator("hostel_ids")
     @classmethod
@@ -46,6 +77,68 @@ class HostelComparisonRequest(BaseCreateSchema):
         if len(v) != len(set(v)):
             raise ValueError("Hostel IDs must be unique")
         return v
+
+
+class PricingComparison(BaseSchema):
+    """
+    Detailed pricing comparison for a hostel.
+    """
+    model_config = ConfigDict(from_attributes=True)
+    
+    hostel_id: UUID = Field(..., description="Hostel identifier")
+    hostel_name: str = Field(..., description="Hostel name")
+    room_type: str = Field(..., description="Room type")
+    base_rent: Annotated[Decimal, Field(ge=0, description="Base monthly rent")]
+    additional_fees: Dict[str, Decimal] = Field(default_factory=dict, description="Additional fees breakdown")
+    discounts: Dict[str, Decimal] = Field(default_factory=dict, description="Available discounts")
+    total_monthly_cost: Annotated[Decimal, Field(ge=0, description="Total monthly cost")]
+    security_deposit: Optional[Annotated[Decimal, Field(ge=0, description="Security deposit")]] = None
+    price_per_amenity: Optional[Annotated[Decimal, Field(ge=0, description="Price per amenity ratio")]] = None
+    duration_months: int = Field(..., ge=1, le=12, description="Booking duration in months")
+
+
+class HostelRecommendation(BaseSchema):
+    """
+    Hostel recommendation with scoring details.
+    """
+    model_config = ConfigDict(from_attributes=True)
+    
+    hostel_id: UUID = Field(..., description="Hostel identifier")
+    hostel_name: str = Field(..., description="Hostel name")
+    slug: str = Field(..., description="URL slug")
+    city: str = Field(..., description="City")
+    state: str = Field(..., description="State")
+    
+    # Pricing
+    starting_price_monthly: Annotated[Decimal, Field(ge=0, description="Starting monthly price")]
+    price_range_monthly: str = Field(..., description="Price range display")
+    
+    # Ratings
+    average_rating: Annotated[Decimal, Field(ge=0, le=5, description="Average rating")]
+    total_reviews: int = Field(..., ge=0, description="Total reviews")
+    
+    # Availability
+    available_beds: int = Field(..., ge=0, description="Available beds")
+    total_beds: int = Field(..., ge=0, description="Total beds")
+    
+    # Location
+    distance_from_center_km: Optional[Annotated[Decimal, Field(ge=0, description="Distance from center")]] = None
+    distance_from_university: Optional[Annotated[Decimal, Field(ge=0, description="Distance from university")]] = None
+    
+    # Recommendation scoring
+    recommendation_score: Annotated[Decimal, Field(ge=0, le=100, description="AI recommendation score")]
+    match_reasons: List[str] = Field(default_factory=list, description="Why this hostel was recommended")
+    
+    # Key features
+    key_amenities: List[str] = Field(default_factory=list, description="Key amenities")
+    unique_features: List[str] = Field(default_factory=list, description="Unique selling points")
+    
+    # Media
+    cover_image_url: Optional[str] = Field(None, description="Cover image URL")
+    
+    # Quick facts
+    hostel_type: HostelType = Field(..., description="Hostel type")
+    is_verified: bool = Field(default=False, description="Verification status")
 
 
 class RoomTypeComparison(BaseSchema):

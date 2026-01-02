@@ -9,6 +9,8 @@ email, SMS, push notifications, templates, preferences, routing, and queues.
 # Base notification schemas
 from app.schemas.notification.notification_base import (
     BulkMarkAsRead,
+    BulkNotificationRequest,
+    BulkNotificationResponse,
     MarkAsRead,
     NotificationBase,
     NotificationCreate,
@@ -18,21 +20,27 @@ from app.schemas.notification.notification_base import (
 
 # Response schemas
 from app.schemas.notification.notification_response import (
+    InAppNotificationResponse,
     NotificationDetail,
     NotificationList,
     NotificationListItem,
     NotificationResponse,
+    NotificationStats,
     NotificationSummary,
     UnreadCount,
 )
 
 # Template schemas
 from app.schemas.notification.notification_template import (
+    NotificationTemplate,
+    NotificationTemplateCreate,
+    NotificationTemplateUpdate,
     TemplateCategory,
     TemplateCopyRequest,
     TemplateCreate,
     TemplateList,
     TemplatePreview,
+    TemplatePreviewRequest,
     TemplatePreviewResponse,
     TemplateResponse,
     TemplateUpdate,
@@ -67,6 +75,8 @@ from app.schemas.notification.push_notification import (
     BulkPushRequest,
     DeviceRegistration,
     DeviceToken,
+    DeviceTokenCreate,
+    DeviceTokenResponse,
     DeviceUnregistration,
     PushAction,
     PushConfig,
@@ -91,6 +101,8 @@ from app.schemas.notification.notification_preferences import (
     ChannelPreferences,
     EmailPreferences,
     FrequencySettings,
+    NotificationPreferences,
+    NotificationPreferencesUpdate,
     PreferenceUpdate,
     PushPreferences,
     QuietHours,
@@ -118,6 +130,8 @@ __all__ = [
     "MarkAsRead",
     "BulkMarkAsRead",
     "NotificationDelete",
+    "BulkNotificationRequest",
+    "BulkNotificationResponse",
     # Response
     "NotificationResponse",
     "NotificationDetail",
@@ -125,6 +139,8 @@ __all__ = [
     "NotificationListItem",
     "UnreadCount",
     "NotificationSummary",
+    "InAppNotificationResponse",
+    "NotificationStats",
     # Template
     "TemplateCreate",
     "TemplateUpdate",
@@ -135,6 +151,10 @@ __all__ = [
     "TemplateList",
     "TemplateCategory",
     "TemplateCopyRequest",
+    "NotificationTemplate",
+    "NotificationTemplateCreate",
+    "NotificationTemplateUpdate",
+    "TemplatePreviewRequest",
     # Email
     "EmailRequest",
     "EmailConfig",
@@ -163,6 +183,8 @@ __all__ = [
     "PushStats",
     "PushAction",
     "BulkPushRequest",
+    "DeviceTokenCreate",
+    "DeviceTokenResponse",
     # Queue
     "QueueStatus",
     "QueuedNotification",
@@ -180,6 +202,8 @@ __all__ = [
     "PreferenceUpdate",
     "UnsubscribeRequest",
     "QuietHours",
+    "NotificationPreferences",
+    "NotificationPreferencesUpdate",
     # Routing
     "RoutingConfig",
     "RoutingRule",

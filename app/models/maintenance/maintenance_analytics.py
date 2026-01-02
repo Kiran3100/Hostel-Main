@@ -25,11 +25,11 @@ from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import relationship, validates
 from sqlalchemy.ext.hybrid import hybrid_property
 
-from app.models.base.base_model import BaseModel, TimestampModel
+from app.models.base.base_model import BaseModel
 from app.models.base.mixins import UUIDMixin
 
 
-class MaintenanceAnalytic(BaseModel, UUIDMixin, TimestampModel):
+class MaintenanceAnalytic(UUIDMixin, BaseModel):
     """
     Core maintenance analytics aggregation.
     
@@ -264,8 +264,9 @@ class MaintenanceAnalytic(BaseModel, UUIDMixin, TimestampModel):
         comment="Overall efficiency score (0-100)",
     )
     
-    # Metadata
-    metadata = Column(
+    # Metadata - renamed from 'metadata' to avoid SQLAlchemy conflict
+    analytics_metadata = Column(
+        "metadata",  # Column name in database
         JSONB,
         nullable=True,
         default={},
@@ -337,7 +338,7 @@ class MaintenanceAnalytic(BaseModel, UUIDMixin, TimestampModel):
         self.efficiency_score = round(Decimal(str(efficiency)), 2)
 
 
-class CategoryPerformanceMetric(BaseModel, UUIDMixin, TimestampModel):
+class CategoryPerformanceMetric(UUIDMixin, BaseModel):
     """
     Performance metrics by maintenance category.
     
@@ -489,8 +490,9 @@ class CategoryPerformanceMetric(BaseModel, UUIDMixin, TimestampModel):
         comment="Overall category performance score (0-100)",
     )
     
-    # Metadata
-    metadata = Column(
+    # Metadata - renamed from 'metadata' to avoid SQLAlchemy conflict
+    category_metadata = Column(
+        "metadata",  # Column name in database
         JSONB,
         nullable=True,
         default={},

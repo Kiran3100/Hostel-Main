@@ -6,6 +6,7 @@ Hostel analytics and reporting schemas with comprehensive metrics.
 from datetime import datetime
 from datetime import date as Date
 from decimal import Decimal
+from enum import Enum
 from typing import Annotated, Dict, List, Union
 from uuid import UUID
 
@@ -30,6 +31,8 @@ __all__ = [
     "HostelRevenueStats",
     "MonthlyRevenue",
     "AnalyticsRequest",
+    "AnalyticsPeriod",
+    "TrendData",
 ]
 
 
@@ -705,3 +708,24 @@ class AnalyticsRequest(BaseSchema):
             raise ValueError("Date range cannot exceed 2 years")
         
         return self
+    
+class AnalyticsPeriod(str, Enum):
+    """Analytics aggregation periods."""
+    DAILY = "daily"
+    WEEKLY = "weekly" 
+    MONTHLY = "monthly"
+    QUARTERLY = "quarterly"
+    YEARLY = "yearly"
+
+
+class TrendData(BaseSchema):
+    """Trend data point for time series analysis."""
+    model_config = ConfigDict(from_attributes=True)
+    
+    timestamp: Date = Field(..., description="Data point timestamp")
+    value: Decimal = Field(..., description="Metric value")
+    metric_type: str = Field(..., description="Type of metric")
+    change_percentage: Union[Decimal, None] = Field(
+        default=None, 
+        description="Percentage change from previous period"
+    )

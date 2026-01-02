@@ -8,9 +8,9 @@ material tracking, and completion certificates.
 
 from datetime import date as Date, datetime, time
 from decimal import Decimal
-from typing import Annotated, List, Union
+from typing import Annotated, List, Optional, Union
 
-from pydantic import ConfigDict, Field, HttpUrl, field_validator, model_validator
+from pydantic import ConfigDict, Field, HttpUrl, field_validator, model_validator,computed_field
 from uuid import UUID
 
 from app.schemas.common.base import BaseCreateSchema, BaseSchema
@@ -22,6 +22,8 @@ __all__ = [
     "ChecklistItem",
     "CompletionResponse",
     "CompletionCertificate",
+    "CompletionVerification",
+    "WorkSummary",
 ]
 
 
@@ -1019,3 +1021,399 @@ class CompletionCertificate(BaseSchema):
                 )
         
         return self
+    
+
+class CompletionVerification(BaseCreateSchema):
+    """
+    Final completion verification and sign-off.
+    
+    Performed by admin after quality checks to officially close request.
+    """
+    
+    model_config = ConfigDict(
+        json_schema_extra={
+            "example": {
+                "verified_by": "123e4567-e89b-12d3-a456-426614174111",
+                "verification_passed": True,
+                "verification_notes": "All work completed to satisfaction",
+                "final_cost_approved": True,
+                "warranty_issued": True
+            }
+        }
+    )
+
+    verified_by: UUID = Field(
+        ...,
+        description="User ID performing final verification",
+    )
+    verification_passed: bool = Field(
+        ...,
+        description="Whether verification passed",
+    )
+    verification_notes: str = Field(
+        ...,
+        min_length=10,
+        max_length=1000,
+        description="Verification notes and observations",
+    )
+    
+    # Cost verification
+    final_cost_approved: bool = Field(
+        ...,
+        description="Whether final cost is approved",
+    )
+    cost_variance_acceptable: bool = Field(
+        default=True,
+        description="Whether cost variance is acceptable",
+    )
+    cost_notes: Optional[str] = Field(
+        None,
+        max_length=500,
+        description="Notes about cost variance (if any)",
+    )
+    
+    # Quality verification
+    quality_standards_met: bool = Field(
+        default=True,
+        description="Whether quality standards were met",
+    )
+    defects_found: Optional[str] = Field(
+        None,
+        max_length=500,
+        description="Any defects found during verification",
+    )
+    
+    # Warranty
+    warranty_issued: bool = Field(
+        default=False,
+        description="Whether warranty was issued",
+    )
+    warranty_duration_months: Optional[int] = Field(
+        None,
+        ge=0,
+        le=120,
+        description="Warranty duration in months",
+    )
+    warranty_terms: Optional[str] = Field(
+        None,
+        max_length=1000,
+        description="Warranty terms and conditions",
+    )
+    
+    # Satisfaction
+    customer_satisfaction_rating: Optional[int] = Field(
+        None,
+        ge=1,
+        le=5,
+        description="Customer satisfaction rating (1-5 stars)",
+    )
+    customer_feedback: Optional[str] = Field(
+        None,
+        max_length=1000,
+        description="Customer feedback and comments",
+    )
+    
+    # Sign-off
+    verification_date: Date = Field(
+        ...,
+        description="Verification date",
+    )
+    digital_signature: Optional[str] = Field(
+        None,
+        description="Digital signature or approval token",
+    )
+
+    @field_validator("verification_notes")
+    @classmethod
+    def validate_notes(cls, v: str) -> str:
+        """Validate verification notes are meaningful."""
+        v = v.strip()
+        if len(v) < 10:
+            raise ValueError("Verification notes must be at least 10 characters")
+        return v
+
+    @model_validator(mode="after")
+    def validate_failure_requirements(self):
+        """Validate failure documentation requirements."""
+        if not self.verification_passed:
+            if not self.defects_found:
+                raise ValueError(
+                    "defects_found is required when verification fails"
+                )
+        
+        return self
+
+    @model_validator(mode="after")
+    def validate_warranty_requirements(self):
+        """Validate warranty information consistency."""
+        if self.warranty_issued:
+            if not self.warranty_duration_months:
+                raise ValueError(
+                    "warranty_duration_months is required when warranty is issued"
+                )
+            if not self.warranty_terms:
+                raise ValueError(
+                    "warranty_terms is required when warranty is issued"
+                )
+        
+        return self
+
+
+class WorkSummary(BaseSchema):
+    """
+    Comprehensive work summary for completed maintenance.
+    
+    Aggregates all work details, costs, materials, and timeline.
+    """
+    
+    model_config = ConfigDict(
+        json_schema_extra={
+            "example": {
+                "maintenance_id": "123e4567-e89b-12d3-a456-426614174000",
+                "request_number": "MNT-2024-001",
+                "title": "Ceiling fan replacement",
+                "work_description": "Removed old fan and installed new 1200mm fan",
+                "total_labor_hours": "2.5",
+                "total_cost": "3500.00"
+            }
+        }
+    )
+
+    maintenance_id: UUID = Field(
+        ...,
+        description="Maintenance request unique identifier",
+    )
+    request_number: str = Field(
+        ...,
+        description="Request number",
+    )
+    title: str = Field(
+        ...,
+        description="Maintenance request title",
+    )
+    category: str = Field(
+        ...,
+        description="Maintenance category",
+    )
+    
+    # Work performed
+    work_description: str = Field(
+        ...,
+        description="Description of work performed",
+    )
+    work_notes: Optional[str] = Field(
+        None,
+        description="Additional work notes",
+    )
+    
+    # Materials used
+    materials_used: List[MaterialItem] = Field(
+        default_factory=list,
+        description="List of materials used",
+    )
+    total_materials_count: int = Field(
+        default=0,
+        ge=0,
+        description="Total number of material items",
+    )
+    
+    # Labor details
+    total_labor_hours: Annotated[Decimal, Field(ge=0, decimal_places=2)] = Field(
+        ...,
+        description="Total labor hours",
+    )
+    number_of_workers: int = Field(
+        default=1,
+        ge=1,
+        description="Number of workers involved",
+    )
+    labor_rate_per_hour: Union[Annotated[Decimal, Field(ge=0, decimal_places=2)], None] = Field(
+        None,
+        description="Labor rate per hour",
+    )
+    
+    # Cost breakdown
+    materials_cost: Annotated[Decimal, Field(ge=0, decimal_places=2)] = Field(
+        ...,
+        description="Total materials cost",
+    )
+    labor_cost: Annotated[Decimal, Field(ge=0, decimal_places=2)] = Field(
+        ...,
+        description="Total labor cost",
+    )
+    vendor_charges: Annotated[Decimal, Field(ge=0, decimal_places=2)] = Field(
+        default=Decimal("0.00"),
+        description="Vendor charges",
+    )
+    other_costs: Annotated[Decimal, Field(ge=0, decimal_places=2)] = Field(
+        default=Decimal("0.00"),
+        description="Other miscellaneous costs",
+    )
+    tax_amount: Annotated[Decimal, Field(ge=0, decimal_places=2)] = Field(
+        default=Decimal("0.00"),
+        description="Tax amount",
+    )
+    total_cost: Annotated[Decimal, Field(ge=0, decimal_places=2)] = Field(
+        ...,
+        description="Total cost",
+    )
+    
+    # Cost comparison
+    estimated_cost: Union[Annotated[Decimal, Field(ge=0, decimal_places=2)], None] = Field(
+        None,
+        description="Original estimated cost",
+    )
+    cost_variance: Union[Annotated[Decimal, Field(decimal_places=2)], None] = Field(
+        None,
+        description="Cost variance (actual - estimated)",
+    )
+    cost_variance_percentage: Union[Annotated[Decimal, Field(decimal_places=2)], None] = Field(
+        None,
+        description="Cost variance percentage",
+    )
+    within_budget: Union[bool, None] = Field(
+        None,
+        description="Whether work was completed within budget",
+    )
+    
+    # Timeline
+    work_started_at: datetime = Field(
+        ...,
+        description="Work start timestamp",
+    )
+    work_completed_at: datetime = Field(
+        ...,
+        description="Work completion timestamp",
+    )
+    total_duration_hours: Annotated[Decimal, Field(ge=0, decimal_places=2)] = Field(
+        ...,
+        description="Total duration in hours",
+    )
+    total_duration_days: int = Field(
+        ...,
+        ge=0,
+        description="Total duration in days",
+    )
+    
+    # Timeline comparison
+    estimated_duration_hours: Union[Annotated[Decimal, Field(ge=0, decimal_places=2)], None] = Field(
+        None,
+        description="Estimated duration",
+    )
+    was_on_time: Union[bool, None] = Field(
+        None,
+        description="Whether work was completed on time",
+    )
+    
+    # Assigned to
+    completed_by: UUID = Field(
+        ...,
+        description="User/vendor who completed work",
+    )
+    completed_by_name: str = Field(
+        ...,
+        description="Name of person/vendor who completed work",
+    )
+    assignment_type: str = Field(
+        ...,
+        pattern=r"^(staff|vendor|contractor)$",
+        description="Type of assignee",
+    )
+    
+    # Quality
+    quality_checked: bool = Field(
+        default=False,
+        description="Whether quality check was performed",
+    )
+    quality_check_passed: Union[bool, None] = Field(
+        None,
+        description="Quality check result",
+    )
+    quality_rating: Union[int, None] = Field(
+        None,
+        ge=1,
+        le=5,
+        description="Quality rating (1-5 stars)",
+    )
+    
+    # Verification
+    verified: bool = Field(
+        default=False,
+        description="Whether work was verified",
+    )
+    verified_by_name: Optional[str] = Field(
+        None,
+        description="Name of verifier",
+    )
+    verified_at: Optional[datetime] = Field(
+        None,
+        description="Verification timestamp",
+    )
+    
+    # Warranty
+    warranty_applicable: bool = Field(
+        default=False,
+        description="Whether warranty applies",
+    )
+    warranty_period_months: Optional[int] = Field(
+        None,
+        ge=0,
+        description="Warranty period in months",
+    )
+    warranty_expiry_date: Optional[Date] = Field(
+        None,
+        description="Warranty expiry date",
+    )
+    
+    # Photos
+    before_photos: List[str] = Field(
+        default_factory=list,
+        description="Before photos URLs",
+    )
+    after_photos: List[str] = Field(
+        default_factory=list,
+        description="After photos URLs",
+    )
+
+    @computed_field  # type: ignore[misc]
+    @property
+    def cost_efficiency_score(self) -> Optional[Decimal]:
+        """Calculate cost efficiency score (0-100)."""
+        if not self.estimated_cost or self.estimated_cost == 0:
+            return None
+        
+        # Lower variance = higher efficiency
+        variance_pct = abs(float(self.cost_variance_percentage or 0))
+        
+        if variance_pct <= 5:
+            return Decimal("100.00")
+        elif variance_pct <= 10:
+            return Decimal("90.00")
+        elif variance_pct <= 20:
+            return Decimal("75.00")
+        elif variance_pct <= 30:
+            return Decimal("60.00")
+        else:
+            return Decimal("40.00")
+
+    @computed_field  # type: ignore[misc]
+    @property
+    def time_efficiency_score(self) -> Optional[Decimal]:
+        """Calculate time efficiency score (0-100)."""
+        if not self.estimated_duration_hours or self.estimated_duration_hours == 0:
+            return None
+        
+        variance = (self.total_duration_hours - self.estimated_duration_hours) / self.estimated_duration_hours * 100
+        
+        if variance <= 0:  # Completed early
+            return Decimal("100.00")
+        elif variance <= 10:
+            return Decimal("90.00")
+        elif variance <= 25:
+            return Decimal("75.00")
+        elif variance <= 50:
+            return Decimal("60.00")
+        else:
+            return Decimal("40.00")
+
+

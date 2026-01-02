@@ -323,7 +323,7 @@ class Settings(BaseSettings):
     TESTING: bool = Field(default=False, env="TESTING")
     
     # Project information
-    PROJECT_NAME: str = Field(default="Hostel Management System", env="PROJECT_NAME")
+    PROJECT_NAME: str = Field(default="1234", env="PROJECT_NAME")
     PROJECT_VERSION: str = Field(default="2.0.0", env="PROJECT_VERSION")
     
     # Server settings

@@ -20,7 +20,7 @@ from fastapi import (
 from sqlalchemy.orm import Session
 
 from app.api import deps
-from app.schemas.file_management import (
+from app.schemas.file import (
     DocumentFilterParams,
     DocumentInfo,
     DocumentList,

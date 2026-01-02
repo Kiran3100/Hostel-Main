@@ -21,6 +21,8 @@ __all__ = [
     "ThresholdConfig",
     "ApprovalWorkflow",
     "RejectionRequest",
+    "ApprovalHistory",
+    "BulkApprovalRequest",
 ]
 
 
@@ -721,5 +723,167 @@ class RejectionRequest(BaseCreateSchema):
                     "Please provide guidance for resubmission (suggested alternative, "
                     "cost reduction, or specific requirements)"
                 )
+        
+        return self
+
+
+class ApprovalHistory(BaseSchema):
+    """
+    Single approval history entry.
+    
+    Records individual approval/rejection action in request lifecycle.
+    """
+    
+    model_config = ConfigDict(
+        json_schema_extra={
+            "example": {
+                "id": "123e4567-e89b-12d3-a456-426614174000",
+                "maintenance_id": "123e4567-e89b-12d3-a456-426614174001",
+                "action": "approved",
+                "actor_name": "John Admin",
+                "actor_role": "admin",
+                "approved_amount": "7500.00",
+                "notes": "Approved for electrical safety upgrade"
+            }
+        }
+    )
+
+    id: UUID = Field(
+        ...,
+        description="Approval history entry unique identifier",
+    )
+    maintenance_id: UUID = Field(
+        ...,
+        description="Maintenance request unique identifier",
+    )
+    action: str = Field(
+        ...,
+        pattern=r"^(requested|approved|rejected|appealed|escalated)$",
+        description="Approval action taken",
+    )
+    actor_id: UUID = Field(
+        ...,
+        description="User who performed the action",
+    )
+    actor_name: str = Field(
+        ...,
+        description="Name of actor",
+    )
+    actor_role: str = Field(
+        ...,
+        description="Role of actor (supervisor, admin, etc.)",
+    )
+    timestamp: datetime = Field(
+        ...,
+        description="When action was performed",
+    )
+    
+    # Approval details
+    approved_amount: Union[Annotated[Decimal, Field(ge=0, decimal_places=2)], None] = Field(
+        None,
+        description="Amount approved (if action is approved)",
+    )
+    rejection_reason: Optional[str] = Field(
+        None,
+        description="Rejection reason (if action is rejected)",
+    )
+    notes: Optional[str] = Field(
+        None,
+        description="Additional notes or comments",
+    )
+    conditions: Optional[str] = Field(
+        None,
+        description="Approval conditions (if any)",
+    )
+    
+    # Request details at time of action
+    estimated_cost_at_time: Union[Annotated[Decimal, Field(ge=0, decimal_places=2)], None] = Field(
+        None,
+        description="Estimated cost when action was taken",
+    )
+
+
+class BulkApprovalRequest(BaseCreateSchema):
+    """
+    Bulk approval request for multiple maintenance requests.
+    
+    Allows approving multiple requests in a single operation.
+    """
+    
+    model_config = ConfigDict(
+        json_schema_extra={
+            "example": {
+                "maintenance_ids": [
+                    "123e4567-e89b-12d3-a456-426614174000",
+                    "123e4567-e89b-12d3-a456-426614174001"
+                ],
+                "approved_by": "123e4567-e89b-12d3-a456-426614174111",
+                "approval_notes": "Batch approval for routine maintenance requests",
+                "send_notifications": True
+            }
+        }
+    )
+
+    maintenance_ids: List[UUID] = Field(
+        ...,
+        min_length=1,
+        max_length=100,
+        description="List of maintenance request IDs to approve",
+    )
+    approved_by: UUID = Field(
+        ...,
+        description="User ID performing bulk approval",
+    )
+    approval_notes: Optional[str] = Field(
+        None,
+        max_length=1000,
+        description="Common approval notes for all requests",
+    )
+    approval_conditions: Optional[str] = Field(
+        None,
+        max_length=1000,
+        description="Common conditions for all approvals",
+    )
+    send_notifications: bool = Field(
+        default=True,
+        description="Whether to send approval notifications",
+    )
+    
+    # Cost adjustment (if needed)
+    apply_cost_adjustment: bool = Field(
+        default=False,
+        description="Whether to apply cost adjustment to all requests",
+    )
+    cost_adjustment_percentage: Union[Annotated[Decimal, Field(ge=-100, le=100, decimal_places=2)], None] = Field(
+        None,
+        description="Percentage to adjust costs (+ or -)",
+    )
+
+    @field_validator("maintenance_ids")
+    @classmethod
+    def validate_unique_ids(cls, v: List[UUID]) -> List[UUID]:
+        """Ensure no duplicate maintenance IDs."""
+        if len(v) != len(set(v)):
+            # Find duplicates
+            seen = set()
+            duplicates = set()
+            for maintenance_id in v:
+                if maintenance_id in seen:
+                    duplicates.add(str(maintenance_id))
+                seen.add(maintenance_id)
+            
+            raise ValueError(
+                f"Duplicate maintenance IDs not allowed: {', '.join(duplicates)}"
+            )
+        
+        return v
+
+    @model_validator(mode="after")
+    def validate_cost_adjustment(self):
+        """Validate cost adjustment configuration."""
+        if self.apply_cost_adjustment and self.cost_adjustment_percentage is None:
+            raise ValueError(
+                "cost_adjustment_percentage is required when apply_cost_adjustment is True"
+            )
         
         return self
