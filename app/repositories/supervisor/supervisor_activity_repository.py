@@ -22,7 +22,10 @@ from app.models.supervisor.supervisor_activity import (
 from app.models.supervisor.supervisor import Supervisor
 from app.repositories.base.base_repository import BaseRepository
 from app.core.exceptions import ResourceNotFoundError, BusinessLogicError
-from app.core.logging import logger
+from app.core.logging import get_logger
+
+logger = get_logger(__name__)
+  
 
 
 class SupervisorActivityRepository(BaseRepository[SupervisorActivity]):

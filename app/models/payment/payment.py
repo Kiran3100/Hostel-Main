@@ -29,7 +29,7 @@ from app.schemas.common.enums import PaymentMethod, PaymentStatus, PaymentType
 
 if TYPE_CHECKING:
     from app.models.hostel.hostel import Hostel
-    from app.models.payment.payment_gateway import GatewayTransaction
+    from app.models.payment.gateway_transaction import GatewayTransaction
     from app.models.payment.payment_ledger import PaymentLedger
     from app.models.payment.payment_refund import PaymentRefund
     from app.models.payment.payment_reminder import PaymentReminder

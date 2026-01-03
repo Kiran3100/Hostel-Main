@@ -30,6 +30,8 @@ from app.schemas.subscription.subscription_billing import (
     GenerateInvoiceRequest,
     InvoiceInfo,
     InvoiceStatus,
+    SubscriptionInvoice,
+    InvoiceSummary,
 )
 
 # Cancellation schemas
@@ -51,6 +53,7 @@ from app.schemas.subscription.subscription_plan_response import (
     PlanComparison,
     PlanFeatures,
     PlanResponse,
+    PlanSummary,  # ADDED THIS
 )
 
 # Subscription response schemas
@@ -58,7 +61,9 @@ from app.schemas.subscription.subscription_response import (
     BillingHistory,
     BillingHistoryItem,
     SubscriptionResponse,
+    SubscriptionDetail,
     SubscriptionSummary,
+    SubscriptionMetrics,
 )
 
 # Upgrade/downgrade schemas
@@ -86,6 +91,8 @@ __all__ = [
     "BillingCycleInfo",
     "GenerateInvoiceRequest",
     "InvoiceInfo",
+    "SubscriptionInvoice",
+    "InvoiceSummary",
     # Cancellation
     "CancellationRequest",
     "CancellationResponse",
@@ -96,11 +103,14 @@ __all__ = [
     "PlanUpdate",
     # Plan response
     "PlanResponse",
+    "PlanSummary",  
     "PlanFeatures",
     "PlanComparison",
     # Subscription response
     "SubscriptionResponse",
+    "SubscriptionDetail",
     "SubscriptionSummary",
+    "SubscriptionMetrics",
     "BillingHistoryItem",
     "BillingHistory",
     # Upgrade/downgrade

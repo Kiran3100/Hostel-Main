@@ -28,6 +28,7 @@ __all__ = [
     "ScheduledMaintenanceItem",
     "ScheduledMeeting",
     "QuickAction",
+    "SupervisorDashboardAlerts",
 ]
 
 
@@ -796,3 +797,70 @@ class SupervisorDashboard(BaseSchema):
             return "Good"
         else:
             return "Excellent"
+
+
+class SupervisorDashboardAlerts(BaseSchema):
+    """
+    Dashboard alerts collection with metadata.
+    
+    Wrapper for dashboard alerts with summary information.
+    """
+    
+    supervisor_id: str = Field(..., description="Supervisor ID")
+    
+    # Alert counts
+    total_alerts: int = Field(
+        default=0,
+        ge=0,
+        description="Total number of alerts",
+    )
+    unread_alerts: int = Field(
+        default=0,
+        ge=0,
+        description="Number of unread alerts",
+    )
+    urgent_alerts: int = Field(
+        default=0,
+        ge=0,
+        description="Number of urgent alerts",
+    )
+    
+    # Alerts by severity
+    alerts_by_severity: Dict[str, int] = Field(
+        default_factory=dict,
+        description="Alert count by severity level",
+    )
+    
+    # Alert list
+    alerts: List[DashboardAlert] = Field(
+        default_factory=list,
+        description="List of dashboard alerts",
+    )
+    
+    # Metadata
+    last_updated: datetime = Field(
+        ...,
+        description="Last update timestamp",
+    )
+    next_refresh: Union[datetime, None] = Field(
+        default=None,
+        description="Next scheduled refresh",
+    )
+
+    @computed_field
+    @property
+    def has_urgent_alerts(self) -> bool:
+        """Check if there are any urgent alerts."""
+        return self.urgent_alerts > 0
+
+    @computed_field
+    @property
+    def alert_summary(self) -> str:
+        """Generate alert summary text."""
+        if self.total_alerts == 0:
+            return "No alerts"
+        
+        if self.urgent_alerts > 0:
+            return f"{self.urgent_alerts} urgent, {self.total_alerts - self.urgent_alerts} other alerts"
+        
+        return f"{self.total_alerts} alerts ({self.unread_alerts} unread)"

@@ -7,12 +7,12 @@ sending reminders, and tracking reminder history.
 """
 
 from datetime import datetime, timedelta
-from typing import List, Union
+from typing import Any, Dict, List, Union
 from uuid import UUID
 
 from pydantic import Field, field_validator, model_validator, computed_field
 
-from app.schemas.common.base import BaseCreateSchema, BaseResponseSchema, BaseSchema
+from app.schemas.common.base import BaseCreateSchema, BaseResponseSchema, BaseSchema, BaseUpdateSchema
 
 __all__ = [
     "ReminderConfig",
@@ -20,6 +20,10 @@ __all__ = [
     "SendReminderRequest",
     "ReminderBatch",
     "ReminderStats",
+    "ReminderConfigUpdate",
+    "ReminderSendRequest",
+    "ReminderHistoryItem",
+    "ReminderSendResponse",
 ]
 
 
@@ -595,3 +599,414 @@ class ReminderStats(BaseSchema):
             (self.payments_made_after_reminder / self.total_payments_reminded) * 100,
             2
         )
+
+
+class ReminderConfigUpdate(BaseUpdateSchema):
+    """
+    Reminder configuration update schema.
+    
+    Used to update existing reminder configuration.
+    """
+
+    days_before_due: Union[List[int], None] = Field(
+        None,
+        description="Update days before due Date to send reminders",
+    )
+    days_after_due: Union[List[int], None] = Field(
+        None,
+        description="Update days after due Date to send reminders",
+    )
+    is_enabled: Union[bool, None] = Field(
+        None,
+        description="Enable or disable reminders",
+    )
+    max_reminders: Union[int, None] = Field(
+        None,
+        ge=1,
+        le=10,
+        description="Update maximum reminders per payment",
+    )
+
+    # Communication Channels
+    send_email: Union[bool, None] = Field(
+        None,
+        description="Update email reminder setting",
+    )
+    send_sms: Union[bool, None] = Field(
+        None,
+        description="Update SMS reminder setting",
+    )
+    send_push: Union[bool, None] = Field(
+        None,
+        description="Update push notification setting",
+    )
+
+    # Templates
+    email_template_id: Union[str, None] = Field(
+        None,
+        max_length=100,
+        description="Update email template ID",
+    )
+    sms_template_id: Union[str, None] = Field(
+        None,
+        max_length=100,
+        description="Update SMS template ID",
+    )
+
+    # Escalation
+    enable_escalation: Union[bool, None] = Field(
+        None,
+        description="Update escalation setting",
+    )
+    escalation_after_reminders: Union[int, None] = Field(
+        None,
+        ge=1,
+        le=10,
+        description="Update escalation threshold",
+    )
+
+    @field_validator("days_before_due")
+    @classmethod
+    def validate_days_before_due(cls, v: Union[List[int], None]) -> Union[List[int], None]:
+        """Validate days before due."""
+        if v is not None:
+            if not v:
+                raise ValueError("If provided, days_before_due cannot be empty")
+            if any(day <= 0 for day in v):
+                raise ValueError("Days before due must be positive")
+            return sorted(v, reverse=True)
+        return v
+
+    @field_validator("days_after_due")
+    @classmethod
+    def validate_days_after_due(cls, v: Union[List[int], None]) -> Union[List[int], None]:
+        """Validate days after due."""
+        if v is not None:
+            if any(day <= 0 for day in v):
+                raise ValueError("Days after due must be positive")
+            return sorted(v)
+        return v
+
+
+class ReminderSendRequest(BaseCreateSchema):
+    """
+    Reminder send request schema.
+    
+    Used to manually trigger sending of reminders.
+    """
+
+    # Target Selection
+    payment_ids: Union[List[UUID], None] = Field(
+        None,
+        min_length=1,
+        max_length=1000,
+        description="Specific payment IDs to remind (null = all eligible)",
+    )
+    hostel_id: Union[UUID, None] = Field(
+        None,
+        description="Send reminders for specific hostel",
+    )
+    student_id: Union[UUID, None] = Field(
+        None,
+        description="Send reminders for specific student",
+    )
+
+    # Filter Criteria
+    only_overdue: bool = Field(
+        False,
+        description="Only send reminders for overdue payments",
+    )
+    days_overdue_min: Union[int, None] = Field(
+        None,
+        ge=0,
+        description="Minimum days overdue",
+    )
+    days_overdue_max: Union[int, None] = Field(
+        None,
+        ge=0,
+        description="Maximum days overdue",
+    )
+    payment_status: Union[List[str], None] = Field(
+        None,
+        description="Filter by payment status",
+    )
+
+    # Reminder Options
+    reminder_type: str = Field(
+        "manual",
+        pattern=r"^(manual|scheduled|overdue|escalation|final_notice)$",
+        description="Type of reminder to send",
+    )
+    force_send: bool = Field(
+        False,
+        description="Force send even if reminder was recently sent",
+    )
+
+    # Communication Channels
+    via_email: bool = Field(
+        True,
+        description="Send via email",
+    )
+    via_sms: bool = Field(
+        False,
+        description="Send via SMS",
+    )
+    via_push: bool = Field(
+        False,
+        description="Send via push notification",
+    )
+
+    # Customization
+    custom_message: Union[str, None] = Field(
+        None,
+        max_length=500,
+        description="Custom message to include",
+    )
+    custom_subject: Union[str, None] = Field(
+        None,
+        max_length=200,
+        description="Custom email subject",
+    )
+
+    # Scheduling
+    send_immediately: bool = Field(
+        True,
+        description="Send immediately or schedule",
+    )
+    scheduled_for: Union[datetime, None] = Field(
+        None,
+        description="Schedule for specific time",
+    )
+
+    @field_validator("payment_ids")
+    @classmethod
+    def validate_payment_ids(cls, v: Union[List[UUID], None]) -> Union[List[UUID], None]:
+        """Validate payment IDs list."""
+        if v is not None:
+            if len(v) == 0:
+                raise ValueError("If payment_ids is specified, it cannot be empty")
+            
+            if len(v) > 1000:
+                raise ValueError("Cannot send reminders to more than 1000 payments at once")
+            
+            # Check for duplicates
+            if len(v) != len(set(v)):
+                raise ValueError("Duplicate payment IDs found")
+        
+        return v
+
+    @field_validator("days_overdue_min", "days_overdue_max")
+    @classmethod
+    def validate_days_overdue(cls, v: Union[int, None]) -> Union[int, None]:
+        """Validate days overdue values."""
+        if v is not None and v < 0:
+            raise ValueError("Days overdue cannot be negative")
+        return v
+
+
+class ReminderHistoryItem(BaseResponseSchema):
+    """
+    Reminder history item schema.
+    
+    Represents a single reminder in history.
+    """
+
+    reminder_id: UUID = Field(
+        ...,
+        description="Unique reminder ID",
+    )
+    payment_id: UUID = Field(
+        ...,
+        description="Associated payment ID",
+    )
+    payment_reference: str = Field(
+        ...,
+        description="Payment reference number",
+    )
+
+    # Reminder Details
+    reminder_type: str = Field(
+        ...,
+        description="Type of reminder",
+    )
+    reminder_number: int = Field(
+        ...,
+        ge=1,
+        description="Sequence number of this reminder",
+    )
+
+    # Timing
+    sent_at: datetime = Field(
+        ...,
+        description="When reminder was sent",
+    )
+    scheduled_for: Union[datetime, None] = Field(
+        None,
+        description="When it was scheduled for",
+    )
+
+    # Channels Used
+    sent_via: List[str] = Field(
+        ...,
+        description="Channels used (email, sms, push)",
+    )
+
+    # Status
+    is_successful: bool = Field(
+        ...,
+        description="Whether sending was successful",
+    )
+    delivery_status: str = Field(
+        ...,
+        description="Delivery status",
+    )
+
+    # Recipient Information
+    recipient_email: Union[str, None] = Field(
+        None,
+        description="Recipient email address",
+    )
+    recipient_phone: Union[str, None] = Field(
+        None,
+        description="Recipient phone number",
+    )
+    recipient_name: str = Field(
+        ...,
+        description="Recipient name",
+    )
+
+    # Engagement Metrics
+    opened_at: Union[datetime, None] = Field(
+        None,
+        description="When email was opened",
+    )
+    clicked_at: Union[datetime, None] = Field(
+        None,
+        description="When link was clicked",
+    )
+    responded_at: Union[datetime, None] = Field(
+        None,
+        description="When recipient responded",
+    )
+
+    # Error Information
+    error_message: Union[str, None] = Field(
+        None,
+        description="Error message if failed",
+    )
+
+    # Content
+    subject: Union[str, None] = Field(
+        None,
+        description="Email subject",
+    )
+    message_preview: Union[str, None] = Field(
+        None,
+        max_length=200,
+        description="Preview of message content",
+    )
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def was_opened(self) -> bool:
+        """Check if reminder was opened."""
+        return self.opened_at is not None
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def was_clicked(self) -> bool:
+        """Check if reminder link was clicked."""
+        return self.clicked_at is not None
+
+
+class ReminderSendResponse(BaseSchema):
+    """
+    Reminder send response schema.
+    
+    Contains results after sending reminders.
+    """
+
+    # Summary Counts
+    total_targeted: int = Field(
+        ...,
+        ge=0,
+        description="Total payments targeted for reminders",
+    )
+    reminders_sent: int = Field(
+        ...,
+        ge=0,
+        description="Number of reminders successfully sent",
+    )
+    reminders_failed: int = Field(
+        ...,
+        ge=0,
+        description="Number of reminders that failed",
+    )
+    reminders_skipped: int = Field(
+        ...,
+        ge=0,
+        description="Number of reminders skipped",
+    )
+
+    # Channel Breakdown
+    send_summary: Dict[str, int] = Field(
+        ...,
+        description="Breakdown by channel (email, sms, push)",
+    )
+
+    # Success Details
+    successful_payment_ids: List[UUID] = Field(
+        default_factory=list,
+        description="Payment IDs for which reminders were sent",
+    )
+    failed_payment_ids: List[UUID] = Field(
+        default_factory=list,
+        description="Payment IDs for which reminders failed",
+    )
+    skipped_payment_ids: List[UUID] = Field(
+        default_factory=list,
+        description="Payment IDs that were skipped",
+    )
+
+    # Errors
+    errors: Union[List[str], None] = Field(
+        None,
+        description="List of error messages",
+    )
+    error_details: Union[List[Dict[str, Any]], None] = Field(
+        None,
+        description="Detailed error information",
+    )
+
+    # Timing
+    started_at: datetime = Field(
+        ...,
+        description="When sending started",
+    )
+    completed_at: Union[datetime, None] = Field(
+        None,
+        description="When sending completed",
+    )
+
+    # Batch Information
+    batch_id: Union[UUID, None] = Field(
+        None,
+        description="Batch ID if part of batch operation",
+    )
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def success_rate(self) -> float:
+        """Calculate success rate percentage."""
+        if self.total_targeted == 0:
+            return 0.0
+        return round((self.reminders_sent / self.total_targeted) * 100, 2)
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def duration_seconds(self) -> Union[float, None]:
+        """Calculate duration in seconds."""
+        if self.completed_at:
+            delta = self.completed_at - self.started_at
+            return round(delta.total_seconds(), 2)
+        return None

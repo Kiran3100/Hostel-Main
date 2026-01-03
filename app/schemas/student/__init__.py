@@ -1,4 +1,3 @@
-# --- File: app/schemas/student/__init__.py ---
 """
 Student schemas package.
 
@@ -10,11 +9,16 @@ Example:
         StudentDetail,
         StudentDashboard,
         RoomTransferRequest,
+        StudentDocument,
+        GuardianContact,
+        OnboardingRequest,
+        StudentStatus,
     )
 """
 
 from typing import Union
 
+# Base student schemas
 from app.schemas.student.student_base import (
     StudentBase,
     StudentCheckInRequest,
@@ -24,8 +28,11 @@ from app.schemas.student.student_base import (
     StudentStatusUpdate,
     StudentUpdate,
 )
+
+# Dashboard schemas
 from app.schemas.student.student_dashboard import (
     AttendanceSummary,
+    DashboardPeriod,
     PendingLeave,
     RecentAnnouncement,
     RecentComplaint,
@@ -36,6 +43,8 @@ from app.schemas.student.student_dashboard import (
     TodayMessMenu,
     UpcomingEvent,
 )
+
+# Filter schemas
 from app.schemas.student.student_filters import (
     AdvancedStudentFilters,
     StudentBulkActionRequest,
@@ -44,6 +53,8 @@ from app.schemas.student.student_filters import (
     StudentSearchRequest,
     StudentSortOptions,
 )
+
+# Profile schemas
 from app.schemas.student.student_profile import (
     DocumentInfo,
     DocumentUploadRequest,
@@ -55,6 +66,8 @@ from app.schemas.student.student_profile import (
     StudentProfileCreate,
     StudentProfileUpdate,
 )
+
+# Response schemas
 from app.schemas.student.student_response import (
     StudentContactInfo,
     StudentDetail,
@@ -64,6 +77,8 @@ from app.schemas.student.student_response import (
     StudentProfile,
     StudentResponse,
 )
+
+# Room history schemas
 from app.schemas.student.student_room_history import (
     BulkRoomTransfer,
     RoomHistoryItem,
@@ -75,8 +90,45 @@ from app.schemas.student.student_room_history import (
     SingleTransfer,
 )
 
+# Document schemas (API compatibility)
+from app.schemas.student.student_document import (
+    DocumentType,
+    DocumentVerificationStatus,
+    StudentDocument,
+    StudentDocumentCreate,
+    StudentDocumentUpdate,
+    DocumentVerificationRequest as DocumentVerificationRequestAPI,
+    DocumentListResponse,
+)
+
+# Guardian schemas (API compatibility)
+from app.schemas.student.guardian_contact import (
+    GuardianRelationType,
+    GuardianContact,
+    GuardianContactCreate,
+    GuardianContactUpdate,
+    GuardianContactList,
+)
+
+# Lifecycle schemas (API compatibility)
+from app.schemas.student.student_lifecycle import (
+    OnboardingRequest,
+    CheckoutRequest,
+    BulkStatusUpdate,
+    StatusUpdateRequest,
+    OnboardingResponse,
+    CheckoutResponse,
+)
+
+# Common enums used across student schemas
+from app.schemas.common.enums import (
+    StudentStatus,
+    DietaryPreference,
+    IDProofType,
+)
+
 __all__ = [
-    # Base
+    # Base schemas
     "StudentBase",
     "StudentCreate",
     "StudentUpdate",
@@ -84,7 +136,8 @@ __all__ = [
     "StudentCheckOutRequest",
     "StudentRoomAssignment",
     "StudentStatusUpdate",
-    # Response
+    
+    # Response schemas
     "StudentResponse",
     "StudentDetail",
     "StudentProfile",
@@ -92,7 +145,8 @@ __all__ = [
     "StudentFinancialInfo",
     "StudentContactInfo",
     "StudentDocumentInfo",
-    # Profile
+    
+    # Profile schemas
     "StudentProfileCreate",
     "StudentProfileUpdate",
     "StudentDocuments",
@@ -102,7 +156,8 @@ __all__ = [
     "StudentPreferences",
     "StudentPrivacySettings",
     "StudentBulkImport",
-    # Room history
+    
+    # Room history schemas
     "RoomHistoryResponse",
     "RoomHistoryItem",
     "RoomTransferRequest",
@@ -111,22 +166,54 @@ __all__ = [
     "BulkRoomTransfer",
     "SingleTransfer",
     "RoomSwapRequest",
-    # Dashboard
+    
+    # Dashboard schemas
     "StudentDashboard",
     "StudentStats",
     "StudentFinancialSummary",
     "AttendanceSummary",
+    "DashboardPeriod",
     "RecentPayment",
     "RecentComplaint",
     "PendingLeave",
     "RecentAnnouncement",
     "TodayMessMenu",
     "UpcomingEvent",
-    # Filters
+    
+    # Filter schemas
     "StudentFilterParams",
     "StudentSearchRequest",
     "StudentSortOptions",
     "StudentExportRequest",
     "StudentBulkActionRequest",
     "AdvancedStudentFilters",
+    
+    # Document schemas (API compatibility)
+    "DocumentType",
+    "DocumentVerificationStatus",
+    "StudentDocument",
+    "StudentDocumentCreate",
+    "StudentDocumentUpdate",
+    "DocumentVerificationRequestAPI",
+    "DocumentListResponse",
+    
+    # Guardian schemas (API compatibility)
+    "GuardianRelationType",
+    "GuardianContact",
+    "GuardianContactCreate",
+    "GuardianContactUpdate",
+    "GuardianContactList",
+    
+    # Lifecycle schemas (API compatibility)
+    "OnboardingRequest",
+    "CheckoutRequest",
+    "BulkStatusUpdate",
+    "StatusUpdateRequest",
+    "OnboardingResponse",
+    "CheckoutResponse",
+    
+    # Common enums
+    "StudentStatus",
+    "DietaryPreference",
+    "IDProofType",
 ]

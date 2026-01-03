@@ -39,6 +39,7 @@ from app.schemas.referral.referral_code import (
     ReferralCodeGenerate,
     ReferralCodeResponse,
     ReferralCodeStats,
+    ReferralCodeValidationResponse,
 )
 
 # Response schemas
@@ -57,12 +58,41 @@ from app.schemas.referral.referral_response import (
 from app.schemas.referral.referral_rewards import (
     PayoutHistory,
     PayoutRequest,
+    PayoutRequestCreate,
     PayoutRequestResponse,
     RewardCalculation,
     RewardConfig,
     RewardSummary,
     RewardTracking,
 )
+
+# List response schemas
+from app.schemas.referral.referral_list_responses import (
+    ReferralCodeListResponse,
+    ReferralProgramListResponse,
+    ReferralListResponse,
+    PayoutListResponse,
+)
+
+# Request schemas
+from app.schemas.referral.referral_requests import (
+    ReferralConversionRequest,
+    ReferralCancellationRequest,
+    PayoutProcessRequest,
+)
+
+# Transaction schemas
+from app.schemas.referral.reward_transaction import (
+    RewardTransaction,
+    RewardTransactionDetail,
+)
+
+# API-compatible aliases for programs
+ReferralProgramResponse = ProgramResponse
+ReferralProgramCreate = ProgramCreate
+ReferralProgramUpdate = ProgramUpdate
+ReferralProgramStats = ProgramStats
+ReferralProgramAnalytics = ProgramAnalytics
 
 __all__ = [
     # Program Base
@@ -87,6 +117,7 @@ __all__ = [
     "ReferralCodeResponse",
     "CodeValidationRequest",
     "CodeValidationResponse",
+    "ReferralCodeValidationResponse",
     "ReferralCodeStats",
     # Response
     "ReferralResponse",
@@ -102,7 +133,26 @@ __all__ = [
     "RewardTracking",
     "RewardCalculation",
     "PayoutRequest",
+    "PayoutRequestCreate",
     "PayoutRequestResponse",
     "PayoutHistory",
     "RewardSummary",
+    # List Responses
+    "ReferralCodeListResponse",
+    "ReferralProgramListResponse",
+    "ReferralListResponse",
+    "PayoutListResponse",
+    # Request Schemas
+    "ReferralConversionRequest",
+    "ReferralCancellationRequest",
+    "PayoutProcessRequest",
+    # Transactions
+    "RewardTransaction",
+    "RewardTransactionDetail",
+    # API Aliases
+    "ReferralProgramResponse",
+    "ReferralProgramCreate",
+    "ReferralProgramUpdate",
+    "ReferralProgramStats",
+    "ReferralProgramAnalytics",
 ]

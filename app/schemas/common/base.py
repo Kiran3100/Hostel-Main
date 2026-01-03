@@ -1,12 +1,11 @@
-# --- File: app/schemas/common/base.py ---
 """
 Base schema classes with common fields and configurations.
 """
 
 from datetime import datetime
-from typing import Any, Union
+from typing import Any, Union, List, TypeVar, Generic, Optional
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, EmailStr
 
 __all__ = [
     "BaseSchema",
@@ -18,7 +17,11 @@ __all__ = [
     "BaseUpdateSchema",
     "BaseResponseSchema",
     "BaseFilterSchema",
+    "PaginatedResponse",
+    "User",
 ]
+
+T = TypeVar('T')
 
 
 class BaseSchema(BaseModel):
@@ -101,3 +104,52 @@ class BaseResponseSchema(BaseDBSchema):
 class BaseFilterSchema(BaseSchema):
     """Base schema for filter parameters."""
     pass
+
+
+class PaginatedResponse(BaseSchema, Generic[T]):
+    """
+    Base schema for paginated API responses.
+    
+    This generic class provides standard pagination metadata along with
+    the actual data items. Subclasses should specify the items type.
+    """
+    
+    items: List[T] = Field(..., description="List of items in the current page")
+    page: int = Field(..., ge=1, description="Current page number")
+    page_size: int = Field(..., ge=1, description="Number of items per page")
+    total_items: int = Field(..., ge=0, description="Total number of items across all pages")
+    total_pages: int = Field(..., ge=0, description="Total number of pages")
+    has_next: bool = Field(..., description="Whether there is a next page")
+    has_previous: bool = Field(..., description="Whether there is a previous page")
+    
+    @property
+    def is_first_page(self) -> bool:
+        """Check if this is the first page."""
+        return self.page == 1
+    
+    @property
+    def is_last_page(self) -> bool:
+        """Check if this is the last page."""
+        return self.page >= self.total_pages
+
+
+class User(BaseResponseSchema):
+    """
+    User schema for authentication and user information.
+    
+    This schema represents the authenticated user in the system.
+    Used primarily in dependency injection for current_user.
+    """
+    
+    email: EmailStr = Field(..., description="User email address")
+    first_name: str = Field(..., description="User's first name")
+    last_name: str = Field(..., description="User's last name")
+    username: Optional[str] = Field(None, description="Username")
+    role: str = Field(..., description="User role in the system")
+    is_active: bool = Field(default=True, description="Whether the user account is active")
+    is_verified: bool = Field(default=False, description="Whether the user email is verified")
+    
+    @property
+    def full_name(self) -> str:
+        """Get the user's full name."""
+        return f"{self.first_name} {self.last_name}".strip()

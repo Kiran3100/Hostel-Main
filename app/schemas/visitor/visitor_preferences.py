@@ -7,7 +7,7 @@ room preferences, budget, location, amenities, dietary preferences,
 and saved search criteria.
 """
 
-from datetime import datetime, date as Date
+from datetime import datetime, date as Date, time as Time
 from decimal import Decimal
 from typing import Annotated, Dict, List, Union
 from uuid import UUID
@@ -24,9 +24,240 @@ from app.schemas.common.enums import (
 __all__ = [
     "VisitorPreferences",
     "PreferenceUpdate",
+    "PreferencesUpdate",  # Alternative naming
+    "NotificationPreferences",
+    "PrivacyPreferences",
+    "DisplayPreferences",
     "SearchPreferences",
     "SavedSearch",
 ]
+
+
+class NotificationPreferences(BaseSchema):
+    """
+    Notification preferences for various channels and types.
+    """
+
+    # Channel preferences
+    email_enabled: bool = Field(
+        default=True,
+        description="Enable email notifications",
+    )
+    push_enabled: bool = Field(
+        default=True,
+        description="Enable push notifications",
+    )
+    sms_enabled: bool = Field(
+        default=False,
+        description="Enable SMS notifications",
+    )
+
+    # Notification types
+    booking_updates: bool = Field(
+        default=True,
+        description="Receive booking status updates",
+    )
+    price_alerts: bool = Field(
+        default=True,
+        description="Receive price drop alerts for saved hostels",
+    )
+    availability_alerts: bool = Field(
+        default=True,
+        description="Receive availability alerts for saved hostels",
+    )
+    new_listings: bool = Field(
+        default=True,
+        description="Receive notifications for new hostel listings",
+    )
+    promotional: bool = Field(
+        default=False,
+        description="Receive promotional offers and deals",
+    )
+    weekly_digest: bool = Field(
+        default=True,
+        description="Receive weekly summary digest",
+    )
+
+    # Frequency and timing
+    notification_frequency: str = Field(
+        default="instant",
+        pattern="^(instant|hourly|daily|weekly)$",
+        description="Notification frequency for non-urgent notifications",
+    )
+    quiet_hours_enabled: bool = Field(
+        default=False,
+        description="Enable quiet hours (no notifications)",
+    )
+    quiet_hours_start: Union[Time, None] = Field(
+        default=None,
+        description="Start time for quiet hours (e.g., 22:00)",
+    )
+    quiet_hours_end: Union[Time, None] = Field(
+        default=None,
+        description="End time for quiet hours (e.g., 08:00)",
+    )
+
+    @model_validator(mode="after")
+    def validate_quiet_hours(self) -> "NotificationPreferences":
+        """Validate quiet hours configuration."""
+        if self.quiet_hours_enabled:
+            if not self.quiet_hours_start or not self.quiet_hours_end:
+                raise ValueError(
+                    "Quiet hours start and end times are required when quiet hours are enabled"
+                )
+        return self
+
+
+class PrivacyPreferences(BaseSchema):
+    """
+    Privacy and data sharing preferences.
+    """
+
+    # Profile visibility
+    profile_visibility: str = Field(
+        default="public",
+        pattern="^(public|private|friends_only)$",
+        description="Profile visibility setting",
+    )
+    show_real_name: bool = Field(
+        default=True,
+        description="Show real name in public profile",
+    )
+    show_location: bool = Field(
+        default=True,
+        description="Show location in public profile",
+    )
+
+    # Data sharing
+    analytics_opt_in: bool = Field(
+        default=True,
+        description="Allow anonymous analytics data collection",
+    )
+    marketing_opt_in: bool = Field(
+        default=False,
+        description="Opt-in to marketing communications",
+    )
+    third_party_sharing: bool = Field(
+        default=False,
+        description="Allow data sharing with trusted partners",
+    )
+
+    # Activity privacy
+    show_activity: bool = Field(
+        default=True,
+        description="Show activity status to other users",
+    )
+    show_reviews: bool = Field(
+        default=True,
+        description="Make reviews publicly visible",
+    )
+    show_favorites: bool = Field(
+        default=False,
+        description="Make favorite hostels publicly visible",
+    )
+
+    # Communication preferences
+    allow_messages: bool = Field(
+        default=True,
+        description="Allow messages from other users",
+    )
+    allow_connection_requests: bool = Field(
+        default=True,
+        description="Allow connection requests from other users",
+    )
+
+
+class DisplayPreferences(BaseSchema):
+    """
+    UI and display preferences for the application.
+    """
+
+    # Theme and appearance
+    theme: str = Field(
+        default="auto",
+        pattern="^(light|dark|auto)$",
+        description="Color theme preference",
+    )
+    language: str = Field(
+        default="en",
+        min_length=2,
+        max_length=5,
+        description="Language code (e.g., 'en', 'es', 'fr')",
+    )
+    currency: str = Field(
+        default="USD",
+        min_length=3,
+        max_length=3,
+        description="Preferred currency code",
+    )
+
+    # List and grid preferences
+    default_view_mode: str = Field(
+        default="list",
+        pattern="^(list|grid|map)$",
+        description="Default view mode for hostel listings",
+    )
+    items_per_page: int = Field(
+        default=20,
+        ge=10,
+        le=100,
+        description="Number of items to show per page",
+    )
+
+    # Map preferences
+    map_default_zoom: int = Field(
+        default=12,
+        ge=1,
+        le=20,
+        description="Default zoom level for map views",
+    )
+    map_style: str = Field(
+        default="standard",
+        pattern="^(standard|satellite|terrain)$",
+        description="Default map style",
+    )
+
+    # Accessibility
+    high_contrast: bool = Field(
+        default=False,
+        description="Enable high contrast mode",
+    )
+    large_text: bool = Field(
+        default=False,
+        description="Enable larger text size",
+    )
+    reduced_motion: bool = Field(
+        default=False,
+        description="Reduce animations and motion",
+    )
+
+    # Data and performance
+    auto_load_images: bool = Field(
+        default=True,
+        description="Automatically load images",
+    )
+    cache_enabled: bool = Field(
+        default=True,
+        description="Enable local caching for better performance",
+    )
+
+    @field_validator("language")
+    @classmethod
+    def validate_language(cls, v: str) -> str:
+        """Validate language code."""
+        v = v.lower().strip()
+        if not v.replace('-', '').isalpha():
+            raise ValueError("Invalid language code format")
+        return v
+
+    @field_validator("currency")
+    @classmethod
+    def validate_currency(cls, v: str) -> str:
+        """Validate currency code."""
+        v = v.upper().strip()
+        if len(v) != 3 or not v.isalpha():
+            raise ValueError("Currency code must be exactly 3 alphabetic characters")
+        return v
 
 
 class VisitorPreferences(BaseSchema):
@@ -122,32 +353,18 @@ class VisitorPreferences(BaseSchema):
         description="Preferred lease duration in months (1-24)",
     )
 
-    # Notification Preferences
-    email_notifications: bool = Field(
-        default=True,
-        description="Enable email notifications",
+    # Embedded preferences
+    notifications: NotificationPreferences = Field(
+        default_factory=NotificationPreferences,
+        description="Notification preferences",
     )
-    sms_notifications: bool = Field(
-        default=True,
-        description="Enable SMS notifications",
+    privacy: PrivacyPreferences = Field(
+        default_factory=PrivacyPreferences,
+        description="Privacy preferences",
     )
-    push_notifications: bool = Field(
-        default=True,
-        description="Enable push notifications",
-    )
-
-    # Specific Notification Types
-    notify_on_price_drop: bool = Field(
-        default=True,
-        description="Notify when saved hostel reduces price",
-    )
-    notify_on_availability: bool = Field(
-        default=True,
-        description="Notify when saved hostel has new availability",
-    )
-    notify_on_new_listings: bool = Field(
-        default=True,
-        description="Notify about new hostels matching preferences",
+    display: DisplayPreferences = Field(
+        default_factory=DisplayPreferences,
+        description="Display preferences",
     )
 
     @field_validator("budget_min", "budget_max")
@@ -214,29 +431,6 @@ class VisitorPreferences(BaseSchema):
 
         return normalized
 
-    @model_validator(mode="after")
-    def validate_notification_settings(self) -> "VisitorPreferences":
-        """Ensure at least one notification channel is enabled if specific alerts are on."""
-        specific_alerts_enabled = (
-            self.notify_on_price_drop
-            or self.notify_on_availability
-            or self.notify_on_new_listings
-        )
-
-        all_channels_disabled = not (
-            self.email_notifications
-            or self.sms_notifications
-            or self.push_notifications
-        )
-
-        if specific_alerts_enabled and all_channels_disabled:
-            raise ValueError(
-                "At least one notification channel (email/SMS/push) must be "
-                "enabled to receive alerts"
-            )
-
-        return self
-
 
 class PreferenceUpdate(BaseUpdateSchema):
     """
@@ -291,30 +485,18 @@ class PreferenceUpdate(BaseUpdateSchema):
         description="Update dietary preference",
     )
 
-    # Notification Toggles
-    email_notifications: Union[bool, None] = Field(
+    # Embedded preferences (partial updates)
+    notifications: Union[NotificationPreferences, None] = Field(
         default=None,
-        description="Update email notification setting",
+        description="Update notification preferences",
     )
-    sms_notifications: Union[bool, None] = Field(
+    privacy: Union[PrivacyPreferences, None] = Field(
         default=None,
-        description="Update SMS notification setting",
+        description="Update privacy preferences",
     )
-    push_notifications: Union[bool, None] = Field(
+    display: Union[DisplayPreferences, None] = Field(
         default=None,
-        description="Update push notification setting",
-    )
-    notify_on_price_drop: Union[bool, None] = Field(
-        default=None,
-        description="Update price drop alert setting",
-    )
-    notify_on_availability: Union[bool, None] = Field(
-        default=None,
-        description="Update availability alert setting",
-    )
-    notify_on_new_listings: Union[bool, None] = Field(
-        default=None,
-        description="Update new listings alert setting",
+        description="Update display preferences",
     )
 
     @field_validator("budget_min", "budget_max")
@@ -338,6 +520,10 @@ class PreferenceUpdate(BaseUpdateSchema):
                 f"equal to minimum budget (₹{self.budget_min})"
             )
         return self
+
+
+# Alias for alternative naming convention used in API
+PreferencesUpdate = PreferenceUpdate
 
 
 class SearchPreferences(BaseSchema):

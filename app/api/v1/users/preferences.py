@@ -11,7 +11,7 @@ from fastapi.responses import Response
 
 from app.core.dependencies import AuthenticationDependency
 from app.services.user.user_preference_service import UserPreferenceService
-from app.schemas.user_preferences import (
+from app.schemas.user.user_preferences import (
     UserNotificationPreferences,
     UserNotificationPreferencesUpdate,
 )

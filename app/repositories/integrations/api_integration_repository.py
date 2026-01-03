@@ -15,7 +15,7 @@ from sqlalchemy.orm import Session
 
 from app.repositories.base.base_repository import BaseRepository
 from app.repositories.base.query_builder import QueryBuilder
-from app.core1.exceptions import NotFoundException, ValidationException
+from app.core.exceptions import NotFoundError, ValidationException
 
 
 class IntegrationStatus(str, PyEnum):
@@ -595,7 +595,7 @@ class APIIntegrationRepository(BaseRepository):
             Integration data
             
         Raises:
-            NotFoundException: If not found
+            NotFoundError: If not found
         """
         # Placeholder implementation
         return {

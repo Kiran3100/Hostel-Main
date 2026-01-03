@@ -27,6 +27,15 @@ from .exceptions import (
 )
 from .logging import get_logger
 
+# Import service classes
+from app.services.visitor.visitor_service import VisitorService
+from app.services.visitor.visitor_dashboard_service import VisitorDashboardService
+from app.services.visitor.visitor_favorite_service import VisitorFavoriteService
+from app.services.visitor.visitor_preference_service import VisitorPreferenceService
+from app.services.visitor.visitor_recommendation_service import VisitorRecommendationService
+from app.services.visitor.saved_search_service import SavedSearchService
+from app.services.attendance.attendance_service import AttendanceService
+
 logger = get_logger(__name__)
 
 # Security scheme
@@ -120,17 +129,125 @@ async def get_current_user_optional(
         return None
 
 
-# Role-based access dependencies
-def require_role(role: str):
+# Main dependency function that's being imported everywhere
+async def get_current_user_dependency(
+    current_user: Dict[str, Any] = Depends(get_current_active_user)
+) -> Dict[str, Any]:
     """
-    Create a dependency that requires a specific role
+    Get current authenticated and active user
+    This is the main function imported across review endpoints
+    """
+    return current_user
+
+
+# Visitor API specific dependency - alias for get_current_active_user
+async def get_current_user(
+    credentials: HTTPAuthorizationCredentials = Depends(security),
+    db: Session = Depends(get_database)
+) -> Dict[str, Any]:
+    """
+    Get current user (alias for visitor API compatibility)
+    """
+    try:
+        token = credentials.credentials
+        user = await get_current_user(token, db)
+        if not user:
+            raise AuthenticationError("Invalid token")
+        if not user.get("is_active", True):
+            raise AuthenticationError("Inactive user")
+        return user
+    except JWTError:
+        raise AuthenticationError("Invalid token")
+    except TokenExpiredError:
+        raise AuthenticationError("Token has expired")
+    except Exception as e:
+        logger.error(f"Authentication error: {str(e)}")
+        raise AuthenticationError("Authentication failed")
+
+
+# Service dependencies for visitor API
+def get_visitor_service(
+    db: Session = Depends(get_database)
+) -> VisitorService:
+    """
+    Get visitor service instance
+    """
+    return VisitorService(db)
+
+
+def get_visitor_dashboard_service(
+    db: Session = Depends(get_database)
+) -> VisitorDashboardService:
+    """
+    Get visitor dashboard service instance
+    """
+    return VisitorDashboardService(db)
+
+
+def get_visitor_favorite_service(
+    db: Session = Depends(get_database)
+) -> VisitorFavoriteService:
+    """
+    Get visitor favorite service instance
+    """
+    return VisitorFavoriteService(db)
+
+
+def get_visitor_preference_service(
+    db: Session = Depends(get_database)
+) -> VisitorPreferenceService:
+    """
+    Get visitor preference service instance
+    """
+    return VisitorPreferenceService(db)
+
+
+def get_visitor_recommendation_service(
+    db: Session = Depends(get_database)
+) -> VisitorRecommendationService:
+    """
+    Get visitor recommendation service instance
+    """
+    return VisitorRecommendationService(db)
+
+
+def get_saved_search_service(
+    db: Session = Depends(get_database)
+) -> SavedSearchService:
+    """
+    Get saved search service instance
+    """
+    return SavedSearchService(db)
+
+
+def get_attendance_service(
+    db: Session = Depends(get_database)
+) -> AttendanceService:
+    """
+    Get attendance service instance
+    """
+    return AttendanceService(db)
+
+
+# Role-based access dependencies
+def require_role(roles: List[str]):
+    """
+    Create a dependency that requires specific roles
     """
     async def role_dependency(
         current_user: Dict[str, Any] = Depends(get_current_active_user)
     ) -> Dict[str, Any]:
         user_roles = current_user.get("roles", [])
-        if role not in user_roles and not current_user.get("is_superuser", False):
-            raise AuthorizationError(f"Role '{role}' required", required_permission=role)
+        is_superuser = current_user.get("is_superuser", False)
+        
+        # Superuser has all roles
+        if is_superuser:
+            return current_user
+            
+        # Check if user has any of the required roles
+        if not any(role in user_roles for role in roles):
+            raise AuthorizationError(f"One of these roles required: {', '.join(roles)}")
+        
         return current_user
     
     return role_dependency
@@ -545,7 +662,7 @@ class FileUploadDependency(BaseDependency):
         self.handle_file_upload = self.__call__
         self.save_file = self.__call__
         self.get_file_upload = self.__call__
-        self.validate_file_upload = self.__call__  # Add this line
+        self.validate_file_upload = self.__call__
         self.validate_upload = self.__call__
         self.file_upload_handler = self.__call__
         self.process_file_upload = self.__call__
@@ -1750,10 +1867,22 @@ __all__ = [
     "get_current_admin_user",
     "get_current_superuser",
     "get_current_user_optional",
+    "get_current_user_dependency",  # Added missing dependency
+    "get_current_user",  # Added for visitor API compatibility
     "get_student_user",
     "get_supervisor_user",
     "get_admin_user",
     "get_super_admin_user",
+    # Visitor service dependencies
+    "get_visitor_service",
+    "get_visitor_dashboard_service",
+    "get_visitor_favorite_service",
+    "get_visitor_preference_service",
+    "get_visitor_recommendation_service",
+    "get_saved_search_service",
+    # Attendance service dependency
+    "get_attendance_service",
+    # Existing dependency classes
     "HostelContextDependency",
     "FileUploadDependency",
     "PaginationDependency",

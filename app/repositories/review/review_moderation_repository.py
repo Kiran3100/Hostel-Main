@@ -20,8 +20,8 @@ from app.models.review.review_moderation import (
     ReviewModerationQueue,
     ReviewAutoModeration,
 )
-from app.models.enums import ReviewStatus
-from app.repositories.base import BaseRepository, PaginationResult
+from app.models.common.enums import ReviewStatus
+from app.repositories.base import BaseRepository, PaginatedResult
 
 
 class ReviewModerationRepository(BaseRepository[ReviewModerationLog]):
@@ -97,7 +97,7 @@ class ReviewModerationRepository(BaseRepository[ReviewModerationLog]):
         self,
         review_id: UUID,
         pagination: Optional[Dict[str, Any]] = None
-    ) -> PaginationResult[ReviewModerationLog]:
+    ) -> PaginatedResult[ReviewModerationLog]:
         """
         Get moderation history for review.
         
@@ -120,7 +120,7 @@ class ReviewModerationRepository(BaseRepository[ReviewModerationLog]):
         start_date: Optional[datetime] = None,
         end_date: Optional[datetime] = None,
         pagination: Optional[Dict[str, Any]] = None
-    ) -> PaginationResult[ReviewModerationLog]:
+    ) -> PaginatedResult[ReviewModerationLog]:
         """
         Get moderation activity for specific moderator.
         
@@ -286,7 +286,7 @@ class ReviewModerationRepository(BaseRepository[ReviewModerationLog]):
         self,
         priority: Optional[str] = None,
         pagination: Optional[Dict[str, Any]] = None
-    ) -> PaginationResult[ReviewFlag]:
+    ) -> PaginatedResult[ReviewFlag]:
         """
         Get pending flags requiring resolution.
         
@@ -547,7 +547,7 @@ class ReviewModerationRepository(BaseRepository[ReviewModerationLog]):
         hostel_id: Optional[UUID] = None,
         min_priority: Optional[int] = None,
         pagination: Optional[Dict[str, Any]] = None
-    ) -> PaginationResult[ReviewModerationQueue]:
+    ) -> PaginatedResult[ReviewModerationQueue]:
         """
         Get moderation queue items.
         
@@ -858,7 +858,7 @@ class ReviewModerationRepository(BaseRepository[ReviewModerationLog]):
         self,
         query,
         pagination: Optional[Dict[str, Any]] = None
-    ) -> PaginationResult:
+    ) -> PaginatedResult:
         """Paginate query results."""
         if not pagination:
             pagination = {'page': 1, 'per_page': 20}
@@ -869,10 +869,9 @@ class ReviewModerationRepository(BaseRepository[ReviewModerationLog]):
         total = query.count()
         items = query.limit(per_page).offset((page - 1) * per_page).all()
         
-        return PaginationResult(
+        return PaginatedResult(
             items=items,
-            total=total,
+            total_count=total,
             page=page,
-            per_page=per_page,
-            pages=(total + per_page - 1) // per_page
+            page_size=per_page
         )

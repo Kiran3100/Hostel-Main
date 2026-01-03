@@ -22,7 +22,7 @@ from app.models.search.search_query_log import (
 from app.repositories.base.base_repository import BaseRepository
 from app.repositories.base.query_builder import QueryBuilder
 from app.repositories.base.pagination import PaginationManager
-from app.core.exceptions import NotFoundException, ValidationException
+from app.core.exceptions import NotFoundError, ValidationException
 
 
 class SearchQueryLogRepository(BaseRepository[SearchQueryLog]):
@@ -131,7 +131,7 @@ class SearchQueryLogRepository(BaseRepository[SearchQueryLog]):
 
         log = query.first()
         if not log:
-            raise NotFoundException(f"Search query log {log_id} not found")
+            raise NotFoundError(f"Search query log {log_id} not found")
 
         return log
 
@@ -778,7 +778,7 @@ class SearchSessionRepository(BaseRepository[SearchSession]):
         """
         session = self.get_by_session_id(session_id)
         if not session:
-            raise NotFoundException(f"Session {session_id} not found")
+            raise NotFoundError(f"Session {session_id} not found")
 
         session.last_activity = datetime.utcnow()
 
@@ -809,7 +809,7 @@ class SearchSessionRepository(BaseRepository[SearchSession]):
         """
         session = self.get_by_session_id(session_id)
         if not session:
-            raise NotFoundException(f"Session {session_id} not found")
+            raise NotFoundError(f"Session {session_id} not found")
 
         session.is_active = False
         session.end_time = datetime.utcnow()
@@ -1019,7 +1019,7 @@ class SavedSearchRepository(BaseRepository[SavedSearch]):
         """
         saved_search = self.get_by_id(search_id)
         if not saved_search:
-            raise NotFoundException(f"Saved search {search_id} not found")
+            raise NotFoundError(f"Saved search {search_id} not found")
 
         # Update search criteria if provided
         if 'search_criteria' in update_data:
@@ -1126,7 +1126,7 @@ class SavedSearchRepository(BaseRepository[SavedSearch]):
         """
         saved_search = self.get_by_id(search_id)
         if not saved_search:
-            raise NotFoundException(f"Saved search {search_id} not found")
+            raise NotFoundError(f"Saved search {search_id} not found")
 
         saved_search.last_executed_at = datetime.utcnow()
         saved_search.execution_count += 1
@@ -1154,7 +1154,7 @@ class SavedSearchRepository(BaseRepository[SavedSearch]):
         """
         saved_search = self.get_by_id(search_id)
         if not saved_search:
-            raise NotFoundException(f"Saved search {search_id} not found")
+            raise NotFoundError(f"Saved search {search_id} not found")
 
         if alert_sent:
             saved_search.last_alert_sent = datetime.utcnow()
@@ -1180,7 +1180,7 @@ class SavedSearchRepository(BaseRepository[SavedSearch]):
         """Toggle favorite status."""
         saved_search = self.get_by_id(search_id)
         if not saved_search:
-            raise NotFoundException(f"Saved search {search_id} not found")
+            raise NotFoundError(f"Saved search {search_id} not found")
 
         saved_search.is_favorite = not saved_search.is_favorite
 
@@ -1196,7 +1196,7 @@ class SavedSearchRepository(BaseRepository[SavedSearch]):
         """Toggle alert status."""
         saved_search = self.get_by_id(search_id)
         if not saved_search:
-            raise NotFoundException(f"Saved search {search_id} not found")
+            raise NotFoundError(f"Saved search {search_id} not found")
 
         saved_search.is_alert_enabled = not saved_search.is_alert_enabled
 

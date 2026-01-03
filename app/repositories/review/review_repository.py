@@ -19,8 +19,8 @@ from app.models.review import (
     ReviewVerification,
     ReviewStatusHistory,
 )
-from app.models.enums import ReviewStatus
-from app.repositories.base import BaseRepository, QueryBuilder, PaginationResult
+from app.models.common.enums import ReviewStatus
+from app.repositories.base import BaseRepository, PaginatedResult, AuditContext
 
 
 class ReviewRepository(BaseRepository[Review]):
@@ -47,7 +47,7 @@ class ReviewRepository(BaseRepository[Review]):
         hostel_id: UUID,
         reviewer_id: UUID,
         data: Dict[str, Any],
-        audit_context: Optional[Dict[str, Any]] = None
+        audit_context: Optional[AuditContext] = None
     ) -> Review:
         """
         Create new review with validation and initial status.
@@ -124,7 +124,7 @@ class ReviewRepository(BaseRepository[Review]):
         review_id: UUID,
         data: Dict[str, Any],
         user_id: UUID,
-        audit_context: Optional[Dict[str, Any]] = None
+        audit_context: Optional[AuditContext] = None
     ) -> Review:
         """
         Update existing review with edit tracking.
@@ -183,7 +183,7 @@ class ReviewRepository(BaseRepository[Review]):
         review_id: UUID,
         user_id: UUID,
         reason: Optional[str] = None,
-        audit_context: Optional[Dict[str, Any]] = None
+        audit_context: Optional[AuditContext] = None
     ) -> bool:
         """
         Soft delete review with audit trail.
@@ -216,7 +216,7 @@ class ReviewRepository(BaseRepository[Review]):
         filters: Optional[Dict[str, Any]] = None,
         pagination: Optional[Dict[str, Any]] = None,
         include_relationships: bool = False
-    ) -> PaginationResult[Review]:
+    ) -> PaginatedResult[Review]:
         """
         Find reviews for specific hostel with filtering and pagination.
         
@@ -260,7 +260,7 @@ class ReviewRepository(BaseRepository[Review]):
         reviewer_id: UUID,
         filters: Optional[Dict[str, Any]] = None,
         pagination: Optional[Dict[str, Any]] = None
-    ) -> PaginationResult[Review]:
+    ) -> PaginatedResult[Review]:
         """
         Find reviews by specific reviewer.
         
@@ -289,7 +289,7 @@ class ReviewRepository(BaseRepository[Review]):
         status: ReviewStatus,
         hostel_id: Optional[UUID] = None,
         pagination: Optional[Dict[str, Any]] = None
-    ) -> PaginationResult[Review]:
+    ) -> PaginatedResult[Review]:
         """
         Find reviews by status with optional hostel filter.
         
@@ -318,7 +318,7 @@ class ReviewRepository(BaseRepository[Review]):
         hostel_id: Optional[UUID] = None,
         min_rating: Optional[Decimal] = None,
         pagination: Optional[Dict[str, Any]] = None
-    ) -> PaginationResult[Review]:
+    ) -> PaginatedResult[Review]:
         """
         Find verified stay reviews.
         
@@ -349,7 +349,7 @@ class ReviewRepository(BaseRepository[Review]):
     def find_flagged_reviews(
         self,
         pagination: Optional[Dict[str, Any]] = None
-    ) -> PaginationResult[Review]:
+    ) -> PaginatedResult[Review]:
         """
         Find flagged reviews requiring moderation.
         
@@ -372,7 +372,7 @@ class ReviewRepository(BaseRepository[Review]):
         self,
         hostel_id: Optional[UUID] = None,
         pagination: Optional[Dict[str, Any]] = None
-    ) -> PaginationResult[Review]:
+    ) -> PaginatedResult[Review]:
         """
         Find reviews pending approval.
         
@@ -402,7 +402,7 @@ class ReviewRepository(BaseRepository[Review]):
         hostel_id: Optional[UUID] = None,
         filters: Optional[Dict[str, Any]] = None,
         pagination: Optional[Dict[str, Any]] = None
-    ) -> PaginationResult[Review]:
+    ) -> PaginatedResult[Review]:
         """
         Full-text search across review content.
         
@@ -776,7 +776,7 @@ class ReviewRepository(BaseRepository[Review]):
         self,
         query,
         pagination: Optional[Dict[str, Any]] = None
-    ) -> PaginationResult[Review]:
+    ) -> PaginatedResult[Review]:
         """Paginate query results."""
         if not pagination:
             pagination = {'page': 1, 'per_page': 20}
@@ -787,12 +787,11 @@ class ReviewRepository(BaseRepository[Review]):
         total = query.count()
         items = query.limit(per_page).offset((page - 1) * per_page).all()
         
-        return PaginationResult(
+        return PaginatedResult(
             items=items,
-            total=total,
+            total_count=total,
             page=page,
-            per_page=per_page,
-            pages=(total + per_page - 1) // per_page
+            page_size=per_page
         )
     
     def _create_status_history(

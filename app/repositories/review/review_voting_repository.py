@@ -17,8 +17,8 @@ from app.models.review.review_voting import (
     ReviewHelpfulnessScore,
     ReviewEngagement,
 )
-from app.models.enums import VoteType
-from app.repositories.base import BaseRepository
+from app.models.common.enums import VoteType
+from app.repositories.base import BaseRepository, PaginatedResult
 
 
 class ReviewVotingRepository(BaseRepository[ReviewVote]):

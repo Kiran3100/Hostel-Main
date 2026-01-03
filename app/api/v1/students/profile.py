@@ -11,14 +11,14 @@ from fastapi import APIRouter, Depends, Path, status, Body
 from app.core.dependencies import get_current_user
 from app.services.student.student_profile_service import StudentProfileService
 from app.services.student.guardian_contact_service import GuardianContactService
-from app.schemas.student_profile import (
+from app.schemas.student import (
     StudentProfile,
     StudentProfileUpdate,
     GuardianContact,
     GuardianContactCreate,
     GuardianContactUpdate,
 )
-from app.schemas.base import User
+from app.schemas.common.base import User
 
 router = APIRouter(
     prefix="/students",

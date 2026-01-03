@@ -9,12 +9,12 @@ from fastapi import APIRouter, Depends, status, Query
 from datetime import date
 
 from app.core.dependencies import get_current_user
-from app.services.student.student_aggregate_service import StudentAggregateService
-from app.schemas.student_dashboard import (
+from app.services.student import StudentAggregateService
+from app.schemas.student.student_dashboard import (
     StudentDashboard,
     DashboardPeriod,
 )
-from app.schemas.base import User
+from app.schemas.common.base import User
 
 router = APIRouter(
     prefix="/students/me/dashboard",

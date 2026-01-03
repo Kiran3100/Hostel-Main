@@ -22,7 +22,7 @@ from app.models.search.search_autocomplete import (
     SuggestionPerformance
 )
 from app.repositories.base.base_repository import BaseRepository
-from app.core.exceptions import NotFoundException, ValidationException
+from app.core.exceptions import NotFoundError, ValidationException
 
 
 class AutocompleteSuggestionRepository(BaseRepository[AutocompleteSuggestion]):
@@ -253,7 +253,7 @@ class AutocompleteSuggestionRepository(BaseRepository[AutocompleteSuggestion]):
         """
         suggestion = self.get_by_id(suggestion_id)
         if not suggestion:
-            raise NotFoundException(f"Suggestion {suggestion_id} not found")
+            raise NotFoundError(f"Suggestion {suggestion_id} not found")
 
         # Update impression count
         suggestion.impression_count += 1
@@ -302,7 +302,7 @@ class AutocompleteSuggestionRepository(BaseRepository[AutocompleteSuggestion]):
         """Update suggestion scoring components."""
         suggestion = self.get_by_id(suggestion_id)
         if not suggestion:
-            raise NotFoundException(f"Suggestion {suggestion_id} not found")
+            raise NotFoundError(f"Suggestion {suggestion_id} not found")
 
         if base_score is not None:
             suggestion.base_score = base_score
@@ -330,7 +330,7 @@ class AutocompleteSuggestionRepository(BaseRepository[AutocompleteSuggestion]):
         """Toggle featured status."""
         suggestion = self.get_by_id(suggestion_id)
         if not suggestion:
-            raise NotFoundException(f"Suggestion {suggestion_id} not found")
+            raise NotFoundError(f"Suggestion {suggestion_id} not found")
 
         suggestion.is_featured = not suggestion.is_featured
 
@@ -549,7 +549,7 @@ class SuggestionSourceRepository(BaseRepository[SuggestionSource]):
         """Update source sync status."""
         source = self.get_by_id(source_id)
         if not source:
-            raise NotFoundException(f"Source {source_id} not found")
+            raise NotFoundError(f"Source {source_id} not found")
 
         source.last_sync = datetime.utcnow()
         source.last_sync_status = status

@@ -27,6 +27,7 @@ __all__ = [
     "ReviewListItem",
     "ReviewSummary",
     "HostelResponseDetail",
+    "PaginatedReviewResponse",
 ]
 
 
@@ -467,3 +468,60 @@ class ReviewSummary(BaseSchema):
             return "average"
         else:
             return "poor"
+
+
+class PaginatedReviewResponse(BaseSchema):
+    """
+    Paginated review response.
+    
+    Standard pagination wrapper for review lists.
+    """
+    
+    items: List[ReviewListItem] = Field(
+        ...,
+        description="List of review items for current page",
+    )
+    total: int = Field(
+        ...,
+        ge=0,
+        description="Total number of items across all pages",
+    )
+    page: int = Field(
+        ...,
+        ge=1,
+        description="Current page number",
+    )
+    page_size: int = Field(
+        ...,
+        ge=1,
+        description="Number of items per page",
+    )
+    pages: int = Field(
+        ...,
+        ge=1,
+        description="Total number of pages",
+    )
+    
+    @computed_field  # type: ignore[misc]
+    @property
+    def has_next(self) -> bool:
+        """Whether there are more pages after current."""
+        return self.page < self.pages
+    
+    @computed_field  # type: ignore[misc]
+    @property
+    def has_previous(self) -> bool:
+        """Whether there are pages before current."""
+        return self.page > 1
+    
+    @computed_field  # type: ignore[misc]
+    @property
+    def next_page(self) -> Union[int, None]:
+        """Next page number or None if last page."""
+        return self.page + 1 if self.has_next else None
+    
+    @computed_field  # type: ignore[misc]
+    @property
+    def previous_page(self) -> Union[int, None]:
+        """Previous page number or None if first page."""
+        return self.page - 1 if self.has_previous else None

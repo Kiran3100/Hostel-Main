@@ -1,4 +1,3 @@
-# --- File: app/schemas/review/__init__.py ---
 """
 Review schemas package.
 
@@ -36,6 +35,7 @@ from app.schemas.review.review_response import (
     ReviewListItem,
     ReviewSummary,
     HostelResponseDetail,
+    PaginatedReviewResponse,
 )
 
 # Submission schemas
@@ -79,6 +79,7 @@ from app.schemas.review.review_response_schema import (
     ResponseGuidelines,
     ResponseStats,
     ResponseTemplate,
+    ResponseTemplateCreate,
 )
 
 # Filter schemas
@@ -113,6 +114,7 @@ __all__ = [
     "ReviewListItem",
     "ReviewSummary",
     "HostelResponseDetail",
+    "PaginatedReviewResponse",
     
     # Submission
     "ReviewSubmissionRequest",
@@ -148,6 +150,7 @@ __all__ = [
     "ResponseGuidelines",
     "ResponseStats",
     "ResponseTemplate",
+    "ResponseTemplateCreate",
     
     # Filters
     "ReviewFilterParams",

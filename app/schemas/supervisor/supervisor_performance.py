@@ -12,7 +12,7 @@ from typing import Any, Dict, List, Union
 
 from pydantic import Field, field_validator, computed_field
 
-from app.schemas.common.base import BaseCreateSchema, BaseSchema
+from app.schemas.common.base import BaseCreateSchema, BaseSchema, BaseUpdateSchema
 from app.schemas.common.filters import DateRangeFilter
 
 __all__ = [
@@ -30,6 +30,10 @@ __all__ = [
     "PerformanceGoal",
     "PerformanceGoalProgress",
     "PerformanceInsights",
+    "PerformanceReviewCreate",
+    "PerformanceReviewUpdate",
+    "SupervisorPerformanceTrends",
+    "PerformanceRating",
 ]
 
 
@@ -725,7 +729,6 @@ class PeriodComparison(BaseSchema):
             return f"Mixed performance: {improved_count} improved, {declined_count} declined"
 
 
-# MOVED THESE CLASSES BEFORE PerformanceReport
 class PerformanceGoal(BaseCreateSchema):
     """Set performance goal for supervisor."""
     
@@ -949,7 +952,7 @@ class PerformanceReport(BaseSchema):
     )
     
     # Goals and targets
-    current_goals: List[PerformanceGoalProgress] = Field(  # NOW THIS WORKS!
+    current_goals: List[PerformanceGoalProgress] = Field(
         default_factory=list,
         description="Current performance goals progress",
     )
@@ -1235,3 +1238,386 @@ class PerformanceInsights(BaseSchema):
             return "Requires attention and support"
         else:
             return "Balanced performer with mixed results"
+
+
+class PerformanceReviewCreate(BaseCreateSchema):
+    """
+    Create performance review for supervisor.
+    
+    Schema for initiating new performance review.
+    """
+    
+    review_type: str = Field(
+        ...,
+        pattern=r"^(annual|probation|mid_year|promotion|improvement|custom)$",
+        description="Type of performance review",
+    )
+    review_period_start: Date = Field(
+        ...,
+        description="Review period start date",
+    )
+    review_period_end: Date = Field(
+        ...,
+        description="Review period end date",
+    )
+    
+    # Review configuration
+    use_template: Union[str, None] = Field(
+        default=None,
+        description="Review template to use",
+    )
+    include_peer_feedback: bool = Field(
+        default=False,
+        description="Include peer feedback in review",
+    )
+    include_self_assessment: bool = Field(
+        default=True,
+        description="Include supervisor self-assessment",
+    )
+    
+    # Initial data
+    review_notes: Union[str, None] = Field(
+        default=None,
+        max_length=2000,
+        description="Initial review notes",
+    )
+    goals_for_period: List[str] = Field(
+        default_factory=list,
+        max_length=10,
+        description="Goals for the review period",
+    )
+
+    @field_validator("review_period_end")
+    @classmethod
+    def validate_period_end(cls, v: Date, info) -> Date:
+        """Validate review period end date."""
+        start_date = info.data.get("review_period_start")
+        if start_date and v <= start_date:
+            raise ValueError("Review period end must be after start date")
+        return v
+
+
+class PerformanceReviewUpdate(BaseUpdateSchema):
+    """
+    Update performance review.
+    
+    Schema for updating existing performance review.
+    """
+    
+    # Review status
+    status: Union[str, None] = Field(
+        default=None,
+        pattern=r"^(draft|in_progress|pending_approval|completed|cancelled)$",
+        description="Review status",
+    )
+    
+    # Ratings (1-5 scale)
+    overall_rating: Union[Decimal, None] = Field(
+        default=None,
+        ge=1,
+        le=5,
+        description="Overall performance rating",
+    )
+    quality_rating: Union[Decimal, None] = Field(
+        default=None,
+        ge=1,
+        le=5,
+        description="Quality of work rating",
+    )
+    efficiency_rating: Union[Decimal, None] = Field(
+        default=None,
+        ge=1,
+        le=5,
+        description="Efficiency rating",
+    )
+    communication_rating: Union[Decimal, None] = Field(
+        default=None,
+        ge=1,
+        le=5,
+        description="Communication skills rating",
+    )
+    reliability_rating: Union[Decimal, None] = Field(
+        default=None,
+        ge=1,
+        le=5,
+        description="Reliability rating",
+    )
+    
+    # Feedback
+    strengths: Union[str, None] = Field(
+        default=None,
+        max_length=2000,
+        description="Identified strengths",
+    )
+    areas_for_improvement: Union[str, None] = Field(
+        default=None,
+        max_length=2000,
+        description="Areas for improvement",
+    )
+    achievements: Union[str, None] = Field(
+        default=None,
+        max_length=2000,
+        description="Key achievements",
+    )
+    
+    # Goals and development
+    goals_for_next_period: Union[str, None] = Field(
+        default=None,
+        max_length=2000,
+        description="Goals for next review period",
+    )
+    development_plan: Union[str, None] = Field(
+        default=None,
+        max_length=2000,
+        description="Development and training plan",
+    )
+    
+    # Administrative
+    reviewer_notes: Union[str, None] = Field(
+        default=None,
+        max_length=3000,
+        description="Reviewer's notes and comments",
+    )
+
+
+class SupervisorPerformanceTrends(BaseSchema):
+    """
+    Performance trends analysis over time.
+    
+    Comprehensive trends data for supervisor performance.
+    """
+    
+    supervisor_id: str = Field(..., description="Supervisor ID")
+    supervisor_name: str = Field(..., description="Supervisor name")
+    
+    # Trend configuration
+    period_start: Date = Field(..., description="Analysis period start")
+    period_end: Date = Field(..., description="Analysis period end") 
+    granularity: str = Field(
+        ...,
+        pattern=r"^(week|month|quarter|year)$",
+        description="Trend granularity",
+    )
+    
+    # Trend data points
+    trend_points: List[PerformanceTrendPoint] = Field(
+        default_factory=list,
+        description="Performance trend data points",
+    )
+    
+    # Trend analysis
+    overall_trend_direction: str = Field(
+        ...,
+        pattern=r"^(improving|stable|declining|volatile)$",
+        description="Overall trend direction",
+    )
+    trend_strength: str = Field(
+        ...,
+        pattern=r"^(weak|moderate|strong|very_strong)$",
+        description="Strength of the trend",
+    )
+    
+    # Statistical measures
+    average_performance: Decimal = Field(
+        ...,
+        ge=0,
+        le=100,
+        description="Average performance across period",
+    )
+    performance_volatility: Decimal = Field(
+        ...,
+        ge=0,
+        le=100,
+        description="Performance volatility score",
+    )
+    best_performance_period: Union[str, None] = Field(
+        default=None,
+        description="Period with best performance",
+    )
+    worst_performance_period: Union[str, None] = Field(
+        default=None,
+        description="Period with worst performance",
+    )
+    
+    # Predictions and insights
+    predicted_next_period: Union[Decimal, None] = Field(
+        default=None,
+        ge=0,
+        le=100,
+        description="Predicted performance for next period",
+    )
+    key_insights: List[str] = Field(
+        default_factory=list,
+        description="Key insights from trend analysis",
+    )
+    recommendations: List[str] = Field(
+        default_factory=list,
+        description="Recommendations based on trends",
+    )
+
+    @computed_field
+    @property
+    def trend_summary(self) -> str:
+        """Generate trend summary description."""
+        direction_map = {
+            "improving": "Performance is trending upward",
+            "stable": "Performance is stable", 
+            "declining": "Performance is trending downward",
+            "volatile": "Performance shows high volatility"
+        }
+        
+        base_msg = direction_map.get(self.overall_trend_direction, "Unknown trend")
+        strength_msg = f" with {self.trend_strength} trend strength"
+        
+        return base_msg + strength_msg
+
+    @computed_field
+    @property
+    def performance_range(self) -> Dict[str, Decimal]:
+        """Calculate performance range from trend points."""
+        if not self.trend_points:
+            return {"min": Decimal("0"), "max": Decimal("0")}
+        
+        scores = [point.overall_score for point in self.trend_points]
+        return {
+            "min": min(scores),
+            "max": max(scores),
+            "range": max(scores) - min(scores)
+        }
+
+
+class PerformanceRating(BaseSchema):
+    """
+    Overall performance rating for supervisor.
+    
+    Calculated performance rating with context and breakdown.
+    """
+    
+    supervisor_id: str = Field(..., description="Supervisor ID")
+    supervisor_name: str = Field(..., description="Supervisor name")
+    
+    # Rating details
+    overall_score: Decimal = Field(
+        ...,
+        ge=0,
+        le=100,
+        description="Overall performance score (0-100)",
+    )
+    rating_category: str = Field(
+        ...,
+        pattern=r"^(excellent|good|satisfactory|needs_improvement|unsatisfactory)$",
+        description="Performance category",
+    )
+    percentile_rank: Union[Decimal, None] = Field(
+        default=None,
+        ge=0,
+        le=100,
+        description="Percentile rank among peers",
+    )
+    
+    # Component scores
+    quality_score: Decimal = Field(
+        ...,
+        ge=0,
+        le=100,
+        description="Quality component score",
+    )
+    efficiency_score: Decimal = Field(
+        ...,
+        ge=0,
+        le=100,
+        description="Efficiency component score",
+    )
+    reliability_score: Decimal = Field(
+        ...,
+        ge=0,
+        le=100,
+        description="Reliability component score",
+    )
+    communication_score: Decimal = Field(
+        ...,
+        ge=0,
+        le=100,
+        description="Communication component score",
+    )
+    
+    # Context
+    calculation_date: datetime = Field(
+        ...,
+        description="When rating was calculated",
+    )
+    data_period_start: Date = Field(
+        ...,
+        description="Performance data period start",
+    )
+    data_period_end: Date = Field(
+        ...,
+        description="Performance data period end",
+    )
+    confidence_level: Decimal = Field(
+        ...,
+        ge=0,
+        le=100,
+        description="Confidence in rating accuracy",
+    )
+    
+    # Insights
+    top_strengths: List[str] = Field(
+        default_factory=list,
+        max_length=5,
+        description="Top identified strengths",
+    )
+    improvement_areas: List[str] = Field(
+        default_factory=list,
+        max_length=5,
+        description="Key improvement areas",
+    )
+
+    @computed_field
+    @property
+    def rating_description(self) -> str:
+        """Get detailed rating description."""
+        score = float(self.overall_score)
+        
+        if score >= 90:
+            return "Outstanding performance - consistently exceeds expectations"
+        elif score >= 80:
+            return "Excellent performance - frequently exceeds expectations"
+        elif score >= 70:
+            return "Good performance - meets expectations with some excellence"
+        elif score >= 60:
+            return "Satisfactory performance - meets basic expectations"
+        elif score >= 50:
+            return "Below expectations - needs improvement"
+        else:
+            return "Unsatisfactory performance - requires immediate attention"
+
+    @computed_field
+    @property
+    def is_high_performer(self) -> bool:
+        """Check if supervisor is a high performer."""
+        return float(self.overall_score) >= 80
+
+    @computed_field
+    @property
+    def component_balance(self) -> str:
+        """Assess balance across component scores."""
+        scores = [
+            float(self.quality_score),
+            float(self.efficiency_score),
+            float(self.reliability_score),
+            float(self.communication_score),
+        ]
+        
+        min_score = min(scores)
+        max_score = max(scores)
+        range_diff = max_score - min_score
+        
+        if range_diff < 10:
+            return "Well-balanced"
+        elif range_diff < 20:
+            return "Mostly balanced"
+        elif range_diff < 30:
+            return "Uneven performance"
+        else:
+            return "Significant gaps"

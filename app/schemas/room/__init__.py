@@ -1,4 +1,3 @@
-# --- File: app/schemas/room/__init__.py ---
 """
 Room schemas package.
 

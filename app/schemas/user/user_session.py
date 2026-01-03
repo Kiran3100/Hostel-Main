@@ -1,4 +1,3 @@
-# --- File: app/schemas/user/user_session.py ---
 """
 User session schemas with enhanced tracking and management.
 """
@@ -18,6 +17,7 @@ __all__ = [
     "RevokeSessionRequest",
     "RevokeAllSessionsRequest",
     "CreateSessionRequest",
+    "SessionAnalytics",
 ]
 
 
@@ -208,3 +208,70 @@ class CreateSessionRequest(BaseCreateSchema):
             ):
                 raise ValueError("Invalid IP address format")
         return v
+
+
+class SessionAnalytics(BaseResponseSchema):
+    """
+    Session analytics and statistics.
+    
+    Comprehensive session metrics for security and usage analysis.
+    """
+
+    user_id: UUID = Field(
+        ...,
+        description="User ID for the analytics",
+    )
+    total_sessions: int = Field(
+        ...,
+        ge=0,
+        description="Total number of sessions (all time)",
+    )
+    active_sessions: int = Field(
+        ...,
+        ge=0,
+        description="Currently active sessions",
+    )
+    sessions_last_30_days: int = Field(
+        ...,
+        ge=0,
+        description="Sessions created in last 30 days",
+    )
+    device_distribution: Dict[str, int] = Field(
+        default_factory=dict,
+        description="Session count by device type",
+        examples=[{"desktop": 5, "mobile": 3, "tablet": 1}],
+    )
+    browser_distribution: Dict[str, int] = Field(
+        default_factory=dict,
+        description="Session count by browser",
+        examples=[{"Chrome": 6, "Safari": 2, "Firefox": 1}],
+    )
+    os_distribution: Dict[str, int] = Field(
+        default_factory=dict,
+        description="Session count by operating system",
+        examples=[{"Windows": 4, "iOS": 3, "macOS": 2}],
+    )
+    location_distribution: Dict[str, int] = Field(
+        default_factory=dict,
+        description="Session count by location",
+        examples=[{"Mumbai, India": 5, "New York, USA": 2}],
+    )
+    average_session_duration_minutes: Union[float, None] = Field(
+        default=None,
+        ge=0,
+        description="Average session duration in minutes",
+    )
+    last_login_at: Union[datetime, None] = Field(
+        default=None,
+        description="Last login timestamp",
+    )
+    most_recent_locations: List[str] = Field(
+        default_factory=list,
+        description="Most recent login locations",
+        examples=[["Mumbai, India", "New York, USA"]],
+    )
+    suspicious_activity_count: int = Field(
+        default=0,
+        ge=0,
+        description="Count of flagged suspicious activities",
+    )

@@ -20,7 +20,7 @@ from app.models.visitor.visitor_favorite import (
     VisitorFavorite,
 )
 from app.repositories.base.base_repository import BaseRepository
-from app.repositories.base.pagination import PaginationParams, PaginationResult
+from app.repositories.base.pagination import PaginationParams, PaginatedResult
 
 
 class VisitorFavoriteRepository(BaseRepository[VisitorFavorite]):
@@ -92,7 +92,7 @@ class VisitorFavoriteRepository(BaseRepository[VisitorFavorite]):
             existing.price_when_saved = price_when_saved
             existing.current_price = current_price
             existing.notes = notes
-            self.session.flush()
+            self.db.flush()
             return existing
         
         favorite = VisitorFavorite(
@@ -112,8 +112,8 @@ class VisitorFavoriteRepository(BaseRepository[VisitorFavorite]):
             added_at=datetime.utcnow(),
         )
         
-        self.session.add(favorite)
-        self.session.flush()
+        self.db.add(favorite)
+        self.db.flush()
         
         # Create initial price history record
         self._create_price_history_record(
@@ -146,7 +146,7 @@ class VisitorFavoriteRepository(BaseRepository[VisitorFavorite]):
         favorite.is_deleted = True
         favorite.deleted_at = datetime.utcnow()
         
-        self.session.flush()
+        self.db.flush()
         return True
 
     def find_favorite(
@@ -171,7 +171,7 @@ class VisitorFavoriteRepository(BaseRepository[VisitorFavorite]):
             )
         )
         
-        result = self.session.execute(query)
+        result = self.db.execute(query)
         return result.scalar_one_or_none()
 
     def get_visitor_favorites(
@@ -179,7 +179,7 @@ class VisitorFavoriteRepository(BaseRepository[VisitorFavorite]):
         visitor_id: UUID,
         include_deleted: bool = False,
         pagination: Optional[PaginationParams] = None,
-    ) -> PaginationResult[VisitorFavorite]:
+    ) -> PaginatedResult[VisitorFavorite]:
         """
         Get all favorites for a visitor.
         
@@ -225,7 +225,7 @@ class VisitorFavoriteRepository(BaseRepository[VisitorFavorite]):
             )
         )
         
-        count = self.session.execute(query).scalar_one()
+        count = self.db.execute(query).scalar_one()
         return count > 0
 
     def get_favorites_count(
@@ -248,7 +248,7 @@ class VisitorFavoriteRepository(BaseRepository[VisitorFavorite]):
             )
         )
         
-        return self.session.execute(query).scalar_one()
+        return self.db.execute(query).scalar_one()
 
     # ==================== Price Tracking ====================
 
@@ -289,7 +289,7 @@ class VisitorFavoriteRepository(BaseRepository[VisitorFavorite]):
             favorite.price_drop_amount = None
             favorite.price_drop_percentage = None
         
-        self.session.flush()
+        self.db.flush()
         
         # Create price history record
         self._create_price_history_record(
@@ -323,7 +323,7 @@ class VisitorFavoriteRepository(BaseRepository[VisitorFavorite]):
         favorite.available_beds = available_beds
         favorite.has_availability = available_beds > 0
         
-        self.session.flush()
+        self.db.flush()
         return favorite
 
     def get_favorites_with_price_drops(
@@ -356,7 +356,7 @@ class VisitorFavoriteRepository(BaseRepository[VisitorFavorite]):
         
         query = query.order_by(desc(VisitorFavorite.price_drop_percentage))
         
-        result = self.session.execute(query)
+        result = self.db.execute(query)
         return list(result.scalars().all())
 
     def get_favorites_without_availability(
@@ -380,7 +380,7 @@ class VisitorFavoriteRepository(BaseRepository[VisitorFavorite]):
             )
         ).order_by(desc(VisitorFavorite.added_at))
         
-        result = self.session.execute(query)
+        result = self.db.execute(query)
         return list(result.scalars().all())
 
     def _create_price_history_record(
@@ -417,8 +417,8 @@ class VisitorFavoriteRepository(BaseRepository[VisitorFavorite]):
             price_change_percentage=price_change_percentage,
         )
         
-        self.session.add(history)
-        self.session.flush()
+        self.db.add(history)
+        self.db.flush()
         
         return history
 
@@ -445,7 +445,7 @@ class VisitorFavoriteRepository(BaseRepository[VisitorFavorite]):
         
         favorite.notes = notes
         
-        self.session.flush()
+        self.db.flush()
         return favorite
 
     def track_favorite_view(
@@ -468,7 +468,7 @@ class VisitorFavoriteRepository(BaseRepository[VisitorFavorite]):
         favorite.times_viewed += 1
         favorite.last_viewed_at = datetime.utcnow()
         
-        self.session.flush()
+        self.db.flush()
         return favorite
 
     def update_alert_preferences(
@@ -497,7 +497,7 @@ class VisitorFavoriteRepository(BaseRepository[VisitorFavorite]):
         if alert_on_availability is not None:
             favorite.alert_on_availability = alert_on_availability
         
-        self.session.flush()
+        self.db.flush()
         return favorite
 
     # ==================== Analytics & Insights ====================
@@ -579,7 +579,7 @@ class VisitorFavoriteRepository(BaseRepository[VisitorFavorite]):
             .group_by(VisitorFavorite.hostel_city)
         )
         
-        result = self.session.execute(query)
+        result = self.db.execute(query)
         return {row.hostel_city: row.count for row in result}
 
     def get_highly_viewed_favorites(
@@ -605,7 +605,7 @@ class VisitorFavoriteRepository(BaseRepository[VisitorFavorite]):
             )
         ).order_by(desc(VisitorFavorite.times_viewed))
         
-        result = self.session.execute(query)
+        result = self.db.execute(query)
         return list(result.scalars().all())
 
     # ==================== Bulk Operations ====================
@@ -688,8 +688,8 @@ class FavoriteComparisonRepository(BaseRepository[FavoriteComparison]):
             comparison_criteria=comparison_criteria or {},
         )
         
-        self.session.add(comparison)
-        self.session.flush()
+        self.db.add(comparison)
+        self.db.flush()
         
         return comparison
 
@@ -717,7 +717,7 @@ class FavoriteComparisonRepository(BaseRepository[FavoriteComparison]):
         comparison.selected_favorite_id = selected_favorite_id
         comparison.comparison_duration_seconds = duration_seconds
         
-        self.session.flush()
+        self.db.flush()
         return comparison
 
     def get_visitor_comparisons(
@@ -742,7 +742,7 @@ class FavoriteComparisonRepository(BaseRepository[FavoriteComparison]):
             .limit(limit)
         )
         
-        result = self.session.execute(query)
+        result = self.db.execute(query)
         return list(result.scalars().all())
 
 
@@ -780,7 +780,7 @@ class FavoritePriceHistoryRepository(BaseRepository[FavoritePriceHistory]):
             .order_by(FavoritePriceHistory.recorded_at)
         )
         
-        result = self.session.execute(query)
+        result = self.db.execute(query)
         return list(result.scalars().all())
 
     def get_price_trends(

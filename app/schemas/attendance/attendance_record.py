@@ -6,8 +6,8 @@ Provides schemas for single, bulk, correction, and quick attendance marking
 operations with comprehensive validation logic.
 """
 
-from datetime import date as Date, time
-from typing import List, Union
+from datetime import date as Date, time, datetime
+from typing import List, Union, Optional
 
 from pydantic import Field, field_validator, model_validator
 from pydantic.types import UUID4 as UUID
@@ -21,7 +21,130 @@ __all__ = [
     "StudentAttendanceRecord",
     "AttendanceCorrection",
     "QuickAttendanceMarkAll",
+    "AttendanceRecord",
+    "AttendanceResponse",
 ]
+
+
+class AttendanceRecord(BaseSchema):
+    """
+    Attendance record response schema.
+    
+    Represents a complete attendance record with all metadata
+    for API responses.
+    """
+    
+    id: UUID = Field(
+        ...,
+        description="Attendance record unique identifier",
+    )
+    hostel_id: UUID = Field(
+        ...,
+        description="Hostel unique identifier",
+    )
+    student_id: UUID = Field(
+        ...,
+        description="Student unique identifier",
+    )
+    attendance_date: Date = Field(
+        ...,
+        description="Date of attendance",
+    )
+    status: AttendanceStatus = Field(
+        ...,
+        description="Attendance status",
+    )
+    check_in_time: Union[time, None] = Field(
+        None,
+        description="Check-in time",
+    )
+    check_out_time: Union[time, None] = Field(
+        None,
+        description="Check-out time",
+    )
+    is_late: bool = Field(
+        False,
+        description="Late arrival indicator",
+    )
+    late_minutes: Union[int, None] = Field(
+        None,
+        description="Minutes late",
+    )
+    notes: Union[str, None] = Field(
+        None,
+        description="Additional notes or remarks",
+    )
+    marking_mode: AttendanceMode = Field(
+        ...,
+        description="Method used to record attendance",
+    )
+    marked_by: UUID = Field(
+        ...,
+        description="User ID who marked the attendance",
+    )
+    supervisor_id: Union[UUID, None] = Field(
+        None,
+        description="Supervisor ID who verified attendance",
+    )
+    created_at: datetime = Field(
+        ...,
+        description="Record creation timestamp",
+    )
+    updated_at: Union[datetime, None] = Field(
+        None,
+        description="Record last update timestamp",
+    )
+    is_corrected: bool = Field(
+        False,
+        description="Indicates if record has been corrected",
+    )
+    correction_count: int = Field(
+        0,
+        description="Number of times record has been corrected",
+    )
+
+    class Config:
+        from_attributes = True
+
+
+class AttendanceResponse(BaseSchema):
+    """
+    Response schema for attendance queries.
+    
+    Contains list of attendance records with metadata.
+    """
+    
+    records: List[AttendanceRecord] = Field(
+        ...,
+        description="List of attendance records",
+    )
+    total_count: int = Field(
+        ...,
+        description="Total number of records",
+    )
+    present_count: int = Field(
+        ...,
+        description="Number of present records",
+    )
+    absent_count: int = Field(
+        ...,
+        description="Number of absent records",
+    )
+    late_count: int = Field(
+        ...,
+        description="Number of late records",
+    )
+    attendance_percentage: float = Field(
+        ...,
+        description="Attendance percentage",
+    )
+    date_range: Optional[dict] = Field(
+        None,
+        description="Date range of the records",
+    )
+
+    class Config:
+        from_attributes = True
 
 
 class AttendanceRecordRequest(BaseCreateSchema):

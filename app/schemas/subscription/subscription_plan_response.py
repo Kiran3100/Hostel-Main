@@ -15,9 +15,9 @@ from app.schemas.common.enums import SubscriptionPlan
 
 __all__ = [
     "PlanResponse",
+    "PlanSummary",
     "PlanFeatures",
     "PlanComparison",
-    "PlanSummary",
 ]
 
 
@@ -140,9 +140,77 @@ class PlanSummary(BaseSchema):
     price_yearly: Annotated[Decimal, Field(..., description="Yearly price")]
     currency: str = Field(..., description="Currency")
 
-    short_description: Union[str, None] = Field(None)
-    is_featured: bool = Field(default=False)
-    trial_days: int = Field(default=0)
+    short_description: Union[str, None] = Field(None, description="Short description")
+    is_featured: bool = Field(default=False, description="Featured plan")
+    is_active: bool = Field(default=True, description="Plan is active")
+    is_public: bool = Field(default=True, description="Publicly available")
+    trial_days: int = Field(default=0, description="Trial period days")
+    sort_order: int = Field(default=0, description="Display sort order")
+
+    # Key feature highlights
+    key_features: List[str] = Field(
+        default_factory=list, description="Key features for display"
+    )
+    
+    # Limits summary
+    max_hostels: Union[int, None] = Field(None, description="Max hostels")
+    max_students: Union[int, None] = Field(None, description="Max students")
+
+    @computed_field  # type: ignore[misc]
+    @property
+    def price_monthly_formatted(self) -> str:
+        """Format monthly price with currency."""
+        return f"{self.currency} {self.price_monthly:,.2f}/mo"
+
+    @computed_field  # type: ignore[misc]
+    @property
+    def price_yearly_formatted(self) -> str:
+        """Format yearly price with currency."""
+        return f"{self.currency} {self.price_yearly:,.2f}/yr"
+
+    @computed_field  # type: ignore[misc]
+    @property
+    def yearly_savings_amount(self) -> Decimal:
+        """Calculate yearly savings amount."""
+        return (self.price_monthly * 12 - self.price_yearly).quantize(
+            Decimal("0.01")
+        )
+
+    @computed_field  # type: ignore[misc]
+    @property
+    def yearly_discount_percent(self) -> Decimal:
+        """Calculate yearly discount percentage."""
+        if self.price_monthly == Decimal("0"):
+            return Decimal("0")
+        monthly_yearly = self.price_monthly * 12
+        if monthly_yearly == Decimal("0"):
+            return Decimal("0")
+        return (
+            (monthly_yearly - self.price_yearly) / monthly_yearly * 100
+        ).quantize(Decimal("0.01"))
+
+    @computed_field  # type: ignore[misc]
+    @property
+    def has_trial(self) -> bool:
+        """Check if plan offers trial."""
+        return self.trial_days > 0
+
+    @computed_field  # type: ignore[misc]
+    @property
+    def limits_summary(self) -> str:
+        """Create a summary string of key limits."""
+        parts = []
+        if self.max_hostels:
+            parts.append(f"{self.max_hostels} hostel{'s' if self.max_hostels != 1 else ''}")
+        else:
+            parts.append("Unlimited hostels")
+            
+        if self.max_students:
+            parts.append(f"{self.max_students} student{'s' if self.max_students != 1 else ''}")
+        else:
+            parts.append("Unlimited students")
+            
+        return " • ".join(parts)
 
 
 class PlanFeatures(BaseSchema):

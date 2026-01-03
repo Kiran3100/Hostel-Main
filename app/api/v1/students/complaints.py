@@ -3,11 +3,10 @@ Student Complaints API Endpoints
 
 Provides endpoints for students to manage their complaints and grievances.
 """
-from typing import List, Optional
+from typing import Optional
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, Query, status, Body, Path
-from pydantic import Field
 
 from app.core.dependencies import get_current_user
 from app.services.complaint.complaint_service import ComplaintService
@@ -15,9 +14,9 @@ from app.schemas.complaint import (
     ComplaintCreate,
     ComplaintResponse,
     ComplaintListResponse,
-    ComplaintStatus,
 )
-from app.schemas.base import User
+from app.schemas.common.enums import ComplaintStatus
+from app.schemas.common.base import User
 
 router = APIRouter(
     prefix="/students/me/complaints",
@@ -93,6 +92,12 @@ async def list_my_complaints(
     status_code=status.HTTP_200_OK,
     summary="Get complaint details",
     description="Retrieve detailed information about a specific complaint.",
+    responses={
+        200: {"description": "Complaint details retrieved successfully"},
+        401: {"description": "Unauthorized - Invalid or missing authentication"},
+        403: {"description": "Forbidden - Cannot access another student's complaint"},
+        404: {"description": "Complaint not found"},
+    },
 )
 async def get_complaint_detail(
     complaint_id: UUID = Path(..., description="Unique complaint identifier"),
@@ -127,6 +132,7 @@ async def get_complaint_detail(
         201: {"description": "Complaint created successfully"},
         400: {"description": "Invalid complaint data"},
         401: {"description": "Unauthorized"},
+        422: {"description": "Validation error"},
     },
 )
 async def create_complaint(
@@ -149,8 +155,12 @@ async def create_complaint(
         ComplaintResponse: Created complaint details
     """
     # Ensure complaint is associated with the authenticated user
-    complaint_data = payload.dict()
-    complaint_data["student_id"] = current_user.id
+    complaint_data = payload.model_dump()
+    complaint_data["raised_by"] = current_user.id
+    
+    # If student_id is not set, use current user's ID
+    if not complaint_data.get("student_id"):
+        complaint_data["student_id"] = current_user.id
     
     result = complaint_service.create(data=complaint_data)
     return result.unwrap()
@@ -162,6 +172,13 @@ async def create_complaint(
     status_code=status.HTTP_200_OK,
     summary="Cancel a complaint",
     description="Cancel a pending complaint (only if not yet resolved).",
+    responses={
+        200: {"description": "Complaint cancelled successfully"},
+        400: {"description": "Cannot cancel complaint in current status"},
+        401: {"description": "Unauthorized"},
+        403: {"description": "Forbidden - Cannot cancel another student's complaint"},
+        404: {"description": "Complaint not found"},
+    },
 )
 async def cancel_complaint(
     complaint_id: UUID = Path(..., description="Unique complaint identifier"),
@@ -169,6 +186,7 @@ async def cancel_complaint(
         None,
         embed=True,
         description="Optional reason for cancellation",
+        max_length=500,
     ),
     complaint_service: ComplaintService = Depends(get_complaint_service),
     current_user: User = Depends(get_current_user),

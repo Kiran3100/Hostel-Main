@@ -800,6 +800,57 @@ class BaseRepository(Generic[ModelType]):
         except SQLAlchemyError as e:
             raise RepositoryError(f"Pagination failed: {str(e)}") from e
     
+    def _paginate_query(
+        self,
+        query: Union[Query, select],
+        pagination: Optional['PaginationParams'] = None
+    ) -> 'PaginatedResult[ModelType]':
+        """
+        Helper method to paginate a SQLAlchemy query.
+        
+        Args:
+            query: SQLAlchemy query to paginate (Query or Select)
+            pagination: Pagination parameters
+            
+        Returns:
+            Paginated result
+        """
+        from app.repositories.base.pagination import PaginationParams, PaginatedResult
+        
+        if not pagination:
+            pagination = PaginationParams()
+        
+        try:
+            # Handle different query types
+            if isinstance(query, select):
+                # For SQLAlchemy 2.0 style select statements
+                # Get total count
+                count_query = select(func.count()).select_from(query.alias())
+                total_count = self.db.execute(count_query).scalar()
+                
+                # Apply pagination
+                paginated_query = query.offset(pagination.skip).limit(pagination.limit)
+                result = self.db.execute(paginated_query)
+                items = list(result.scalars().all())
+            else:
+                # For legacy Query objects
+                # Get total count
+                total_count = query.count()
+                
+                # Apply pagination
+                paginated_query = query.offset(pagination.skip).limit(pagination.limit)
+                items = paginated_query.all()
+            
+            return PaginatedResult(
+                items=items,
+                total_count=total_count,
+                page=pagination.page,
+                page_size=pagination.per_page
+            )
+            
+        except SQLAlchemyError as e:
+            raise RepositoryError(f"Pagination failed: {str(e)}") from e
+    
     def find_by_specification(self, specification: 'Specification') -> List[ModelType]:
         """
         Find entities matching a specification.

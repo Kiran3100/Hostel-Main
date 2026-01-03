@@ -20,14 +20,14 @@ from fastapi import (
 
 from app.core.dependencies import get_current_user
 from app.services.student.student_document_service import StudentDocumentService
-from app.schemas.student_document import (
+from app.schemas.student.student_document import (
     StudentDocument,
     StudentDocumentCreate,
     StudentDocumentUpdate,
     DocumentType,
     DocumentVerificationStatus,
 )
-from app.schemas.base import User
+from app.schemas.common.base import User
 
 router = APIRouter(
     prefix="/students",

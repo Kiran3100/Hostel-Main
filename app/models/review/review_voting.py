@@ -28,7 +28,7 @@ from sqlalchemy.dialects.postgresql import JSONB, UUID as PG_UUID
 from sqlalchemy.orm import relationship, validates
 
 from app.models.base import BaseModel, TimestampMixin
-from app.models.enums import VoteType
+from app.models.common.enums import VoteType
 
 __all__ = [
     "ReviewVote",

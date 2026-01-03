@@ -17,6 +17,11 @@ from app.schemas.common.base import BaseSchema
 
 __all__ = [
     "VisitorDashboard",
+    "DashboardSummary",
+    "ActivityTimeline",
+    "ActivityItem",
+    "QuickActions",
+    "QuickAction",
     "SavedHostels",
     "SavedHostelItem",
     "BookingHistory",
@@ -526,6 +531,248 @@ class AvailabilityAlert(BaseSchema):
         ...,
         description="Whether alert has been read",
     )
+
+
+class ActivityItem(BaseSchema):
+    """
+    Individual activity item in the timeline.
+    """
+
+    id: UUID = Field(
+        ...,
+        description="Activity identifier",
+    )
+    type: str = Field(
+        ...,
+        description="Type of activity (search, view, inquiry, booking, etc.)",
+        pattern="^(search|view|inquiry|booking|favorite_add|favorite_remove|review)$",
+    )
+    title: str = Field(
+        ...,
+        min_length=1,
+        max_length=255,
+        description="Activity title",
+    )
+    description: Union[str, None] = Field(
+        default=None,
+        max_length=500,
+        description="Activity description",
+    )
+    timestamp: datetime = Field(
+        ...,
+        description="When activity occurred",
+    )
+    
+    # Related entities
+    hostel_id: Union[UUID, None] = Field(
+        default=None,
+        description="Related hostel ID if applicable",
+    )
+    hostel_name: Union[str, None] = Field(
+        default=None,
+        description="Related hostel name if applicable",
+    )
+    
+    # Metadata
+    metadata: Dict = Field(
+        default_factory=dict,
+        description="Additional activity metadata",
+    )
+
+    @computed_field  # type: ignore[misc]
+    @property
+    def days_ago(self) -> int:
+        """Calculate days since activity."""
+        return (datetime.utcnow() - self.timestamp).days
+
+
+class ActivityTimeline(BaseSchema):
+    """
+    Activity timeline for visitor dashboard.
+    """
+
+    total_activities: int = Field(
+        ...,
+        ge=0,
+        description="Total number of activities",
+    )
+    activities: List[ActivityItem] = Field(
+        default_factory=list,
+        description="List of activity items",
+    )
+    days_range: int = Field(
+        ...,
+        ge=1,
+        description="Number of days covered by this timeline",
+    )
+
+    @computed_field  # type: ignore[misc]
+    @property
+    def activities_by_type(self) -> Dict[str, int]:
+        """Count activities by type."""
+        counts = {}
+        for activity in self.activities:
+            counts[activity.type] = counts.get(activity.type, 0) + 1
+        return counts
+
+
+class QuickAction(BaseSchema):
+    """
+    Individual quick action item.
+    """
+
+    id: str = Field(
+        ...,
+        min_length=1,
+        description="Action identifier",
+    )
+    title: str = Field(
+        ...,
+        min_length=1,
+        max_length=100,
+        description="Action title",
+    )
+    description: str = Field(
+        ...,
+        min_length=1,
+        max_length=255,
+        description="Action description",
+    )
+    action_type: str = Field(
+        ...,
+        description="Type of action",
+        pattern="^(search|view|booking|favorite|preference|notification)$",
+    )
+    priority: int = Field(
+        ...,
+        ge=1,
+        le=5,
+        description="Action priority (1=highest, 5=lowest)",
+    )
+    
+    # Action metadata
+    url: Union[str, None] = Field(
+        default=None,
+        description="URL for navigation-based actions",
+    )
+    icon: Union[str, None] = Field(
+        default=None,
+        description="Icon identifier for UI",
+    )
+    badge_text: Union[str, None] = Field(
+        default=None,
+        max_length=20,
+        description="Badge text for notifications/counts",
+    )
+    
+    # Context
+    context: Dict = Field(
+        default_factory=dict,
+        description="Additional context for the action",
+    )
+
+    @computed_field  # type: ignore[misc]
+    @property
+    def is_high_priority(self) -> bool:
+        """Check if this is a high priority action."""
+        return self.priority <= 2
+
+
+class QuickActions(BaseSchema):
+    """
+    Collection of quick actions for dashboard.
+    """
+
+    actions: List[QuickAction] = Field(
+        default_factory=list,
+        max_length=10,
+        description="List of quick actions (max 10)",
+    )
+
+    @computed_field  # type: ignore[misc]
+    @property
+    def high_priority_actions(self) -> List[QuickAction]:
+        """Get high priority actions only."""
+        return [action for action in self.actions if action.is_high_priority]
+
+    @computed_field  # type: ignore[misc]
+    @property
+    def actions_by_type(self) -> Dict[str, List[QuickAction]]:
+        """Group actions by type."""
+        grouped = {}
+        for action in self.actions:
+            if action.action_type not in grouped:
+                grouped[action.action_type] = []
+            grouped[action.action_type].append(action)
+        return grouped
+
+
+class DashboardSummary(BaseSchema):
+    """
+    Lightweight dashboard summary for quick display.
+    """
+
+    visitor_id: UUID = Field(
+        ...,
+        description="Visitor identifier",
+    )
+    visitor_name: str = Field(
+        ...,
+        min_length=1,
+        max_length=255,
+        description="Visitor name",
+    )
+
+    # Key metrics
+    total_saved_hostels: int = Field(
+        ...,
+        ge=0,
+        description="Total saved hostels",
+    )
+    active_bookings: int = Field(
+        ...,
+        ge=0,
+        description="Number of active bookings",
+    )
+    unread_alerts: int = Field(
+        ...,
+        ge=0,
+        description="Number of unread alerts",
+    )
+    new_recommendations: int = Field(
+        ...,
+        ge=0,
+        description="Number of new recommendations",
+    )
+
+    # Recent activity count
+    recent_activity_count: int = Field(
+        ...,
+        ge=0,
+        description="Recent activity items (last 7 days)",
+    )
+
+    # Quick stats
+    hostels_with_price_drops: int = Field(
+        default=0,
+        ge=0,
+        description="Saved hostels with price drops",
+    )
+    hostels_with_availability: int = Field(
+        default=0,
+        ge=0,
+        description="Saved hostels with availability",
+    )
+
+    @computed_field  # type: ignore[misc]
+    @property
+    def has_important_updates(self) -> bool:
+        """Check if there are important updates to show."""
+        return (
+            self.unread_alerts > 0
+            or self.hostels_with_price_drops > 0
+            or self.new_recommendations > 0
+        )
 
 
 class VisitorDashboard(BaseSchema):

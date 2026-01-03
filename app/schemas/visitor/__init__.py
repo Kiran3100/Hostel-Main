@@ -12,10 +12,15 @@ from app.schemas.visitor.visitor_base import (
     VisitorUpdate,
 )
 from app.schemas.visitor.visitor_dashboard import (
+    ActivityItem,
+    ActivityTimeline,
     AvailabilityAlert,
     BookingHistory,
     BookingHistoryItem,
+    DashboardSummary,
     PriceDropAlert,
+    QuickAction,
+    QuickActions,
     RecentSearch,
     RecentlyViewedHostel,
     RecommendedHostel,
@@ -24,6 +29,7 @@ from app.schemas.visitor.visitor_dashboard import (
     VisitorDashboard,
 )
 from app.schemas.visitor.visitor_favorites import (
+    FavoriteBulkOperation,
     FavoriteComparison,
     FavoriteHostelItem,
     FavoriteRequest,
@@ -32,10 +38,19 @@ from app.schemas.visitor.visitor_favorites import (
     FavoritesExport,
 )
 from app.schemas.visitor.visitor_preferences import (
+    DisplayPreferences,
+    NotificationPreferences,
     PreferenceUpdate,
+    PreferencesUpdate,
+    PrivacyPreferences,
     SavedSearch,
     SearchPreferences,
     VisitorPreferences,
+)
+from app.schemas.visitor.visitor_recommendations import (
+    RecommendationExplanation,
+    RecommendationFeedback,
+    RecommendationReason,
 )
 from app.schemas.visitor.visitor_response import (
     VisitorDetail,
@@ -57,10 +72,19 @@ __all__ = [
     # Preferences
     "VisitorPreferences",
     "PreferenceUpdate",
+    "PreferencesUpdate",
+    "NotificationPreferences",
+    "PrivacyPreferences",
+    "DisplayPreferences",
     "SearchPreferences",
     "SavedSearch",
     # Dashboard
     "VisitorDashboard",
+    "DashboardSummary",
+    "ActivityTimeline",
+    "ActivityItem",
+    "QuickActions",
+    "QuickAction",
     "SavedHostels",
     "SavedHostelItem",
     "BookingHistory",
@@ -77,4 +101,9 @@ __all__ = [
     "FavoriteUpdate",
     "FavoritesExport",
     "FavoriteComparison",
+    "FavoriteBulkOperation",
+    # Recommendations
+    "RecommendationFeedback",
+    "RecommendationExplanation",
+    "RecommendationReason",
 ]

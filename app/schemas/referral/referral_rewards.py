@@ -21,6 +21,7 @@ __all__ = [
     "RewardTracking",
     "RewardCalculation",
     "PayoutRequest",
+    "PayoutRequestCreate",
     "PayoutRequestResponse",
     "PayoutHistory",
     "RewardSummary",
@@ -635,3 +636,7 @@ class RewardSummary(BaseSchema):
     def validate_decimal_places(cls, v: Decimal) -> Decimal:
         """Ensure decimal values have at most 2 decimal places."""
         return v.quantize(Decimal("0.01"))
+
+
+# Alias for API compatibility
+PayoutRequestCreate = PayoutRequest

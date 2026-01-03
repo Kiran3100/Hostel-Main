@@ -5,7 +5,7 @@ Comprehensive complaint management schemas including creation, updates,
 assignments, resolution, escalation, feedback, and analytics.
 
 Example:
-    from app.schemas.complaint import ComplaintCreate, ComplaintDetail
+    from app.schemas.complaint import ComplaintCreate, ComplaintDetail, ComplaintListResponse
 """
 
 from app.schemas.complaint.complaint_analytics import (
@@ -75,6 +75,7 @@ from app.schemas.complaint.complaint_resolution import (
 from app.schemas.complaint.complaint_response import (
     ComplaintDetail,
     ComplaintListItem,
+    ComplaintListResponse,
     ComplaintResponse,
     ComplaintStats,
     ComplaintSummary,
@@ -90,6 +91,7 @@ __all__ = [
     "ComplaintResponse",
     "ComplaintDetail",
     "ComplaintListItem",
+    "ComplaintListResponse",
     "ComplaintSummary",
     "ComplaintStats",
     # Assignment schemas

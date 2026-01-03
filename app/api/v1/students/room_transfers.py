@@ -11,14 +11,14 @@ from fastapi import APIRouter, Depends, Path, status, Body, Query
 
 from app.core.dependencies import get_current_user
 from app.services.student.room_transfer_service import RoomTransferService
-from app.schemas.room_transfer import (
+from app.schemas.room.room_transfer import (
     RoomTransferRequest,
     RoomTransferRequestCreate,
     RoomTransferHistory,
     RoomSwapRequest,
     TransferStatus,
 )
-from app.schemas.base import User
+from app.schemas.common.base import User
 
 router = APIRouter(
     prefix="/students",

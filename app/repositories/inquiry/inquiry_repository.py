@@ -21,7 +21,7 @@ from app.schemas.common.enums import InquirySource, InquiryStatus, RoomType
 from app.repositories.base.base_repository import BaseRepository
 from app.repositories.base.query_builder import QueryBuilder
 from app.repositories.base.specifications import Specification
-from app.core1.exceptions import NotFoundException, ValidationException
+from app.core.exceptions import NotFoundError, ValidationException
 
 
 class InquiryRepository(BaseRepository[Inquiry]):
@@ -118,12 +118,12 @@ class InquiryRepository(BaseRepository[Inquiry]):
             Updated inquiry
             
         Raises:
-            NotFoundException: If inquiry not found
+            NotFoundError: If inquiry not found
             ValidationException: If status transition invalid
         """
         inquiry = await self.find_by_id(inquiry_id)
         if not inquiry:
-            raise NotFoundException(f"Inquiry {inquiry_id} not found")
+            raise NotFoundError(f"Inquiry {inquiry_id} not found")
         
         # Validate status transition
         self._validate_status_transition(inquiry.status, new_status)
@@ -180,7 +180,7 @@ class InquiryRepository(BaseRepository[Inquiry]):
         """
         inquiry = await self.find_by_id(inquiry_id)
         if not inquiry:
-            raise NotFoundException(f"Inquiry {inquiry_id} not found")
+            raise NotFoundError(f"Inquiry {inquiry_id} not found")
         
         update_data = {
             "assigned_to": assigned_to,

@@ -22,6 +22,7 @@ from app.schemas.common.base import (
     BaseFilterSchema,
     BaseResponseSchema,
     BaseUpdateSchema,
+    BaseSchema,
 )
 from app.schemas.common.enums import Gender, HostelType, RoomType
 
@@ -33,6 +34,9 @@ __all__ = [
     "SavedSearchUpdate",
     "SavedSearchResponse",
     "SearchHistoryResponse",
+    "SavedSearch",
+    "SavedSearchExecution",
+    "SavedSearchList",
 ]
 
 
@@ -553,3 +557,206 @@ class SearchHistoryResponse(BaseResponseSchema):
         default_factory=list,
         description="IDs of hostels clicked from this search",
     )
+
+
+# NEW SCHEMAS FOR ROUTER COMPATIBILITY
+
+class SavedSearch(SavedSearchResponse):
+    """
+    Alias for SavedSearchResponse to match router expectations.
+    
+    This provides backward compatibility with existing router code
+    while maintaining the same validation and structure.
+    """
+    pass
+
+
+class SavedSearchExecution(BaseResponseSchema):
+    """
+    Results from executing a saved search.
+    
+    Contains both the search results and execution metadata.
+    """
+    
+    model_config = ConfigDict(
+        str_strip_whitespace=True,
+        validate_assignment=True,
+    )
+    
+    # Execution metadata
+    saved_search_id: UUID = Field(..., description="ID of the executed saved search")
+    executed_at: datetime = Field(
+        default_factory=lambda: datetime.utcnow(),
+        description="When the search was executed"
+    )
+    execution_time_ms: int = Field(
+        ...,
+        ge=0,
+        description="Search execution time in milliseconds"
+    )
+    
+    # Results summary
+    total_results: int = Field(
+        ...,
+        ge=0,
+        description="Total number of results found"
+    )
+    new_results_count: int = Field(
+        default=0,
+        ge=0,
+        description="Number of new results since last execution"
+    )
+    
+    # Actual search results (imported from search_response.py)
+    # Note: This creates a circular import issue that needs to be resolved
+    # For now, using Any - should be List[SearchResultItem] 
+    results: List[Dict[str, Any]] = Field(
+        default_factory=list,
+        description="Search result items"
+    )
+    
+    # Search metadata (imported from search_response.py)  
+    # Note: Same circular import issue - should be SearchMetadata
+    search_metadata: Dict[str, Any] = Field(
+        default_factory=dict,
+        description="Search execution metadata"
+    )
+    
+    # Comparison with previous execution
+    previous_result_count: Union[int, None] = Field(
+        default=None,
+        description="Result count from previous execution (for trending)"
+    )
+    trend_direction: Union[str, None] = Field(
+        default=None,
+        pattern=r"^(up|down|stable)$",
+        description="Result trend since last execution"
+    )
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def has_new_results(self) -> bool:
+        """Check if there are new results since last execution."""
+        return self.new_results_count > 0
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def result_trend(self) -> str:
+        """Get human-readable result trend."""
+        if self.previous_result_count is None:
+            return "first_execution"
+        
+        if self.total_results > self.previous_result_count:
+            return "increased"
+        elif self.total_results < self.previous_result_count:
+            return "decreased"
+        else:
+            return "unchanged"
+
+
+class SavedSearchList(BaseSchema):
+    """
+    Paginated list of saved searches with metadata.
+    
+    Provides comprehensive listing functionality for saved searches.
+    """
+    
+    model_config = ConfigDict(
+        str_strip_whitespace=True,
+        validate_assignment=True,
+    )
+    
+    # List data
+    saved_searches: List[SavedSearchResponse] = Field(
+        default_factory=list,
+        description="List of saved searches"
+    )
+    
+    # Pagination metadata
+    total: int = Field(
+        ...,
+        ge=0,
+        description="Total number of saved searches"
+    )
+    page: int = Field(
+        default=1,
+        ge=1,
+        description="Current page number"
+    )
+    page_size: int = Field(
+        default=20,
+        ge=1,
+        le=100,
+        description="Number of items per page"
+    )
+    total_pages: int = Field(
+        ...,
+        ge=0,
+        description="Total number of pages"
+    )
+    
+    # List metadata
+    active_searches: int = Field(
+        default=0,
+        ge=0,
+        description="Number of active saved searches"
+    )
+    searches_with_alerts: int = Field(
+        default=0,
+        ge=0,
+        description="Number of searches with alerts enabled"
+    )
+    
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def has_next_page(self) -> bool:
+        """Check if there are more pages."""
+        return self.page < self.total_pages
+    
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def has_previous_page(self) -> bool:
+        """Check if there are previous pages."""
+        return self.page > 1
+    
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def is_empty(self) -> bool:
+        """Check if list is empty."""
+        return self.total == 0
+
+    @classmethod
+    def create_paginated(
+        cls,
+        saved_searches: List[SavedSearchResponse],
+        total: int,
+        page: int = 1,
+        page_size: int = 20,
+    ) -> "SavedSearchList":
+        """
+        Create paginated list with calculated metadata.
+        
+        Args:
+            saved_searches: List of saved searches for current page
+            total: Total number of saved searches
+            page: Current page number
+            page_size: Items per page
+            
+        Returns:
+            SavedSearchList with calculated pagination metadata
+        """
+        import math
+        
+        total_pages = math.ceil(total / page_size) if total > 0 else 0
+        active_searches = sum(1 for search in saved_searches if search.is_alert_enabled)
+        searches_with_alerts = active_searches  # Same as active for now
+        
+        return cls(
+            saved_searches=saved_searches,
+            total=total,
+            page=page,
+            page_size=page_size,
+            total_pages=total_pages,
+            active_searches=active_searches,
+            searches_with_alerts=searches_with_alerts,
+        )

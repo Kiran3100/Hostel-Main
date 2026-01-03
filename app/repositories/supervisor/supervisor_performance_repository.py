@@ -26,7 +26,10 @@ from app.core.exceptions import (
     BusinessLogicError,
     ValidationError,
 )
-from app.core.logging import logger
+from app.core.logging import get_logger
+
+logger = get_logger(__name__)
+
 
 
 class SupervisorPerformanceRepository(BaseRepository[SupervisorPerformance]):
