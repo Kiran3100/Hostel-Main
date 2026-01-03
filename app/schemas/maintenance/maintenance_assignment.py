@@ -10,7 +10,14 @@ from datetime import date as Date, datetime
 from decimal import Decimal
 from typing import Annotated, List, Optional, Union
 
-from pydantic import ConfigDict, EmailStr, Field, field_validator, model_validator
+from pydantic import (
+    ConfigDict,
+    EmailStr,
+    Field,
+    field_validator,
+    model_validator,
+    computed_field,
+)
 from uuid import UUID
 
 from app.schemas.common.base import BaseCreateSchema, BaseSchema
@@ -22,6 +29,8 @@ __all__ = [
     "BulkAssignment",
     "AssignmentHistory",
     "AssignmentEntry",
+    "AssignmentResponse",
+    "ReassignmentRequest",
 ]
 
 
@@ -789,3 +798,252 @@ class AssignmentHistory(BaseSchema):
                     )
         
         return v
+
+
+class AssignmentResponse(BaseSchema):
+    """
+    Assignment response with complete details.
+    
+    Returned after successful assignment creation or update.
+    """
+    
+    model_config = ConfigDict(
+        json_schema_extra={
+            "example": {
+                "id": "123e4567-e89b-12d3-a456-426614174000",
+                "maintenance_id": "123e4567-e89b-12d3-a456-426614174001",
+                "request_number": "MNT-2024-001",
+                "assigned_to_name": "John Technician",
+                "assigned_by_name": "Supervisor Smith",
+                "assignment_type": "staff",
+                "status": "active"
+            }
+        }
+    )
+
+    id: UUID = Field(
+        ...,
+        description="Assignment unique identifier",
+    )
+    maintenance_id: UUID = Field(
+        ...,
+        description="Maintenance request unique identifier",
+    )
+    request_number: str = Field(
+        ...,
+        description="Request number",
+    )
+    
+    # Assignment details
+    assignment_type: str = Field(
+        ...,
+        pattern=r"^(staff|vendor|contractor)$",
+        description="Type of assignment",
+    )
+    assigned_to: UUID = Field(
+        ...,
+        description="Assignee user/vendor ID",
+    )
+    assigned_to_name: str = Field(
+        ...,
+        description="Assignee name",
+    )
+    assigned_to_role: Optional[str] = Field(
+        None,
+        description="Assignee role/designation",
+    )
+    assigned_by: UUID = Field(
+        ...,
+        description="User who made the assignment",
+    )
+    assigned_by_name: str = Field(
+        ...,
+        description="Assignor name",
+    )
+    assigned_at: datetime = Field(
+        ...,
+        description="Assignment timestamp",
+    )
+    
+    # Status and timeline
+    status: str = Field(
+        ...,
+        pattern=r"^(active|in_progress|completed|cancelled|reassigned)$",
+        description="Assignment status",
+    )
+    deadline: Optional[Date] = Field(
+        None,
+        description="Assignment deadline",
+    )
+    started_at: Optional[datetime] = Field(
+        None,
+        description="Work start timestamp",
+    )
+    completed_at: Optional[datetime] = Field(
+        None,
+        description="Completion timestamp",
+    )
+    
+    # Instructions and notes
+    instructions: Optional[str] = Field(
+        None,
+        description="Assignment instructions",
+    )
+    priority_level: Optional[str] = Field(
+        None,
+        pattern=r"^(low|medium|high|urgent|critical)$",
+        description="Assignment priority",
+    )
+    
+    # Vendor-specific (if applicable)
+    vendor_name: Optional[str] = Field(
+        None,
+        description="Vendor company name (if vendor assignment)",
+    )
+    estimated_cost: Union[Annotated[Decimal, Field(ge=0, decimal_places=2)], None] = Field(
+        None,
+        description="Estimated cost (for vendor assignments)",
+    )
+    
+    # Performance tracking
+    estimated_hours: Union[Annotated[Decimal, Field(ge=0, decimal_places=2)], None] = Field(
+        None,
+        description="Estimated hours to complete",
+    )
+    actual_hours: Union[Annotated[Decimal, Field(ge=0, decimal_places=2)], None] = Field(
+        None,
+        description="Actual hours spent (if completed)",
+    )
+    
+    # Metadata
+    created_at: datetime = Field(
+        ...,
+        description="Record creation timestamp",
+    )
+    updated_at: Optional[datetime] = Field(
+        None,
+        description="Last update timestamp",
+    )
+
+    @computed_field  # type: ignore[misc]
+    @property
+    def is_active(self) -> bool:
+        """Check if assignment is currently active."""
+        return self.status in ["active", "in_progress"]
+
+    @computed_field  # type: ignore[misc]
+    @property
+    def is_overdue(self) -> bool:
+        """Check if assignment is overdue."""
+        if not self.deadline or self.status in ["completed", "cancelled"]:
+            return False
+        return self.deadline < Date.today()
+
+
+class ReassignmentRequest(BaseCreateSchema):
+    """
+    Request to reassign maintenance task to different staff/vendor.
+    
+    Captures reason for reassignment and new assignee details.
+    """
+    
+    model_config = ConfigDict(
+        json_schema_extra={
+            "example": {
+                "new_assigned_to": "123e4567-e89b-12d3-a456-426614174222",
+                "assignment_type": "staff",
+                "reassignment_reason": "Original assignee is on leave",
+                "reassigned_by": "123e4567-e89b-12d3-a456-426614174111",
+                "priority_level": "high"
+            }
+        }
+    )
+
+    new_assigned_to: UUID = Field(
+        ...,
+        description="New assignee user/vendor ID",
+    )
+    assignment_type: str = Field(
+        ...,
+        pattern=r"^(staff|vendor|contractor)$",
+        description="Type of new assignment",
+    )
+    reassignment_reason: str = Field(
+        ...,
+        min_length=10,
+        max_length=500,
+        description="Reason for reassignment",
+    )
+    reassigned_by: UUID = Field(
+        ...,
+        description="User performing the reassignment",
+    )
+    
+    # Optional updates
+    new_deadline: Optional[Date] = Field(
+        None,
+        description="Updated deadline (if changed)",
+    )
+    additional_instructions: Optional[str] = Field(
+        None,
+        max_length=1000,
+        description="Additional instructions for new assignee",
+    )
+    priority_level: Optional[str] = Field(
+        None,
+        pattern=r"^(low|medium|high|urgent|critical)$",
+        description="Updated priority level",
+    )
+    
+    # Vendor-specific (if reassigning to vendor)
+    vendor_name: Optional[str] = Field(
+        None,
+        max_length=255,
+        description="Vendor company name (if reassigning to vendor)",
+    )
+    estimated_cost: Union[Annotated[Decimal, Field(ge=0, decimal_places=2)], None] = Field(
+        None,
+        description="Estimated cost (for vendor reassignments)",
+    )
+    
+    # Notification
+    notify_previous_assignee: bool = Field(
+        default=True,
+        description="Send notification to previous assignee",
+    )
+    notify_new_assignee: bool = Field(
+        default=True,
+        description="Send notification to new assignee",
+    )
+
+    @field_validator("reassignment_reason")
+    @classmethod
+    def validate_reason(cls, v: str) -> str:
+        """Validate reassignment reason is meaningful."""
+        v = v.strip()
+        if len(v) < 10:
+            raise ValueError("Reassignment reason must be at least 10 characters")
+        return v
+
+    @field_validator("new_deadline")
+    @classmethod
+    def validate_deadline(cls, v: Optional[Date]) -> Optional[Date]:
+        """Validate new deadline is in future."""
+        if v is not None and v < Date.today():
+            raise ValueError("New deadline cannot be in the past")
+        return v
+
+    @model_validator(mode="after")
+    def validate_vendor_reassignment(self):
+        """Validate vendor-specific fields for vendor reassignments."""
+        if self.assignment_type == "vendor":
+            if not self.vendor_name:
+                raise ValueError(
+                    "vendor_name is required when reassigning to vendor"
+                )
+            if self.estimated_cost is None:
+                raise ValueError(
+                    "estimated_cost is required when reassigning to vendor"
+                )
+        
+        return self

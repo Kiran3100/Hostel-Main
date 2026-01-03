@@ -9,11 +9,11 @@ from fastapi import Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
 from app.api import deps
-from app.api.v1.leaves.constants import (
+from app.schemas.common.enums import UserRole  # Import from common location
+from app.api.v1.leaves.constants import (  # Import API-specific constants
     DEFAULT_PAGE_SIZE,
     MAX_PAGE_SIZE,
     MIN_PAGE_SIZE,
-    UserRole,
 )
 from app.services.leave.leave_application_service import LeaveApplicationService
 from app.services.leave.leave_approval_service import LeaveApprovalService
@@ -116,7 +116,7 @@ def get_pagination_params(
 
 def verify_student_or_admin(current_user=Depends(deps.get_current_user)):
     """Verify user is either a student or has admin privileges."""
-    allowed_roles = {UserRole.STUDENT, UserRole.ADMIN, UserRole.WARDEN}
+    allowed_roles = {UserRole.STUDENT, UserRole.HOSTEL_ADMIN, UserRole.SUPERVISOR}
     if current_user.role not in allowed_roles:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
@@ -127,7 +127,7 @@ def verify_student_or_admin(current_user=Depends(deps.get_current_user)):
 
 def verify_approver_role(current_user=Depends(deps.get_current_user)):
     """Verify user has approval permissions."""
-    approver_roles = {UserRole.WARDEN, UserRole.ADMIN, UserRole.SUPERVISOR}
+    approver_roles = {UserRole.SUPERVISOR, UserRole.HOSTEL_ADMIN, UserRole.SUPER_ADMIN}
     if current_user.role not in approver_roles:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,

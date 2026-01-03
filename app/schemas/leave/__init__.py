@@ -1,4 +1,3 @@
-# --- File: app/schemas/leave/__init__.py ---
 """
 Leave management schemas package.
 
@@ -18,12 +17,18 @@ from app.schemas.leave.leave_approval import (
     LeaveApprovalAction,
     LeaveApprovalRequest,
     LeaveApprovalResponse,
+    LeaveApprovalHistoryResponse,
+    LeaveApprovalHistoryItem,
+    PendingApprovalItem,
 )
 from app.schemas.leave.leave_balance import (
     LeaveBalance,
     LeaveBalanceSummary,
     LeaveQuota,
     LeaveUsageDetail,
+    LeaveBalanceDetail,
+    LeaveAdjustment,
+    LeaveUsageHistory,
 )
 from app.schemas.leave.leave_base import (
     LeaveBase,
@@ -35,18 +40,27 @@ from app.schemas.leave.leave_response import (
     LeaveListItem,
     LeaveResponse,
     LeaveSummary,
+    PaginatedLeaveResponse,
+)
+from app.schemas.leave.leave_calendar import (
+    CalendarEvent,
+    CalendarDay,
+    StudentCalendarResponse,
+    HostelCalendarResponse,
+    OccupancyStats,
 )
 
 __all__ = [
     # Base schemas
     "LeaveBase",
-    "LeaveCreate",
+    "LeaveCreate", 
     "LeaveUpdate",
     # Response schemas
     "LeaveResponse",
     "LeaveDetail",
-    "LeaveListItem",
+    "LeaveListItem", 
     "LeaveSummary",
+    "PaginatedLeaveResponse",
     # Application schemas
     "LeaveApplicationRequest",
     "LeaveCancellationRequest",
@@ -54,9 +68,21 @@ __all__ = [
     "LeaveApprovalRequest",
     "LeaveApprovalAction",
     "LeaveApprovalResponse",
+    "LeaveApprovalHistoryResponse",
+    "LeaveApprovalHistoryItem",
+    "PendingApprovalItem",
     # Balance schemas
     "LeaveBalance",
     "LeaveBalanceSummary",
-    "LeaveQuota",
+    "LeaveQuota", 
     "LeaveUsageDetail",
+    "LeaveBalanceDetail",
+    "LeaveAdjustment",
+    "LeaveUsageHistory",
+    # Calendar schemas
+    "CalendarEvent",
+    "CalendarDay",
+    "StudentCalendarResponse", 
+    "HostelCalendarResponse",
+    "OccupancyStats",
 ]

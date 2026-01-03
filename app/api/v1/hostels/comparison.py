@@ -4,6 +4,7 @@ Provides functionality to compare multiple hostels and get recommendations
 """
 from typing import Any, List, Dict
 from enum import Enum
+from uuid import UUID
 
 from fastapi import APIRouter, Depends, Query, HTTPException, status
 from sqlalchemy.orm import Session
@@ -77,14 +78,6 @@ def compare_hostels(
         HTTPException: If validation fails or hostels not found
     """
     try:
-        # Validate number of hostels
-        if not 2 <= len(payload.hostel_ids) <= 4:
-            raise ValueError("You must compare between 2 and 4 hostels")
-        
-        # Check for duplicates
-        if len(payload.hostel_ids) != len(set(payload.hostel_ids)):
-            raise ValueError("Duplicate hostel IDs are not allowed")
-        
         logger.info(
             f"Comparing {len(payload.hostel_ids)} hostels: {payload.hostel_ids}"
         )
@@ -129,10 +122,10 @@ def compare_hostels(
     },
 )
 def compare_pricing(
-    hostel_ids: List[str] = Query(
+    hostel_ids: List[UUID] = Query(
         ...,
-        min_items=2,
-        max_items=4,
+        min_length=2,
+        max_length=4,
         description="List of hostel IDs to compare (2-4 hostels)"
     ),
     room_type: str | None = Query(
@@ -170,14 +163,6 @@ def compare_pricing(
         HTTPException: If validation fails or retrieval fails
     """
     try:
-        # Validate number of hostels
-        if not 2 <= len(hostel_ids) <= 4:
-            raise ValueError("You must compare between 2 and 4 hostels")
-        
-        # Check for duplicates
-        if len(hostel_ids) != len(set(hostel_ids)):
-            raise ValueError("Duplicate hostel IDs are not allowed")
-        
         logger.info(f"Comparing pricing for hostels: {hostel_ids}")
         
         pricing = service.compare_pricing(
@@ -246,7 +231,7 @@ def get_recommendations(
     gender_preference: str | None = Query(
         None,
         description="Gender preference (male, female, co-ed)",
-        regex="^(male|female|co-ed)$"
+        pattern="^(male|female|co-ed)$"
     ),
     distance_from_university: float | None = Query(
         None,
@@ -257,7 +242,7 @@ def get_recommendations(
     sort_by: str = Query(
         "recommended",
         description="Sort recommendations by",
-        regex="^(recommended|price_low|price_high|rating|distance)$"
+        pattern="^(recommended|price_low|price_high|rating|distance)$"
     ),
     limit: int = Query(
         10,
@@ -351,10 +336,10 @@ def get_recommendations(
     },
 )
 def get_comparison_summary(
-    hostel_ids: List[str] = Query(
+    hostel_ids: List[UUID] = Query(
         ...,
-        min_items=2,
-        max_items=4,
+        min_length=2,
+        max_length=4,
         description="List of hostel IDs to compare"
     ),
     service: HostelComparisonService = Depends(get_comparison_service),
@@ -376,12 +361,6 @@ def get_comparison_summary(
         Comparison summary
     """
     try:
-        if not 2 <= len(hostel_ids) <= 4:
-            raise ValueError("You must compare between 2 and 4 hostels")
-        
-        if len(hostel_ids) != len(set(hostel_ids)):
-            raise ValueError("Duplicate hostel IDs are not allowed")
-        
         logger.info(f"Getting comparison summary for: {hostel_ids}")
         
         summary = service.get_summary(hostel_ids)

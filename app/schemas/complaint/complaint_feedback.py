@@ -10,9 +10,9 @@ from datetime import date as Date
 from decimal import Decimal
 from typing import Annotated, Dict, List, Union
 
-from pydantic import ConfigDict, Field, field_validator
+from pydantic import ConfigDict, Field, field_validator, model_validator
 
-from app.schemas.common.base import BaseCreateSchema, BaseResponseSchema, BaseSchema
+from app.schemas.common.base import BaseCreateSchema, BaseResponseSchema, BaseSchema, BaseFilterSchema
 
 __all__ = [
     "FeedbackRequest",
@@ -20,7 +20,81 @@ __all__ = [
     "FeedbackSummary",
     "FeedbackAnalysis",
     "RatingTrendPoint",
+    "FeedbackFilterParams",  # Added to exports
 ]
+
+
+class FeedbackFilterParams(BaseFilterSchema):
+    """
+    Filter parameters for feedback queries.
+    
+    Supports filtering by date range, rating, and category.
+    """
+    model_config = ConfigDict(from_attributes=True)
+
+    # Date range filters
+    period_start: Union[Date, None] = Field(
+        default=None,
+        description="Start date for filtering feedback (inclusive)",
+    )
+    period_end: Union[Date, None] = Field(
+        default=None,
+        description="End date for filtering feedback (inclusive)",
+    )
+
+    # Rating filters
+    min_rating: Union[int, None] = Field(
+        default=None,
+        ge=1,
+        le=5,
+        description="Minimum rating filter (1-5)",
+    )
+    max_rating: Union[int, None] = Field(
+        default=None,
+        ge=1,
+        le=5,
+        description="Maximum rating filter (1-5)",
+    )
+
+    # Category filter
+    category: Union[str, None] = Field(
+        default=None,
+        description="Filter by complaint category",
+    )
+
+    # Satisfaction filters
+    issue_resolved_satisfactorily: Union[bool, None] = Field(
+        default=None,
+        description="Filter by issue resolution satisfaction",
+    )
+    response_time_satisfactory: Union[bool, None] = Field(
+        default=None,
+        description="Filter by response time satisfaction",
+    )
+    staff_helpful: Union[bool, None] = Field(
+        default=None,
+        description="Filter by staff helpfulness",
+    )
+    would_recommend: Union[bool, None] = Field(
+        default=None,
+        description="Filter by recommendation status",
+    )
+
+    @model_validator(mode="after")
+    def validate_date_range(self):
+        """Validate date range is logical."""
+        if self.period_end is not None and self.period_start is not None:
+            if self.period_end < self.period_start:
+                raise ValueError("period_end must be >= period_start")
+        return self
+
+    @model_validator(mode="after")
+    def validate_rating_range(self):
+        """Validate rating range is logical."""
+        if self.max_rating is not None and self.min_rating is not None:
+            if self.max_rating < self.min_rating:
+                raise ValueError("max_rating must be >= min_rating")
+        return self
 
 
 class FeedbackRequest(BaseCreateSchema):
@@ -105,8 +179,32 @@ class FeedbackResponse(BaseResponseSchema):
     rating: int = Field(..., description="Submitted rating")
     feedback: Union[str, None] = Field(default=None, description="Submitted feedback")
 
+    # Satisfaction responses
+    issue_resolved_satisfactorily: bool = Field(
+        ...,
+        description="Issue resolution satisfaction",
+    )
+    response_time_satisfactory: bool = Field(
+        ...,
+        description="Response time satisfaction",
+    )
+    staff_helpful: bool = Field(
+        ...,
+        description="Staff helpfulness",
+    )
+    would_recommend: Union[bool, None] = Field(
+        default=None,
+        description="Recommendation status",
+    )
+
     submitted_by: str = Field(..., description="Feedback submitter user ID")
+    submitted_by_name: str = Field(..., description="Feedback submitter name")
     submitted_at: datetime = Field(..., description="Submission timestamp")
+
+    updated_at: Union[datetime, None] = Field(
+        default=None,
+        description="Last update timestamp",
+    )
 
     message: str = Field(
         ...,

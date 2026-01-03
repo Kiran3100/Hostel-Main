@@ -1,4 +1,3 @@
-# app/repositories/booking/booking_approval_repository.py
 """
 Booking approval repository for approval workflow management.
 
@@ -8,13 +7,13 @@ and auto-approval logic.
 
 from datetime import datetime, timedelta
 from decimal import Decimal
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Tuple
 from uuid import UUID
 
 from sqlalchemy import and_, func, or_, select
 from sqlalchemy.orm import Session, joinedload
 
-from app.core1.exceptions import EntityNotFoundError, ValidationError
+from app.core.exceptions import EntityNotFoundError, ValidationError
 from app.models.booking.booking_approval import (
     ApprovalSettings,
     BookingApproval,
@@ -25,7 +24,6 @@ from app.models.base.enums import BookingStatus
 from app.repositories.base.base_repository import (
     AuditContext,
     BaseRepository,
-    QueryOptions,
 )
 
 
@@ -43,7 +41,7 @@ class BookingApprovalRepository(BaseRepository[BookingApproval]):
     
     def __init__(self, session: Session):
         """Initialize approval repository."""
-        super().__init__(session, BookingApproval)
+        super().__init__(BookingApproval, session)
     
     # ==================== APPROVAL OPERATIONS ====================
     
@@ -100,7 +98,7 @@ class BookingApprovalRepository(BaseRepository[BookingApproval]):
             joinedload(BookingApproval.approver),
         )
         
-        result = self.session.execute(query)
+        result = self.db.execute(query)
         return result.scalar_one_or_none()
     
     def update_pricing(
@@ -140,8 +138,8 @@ class BookingApprovalRepository(BaseRepository[BookingApproval]):
             if hasattr(approval, key):
                 setattr(approval, key, value)
         
-        self.session.flush()
-        self.session.refresh(approval)
+        self.db.flush()
+        self.db.refresh(approval)
         
         return approval
     
@@ -166,8 +164,8 @@ class BookingApprovalRepository(BaseRepository[BookingApproval]):
         
         approval.advance_payment_deadline = datetime.utcnow() + timedelta(hours=deadline_hours)
         
-        self.session.flush()
-        self.session.refresh(approval)
+        self.db.flush()
+        self.db.refresh(approval)
         
         return approval
     
@@ -190,8 +188,8 @@ class BookingApprovalRepository(BaseRepository[BookingApproval]):
         
         approval.send_approval_notification()
         
-        self.session.flush()
-        self.session.refresh(approval)
+        self.db.flush()
+        self.db.refresh(approval)
         
         return approval
     
@@ -239,7 +237,7 @@ class BookingApprovalRepository(BaseRepository[BookingApproval]):
             joinedload(BookingApproval.approver),
         )
         
-        result = self.session.execute(query)
+        result = self.db.execute(query)
         return list(result.scalars().all())
     
     def find_payment_expiring_soon(
@@ -281,7 +279,7 @@ class BookingApprovalRepository(BaseRepository[BookingApproval]):
             joinedload(BookingApproval.booking),
         )
         
-        result = self.session.execute(query)
+        result = self.db.execute(query)
         return list(result.scalars().all())
     
     def find_auto_approved(
@@ -324,7 +322,7 @@ class BookingApprovalRepository(BaseRepository[BookingApproval]):
             joinedload(BookingApproval.booking),
         )
         
-        result = self.session.execute(query)
+        result = self.db.execute(query)
         return list(result.scalars().all())
     
     def get_approval_statistics(
@@ -360,7 +358,7 @@ class BookingApprovalRepository(BaseRepository[BookingApproval]):
         if date_to:
             query = query.where(BookingApproval.approved_at <= date_to)
         
-        approvals = self.session.execute(query).scalars().all()
+        approvals = self.db.execute(query).scalars().all()
         
         total_approvals = len(approvals)
         auto_approved = sum(1 for a in approvals if a.auto_approved)
@@ -393,7 +391,7 @@ class ApprovalSettingsRepository(BaseRepository[ApprovalSettings]):
     
     def __init__(self, session: Session):
         """Initialize approval settings repository."""
-        super().__init__(session, ApprovalSettings)
+        super().__init__(ApprovalSettings, session)
     
     def find_by_hostel(self, hostel_id: UUID) -> Optional[ApprovalSettings]:
         """
@@ -413,7 +411,7 @@ class ApprovalSettingsRepository(BaseRepository[ApprovalSettings]):
             joinedload(ApprovalSettings.hostel),
         )
         
-        result = self.session.execute(query)
+        result = self.db.execute(query)
         return result.scalar_one_or_none()
     
     def create_or_update_settings(
@@ -444,8 +442,8 @@ class ApprovalSettingsRepository(BaseRepository[ApprovalSettings]):
             if audit_context:
                 existing.last_updated_by = audit_context.user_id
             
-            self.session.flush()
-            self.session.refresh(existing)
+            self.db.flush()
+            self.db.refresh(existing)
             return existing
         else:
             # Create new
@@ -527,7 +525,7 @@ class ApprovalSettingsRepository(BaseRepository[ApprovalSettings]):
             joinedload(ApprovalSettings.hostel),
         )
         
-        result = self.session.execute(query)
+        result = self.db.execute(query)
         return list(result.scalars().all())
 
 
@@ -536,7 +534,7 @@ class RejectionRecordRepository(BaseRepository[RejectionRecord]):
     
     def __init__(self, session: Session):
         """Initialize rejection record repository."""
-        super().__init__(session, RejectionRecord)
+        super().__init__(RejectionRecord, session)
     
     def create_rejection_record(
         self,
@@ -583,7 +581,7 @@ class RejectionRecordRepository(BaseRepository[RejectionRecord]):
             joinedload(RejectionRecord.rejecter),
         )
         
-        result = self.session.execute(query)
+        result = self.db.execute(query)
         return result.scalar_one_or_none()
     
     def mark_notification_sent(self, booking_id: UUID) -> RejectionRecord:
@@ -602,8 +600,8 @@ class RejectionRecordRepository(BaseRepository[RejectionRecord]):
         
         record.send_rejection_notification()
         
-        self.session.flush()
-        self.session.refresh(record)
+        self.db.flush()
+        self.db.refresh(record)
         
         return record
     
@@ -650,7 +648,7 @@ class RejectionRecordRepository(BaseRepository[RejectionRecord]):
             joinedload(RejectionRecord.booking),
         )
         
-        result = self.session.execute(query)
+        result = self.db.execute(query)
         return list(result.scalars().all())
     
     def get_rejection_statistics(
@@ -686,7 +684,7 @@ class RejectionRecordRepository(BaseRepository[RejectionRecord]):
         if date_to:
             query = query.where(RejectionRecord.rejected_at <= date_to)
         
-        rejections = self.session.execute(query).scalars().all()
+        rejections = self.db.execute(query).scalars().all()
         
         total_rejections = len(rejections)
         

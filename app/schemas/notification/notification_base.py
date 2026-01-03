@@ -10,7 +10,7 @@ from datetime import datetime
 from typing import Any, Dict, List, Union
 from uuid import UUID
 
-from pydantic import Field, field_validator, model_validator
+from pydantic import Field, computed_field, field_validator, model_validator
 
 from app.schemas.common.base import BaseCreateSchema, BaseSchema, BaseUpdateSchema
 from app.schemas.common.enums import NotificationType, Priority
@@ -22,6 +22,8 @@ __all__ = [
     "MarkAsRead",
     "BulkMarkAsRead",
     "NotificationDelete",
+    "BulkNotificationRequest",
+    "BulkNotificationResponse",
 ]
 
 
@@ -289,3 +291,184 @@ class NotificationDelete(BaseCreateSchema):
         max_length=500,
         description="Reason for deletion (optional, for audit purposes)",
     )
+
+
+class BulkNotificationRequest(BaseCreateSchema):
+    """
+    Bulk notification request schema.
+    
+    Send notifications to multiple recipients efficiently with optional
+    per-recipient customization.
+    """
+    
+    recipients: List[UUID] = Field(
+        ...,
+        min_length=1,
+        max_length=10000,
+        description="List of recipient user IDs (max 10,000)",
+    )
+    
+    # Notification content
+    notification_type: NotificationType = Field(
+        ...,
+        description="Notification delivery channel",
+    )
+    subject: Union[str, None] = Field(
+        default=None,
+        min_length=1,
+        max_length=255,
+        description="Notification subject/title",
+    )
+    message_body: str = Field(
+        ...,
+        min_length=1,
+        max_length=5000,
+        description="Notification message content",
+    )
+    
+    # Template support
+    template_code: Union[str, None] = Field(
+        default=None,
+        min_length=3,
+        max_length=100,
+        description="Template code for consistent messaging",
+    )
+    
+    # Per-recipient customization
+    recipient_variables: Union[Dict[UUID, Dict[str, str]], None] = Field(
+        default=None,
+        description="Per-recipient variable mapping for template rendering",
+    )
+    
+    # Priority and settings
+    priority: Priority = Field(
+        default=Priority.MEDIUM,
+        description="Notification priority level",
+    )
+    
+    # Scheduling
+    scheduled_at: Union[datetime, None] = Field(
+        default=None,
+        description="Schedule bulk send for future delivery",
+    )
+    
+    # Batch processing settings
+    batch_size: int = Field(
+        default=100,
+        ge=10,
+        le=1000,
+        description="Number of notifications per batch",
+    )
+    delay_between_batches_seconds: int = Field(
+        default=2,
+        ge=0,
+        le=60,
+        description="Delay between batches in seconds",
+    )
+    
+    # Metadata
+    campaign_name: Union[str, None] = Field(
+        default=None,
+        max_length=100,
+        description="Campaign name for tracking",
+    )
+    metadata: Dict[str, Any] = Field(
+        default_factory=dict,
+        description="Additional metadata for the bulk send",
+    )
+    
+    @field_validator("recipients")
+    @classmethod
+    def validate_unique_recipients(cls, v: List[UUID]) -> List[UUID]:
+        """Ensure recipient list doesn't contain duplicates."""
+        if len(v) != len(set(v)):
+            raise ValueError("Duplicate recipient IDs not allowed")
+        return v
+    
+    @field_validator("scheduled_at")
+    @classmethod
+    def validate_scheduled_time(cls, v: Union[datetime, None]) -> Union[datetime, None]:
+        """Validate scheduled time is in the future."""
+        if v is not None and v <= datetime.utcnow():
+            raise ValueError("Scheduled time must be in the future")
+        return v
+    
+    @model_validator(mode="after")
+    def validate_template_or_content(self) -> "BulkNotificationRequest":
+        """Ensure either template or direct content is provided."""
+        if self.template_code:
+            # Template mode - subject can be in template
+            pass
+        else:
+            # Direct content mode
+            if self.notification_type in [NotificationType.EMAIL, NotificationType.PUSH]:
+                if not self.subject:
+                    raise ValueError(
+                        f"Subject required for {self.notification_type.value} notifications"
+                    )
+        return self
+
+
+class BulkNotificationResponse(BaseSchema):
+    """
+    Bulk notification response schema.
+    
+    Provides job tracking information for asynchronous bulk notification processing.
+    """
+    
+    job_id: UUID = Field(
+        ...,
+        description="Unique job identifier for tracking",
+    )
+    
+    # Request summary
+    total_recipients: int = Field(
+        ...,
+        ge=0,
+        description="Total number of recipients",
+    )
+    notification_type: NotificationType = Field(
+        ...,
+        description="Notification channel used",
+    )
+    
+    # Status
+    status: str = Field(
+        ...,
+        pattern="^(queued|processing|completed|failed|cancelled)$",
+        description="Current job status",
+    )
+    
+    # Processing info
+    batch_count: int = Field(
+        ...,
+        ge=1,
+        description="Number of batches to process",
+    )
+    batch_size: int = Field(
+        ...,
+        ge=1,
+        description="Notifications per batch",
+    )
+    
+    # Timing
+    created_at: datetime = Field(
+        default_factory=datetime.utcnow,
+        description="When the job was created",
+    )
+    estimated_completion_time: Union[datetime, None] = Field(
+        default=None,
+        description="Estimated completion time",
+    )
+    
+    # Metadata
+    campaign_name: Union[str, None] = Field(
+        default=None,
+        description="Campaign name if provided",
+    )
+    
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def tracking_url(self) -> str:
+        """Generate tracking URL for job status."""
+        return f"/api/v1/notifications/bulk/{self.job_id}/status"

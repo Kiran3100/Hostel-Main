@@ -23,6 +23,7 @@ from app.schemas.complaint.complaint_assignment import (
     AssignmentRequest,
     AssignmentResponse,
     BulkAssignment,
+    BulkAssignmentResponse,
     ReassignmentRequest,
     UnassignRequest,
 )
@@ -42,6 +43,7 @@ from app.schemas.complaint.complaint_comments import (
 )
 from app.schemas.complaint.complaint_escalation import (
     AutoEscalationRule,
+    AutoEscalationRuleResponse,
     EscalationEntry,
     EscalationHistory,
     EscalationRequest,
@@ -49,6 +51,7 @@ from app.schemas.complaint.complaint_escalation import (
 )
 from app.schemas.complaint.complaint_feedback import (
     FeedbackAnalysis,
+    FeedbackFilterParams,
     FeedbackRequest,
     FeedbackResponse,
     FeedbackSummary,
@@ -62,7 +65,9 @@ from app.schemas.complaint.complaint_filters import (
 )
 from app.schemas.complaint.complaint_resolution import (
     CloseRequest,
+    CloseResponse,
     ReopenRequest,
+    ReopenResponse,
     ResolutionRequest,
     ResolutionResponse,
     ResolutionUpdate,
@@ -92,6 +97,7 @@ __all__ = [
     "AssignmentResponse",
     "ReassignmentRequest",
     "BulkAssignment",
+    "BulkAssignmentResponse",
     "UnassignRequest",
     "AssignmentHistory",
     # Resolution schemas
@@ -99,18 +105,22 @@ __all__ = [
     "ResolutionResponse",
     "ResolutionUpdate",
     "ReopenRequest",
+    "ReopenResponse",
     "CloseRequest",
+    "CloseResponse",
     # Escalation schemas
     "EscalationRequest",
     "EscalationResponse",
     "EscalationHistory",
     "EscalationEntry",
     "AutoEscalationRule",
+    "AutoEscalationRuleResponse",
     # Feedback schemas
     "FeedbackRequest",
     "FeedbackResponse",
     "FeedbackSummary",
     "FeedbackAnalysis",
+    "FeedbackFilterParams",
     "RatingTrendPoint",
     # Comment schemas
     "CommentCreate",

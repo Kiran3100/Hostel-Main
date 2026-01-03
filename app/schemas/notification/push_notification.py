@@ -27,6 +27,9 @@ __all__ = [
     "PushStats",
     "BulkPushRequest",
     "PushAction",
+    # Aliases for API
+    "DeviceTokenCreate",
+    "DeviceTokenResponse",
 ]
 
 
@@ -819,3 +822,8 @@ class BulkPushRequest(BaseCreateSchema):
                 "At least one recipient group (user_ids, device_tokens, or segment) required"
             )
         return self
+
+
+# Type aliases for API consistency
+DeviceTokenCreate = DeviceRegistration
+DeviceTokenResponse = DeviceToken

@@ -16,7 +16,7 @@ from sqlalchemy.orm import Session
 
 from app.repositories.visitor import VisitorAggregateRepository
 from app.schemas.visitor import VisitorDashboard
-from app.core1.exceptions import (
+from app.core.exceptions import (
     ValidationException,
     NotFoundException,
     ServiceException,

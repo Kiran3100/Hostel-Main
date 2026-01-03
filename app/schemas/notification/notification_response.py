@@ -7,10 +7,12 @@ and detailed information returned by the API.
 """
 
 from datetime import datetime
-from typing import Any, Dict, List, Union
+from decimal import Decimal
+from typing import Annotated, Any, Dict, List, Union
 from uuid import UUID
+from datetime import date as Date
 
-from pydantic import Field, computed_field
+from pydantic import Field, computed_field, field_validator
 
 from app.schemas.common.base import BaseResponseSchema, BaseSchema
 from app.schemas.common.enums import NotificationStatus, NotificationType, Priority
@@ -22,6 +24,8 @@ __all__ = [
     "NotificationListItem",
     "UnreadCount",
     "NotificationSummary",
+    "InAppNotificationResponse",
+    "NotificationStats",
 ]
 
 
@@ -498,3 +502,217 @@ class NotificationSummary(BaseSchema):
             return False
         time_diff = datetime.utcnow() - self.last_notification_at
         return time_diff.total_seconds() < 86400  # 24 hours
+
+
+class InAppNotificationResponse(BaseResponseSchema):
+    """
+    In-app notification response schema.
+    
+    Optimized response for in-app notification display with read status
+    and action URLs.
+    """
+    
+    # Basic info
+    notification_type: NotificationType = Field(
+        ...,
+        description="Notification channel (should be IN_APP)",
+    )
+    
+    # Content
+    subject: Union[str, None] = Field(
+        default=None,
+        description="Notification title",
+    )
+    message_body: str = Field(
+        ...,
+        description="Notification message content",
+    )
+    
+    # Priority and category
+    priority: Priority = Field(
+        ...,
+        description="Notification priority",
+    )
+    category: Union[str, None] = Field(
+        default=None,
+        max_length=50,
+        description="Notification category (e.g., 'payment', 'booking')",
+    )
+    
+    # Read status
+    is_read: bool = Field(
+        default=False,
+        description="Whether notification has been read",
+    )
+    read_at: Union[datetime, None] = Field(
+        default=None,
+        description="When notification was read",
+    )
+    
+    # Actions
+    action_url: Union[str, None] = Field(
+        default=None,
+        max_length=500,
+        description="URL to navigate to when clicked",
+    )
+    action_label: Union[str, None] = Field(
+        default=None,
+        max_length=50,
+        description="Action button label",
+    )
+    
+    # UI elements
+    icon: Union[str, None] = Field(
+        default=None,
+        max_length=50,
+        description="Icon identifier for display",
+    )
+    color: Union[str, None] = Field(
+        default=None,
+        pattern="^#[0-9A-Fa-f]{6}$",
+        description="Color code for UI (hex format)",
+    )
+    
+    # Metadata
+    metadata: Dict[str, Any] = Field(
+        default_factory=dict,
+        description="Additional notification metadata",
+    )
+    
+    # Timestamps
+    created_at: datetime = Field(
+        ...,
+        description="Creation timestamp",
+    )
+    
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def time_ago(self) -> str:
+        """Human-readable time since creation."""
+        delta = datetime.utcnow() - self.created_at
+        
+        if delta.days > 365:
+            years = delta.days // 365
+            return f"{years} year{'s' if years > 1 else ''} ago"
+        elif delta.days > 30:
+            months = delta.days // 30
+            return f"{months} month{'s' if months > 1 else ''} ago"
+        elif delta.days > 0:
+            return f"{delta.days} day{'s' if delta.days > 1 else ''} ago"
+        elif delta.seconds > 3600:
+            hours = delta.seconds // 3600
+            return f"{hours} hour{'s' if hours > 1 else ''} ago"
+        elif delta.seconds > 60:
+            minutes = delta.seconds // 60
+            return f"{minutes} minute{'s' if minutes > 1 else ''} ago"
+        else:
+            return "Just now"
+    
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def is_urgent(self) -> bool:
+        """Check if notification is urgent."""
+        return self.priority in [Priority.URGENT, Priority.CRITICAL]
+
+
+class NotificationStats(BaseSchema):
+    """
+    Generic notification statistics schema.
+    
+    Provides aggregate statistics across all notification channels.
+    """
+    
+    # Overall counts
+    total_sent: int = Field(
+        ...,
+        ge=0,
+        description="Total notifications sent",
+    )
+    total_delivered: int = Field(
+        ...,
+        ge=0,
+        description="Total notifications delivered",
+    )
+    total_failed: int = Field(
+        ...,
+        ge=0,
+        description="Total notifications failed",
+    )
+    total_pending: int = Field(
+        default=0,
+        ge=0,
+        description="Total notifications pending",
+    )
+    
+    # By channel breakdown
+    email_sent: int = Field(default=0, ge=0, description="Email notifications sent")
+    sms_sent: int = Field(default=0, ge=0, description="SMS notifications sent")
+    push_sent: int = Field(default=0, ge=0, description="Push notifications sent")
+    in_app_sent: int = Field(default=0, ge=0, description="In-app notifications sent")
+    
+    email_delivered: int = Field(default=0, ge=0, description="Email delivered")
+    sms_delivered: int = Field(default=0, ge=0, description="SMS delivered")
+    push_delivered: int = Field(default=0, ge=0, description="Push delivered")
+    in_app_delivered: int = Field(default=0, ge=0, description="In-app delivered")
+    
+    # Rates
+    delivery_rate: Annotated[Decimal, Field(ge=0, le=100)] = Field(
+        ...,
+        description="Overall delivery rate percentage",
+    )
+    failure_rate: Annotated[Decimal, Field(ge=0, le=100)] = Field(
+        ...,
+        description="Overall failure rate percentage",
+    )
+    
+    # Engagement
+    total_read: int = Field(
+        default=0,
+        ge=0,
+        description="Total notifications read/opened",
+    )
+    read_rate: Annotated[Decimal, Field(ge=0, le=100)] = Field(
+        default=Decimal("0"),
+        description="Read/open rate percentage",
+    )
+    
+    total_clicked: int = Field(
+        default=0,
+        ge=0,
+        description="Total notifications clicked",
+    )
+    click_rate: Annotated[Decimal, Field(ge=0, le=100)] = Field(
+        default=Decimal("0"),
+        description="Click rate percentage",
+    )
+    
+    # Time period
+    period_start: Date = Field(
+        ...,
+        description="Statistics period start",
+    )
+    period_end: Date = Field(
+        ...,
+        description="Statistics period end",
+    )
+    
+    # Generated timestamp
+    generated_at: datetime = Field(
+        default_factory=datetime.utcnow,
+        description="When statistics were generated",
+    )
+    
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def success_rate(self) -> Decimal:
+        """Calculate success rate."""
+        return Decimal("100") - self.failure_rate
+    
+    @field_validator("period_end")
+    @classmethod
+    def validate_period(cls, v: Date, info) -> Date:
+        """Validate period end is after period start."""
+        period_start = info.data.get("period_start")
+        if period_start and v < period_start:
+            raise ValueError("period_end must be after or equal to period_start")
+        return v

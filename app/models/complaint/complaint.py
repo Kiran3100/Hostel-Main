@@ -102,6 +102,8 @@ class Complaint(BaseModel, TimestampMixin, SoftDeleteMixin, AuditMixin):
         student_feedback: Student feedback text
         student_rating: Student rating (1-5)
         feedback_submitted_at: Feedback submission timestamp
+        
+        complaint_metadata: Additional complaint metadata
     """
 
     __tablename__ = "complaints"
@@ -458,8 +460,8 @@ class Complaint(BaseModel, TimestampMixin, SoftDeleteMixin, AuditMixin):
         comment="Feedback submission timestamp",
     )
 
-    # Additional metadata (JSONB for flexible storage)
-    metadata: Mapped[dict] = mapped_column(
+    # Additional metadata (JSONB for flexible storage) - RENAMED FROM 'metadata'
+    complaint_metadata: Mapped[dict] = mapped_column(
         JSONB,
         nullable=False,
         default=dict,

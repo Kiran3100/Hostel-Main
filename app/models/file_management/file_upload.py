@@ -42,7 +42,7 @@ __all__ = [
 ]
 
 
-class FileUpload(BaseModel, TimestampModel, UUIDMixin, SoftDeleteMixin):
+class FileUpload(UUIDMixin, SoftDeleteMixin, TimestampModel, BaseModel):
     """
     Core file metadata and storage tracking.
     
@@ -239,8 +239,8 @@ class FileUpload(BaseModel, TimestampModel, UUIDMixin, SoftDeleteMixin):
         comment="User who last accessed the file",
     )
 
-    # Custom metadata
-    metadata: Mapped[Optional[dict]] = mapped_column(
+    # Custom metadata - RENAMED from 'metadata' to avoid SQLAlchemy reserved name
+    file_metadata: Mapped[Optional[dict]] = mapped_column(
         JSON,
         nullable=True,
         comment="Custom metadata key-value pairs",
@@ -292,7 +292,7 @@ class FileUpload(BaseModel, TimestampModel, UUIDMixin, SoftDeleteMixin):
         return f"<FileUpload(file_id={self.file_id}, filename={self.filename})>"
 
 
-class UploadSession(BaseModel, TimestampModel, UUIDMixin):
+class UploadSession(UUIDMixin, TimestampModel, BaseModel):
     """
     Multi-part upload session management.
     
@@ -431,7 +431,7 @@ class UploadSession(BaseModel, TimestampModel, UUIDMixin):
         comment="Number of retry attempts",
     )
 
-    # Metadata
+    # Metadata - RENAMED from 'session_metadata' to avoid confusion
     session_metadata: Mapped[Optional[dict]] = mapped_column(
         JSON,
         nullable=True,
@@ -469,7 +469,7 @@ class UploadSession(BaseModel, TimestampModel, UUIDMixin):
         return f"<UploadSession(upload_id={self.upload_id}, status={self.status})>"
 
 
-class FileValidation(BaseModel, TimestampModel, UUIDMixin):
+class FileValidation(UUIDMixin, TimestampModel, BaseModel):
     """
     File validation results and checks.
     
@@ -592,7 +592,7 @@ class FileValidation(BaseModel, TimestampModel, UUIDMixin):
         return f"<FileValidation(file_id={self.file_id}, type={self.validation_type}, valid={self.is_valid})>"
 
 
-class UploadProgress(BaseModel, TimestampModel, UUIDMixin):
+class UploadProgress(UUIDMixin, TimestampModel, BaseModel):
     """
     Upload progress tracking for large files.
     
@@ -703,7 +703,7 @@ class UploadProgress(BaseModel, TimestampModel, UUIDMixin):
         return f"<UploadProgress(session_id={self.session_id}, progress={self.progress_percentage}%)>"
 
 
-class FileQuota(BaseModel, TimestampModel, UUIDMixin):
+class FileQuota(UUIDMixin, TimestampModel, BaseModel):
     """
     Storage quota management per tenant/user.
     
@@ -818,7 +818,7 @@ class FileQuota(BaseModel, TimestampModel, UUIDMixin):
         return f"<FileQuota(owner={self.owner_type}:{self.owner_id}, usage={usage_pct:.1f}%)>"
 
 
-class MultipartUpload(BaseModel, TimestampModel, UUIDMixin):
+class MultipartUpload(UUIDMixin, TimestampModel, BaseModel):
     """
     Multipart upload management for large files.
     
@@ -921,7 +921,7 @@ class MultipartUpload(BaseModel, TimestampModel, UUIDMixin):
         return f"<MultipartUpload(id={self.multipart_upload_id}, parts={self.uploaded_parts}/{self.total_parts})>"
 
 
-class MultipartUploadPart(BaseModel, TimestampModel, UUIDMixin):
+class MultipartUploadPart(UUIDMixin, TimestampModel, BaseModel):
     """
     Individual part in multipart upload.
     

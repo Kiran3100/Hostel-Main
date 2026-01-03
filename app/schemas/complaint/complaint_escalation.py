@@ -18,6 +18,7 @@ __all__ = [
     "EscalationHistory",
     "EscalationEntry",
     "AutoEscalationRule",
+    "AutoEscalationRuleResponse",
 ]
 
 
@@ -238,3 +239,95 @@ class AutoEscalationRule(BaseSchema):
             )
         
         return self
+
+
+class AutoEscalationRuleResponse(BaseResponseSchema):
+    """
+    Auto-escalation rule response with metadata.
+    
+    Provides rule configuration with creation/update tracking.
+    """
+    model_config = ConfigDict(from_attributes=True)
+
+    hostel_id: str = Field(..., description="Hostel identifier for rule scope")
+    hostel_name: Union[str, None] = Field(
+        default=None,
+        description="Hostel name for display",
+    )
+    
+    # Trigger conditions
+    escalate_after_hours: int = Field(
+        ...,
+        description="Hours before auto-escalation",
+    )
+    escalate_on_sla_breach: bool = Field(
+        ...,
+        description="Auto-escalate on SLA breach",
+    )
+    
+    # Priority-specific rules
+    urgent_escalation_hours: int = Field(
+        ...,
+        description="Escalation threshold for urgent complaints (hours)",
+    )
+    high_escalation_hours: int = Field(
+        ...,
+        description="Escalation threshold for high priority (hours)",
+    )
+    medium_escalation_hours: int = Field(
+        ...,
+        description="Escalation threshold for medium priority (hours)",
+    )
+    
+    # Escalation chain
+    first_escalation_to: str = Field(
+        ...,
+        description="First level escalation target user ID",
+    )
+    first_escalation_to_name: Union[str, None] = Field(
+        default=None,
+        description="First level escalation target name",
+    )
+    
+    second_escalation_to: Union[str, None] = Field(
+        default=None,
+        description="Second level escalation target user ID",
+    )
+    second_escalation_to_name: Union[str, None] = Field(
+        default=None,
+        description="Second level escalation target name",
+    )
+    
+    is_active: bool = Field(..., description="Rule active status")
+    
+    # Metadata
+    created_by: str = Field(..., description="Admin who created the rule")
+    created_by_name: Union[str, None] = Field(
+        default=None,
+        description="Creator name",
+    )
+    created_at: datetime = Field(..., description="Creation timestamp")
+    
+    updated_by: Union[str, None] = Field(
+        default=None,
+        description="Last updater user ID",
+    )
+    updated_by_name: Union[str, None] = Field(
+        default=None,
+        description="Last updater name",
+    )
+    updated_at: Union[datetime, None] = Field(
+        default=None,
+        description="Last update timestamp",
+    )
+    
+    # Statistics (optional - can be populated by service layer)
+    total_escalations_triggered: Union[int, None] = Field(
+        default=None,
+        ge=0,
+        description="Total number of escalations triggered by this rule",
+    )
+    last_triggered_at: Union[datetime, None] = Field(
+        default=None,
+        description="Last time this rule triggered an escalation",
+    )

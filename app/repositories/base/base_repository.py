@@ -5,7 +5,7 @@ Provides foundation for all domain repositories with type safety,
 audit integration, and multi-tenant support.
 """
 
-from typing import Any, Dict, Generic, List, Optional, Type, TypeVar, Union
+from typing import Any, Dict, Generic, List, Optional, Type, TypeVar, Union, TYPE_CHECKING
 from uuid import UUID
 from datetime import datetime
 from contextlib import contextmanager
@@ -24,6 +24,10 @@ from app.core.exceptions import (
     OptimisticLockError,
     ValidationError
 )
+
+if TYPE_CHECKING:
+    from app.repositories.base.pagination import PaginationParams, PaginatedResult
+    from app.repositories.base.specifications import Specification
 
 logger = get_logger(__name__)
 
@@ -46,6 +50,24 @@ class AuditContext:
         self.action = action
         self.metadata = metadata or {}
         self.timestamp = datetime.utcnow()
+
+
+class QueryOptions:
+    """Query options for repository methods."""
+    
+    def __init__(
+        self,
+        skip: int = 0,
+        limit: int = 100,
+        order_by: Optional[List[str]] = None,
+        include_deleted: bool = False,
+        filters: Optional[Dict[str, Any]] = None
+    ):
+        self.skip = skip
+        self.limit = limit
+        self.order_by = order_by or []
+        self.include_deleted = include_deleted
+        self.filters = filters or {}
 
 
 class BaseRepository(Generic[ModelType]):
@@ -728,7 +750,7 @@ class BaseRepository(Generic[ModelType]):
         
         return self.count({"hostel_id": hostel_id}, include_deleted)
     
-        # ==================== Pagination Methods ====================
+    # ==================== Pagination Methods ====================
     
     def paginate_query(
         self,

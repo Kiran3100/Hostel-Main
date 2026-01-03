@@ -232,7 +232,7 @@ class ComplaintEscalation(BaseModel, TimestampMixin):
     )
 
     # Metadata
-    metadata: Mapped[dict] = mapped_column(
+    escalation_metadata: Mapped[dict] = mapped_column(
         JSONB,
         nullable=False,
         default=dict,
@@ -454,7 +454,7 @@ class AutoEscalationRule(BaseModel, TimestampMixin):
         comment="Additional escalation conditions",
     )
     
-    metadata: Mapped[dict] = mapped_column(
+    escalation_metadata: Mapped[dict] = mapped_column(
         JSONB,
         nullable=False,
         default=dict,

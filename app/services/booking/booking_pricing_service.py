@@ -22,7 +22,7 @@ from app.repositories.booking import BookingRepository
 from app.repositories.fee_structure import FeeStructureRepository, FeeCalculationRepository
 from app.models.booking.booking import Booking as BookingModel
 from app.schemas.booking.booking_base import BookingCreate
-from app.schemas.fee_structure.fee_calculation import FeeCalculation
+from app.schemas.fee_structure import FeeCalculation
 
 logger = logging.getLogger(__name__)
 

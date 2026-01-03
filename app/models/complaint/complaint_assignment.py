@@ -174,7 +174,7 @@ class ComplaintAssignment(BaseModel, TimestampMixin):
     )
 
     # Metadata
-    metadata: Mapped[dict] = mapped_column(
+    assignment_metadata: Mapped[dict] = mapped_column(
         JSONB,
         nullable=False,
         default=dict,

@@ -8,7 +8,7 @@ detailed, summary, and list views with computed fields.
 
 from datetime import date as Date, datetime
 from decimal import Decimal
-from typing import Annotated, Dict, List, Union
+from typing import Annotated, Dict, List, Optional, Union
 
 from pydantic import ConfigDict, Field, computed_field
 from uuid import UUID
@@ -26,6 +26,7 @@ __all__ = [
     "MaintenanceDetail",
     "RequestListItem",
     "MaintenanceSummary",
+    "MaintenanceListItem",
 ]
 
 
@@ -88,11 +89,11 @@ class MaintenanceResponse(BaseResponseSchema):
         ...,
         description="Current status",
     )
-    assigned_to: Union[UUID, None] = Field(
+    assigned_to: Optional[UUID] = Field(
         None,
         description="Assignee user ID",
     )
-    assigned_to_name: Union[str, None] = Field(
+    assigned_to_name: Optional[str] = Field(
         None,
         description="Assignee name",
     )
@@ -109,11 +110,11 @@ class MaintenanceResponse(BaseResponseSchema):
         ...,
         description="Request creation timestamp",
     )
-    estimated_completion_date: Union[Date, None] = Field(
+    estimated_completion_date: Optional[Date] = Field(
         None,
         description="Estimated completion Date",
     )
-    completed_at: Union[datetime, None] = Field(
+    completed_at: Optional[datetime] = Field(
         None,
         description="Completion timestamp",
     )
@@ -213,19 +214,19 @@ class MaintenanceDetail(BaseResponseSchema):
         ...,
         description="Requester full name",
     )
-    requested_by_email: Union[str, None] = Field(
+    requested_by_email: Optional[str] = Field(
         None,
         description="Requester email",
     )
-    requested_by_phone: Union[str, None] = Field(
+    requested_by_phone: Optional[str] = Field(
         None,
         description="Requester phone",
     )
-    room_id: Union[UUID, None] = Field(
+    room_id: Optional[UUID] = Field(
         None,
         description="Room ID",
     )
-    room_number: Union[str, None] = Field(
+    room_number: Optional[str] = Field(
         None,
         description="Room number",
     )
@@ -253,15 +254,15 @@ class MaintenanceDetail(BaseResponseSchema):
     )
     
     # Location details
-    location: Union[str, None] = Field(
+    location: Optional[str] = Field(
         None,
         description="Location details",
     )
-    floor: Union[int, None] = Field(
+    floor: Optional[int] = Field(
         None,
         description="Floor number",
     )
-    specific_area: Union[str, None] = Field(
+    specific_area: Optional[str] = Field(
         None,
         description="Specific area",
     )
@@ -277,41 +278,41 @@ class MaintenanceDetail(BaseResponseSchema):
     )
     
     # Assignment information
-    assigned_to: Union[UUID, None] = Field(
+    assigned_to: Optional[UUID] = Field(
         None,
         description="Assignee user ID",
     )
-    assigned_to_name: Union[str, None] = Field(
+    assigned_to_name: Optional[str] = Field(
         None,
         description="Assignee name",
     )
-    assigned_to_role: Union[str, None] = Field(
+    assigned_to_role: Optional[str] = Field(
         None,
         description="Assignee role",
     )
-    assigned_by: Union[UUID, None] = Field(
+    assigned_by: Optional[UUID] = Field(
         None,
         description="Assignor user ID",
     )
-    assigned_by_name: Union[str, None] = Field(
+    assigned_by_name: Optional[str] = Field(
         None,
         description="Assignor name",
     )
-    assigned_at: Union[datetime, None] = Field(
+    assigned_at: Optional[datetime] = Field(
         None,
         description="Assignment timestamp",
     )
     
     # Vendor information (if applicable)
-    vendor_name: Union[str, None] = Field(
+    vendor_name: Optional[str] = Field(
         None,
         description="Vendor company name",
     )
-    vendor_contact: Union[str, None] = Field(
+    vendor_contact: Optional[str] = Field(
         None,
         description="Vendor contact number",
     )
-    vendor_email: Union[str, None] = Field(
+    vendor_email: Optional[str] = Field(
         None,
         description="Vendor email",
     )
@@ -321,7 +322,7 @@ class MaintenanceDetail(BaseResponseSchema):
         ...,
         description="Current status",
     )
-    status_history: Union[List[dict], None] = Field(
+    status_history: Optional[List[dict]] = Field(
         None,
         description="Status change history",
     )
@@ -335,37 +336,37 @@ class MaintenanceDetail(BaseResponseSchema):
         default=False,
         description="Whether approval is pending",
     )
-    approved_by: Union[UUID, None] = Field(
+    approved_by: Optional[UUID] = Field(
         None,
         description="Approver user ID",
     )
-    approved_by_name: Union[str, None] = Field(
+    approved_by_name: Optional[str] = Field(
         None,
         description="Approver name",
     )
-    approved_at: Union[datetime, None] = Field(
+    approved_at: Optional[datetime] = Field(
         None,
         description="Approval timestamp",
     )
-    rejected_by: Union[UUID, None] = Field(
+    rejected_by: Optional[UUID] = Field(
         None,
         description="Rejector user ID",
     )
-    rejected_at: Union[datetime, None] = Field(
+    rejected_at: Optional[datetime] = Field(
         None,
         description="Rejection timestamp",
     )
-    rejection_reason: Union[str, None] = Field(
+    rejection_reason: Optional[str] = Field(
         None,
         description="Rejection reason",
     )
     
     # Timeline
-    started_at: Union[datetime, None] = Field(
+    started_at: Optional[datetime] = Field(
         None,
         description="Work start timestamp",
     )
-    completed_at: Union[datetime, None] = Field(
+    completed_at: Optional[datetime] = Field(
         None,
         description="Completion timestamp",
     )
@@ -389,21 +390,21 @@ class MaintenanceDetail(BaseResponseSchema):
     )
     
     # Timeline estimates
-    estimated_completion_date: Union[Date, None] = Field(
+    estimated_completion_date: Optional[Date] = Field(
         None,
         description="Estimated completion Date",
     )
-    actual_completion_date: Union[Date, None] = Field(
+    actual_completion_date: Optional[Date] = Field(
         None,
         description="Actual completion Date",
     )
-    deadline: Union[Date, None] = Field(
+    deadline: Optional[Date] = Field(
         None,
         description="Completion deadline",
     )
     
     # Work details
-    work_notes: Union[str, None] = Field(
+    work_notes: Optional[str] = Field(
         None,
         description="Work performed notes",
     )
@@ -421,23 +422,23 @@ class MaintenanceDetail(BaseResponseSchema):
         default=False,
         description="Whether quality check was performed",
     )
-    quality_checked_by: Union[UUID, None] = Field(
+    quality_checked_by: Optional[UUID] = Field(
         None,
         description="Quality checker user ID",
     )
-    quality_check_passed: Union[bool, None] = Field(
+    quality_check_passed: Optional[bool] = Field(
         None,
         description="Quality check result",
     )
-    quality_check_notes: Union[str, None] = Field(
+    quality_check_notes: Optional[str] = Field(
         None,
         description="Quality check notes",
     )
-    quality_checked_at: Union[datetime, None] = Field(
+    quality_checked_at: Optional[datetime] = Field(
         None,
         description="Quality check timestamp",
     )
-    quality_rating: Union[int, None] = Field(
+    quality_rating: Optional[int] = Field(
         None,
         ge=1,
         le=5,
@@ -449,15 +450,15 @@ class MaintenanceDetail(BaseResponseSchema):
         default=False,
         description="Whether this is preventive maintenance",
     )
-    preventive_schedule_id: Union[UUID, None] = Field(
+    preventive_schedule_id: Optional[UUID] = Field(
         None,
         description="Related preventive schedule ID",
     )
-    next_scheduled_date: Union[Date, None] = Field(
+    next_scheduled_date: Optional[Date] = Field(
         None,
         description="Next scheduled maintenance Date",
     )
-    recurrence: Union[str, None] = Field(
+    recurrence: Optional[str] = Field(
         None,
         description="Recurrence pattern",
     )
@@ -467,11 +468,11 @@ class MaintenanceDetail(BaseResponseSchema):
         default=False,
         description="Whether warranty applies",
     )
-    warranty_period_months: Union[int, None] = Field(
+    warranty_period_months: Optional[int] = Field(
         None,
         description="Warranty period in months",
     )
-    warranty_expiry_date: Union[Date, None] = Field(
+    warranty_expiry_date: Optional[Date] = Field(
         None,
         description="Warranty expiry Date",
     )
@@ -565,7 +566,7 @@ class RequestListItem(BaseSchema):
         ...,
         description="Status",
     )
-    room_number: Union[str, None] = Field(
+    room_number: Optional[str] = Field(
         None,
         description="Room number",
     )
@@ -573,7 +574,7 @@ class RequestListItem(BaseSchema):
         None,
         description="Estimated cost",
     )
-    assigned_to_name: Union[str, None] = Field(
+    assigned_to_name: Optional[str] = Field(
         None,
         description="Assignee name",
     )
@@ -581,7 +582,7 @@ class RequestListItem(BaseSchema):
         ...,
         description="Creation timestamp",
     )
-    estimated_completion_date: Union[Date, None] = Field(
+    estimated_completion_date: Optional[Date] = Field(
         None,
         description="Estimated completion",
     )
@@ -622,6 +623,338 @@ class RequestListItem(BaseSchema):
         return self.priority in [Priority.URGENT, Priority.CRITICAL]
 
 
+class MaintenanceListItem(BaseSchema):
+    """
+    Maintenance list item for API list responses.
+    
+    Balanced schema between RequestListItem and full response.
+    Contains essential information for list displays with some additional context.
+    """
+    
+    model_config = ConfigDict(
+        json_schema_extra={
+            "example": {
+                "id": "123e4567-e89b-12d3-a456-426614174000",
+                "request_number": "MNT-2024-001",
+                "hostel_name": "North Campus Hostel A",
+                "title": "Broken ceiling fan",
+                "description": "Ceiling fan not working in room 101",
+                "category": "electrical",
+                "priority": "medium",
+                "status": "in_progress",
+                "requested_by_name": "John Student",
+                "assigned_to_name": "Mike Technician",
+                "created_at": "2024-01-15T10:30:00",
+                "estimated_cost": "3000.00"
+            }
+        }
+    )
+
+    id: UUID = Field(
+        ...,
+        description="Maintenance request unique identifier",
+    )
+    request_number: str = Field(
+        ...,
+        description="Human-readable request number",
+    )
+    
+    # Hostel info
+    hostel_id: UUID = Field(
+        ...,
+        description="Hostel unique identifier",
+    )
+    hostel_name: str = Field(
+        ...,
+        description="Hostel name",
+    )
+    
+    # Request details
+    title: str = Field(
+        ...,
+        description="Issue title",
+    )
+    description: str = Field(
+        ...,
+        description="Issue description",
+    )
+    category: MaintenanceCategory = Field(
+        ...,
+        description="Maintenance category",
+    )
+    priority: Priority = Field(
+        ...,
+        description="Priority level",
+    )
+    status: MaintenanceStatus = Field(
+        ...,
+        description="Current status",
+    )
+    issue_type: MaintenanceIssueType = Field(
+        ...,
+        description="Issue type",
+    )
+    
+    # People involved
+    requested_by: UUID = Field(
+        ...,
+        description="Requester user ID",
+    )
+    requested_by_name: str = Field(
+        ...,
+        description="Requester name",
+    )
+    assigned_to: Optional[UUID] = Field(
+        None,
+        description="Assignee user ID",
+    )
+    assigned_to_name: Optional[str] = Field(
+        None,
+        description="Assignee name",
+    )
+    
+    # Location
+    room_id: Optional[UUID] = Field(
+        None,
+        description="Room ID",
+    )
+    room_number: Optional[str] = Field(
+        None,
+        description="Room number",
+    )
+    floor: Optional[int] = Field(
+        None,
+        description="Floor number",
+    )
+    location: Optional[str] = Field(
+        None,
+        description="Additional location details",
+    )
+    
+    # Cost
+    estimated_cost: Union[Annotated[Decimal, Field(ge=0, decimal_places=2)], None] = Field(
+        None,
+        description="Estimated cost",
+    )
+    actual_cost: Union[Annotated[Decimal, Field(ge=0, decimal_places=2)], None] = Field(
+        None,
+        description="Actual cost (if completed)",
+    )
+    
+    # Timeline
+    created_at: datetime = Field(
+        ...,
+        description="Creation timestamp",
+    )
+    updated_at: Optional[datetime] = Field(
+        None,
+        description="Last update timestamp",
+    )
+    assigned_at: Optional[datetime] = Field(
+        None,
+        description="Assignment timestamp",
+    )
+    started_at: Optional[datetime] = Field(
+        None,
+        description="Work start timestamp",
+    )
+    completed_at: Optional[datetime] = Field(
+        None,
+        description="Completion timestamp",
+    )
+    estimated_completion_date: Optional[Date] = Field(
+        None,
+        description="Estimated completion date",
+    )
+    deadline: Optional[Date] = Field(
+        None,
+        description="Completion deadline",
+    )
+    
+    # Flags
+    requires_approval: bool = Field(
+        default=False,
+        description="Whether approval is required",
+    )
+    approval_pending: bool = Field(
+        default=False,
+        description="Whether approval is pending",
+    )
+    is_preventive: bool = Field(
+        default=False,
+        description="Whether this is preventive maintenance",
+    )
+    
+    # Quality
+    quality_checked: bool = Field(
+        default=False,
+        description="Whether quality check was performed",
+    )
+    quality_check_passed: Optional[bool] = Field(
+        None,
+        description="Quality check result",
+    )
+
+    @computed_field  # type: ignore[misc]
+    @property
+    def status_display(self) -> str:
+        """Human-readable status display."""
+        status_map = {
+            MaintenanceStatus.PENDING: "Pending",
+            MaintenanceStatus.APPROVED: "Approved",
+            MaintenanceStatus.ASSIGNED: "Assigned",
+            MaintenanceStatus.IN_PROGRESS: "In Progress",
+            MaintenanceStatus.ON_HOLD: "On Hold",
+            MaintenanceStatus.COMPLETED: "Completed",
+            MaintenanceStatus.REJECTED: "Rejected",
+            MaintenanceStatus.CANCELLED: "Cancelled",
+        }
+        return status_map.get(self.status, self.status.value)
+
+    @computed_field  # type: ignore[misc]
+    @property
+    def priority_display(self) -> str:
+        """Human-readable priority display."""
+        priority_map = {
+            Priority.LOW: "Low",
+            Priority.MEDIUM: "Medium",
+            Priority.HIGH: "High",
+            Priority.URGENT: "Urgent",
+            Priority.CRITICAL: "Critical",
+        }
+        return priority_map.get(self.priority, self.priority.value)
+
+    @computed_field  # type: ignore[misc]
+    @property
+    def category_display(self) -> str:
+        """Human-readable category display."""
+        category_map = {
+            MaintenanceCategory.PLUMBING: "Plumbing",
+            MaintenanceCategory.ELECTRICAL: "Electrical",
+            MaintenanceCategory.CARPENTRY: "Carpentry",
+            MaintenanceCategory.PAINTING: "Painting",
+            MaintenanceCategory.HVAC: "HVAC",
+            MaintenanceCategory.CLEANING: "Cleaning",
+            MaintenanceCategory.PEST_CONTROL: "Pest Control",
+            MaintenanceCategory.GENERAL: "General",
+        }
+        return category_map.get(self.category, self.category.value.title())
+
+    @computed_field  # type: ignore[misc]
+    @property
+    def is_overdue(self) -> bool:
+        """Check if request is overdue."""
+        if not self.estimated_completion_date:
+            return False
+        
+        if self.status == MaintenanceStatus.COMPLETED:
+            return False
+        
+        return self.estimated_completion_date < Date.today()
+
+    @computed_field  # type: ignore[misc]
+    @property
+    def days_since_creation(self) -> int:
+        """Calculate days since request was created."""
+        return (datetime.now() - self.created_at).days
+
+    @computed_field  # type: ignore[misc]
+    @property
+    def is_active(self) -> bool:
+        """Check if maintenance is currently active."""
+        active_statuses = {
+            MaintenanceStatus.APPROVED,
+            MaintenanceStatus.ASSIGNED,
+            MaintenanceStatus.IN_PROGRESS,
+        }
+        return self.status in active_statuses
+
+    @computed_field  # type: ignore[misc]
+    @property
+    def status_badge_color(self) -> str:
+        """Get color code for status badge (for UI rendering)."""
+        color_map = {
+            MaintenanceStatus.PENDING: "yellow",
+            MaintenanceStatus.APPROVED: "blue",
+            MaintenanceStatus.ASSIGNED: "cyan",
+            MaintenanceStatus.IN_PROGRESS: "orange",
+            MaintenanceStatus.ON_HOLD: "gray",
+            MaintenanceStatus.COMPLETED: "green",
+            MaintenanceStatus.REJECTED: "red",
+            MaintenanceStatus.CANCELLED: "gray",
+        }
+        return color_map.get(self.status, "gray")
+
+    @computed_field  # type: ignore[misc]
+    @property
+    def priority_badge_color(self) -> str:
+        """Get color code for priority badge."""
+        color_map = {
+            Priority.LOW: "green",
+            Priority.MEDIUM: "yellow",
+            Priority.HIGH: "orange",
+            Priority.URGENT: "red",
+            Priority.CRITICAL: "purple",
+        }
+        return color_map.get(self.priority, "gray")
+
+    @computed_field  # type: ignore[misc]
+    @property
+    def cost_variance(self) -> Union[Decimal, None]:
+        """Calculate cost variance if both costs available."""
+        if self.estimated_cost and self.actual_cost:
+            return round(self.actual_cost - self.estimated_cost, 2)
+        return None
+
+    @computed_field  # type: ignore[misc]
+    @property
+    def cost_variance_percentage(self) -> Union[Decimal, None]:
+        """Calculate cost variance percentage."""
+        if self.estimated_cost and self.actual_cost and self.estimated_cost > 0:
+            variance_pct = (
+                (self.actual_cost - self.estimated_cost) / self.estimated_cost * 100
+            )
+            return round(variance_pct, 2)
+        return None
+
+    @computed_field  # type: ignore[misc]
+    @property
+    def time_to_complete_days(self) -> Union[int, None]:
+        """Calculate total days from creation to completion."""
+        if self.completed_at:
+            return (self.completed_at - self.created_at).days
+        return None
+
+    @computed_field  # type: ignore[misc]
+    @property
+    def is_urgent(self) -> bool:
+        """Check if request is urgent or critical."""
+        return self.priority in [Priority.URGENT, Priority.CRITICAL]
+
+    @computed_field  # type: ignore[misc]
+    @property
+    def urgency_score(self) -> int:
+        """
+        Calculate urgency score (0-100) based on priority and age.
+        
+        Higher score = more urgent
+        """
+        # Base score from priority
+        priority_scores = {
+            Priority.LOW: 10,
+            Priority.MEDIUM: 30,
+            Priority.HIGH: 60,
+            Priority.URGENT: 80,
+            Priority.CRITICAL: 95,
+        }
+        base_score = priority_scores.get(self.priority, 30)
+        
+        # Add points based on age (max 5 points)
+        age_bonus = min(self.days_since_creation, 5)
+        
+        return min(base_score + age_bonus, 100)
+
+
 class MaintenanceSummary(BaseSchema):
     """
     Maintenance summary statistics for hostel dashboard.
@@ -651,11 +984,11 @@ class MaintenanceSummary(BaseSchema):
         ...,
         description="Hostel name",
     )
-    period_start: Union[Date, None] = Field(
+    period_start: Optional[Date] = Field(
         None,
         description="Summary period start",
     )
-    period_end: Union[Date, None] = Field(
+    period_end: Optional[Date] = Field(
         None,
         description="Summary period end",
     )
@@ -748,7 +1081,7 @@ class MaintenanceSummary(BaseSchema):
     )
     
     # Category breakdown
-    requests_by_category: Union[Dict[str, int], None] = Field(
+    requests_by_category: Optional[Dict[str, int]] = Field(
         None,
         description="Request count by category",
     )
@@ -769,3 +1102,19 @@ class MaintenanceSummary(BaseSchema):
     def cost_variance_total(self) -> Decimal:
         """Calculate total cost variance."""
         return round(self.total_actual_cost - self.total_estimated_cost, 2)
+
+    @computed_field  # type: ignore[misc]
+    @property
+    def active_requests(self) -> int:
+        """Calculate total active requests."""
+        return self.pending_requests + self.in_progress_requests
+
+    @computed_field  # type: ignore[misc]
+    @property
+    def high_priority_total(self) -> int:
+        """Calculate total high priority requests (high + urgent + critical)."""
+        return (
+            self.high_priority_count
+            + self.urgent_priority_count
+            + self.critical_priority_count
+        )

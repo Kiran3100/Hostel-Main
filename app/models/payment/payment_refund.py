@@ -1,4 +1,3 @@
-# --- File: C:\Hostel-Main\app\models\payment\payment_refund.py ---
 """
 Payment refund model.
 
@@ -7,17 +6,19 @@ Handles payment refund requests, approvals, and processing.
 
 from datetime import datetime
 from decimal import Decimal
+from enum import Enum
 from typing import TYPE_CHECKING
 
 from sqlalchemy import (
     Boolean,
     DateTime,
-    Enum,
+    Enum as SQLEnum,
     ForeignKey,
     Index,
     Numeric,
     String,
     Text,
+    func,
 )
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -118,7 +119,7 @@ class PaymentRefund(TimestampModel, UUIDMixin, SoftDeleteMixin, AuditMixin):
 
     # ==================== Status ====================
     refund_status: Mapped[RefundStatus] = mapped_column(
-        Enum(RefundStatus, name="refund_status_enum", create_type=True),
+        SQLEnum(RefundStatus, name="refund_status_enum", create_type=True),
         nullable=False,
         default=RefundStatus.PENDING,
         index=True,
@@ -238,7 +239,7 @@ class PaymentRefund(TimestampModel, UUIDMixin, SoftDeleteMixin, AuditMixin):
         comment="Additional notes",
     )
     
-    metadata: Mapped[dict | None] = mapped_column(
+    extra_metadata: Mapped[dict | None] = mapped_column(
         JSONB,
         nullable=True,
         comment="Additional metadata",
@@ -274,7 +275,7 @@ class PaymentRefund(TimestampModel, UUIDMixin, SoftDeleteMixin, AuditMixin):
         Index("idx_refund_payment_status", "payment_id", "refund_status"),
         Index("idx_refund_requested_at", "requested_at"),
         Index("idx_refund_status", "refund_status"),
-        Index("idx_refund_reference_lower", "lower(refund_reference)"),
+        Index("idx_refund_reference_lower", func.lower(refund_reference)),
         {"comment": "Payment refund records and processing"},
     )
 

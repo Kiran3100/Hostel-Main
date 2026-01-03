@@ -1,4 +1,3 @@
-# --- File: C:\Hostel-Main\app\models\payment\payment.py ---
 """
 Payment model.
 
@@ -19,6 +18,7 @@ from sqlalchemy import (
     Numeric,
     String,
     Text,
+    func,
 )
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -287,7 +287,7 @@ class Payment(TimestampModel, UUIDMixin, SoftDeleteMixin, AuditMixin):
         comment="Additional notes about the payment",
     )
     
-    metadata: Mapped[dict | None] = mapped_column(
+    extra_metadata: Mapped[dict | None] = mapped_column(
         JSONB,
         nullable=True,
         comment="Additional metadata in JSON format",
@@ -361,7 +361,7 @@ class Payment(TimestampModel, UUIDMixin, SoftDeleteMixin, AuditMixin):
         Index("idx_payment_type_status", "payment_type", "payment_status"),
         Index("idx_payment_created_at", "created_at"),
         Index("idx_payment_paid_at", "paid_at"),
-        Index("idx_payment_reference_lower", "lower(payment_reference)"),
+        Index("idx_payment_reference_lower", func.lower(payment_reference)),  # Fixed: Use func.lower()
         Index("idx_payment_overdue", "is_overdue", "payment_status"),
         {"comment": "Payment transactions for hostel management system"},
     )
@@ -429,5 +429,6 @@ class Payment(TimestampModel, UUIDMixin, SoftDeleteMixin, AuditMixin):
             "due_date": self.due_date.isoformat() if self.due_date else None,
             "is_overdue": self.is_overdue,
             "receipt_number": self.receipt_number,
+            "extra_metadata": self.extra_metadata,
             "created_at": self.created_at.isoformat(),
         }

@@ -18,7 +18,9 @@ __all__ = [
     "ResolutionResponse",
     "ResolutionUpdate",
     "ReopenRequest",
+    "ReopenResponse",
     "CloseRequest",
+    "CloseResponse",
 ]
 
 
@@ -302,6 +304,57 @@ class ReopenRequest(BaseCreateSchema):
         return v
 
 
+class ReopenResponse(BaseSchema):
+    """
+    Response after successfully reopening a complaint.
+    
+    Provides confirmation and updated complaint status.
+    """
+    model_config = ConfigDict(from_attributes=True)
+
+    complaint_id: str = Field(..., description="Reopened complaint ID")
+    complaint_number: str = Field(..., description="Complaint reference number")
+
+    reopened: bool = Field(..., description="Reopen confirmation flag")
+    reopened_at: datetime = Field(..., description="Reopen timestamp")
+    reopened_by: str = Field(..., description="User ID who reopened")
+    reopened_by_name: str = Field(..., description="Name of user who reopened")
+
+    reopen_reason: str = Field(..., description="Reason for reopening")
+    
+    previous_status: str = Field(
+        ...,
+        description="Status before reopening (resolved/closed)",
+    )
+    current_status: str = Field(
+        ...,
+        description="Current status after reopening",
+    )
+
+    # Assignment info
+    assigned_to: Union[str, None] = Field(
+        default=None,
+        description="User ID complaint was reassigned to",
+    )
+    assigned_to_name: Union[str, None] = Field(
+        default=None,
+        description="Name of new assignee",
+    )
+
+    # Tracking
+    reopen_count: int = Field(
+        ...,
+        ge=1,
+        description="Number of times this complaint has been reopened",
+    )
+
+    message: str = Field(
+        ...,
+        description="Confirmation message",
+        examples=["Complaint reopened successfully"],
+    )
+
+
 class CloseRequest(BaseCreateSchema):
     """
     Request to close complaint (final state).
@@ -335,3 +388,59 @@ class CloseRequest(BaseCreateSchema):
             if not v:
                 return None
         return v
+
+
+class CloseResponse(BaseSchema):
+    """
+    Response after successfully closing a complaint.
+    
+    Provides final closure confirmation and metrics.
+    """
+    model_config = ConfigDict(from_attributes=True)
+
+    complaint_id: str = Field(..., description="Closed complaint ID")
+    complaint_number: str = Field(..., description="Complaint reference number")
+
+    closed: bool = Field(..., description="Closure confirmation flag")
+    closed_at: datetime = Field(..., description="Closure timestamp")
+    closed_by: str = Field(..., description="User ID who closed")
+    closed_by_name: str = Field(..., description="Name of user who closed")
+
+    closure_notes: Union[str, None] = Field(
+        default=None,
+        description="Final closure notes",
+    )
+
+    student_confirmed: bool = Field(
+        ...,
+        description="Whether student confirmed satisfaction",
+    )
+
+    # Resolution summary
+    resolved_at: datetime = Field(
+        ...,
+        description="When complaint was initially resolved",
+    )
+    total_resolution_time_hours: int = Field(
+        ...,
+        ge=0,
+        description="Total time from opening to resolution (hours)",
+    )
+
+    # Final metrics
+    sla_met: bool = Field(
+        ...,
+        description="Whether SLA was met",
+    )
+    student_rating: Union[int, None] = Field(
+        default=None,
+        ge=1,
+        le=5,
+        description="Student satisfaction rating (1-5) if provided",
+    )
+
+    message: str = Field(
+        ...,
+        description="Confirmation message",
+        examples=["Complaint closed successfully"],
+    )

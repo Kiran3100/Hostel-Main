@@ -6,6 +6,12 @@ This module exports all fee structure-related schemas for easy importing
 across the application.
 """
 
+from app.schemas.fee_structure.charge_component import (
+    ChargeComponent,
+    ChargeComponentBase,
+    ChargeComponentCreate,
+    ChargeComponentUpdate,
+)
 from app.schemas.fee_structure.fee_base import (
     FeeStructureBase,
     FeeStructureCreate,
@@ -14,8 +20,14 @@ from app.schemas.fee_structure.fee_base import (
 from app.schemas.fee_structure.fee_config import (
     ChargesBreakdown,
     DiscountConfiguration,
+    DiscountCreate,
+    DiscountUpdate,
     FeeComparison,
     FeeConfiguration,
+    FeeProjection,
+    FeeQuoteRequest,
+    HistoricalData,
+    MonthlyProjection,
 )
 from app.schemas.fee_structure.fee_response import (
     FeeCalculation,
@@ -42,5 +54,16 @@ __all__ = [
     "FeeConfiguration",
     "ChargesBreakdown",
     "DiscountConfiguration",
+    "DiscountCreate",
+    "DiscountUpdate",
     "FeeComparison",
+    "FeeQuoteRequest",
+    "FeeProjection",
+    "MonthlyProjection",
+    "HistoricalData",
+    # Charge Components
+    "ChargeComponent",
+    "ChargeComponentBase",
+    "ChargeComponentCreate",
+    "ChargeComponentUpdate",
 ]

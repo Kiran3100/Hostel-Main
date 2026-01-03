@@ -11,9 +11,9 @@ from decimal import Decimal
 from typing import Annotated, List, Union
 from uuid import UUID
 
-from pydantic import Field, field_validator, model_validator
+from pydantic import Field, field_validator, model_validator, computed_field
 
-from app.schemas.common.base import BaseCreateSchema, BaseSchema
+from app.schemas.common.base import BaseCreateSchema, BaseSchema, BaseUpdateSchema
 from app.schemas.common.enums import DietaryPreference, MealType
 
 __all__ = [
@@ -24,6 +24,10 @@ __all__ = [
     "ItemMasterList",
     "ItemCategory",
     "AllergenInfo",
+    "MealItemCreate",
+    "MealItemUpdate",
+    "MealItemResponse",
+    "MealItemDetail",
 ]
 
 
@@ -412,7 +416,6 @@ class NutritionalInfo(BaseSchema):
     )
 
     # Macronutrients (grams)
-    # Pydantic v2: Using Decimal with validation in field_validator instead of max_digits/decimal_places
     protein_g: Union[Decimal, None] = Field(
         None,
         ge=0,
@@ -513,7 +516,6 @@ class NutritionalInfo(BaseSchema):
         """Normalize serving size description."""
         return v.strip()
 
-    # Pydantic v2: Apply decimal precision using a validator
     @field_validator(
         "protein_g", "carbohydrates_g", "fat_g", "saturated_fat_g",
         "trans_fat_g", "fiber_g", "sugar_g", "sodium_mg", "cholesterol_mg",
@@ -633,3 +635,246 @@ class ItemMasterList(BaseSchema):
         total = sum(len(category.items) for category in self.categories)
         self.total_items = total
         return self
+
+
+# NEW SCHEMAS FOR API ENDPOINTS
+
+
+class MealItemCreate(BaseCreateSchema):
+    """
+    Create new meal item.
+    
+    Provides all necessary information to create a menu item.
+    """
+
+    hostel_id: UUID = Field(
+        ...,
+        description="Hostel unique identifier",
+    )
+    item_name: str = Field(
+        ...,
+        min_length=2,
+        max_length=100,
+        description="Item name",
+    )
+    item_name_local: Union[str, None] = Field(
+        None,
+        max_length=100,
+        description="Item name in local language",
+    )
+    item_description: Union[str, None] = Field(
+        None,
+        max_length=255,
+        description="Item description",
+    )
+    category: str = Field(
+        ...,
+        pattern=r"^(main_course|side_dish|bread|rice|dal|curry|dessert|beverage|salad|soup|starter)$",
+        description="Item category",
+    )
+    
+    # Dietary classification
+    is_vegetarian: bool = Field(True, description="Vegetarian item")
+    is_vegan: bool = Field(False, description="Vegan item")
+    is_jain: bool = Field(False, description="Jain-compatible item")
+    is_gluten_free: bool = Field(False, description="Gluten-free item")
+    is_lactose_free: bool = Field(False, description="Lactose-free item")
+    
+    # Allergen flags
+    contains_dairy: bool = Field(False, description="Contains dairy")
+    contains_nuts: bool = Field(False, description="Contains nuts")
+    contains_soy: bool = Field(False, description="Contains soy")
+    contains_gluten: bool = Field(False, description="Contains gluten")
+    contains_eggs: bool = Field(False, description="Contains eggs")
+    contains_shellfish: bool = Field(False, description="Contains shellfish")
+    
+    # Properties
+    is_spicy: bool = Field(False, description="Spicy item")
+    spice_level: Union[int, None] = Field(None, ge=0, le=5, description="Spice level 0-5")
+    serving_size: Union[str, None] = Field(None, max_length=50, description="Serving size")
+    
+    # Pricing
+    estimated_cost: Union[Decimal, None] = Field(
+        None,
+        ge=0,
+        description="Estimated cost per serving",
+    )
+    
+    # Availability
+    is_available: bool = Field(
+        default=True,
+        description="Currently available",
+    )
+    is_seasonal: bool = Field(
+        default=False,
+        description="Seasonal item",
+    )
+
+    @field_validator("estimated_cost", mode="after")
+    @classmethod
+    def round_cost(cls, v: Union[Decimal, None]) -> Union[Decimal, None]:
+        """Round cost to 2 decimal places."""
+        if v is not None:
+            return v.quantize(Decimal("0.01"))
+        return v
+
+    @model_validator(mode="after")
+    def validate_dietary_consistency(self) -> "MealItemCreate":
+        """Validate dietary classification consistency."""
+        # Vegan items must be vegetarian
+        if self.is_vegan and not self.is_vegetarian:
+            raise ValueError("Vegan items must also be vegetarian")
+        
+        # Vegan items cannot contain dairy or eggs
+        if self.is_vegan:
+            if self.contains_dairy:
+                raise ValueError("Vegan items cannot contain dairy")
+            if self.contains_eggs:
+                raise ValueError("Vegan items cannot contain eggs")
+        
+        return self
+
+
+class MealItemUpdate(BaseUpdateSchema):
+    """
+    Update existing meal item.
+    
+    All fields optional for partial updates.
+    """
+
+    item_name: Union[str, None] = Field(None, min_length=2, max_length=100)
+    item_name_local: Union[str, None] = Field(None, max_length=100)
+    item_description: Union[str, None] = Field(None, max_length=255)
+    category: Union[str, None] = Field(
+        None,
+        pattern=r"^(main_course|side_dish|bread|rice|dal|curry|dessert|beverage|salad|soup|starter)$",
+    )
+    
+    is_vegetarian: Union[bool, None] = None
+    is_vegan: Union[bool, None] = None
+    is_jain: Union[bool, None] = None
+    is_gluten_free: Union[bool, None] = None
+    is_lactose_free: Union[bool, None] = None
+    
+    contains_dairy: Union[bool, None] = None
+    contains_nuts: Union[bool, None] = None
+    contains_soy: Union[bool, None] = None
+    contains_gluten: Union[bool, None] = None
+    contains_eggs: Union[bool, None] = None
+    contains_shellfish: Union[bool, None] = None
+    
+    is_spicy: Union[bool, None] = None
+    spice_level: Union[int, None] = Field(None, ge=0, le=5)
+    serving_size: Union[str, None] = Field(None, max_length=50)
+    estimated_cost: Union[Decimal, None] = Field(None, ge=0)
+    is_available: Union[bool, None] = None
+    is_seasonal: Union[bool, None] = None
+
+    @field_validator("estimated_cost", mode="after")
+    @classmethod
+    def round_cost(cls, v: Union[Decimal, None]) -> Union[Decimal, None]:
+        """Round cost to 2 decimal places."""
+        if v is not None:
+            return v.quantize(Decimal("0.01"))
+        return v
+
+
+class MealItemResponse(BaseSchema):
+    """
+    Meal item response for list views.
+    
+    Lightweight response with essential information.
+    """
+
+    id: UUID = Field(..., description="Item unique identifier")
+    hostel_id: UUID = Field(..., description="Hostel unique identifier")
+    item_name: str = Field(..., description="Item name")
+    item_name_local: Union[str, None] = Field(None, description="Local name")
+    category: str = Field(..., description="Item category")
+    is_vegetarian: bool = Field(..., description="Vegetarian flag")
+    is_vegan: bool = Field(..., description="Vegan flag")
+    is_available: bool = Field(..., description="Availability status")
+    is_seasonal: bool = Field(..., description="Seasonal item flag")
+    estimated_cost: Union[Decimal, None] = Field(None, description="Cost estimate")
+    
+    @computed_field
+    @property
+    def dietary_label(self) -> str:
+        """Get dietary type label."""
+        if self.is_vegan:
+            return "Vegan"
+        elif self.is_vegetarian:
+            return "Vegetarian"
+        else:
+            return "Non-Vegetarian"
+
+
+class MealItemDetail(BaseSchema):
+    """
+    Detailed meal item information.
+    
+    Complete item details including nutritional info and ratings.
+    """
+
+    id: UUID = Field(..., description="Item unique identifier")
+    hostel_id: UUID = Field(..., description="Hostel unique identifier")
+    item_name: str = Field(..., description="Item name")
+    item_name_local: Union[str, None] = None
+    item_description: Union[str, None] = None
+    category: str = Field(..., description="Category")
+    
+    # Dietary info
+    is_vegetarian: bool = Field(...)
+    is_vegan: bool = Field(...)
+    is_jain: bool = Field(...)
+    is_gluten_free: bool = Field(...)
+    is_lactose_free: bool = Field(...)
+    
+    # Allergens
+    contains_dairy: bool = Field(...)
+    contains_nuts: bool = Field(...)
+    contains_soy: bool = Field(...)
+    contains_gluten: bool = Field(...)
+    contains_eggs: bool = Field(...)
+    contains_shellfish: bool = Field(...)
+    
+    # Properties
+    is_spicy: bool = Field(...)
+    spice_level: Union[int, None] = None
+    serving_size: Union[str, None] = None
+    estimated_cost: Union[Decimal, None] = None
+    is_available: bool = Field(...)
+    is_seasonal: bool = Field(...)
+    
+    # Ratings and usage
+    average_rating: Union[Decimal, None] = Field(
+        None,
+        ge=0,
+        le=5,
+        description="Average student rating",
+    )
+    total_ratings: int = Field(
+        default=0,
+        ge=0,
+        description="Total number of ratings",
+    )
+    usage_count: int = Field(
+        default=0,
+        ge=0,
+        description="Times item appeared in menus",
+    )
+    
+    # Metadata
+    created_at: datetime = Field(..., description="Creation timestamp")
+    updated_at: datetime = Field(..., description="Last update timestamp")
+
+    @computed_field
+    @property
+    def popularity_score(self) -> Decimal:
+        """Calculate item popularity (0-100)."""
+        if self.total_ratings == 0:
+            return Decimal("0.00")
+        
+        # Simple formula: (avg_rating * usage_count) normalized
+        score = (float(self.average_rating or 0) * self.usage_count) / 10
+        return round(Decimal(str(min(score, 100))), 2)

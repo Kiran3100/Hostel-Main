@@ -1,4 +1,3 @@
-# --- File: C:\Hostel-Main\app\models\payment\payment_schedule.py ---
 """
 Payment schedule model.
 
@@ -7,6 +6,7 @@ Manages recurring payment schedules for students.
 
 from datetime import date as Date, datetime
 from decimal import Decimal
+from enum import Enum as PyEnum
 from typing import TYPE_CHECKING
 
 from sqlalchemy import (
@@ -20,6 +20,7 @@ from sqlalchemy import (
     Numeric,
     String,
     Text,
+    func,  # Added this import
 )
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -35,7 +36,7 @@ if TYPE_CHECKING:
     from app.models.user.user import User
 
 
-class ScheduleStatus(str, Enum):
+class ScheduleStatus(str, PyEnum):
     """Payment schedule status enum."""
     
     ACTIVE = "active"
@@ -78,7 +79,7 @@ class PaymentSchedule(TimestampModel, UUIDMixin, SoftDeleteMixin, AuditMixin):
     )
     
     fee_type: Mapped[FeeType] = mapped_column(
-        Enum(FeeType, name="fee_type_enum", create_type=True),
+        Enum(FeeType),
         nullable=False,
         index=True,
         comment="Type of fee (monthly, quarterly, etc.)",
@@ -162,7 +163,7 @@ class PaymentSchedule(TimestampModel, UUIDMixin, SoftDeleteMixin, AuditMixin):
 
     # ==================== Status ====================
     schedule_status: Mapped[ScheduleStatus] = mapped_column(
-        Enum(ScheduleStatus, name="schedule_status_enum", create_type=True),
+        Enum(ScheduleStatus),
         nullable=False,
         default=ScheduleStatus.ACTIVE,
         index=True,
@@ -250,7 +251,8 @@ class PaymentSchedule(TimestampModel, UUIDMixin, SoftDeleteMixin, AuditMixin):
         comment="Additional notes about schedule",
     )
     
-    metadata: Mapped[dict | None] = mapped_column(
+    # Changed 'metadata' to 'extra_data' to avoid SQLAlchemy reserved word conflict
+    extra_data: Mapped[dict | None] = mapped_column(
         JSONB,
         nullable=True,
         comment="Additional metadata",
@@ -283,7 +285,8 @@ class PaymentSchedule(TimestampModel, UUIDMixin, SoftDeleteMixin, AuditMixin):
         Index("idx_schedule_next_due", "next_due_date", "is_active"),
         Index("idx_schedule_fee_type", "fee_type"),
         Index("idx_schedule_active", "is_active", "schedule_status"),
-        Index("idx_schedule_reference_lower", "lower(schedule_reference)"),
+        # Fixed: Use func.lower() for case-insensitive index
+        Index("idx_schedule_reference_lower", func.lower(schedule_reference)),
         {"comment": "Recurring payment schedules for students"},
     )
 
@@ -335,7 +338,22 @@ class PaymentSchedule(TimestampModel, UUIDMixin, SoftDeleteMixin, AuditMixin):
     def calculate_next_due_date(self) -> Date:
         """Calculate next due date based on frequency."""
         from datetime import timedelta
-        return self.next_due_date + timedelta(days=self.frequency_days)
+        from calendar import monthrange
+        
+        next_date = self.next_due_date + timedelta(days=self.frequency_days)
+        
+        # Handle day_of_month preference
+        if self.day_of_month:
+            try:
+                # Adjust to preferred day of month
+                days_in_month = monthrange(next_date.year, next_date.month)[1]
+                target_day = min(self.day_of_month, days_in_month)
+                next_date = next_date.replace(day=target_day)
+            except ValueError:
+                # Fall back to calculated date if replacement fails
+                pass
+        
+        return next_date
 
     def is_in_suspension_period(self, check_date: Date | None = None) -> bool:
         """Check if given date falls in suspension period."""
@@ -344,3 +362,21 @@ class PaymentSchedule(TimestampModel, UUIDMixin, SoftDeleteMixin, AuditMixin):
         
         date_to_check = check_date or Date.today()
         return self.suspension_start_date <= date_to_check <= self.suspension_end_date
+
+    def validate_schedule_dates(self) -> bool:
+        """Validate schedule date consistency."""
+        if self.end_date and self.start_date >= self.end_date:
+            raise ValueError("End date must be after start date")
+        
+        if self.next_due_date < self.start_date:
+            raise ValueError("Next due date cannot be before start date")
+        
+        return True
+
+    def reactivate_from_suspension(self, reason: str = None) -> None:
+        """Reactivate schedule from suspension."""
+        if self.schedule_status == ScheduleStatus.SUSPENDED:
+            self.schedule_status = ScheduleStatus.ACTIVE
+            self.suspended_at = None
+            self.suspension_reason = None
+            # Update audit fields would be handled by AuditMixin

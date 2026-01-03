@@ -6,9 +6,9 @@ bulk operations, and unassignment flows.
 """
 
 from datetime import datetime, timezone
-from typing import List, Union
+from typing import Dict, List, Union
 
-from pydantic import ConfigDict, Field, field_validator, model_validator
+from pydantic import ConfigDict, Field, computed_field, field_validator, model_validator
 
 from app.schemas.common.base import BaseCreateSchema, BaseSchema
 
@@ -17,6 +17,7 @@ __all__ = [
     "AssignmentResponse",
     "ReassignmentRequest",
     "BulkAssignment",
+    "BulkAssignmentResponse",
     "UnassignRequest",
     "AssignmentHistory",
 ]
@@ -194,6 +195,105 @@ class BulkAssignment(BaseCreateSchema):
             if not v:
                 return None
         return v
+
+
+class BulkAssignmentResponse(BaseSchema):
+    """
+    Response for bulk assignment operation.
+    
+    Provides detailed results for each complaint assignment
+    including successes, failures, and partial completion status.
+    """
+    model_config = ConfigDict(from_attributes=True)
+
+    total_requested: int = Field(
+        ...,
+        ge=0,
+        description="Total complaints requested for assignment",
+    )
+    successful_assignments: int = Field(
+        ...,
+        ge=0,
+        description="Number of successful assignments",
+    )
+    failed_assignments: int = Field(
+        ...,
+        ge=0,
+        description="Number of failed assignments",
+    )
+
+    assigned_to: str = Field(
+        ...,
+        description="User ID assignments were made to",
+    )
+    assigned_to_name: str = Field(
+        ...,
+        description="Name of assignee",
+    )
+    assigned_by: str = Field(
+        ...,
+        description="User ID who performed bulk assignment",
+    )
+    assigned_by_name: str = Field(
+        ...,
+        description="Name of user who assigned",
+    )
+
+    # Detailed results
+    successful_complaint_ids: List[str] = Field(
+        default_factory=list,
+        description="List of successfully assigned complaint IDs",
+    )
+    failed_results: List[Dict[str, str]] = Field(
+        default_factory=list,
+        description="Failed assignments with complaint_id and error_message",
+    )
+
+    assignment_timestamp: datetime = Field(
+        ...,
+        description="When bulk assignment was performed",
+    )
+
+    # Overall status
+    overall_status: str = Field(
+        ...,
+        pattern=r"^(success|partial_success|failed)$",
+        description="Overall operation status",
+    )
+    message: str = Field(
+        ...,
+        description="Summary message",
+    )
+
+    @model_validator(mode="after")
+    def validate_assignment_counts(self):
+        """Ensure assignment counts are consistent."""
+        if self.successful_assignments + self.failed_assignments != self.total_requested:
+            raise ValueError(
+                "successful_assignments + failed_assignments must equal total_requested"
+            )
+        
+        # Validate overall_status matches the results
+        if self.failed_assignments == 0:
+            expected_status = "success"
+        elif self.successful_assignments == 0:
+            expected_status = "failed"
+        else:
+            expected_status = "partial_success"
+        
+        if self.overall_status != expected_status:
+            # Auto-correct the status based on results
+            self.overall_status = expected_status
+        
+        return self
+
+    @computed_field  # type: ignore[misc]
+    @property
+    def success_rate(self) -> float:
+        """Calculate success rate percentage."""
+        if self.total_requested == 0:
+            return 0.0
+        return round((self.successful_assignments / self.total_requested) * 100, 2)
 
 
 class UnassignRequest(BaseCreateSchema):

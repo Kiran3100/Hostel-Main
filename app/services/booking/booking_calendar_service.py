@@ -18,7 +18,7 @@ from dateutil.relativedelta import relativedelta
 from sqlalchemy.orm import Session
 
 from app.services.base import BaseService, ServiceResult, ServiceError, ErrorCode, ErrorSeverity
-from app.repositories.booking import BookingCalendarRepository
+from app.repositories.booking import BookingCalendarEventRepository as BookingCalendarRepository
 from app.models.booking.booking_calendar import BookingCalendarEvent as BookingCalendarEventModel
 from app.schemas.booking.booking_calendar import (
     CalendarView,

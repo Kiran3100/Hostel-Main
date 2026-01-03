@@ -30,7 +30,7 @@ from app.models.base.base_model import BaseModel, TimestampModel
 from app.models.base.mixins import SoftDeleteMixin, UUIDMixin, AuditMixin
 
 
-class MaintenanceApproval(BaseModel, UUIDMixin, TimestampModel, SoftDeleteMixin, AuditMixin):
+class MaintenanceApproval(UUIDMixin, TimestampModel, SoftDeleteMixin, AuditMixin, BaseModel):
     """
     Approval workflow tracking for maintenance requests.
     
@@ -235,8 +235,8 @@ class MaintenanceApproval(BaseModel, UUIDMixin, TimestampModel, SoftDeleteMixin,
         comment="Whether notifications were sent",
     )
     
-    # Metadata
-    metadata = Column(
+    # Additional data
+    extra_data = Column(
         JSONB,
         nullable=True,
         default={},
@@ -377,7 +377,7 @@ class MaintenanceApproval(BaseModel, UUIDMixin, TimestampModel, SoftDeleteMixin,
         self.approval_level = new_approval_level
 
 
-class ApprovalThreshold(BaseModel, UUIDMixin, TimestampModel):
+class ApprovalThreshold(UUIDMixin, TimestampModel, BaseModel):
     """
     Approval threshold configuration for hostels.
     
@@ -537,7 +537,7 @@ class ApprovalThreshold(BaseModel, UUIDMixin, TimestampModel):
         return "supervisor"
 
 
-class ApprovalWorkflow(BaseModel, UUIDMixin, TimestampModel):
+class ApprovalWorkflow(UUIDMixin, TimestampModel, BaseModel):
     """
     Approval workflow state tracking.
     
@@ -644,8 +644,8 @@ class ApprovalWorkflow(BaseModel, UUIDMixin, TimestampModel):
         comment="Previous approval steps (for multi-level workflows)",
     )
     
-    # Metadata
-    metadata = Column(
+    # Additional data
+    workflow_data = Column(
         JSONB,
         nullable=True,
         default={},

@@ -2,15 +2,15 @@
 API v1 Router - Main Entry Point
 Aggregates all v1 API endpoints for the hostel management system
 """
-from __future__ import annotations
-
+from typing import List, Optional
+ 
 from fastapi import APIRouter, Depends
 import logging
-
+ 
 from app.core.logging import get_logger
-
+ 
 logger = get_logger(__name__)
-
+ 
 # Create main API v1 router with proper configuration
 router = APIRouter(
     responses={
@@ -22,39 +22,63 @@ router = APIRouter(
         500: {"description": "Internal Server Error"}
     }
 )
-
+ 
 # Track successful and failed imports for debugging
 successful_imports = []
 failed_imports = []
-
+ 
 # Import and include existing sophisticated modules
-def import_module_router(module_path: str, module_name: str, tags: list[str] | None = None) -> bool:
+def import_module_router(module_path: str, module_name: str, tags: Optional[List[str]] = None) -> bool:
     """Helper function to safely import and register module routers"""
     try:
         module = __import__(module_path, fromlist=[module_name])
         module_router = getattr(module, 'router')
-        
+       
         # Include router with or without additional tags
         if tags:
             router.include_router(module_router, tags=tags)
         else:
             router.include_router(module_router)
-            
+           
         successful_imports.append(module_name)
         logger.info(f"Successfully imported {module_name} router from {module_path}")
         return True
-        
+       
     except (ImportError, AttributeError) as e:
         failed_imports.append((module_name, str(e)))
         logger.warning(f"Could not import {module_name} router from {module_path}: {e}")
         return False
-
+ 
 # Import the sophisticated modules that exist
 import_module_router("app.api.v1.admin", "admin", ["Admin Management"])
-import_module_router("app.api.v1.analytics", "analytics", ["Analytics & Reporting"]) 
+import_module_router("app.api.v1.analytics", "analytics", ["Analytics & Reporting"])
 import_module_router("app.api.v1.announcements", "announcements", ["Announcements"])
 import_module_router("app.api.v1.attendance", "attendance", ["Attendance Management"])
+import_module_router("app.api.v1.auth", "auth", ["Authentication & Authorization"])
+import_module_router("app.api.v1.bookings", "bookings", ["Booking Management"])
+import_module_router("app.api.v1.complaints", "complaints", ["Complaint Management"])
+import_module_router("app.api.v1.fee_structures", "fee_structures", ["Fee Structures"])
+import_module_router("app.api.v1.files", "files", ["File Management"])
+import_module_router("app.api.v1.hostels", "hostels", ["Hostel Management"])
+import_module_router("app.api.v1.inquiries", "inquiries", ["Inquiries Management"])
+import_module_router("app.api.v1.leaves", "leaves", ["Leave Management"])       
+import_module_router("app.api.v1.maintenance", "maintenance", ["Maintenance Management"])
+import_module_router("app.api.v1.mess", "mess", ["Mess Management"])
+import_module_router("app.api.v1.notifications", "notifications", ["Notifications"])
+import_module_router("app.api.v1.payments", "payments", ["Payment Processing"])
+import_module_router("app.api.v1.referrals", "referrals", ["Referrals Management"])
+import_module_router("app.api.v1.reviews", "reviews", ["Reviews & Feedback"])
+import_module_router("app.api.v1.rooms", "rooms", ["Room Management"])
+import_module_router("app.api.v1.students", "students", ["Student Management"]) 
+import_module_router("app.api.v1.subscriptions", "subscriptions", ["Subscriptions Management"])
+import_module_router("app.api.v1.supervisors", "supervisors", ["Supervisor Management"])
+import_module_router("app.api.v1.users", "users", ["User Management"])
+import_module_router("app.api.v1.visitors", "visitors", ["Visitor Management"])
+import_module_router("app.api.v1.webhooks", "webhooks", ["Webhooks"])
 
+
+
+ 
 # Try to import legacy endpoint modules (if they exist)
 legacy_modules = [
     ("app.api.v1.endpoints.auth", "auth", ["Authentication"]),
@@ -73,11 +97,12 @@ legacy_modules = [
     ("app.api.v1.endpoints.inventory", "inventory", ["Inventory"]),
     ("app.api.v1.endpoints.staff", "staff", ["Staff Management"]),
     ("app.api.v1.endpoints.visitors", "visitors", ["Visitor Management"])
+    
 ]
-
+ 
 for module_path, module_name, tags in legacy_modules:
     import_module_router(module_path, module_name, tags)
-
+ 
 # Health and diagnostic endpoints
 @router.get("/health", tags=["System Health"])
 async def api_health_check():
@@ -93,7 +118,7 @@ async def api_health_check():
         "total_endpoints": len(successful_imports),
         "description": "Hostel Management System API v1"
     }
-
+ 
 @router.get("/debug/modules", tags=["System Health"])
 async def debug_module_status():
     """
@@ -105,9 +130,9 @@ async def debug_module_status():
             "modules": successful_imports
         },
         "failed_imports": {
-            "count": len(failed_imports), 
+            "count": len(failed_imports),
             "details": [
-                {"module": name, "error": str(error)} 
+                {"module": name, "error": str(error)}
                 for name, error in failed_imports
             ]
         },
@@ -119,12 +144,12 @@ async def debug_module_status():
                     "methods": list(route.methods) if hasattr(route, 'methods') else [],
                     "name": route.name if hasattr(route, 'name') else "unnamed"
                 }
-                for route in router.routes 
+                for route in router.routes
                 if hasattr(route, 'path')
             ]
         }
     }
-
+ 
 @router.get("/debug/openapi", tags=["System Health"])
 async def debug_openapi_routes():
     """
@@ -140,19 +165,19 @@ async def debug_openapi_routes():
                 "summary": getattr(route, 'summary', 'No summary'),
                 "tags": getattr(route, 'tags', [])
             })
-    
+   
     return {
         "total_registered_routes": len(routes_info),
         "routes": routes_info,
         "modules_loaded": successful_imports
     }
-
+ 
 # Log initialization status
 logger.info(f"API v1 router initialized successfully")
 logger.info(f"Loaded modules: {successful_imports}")
 if failed_imports:
     logger.warning(f"Failed to load modules: {[name for name, _ in failed_imports]}")
-
+ 
 # Export router info for external access
 router_info = {
     "successful_imports": successful_imports,

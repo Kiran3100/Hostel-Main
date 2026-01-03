@@ -44,7 +44,7 @@ from app.schemas.common.enums import (
 )
 
 
-class MaintenanceRequest(BaseModel, UUIDMixin, TimestampModel, SoftDeleteMixin, LocationMixin, MediaMixin, AuditMixin):
+class MaintenanceRequest(UUIDMixin, TimestampModel, SoftDeleteMixin, LocationMixin, MediaMixin, AuditMixin, BaseModel):
     """
     Core maintenance request entity.
     
@@ -362,8 +362,8 @@ class MaintenanceRequest(BaseModel, UUIDMixin, TimestampModel, SoftDeleteMixin, 
         comment="Vendor contact number",
     )
     
-    # Additional metadata
-    metadata = Column(
+    # Additional metadata - renamed from 'metadata' to avoid conflict
+    additional_data = Column(
         JSONB,
         nullable=True,
         default={},
@@ -433,6 +433,26 @@ class MaintenanceRequest(BaseModel, UUIDMixin, TimestampModel, SoftDeleteMixin, 
     preventive_schedule = relationship(
         "MaintenanceSchedule",
         back_populates="maintenance_requests"
+    )
+    vendor_assignments = relationship(
+        "VendorAssignment",
+        back_populates="maintenance_request",
+        cascade="all, delete-orphan"
+    )
+    quality_checks = relationship(
+        "MaintenanceQualityCheck",
+        back_populates="maintenance_request",
+        cascade="all, delete-orphan"
+    )
+    certificates = relationship(
+        "MaintenanceCertificate",
+        back_populates="maintenance_request",
+        cascade="all, delete-orphan"
+    )
+    vendor_invoices = relationship(
+        "VendorInvoice",
+        back_populates="maintenance_request",
+        cascade="all, delete-orphan"
     )
     
     # Table constraints
@@ -587,7 +607,7 @@ class MaintenanceRequest(BaseModel, UUIDMixin, TimestampModel, SoftDeleteMixin, 
             )
 
 
-class MaintenanceStatusHistory(BaseModel, UUIDMixin, TimestampModel):
+class MaintenanceStatusHistory(UUIDMixin, TimestampModel, BaseModel):
     """
     Status change history for maintenance requests.
     
@@ -664,7 +684,7 @@ class MaintenanceStatusHistory(BaseModel, UUIDMixin, TimestampModel):
         )
 
 
-class MaintenanceIssueType(BaseModel, UUIDMixin, TimestampModel):
+class MaintenanceIssueTypeModel(UUIDMixin, TimestampModel, BaseModel):
     """
     Maintenance issue type definitions and categorization.
     
@@ -731,4 +751,4 @@ class MaintenanceIssueType(BaseModel, UUIDMixin, TimestampModel):
     )
     
     def __repr__(self) -> str:
-        return f"<MaintenanceIssueType {self.name}>"
+        return f"<MaintenanceIssueTypeModel {self.name}>"

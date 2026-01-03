@@ -1,4 +1,3 @@
-# --- File: app/schemas/leave/leave_approval.py ---
 """
 Leave approval and workflow schemas.
 
@@ -13,12 +12,15 @@ from pydantic import ConfigDict, Field, field_validator, model_validator
 from uuid import UUID
 
 from app.schemas.common.base import BaseCreateSchema, BaseSchema
-from app.schemas.common.enums import LeaveStatus
+from app.schemas.common.enums import LeaveStatus, LeaveType
 
 __all__ = [
     "LeaveApprovalRequest",
     "LeaveApprovalResponse",
     "LeaveApprovalAction",
+    "PendingApprovalItem",
+    "LeaveApprovalHistoryResponse",
+    "LeaveApprovalHistoryItem",
 ]
 
 
@@ -359,3 +361,82 @@ class LeaveApprovalResponse(BaseSchema):
                 )
         
         return self
+
+
+class PendingApprovalItem(BaseSchema):
+    """
+    Pending approval item for dashboard/queue display.
+    
+    Compact view of leave applications awaiting approval.
+    """
+    
+    model_config = ConfigDict(
+        json_schema_extra={
+            "example": {
+                "leave_id": "123e4567-e89b-12d3-a456-426614174000",
+                "student_id": "123e4567-e89b-12d3-a456-426614174001",
+                "student_name": "John Student",
+                "room_number": "101",
+                "leave_type": "casual",
+                "from_date": "2024-02-01",
+                "to_date": "2024-02-05",
+                "total_days": 5,
+                "applied_at": "2024-01-25T10:30:00Z",
+                "priority": "normal",
+                "reason_summary": "Family function"
+            }
+        }
+    )
+
+    leave_id: UUID = Field(..., description="Leave application ID")
+    student_id: UUID = Field(..., description="Student ID")
+    student_name: str = Field(..., description="Student name")
+    hostel_name: str = Field(..., description="Hostel name")
+    room_number: Union[str, None] = Field(None, description="Room number")
+    leave_type: LeaveType = Field(..., description="Leave type")
+    from_date: datetime = Field(..., description="Leave start date")
+    to_date: datetime = Field(..., description="Leave end date")
+    total_days: int = Field(..., description="Total days")
+    applied_at: datetime = Field(..., description="Application timestamp")
+    reason_summary: str = Field(..., max_length=100, description="Truncated reason")
+    priority: str = Field(default="normal", description="Priority level")
+    urgency_score: int = Field(default=0, description="Urgency score for sorting")
+
+
+class LeaveApprovalHistoryItem(BaseSchema):
+    """Individual approval history entry."""
+    
+    action: str = Field(..., description="Action taken")
+    actor_id: UUID = Field(..., description="User who performed action")
+    actor_name: str = Field(..., description="User name")
+    timestamp: datetime = Field(..., description="Action timestamp")
+    comments: Union[str, None] = Field(None, description="Action comments")
+    from_status: Union[LeaveStatus, None] = Field(None, description="Previous status")
+    to_status: LeaveStatus = Field(..., description="New status")
+
+
+class LeaveApprovalHistoryResponse(BaseSchema):
+    """
+    Complete approval history with audit trail.
+    
+    Comprehensive view of all actions taken on a leave application.
+    """
+    
+    model_config = ConfigDict(
+        json_schema_extra={
+            "example": {
+                "leave_id": "123e4567-e89b-12d3-a456-426614174000",
+                "student_name": "John Student",
+                "current_status": "approved",
+                "history": []
+            }
+        }
+    )
+
+    leave_id: UUID = Field(..., description="Leave application ID")
+    student_id: UUID = Field(..., description="Student ID")
+    student_name: str = Field(..., description="Student name")
+    current_status: LeaveStatus = Field(..., description="Current status")
+    history: List[LeaveApprovalHistoryItem] = Field(..., description="Approval history")
+    total_actions: int = Field(..., description="Total number of actions")
+    days_since_application: int = Field(..., description="Days since application")

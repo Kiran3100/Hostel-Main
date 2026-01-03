@@ -31,7 +31,7 @@ from app.models.base.base_model import BaseModel, TimestampModel
 from app.models.base.mixins import SoftDeleteMixin, UUIDMixin, MediaMixin, AuditMixin
 
 
-class MaintenanceCompletion(BaseModel, UUIDMixin, TimestampModel, SoftDeleteMixin, MediaMixin, AuditMixin):
+class MaintenanceCompletion(UUIDMixin, TimestampModel, SoftDeleteMixin, AuditMixin, BaseModel):
     """
     Maintenance work completion record.
     
@@ -227,8 +227,8 @@ class MaintenanceCompletion(BaseModel, UUIDMixin, TimestampModel, SoftDeleteMixi
         comment="Quality verification timestamp",
     )
     
-    # Metadata
-    metadata = Column(
+    # Metadata - renamed from 'metadata' to avoid conflict
+    additional_data = Column(
         JSONB,
         nullable=True,
         default={},
@@ -341,7 +341,7 @@ class MaintenanceCompletion(BaseModel, UUIDMixin, TimestampModel, SoftDeleteMixi
         return True
 
 
-class MaintenanceMaterial(BaseModel, UUIDMixin, TimestampModel):
+class MaintenanceMaterial(UUIDMixin, TimestampModel, BaseModel):
     """
     Materials used in maintenance work.
     
@@ -424,8 +424,8 @@ class MaintenanceMaterial(BaseModel, UUIDMixin, TimestampModel):
         comment="Material warranty period in months",
     )
     
-    # Metadata
-    metadata = Column(
+    # Metadata - renamed from 'metadata' to avoid conflict
+    additional_data = Column(
         JSONB,
         nullable=True,
         default={},
@@ -473,7 +473,7 @@ class MaintenanceMaterial(BaseModel, UUIDMixin, TimestampModel):
         return value
 
 
-class MaintenanceQualityCheck(BaseModel, UUIDMixin, TimestampModel):
+class MaintenanceQualityCheck(UUIDMixin, TimestampModel, BaseModel):
     """
     Quality check record for completed maintenance work.
     
@@ -587,8 +587,8 @@ class MaintenanceQualityCheck(BaseModel, UUIDMixin, TimestampModel):
         comment="Detailed checklist item results",
     )
     
-    # Metadata
-    metadata = Column(
+    # Metadata - renamed from 'metadata' to avoid conflict
+    additional_data = Column(
         JSONB,
         nullable=True,
         default={},
@@ -629,7 +629,7 @@ class MaintenanceQualityCheck(BaseModel, UUIDMixin, TimestampModel):
         return value
 
 
-class MaintenanceCertificate(BaseModel, UUIDMixin, TimestampModel):
+class MaintenanceCertificate(UUIDMixin, TimestampModel, BaseModel):
     """
     Work completion certificate.
     

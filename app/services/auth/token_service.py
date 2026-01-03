@@ -21,7 +21,7 @@ from app.services.base import (
 )
 from app.repositories.user import UserRepository
 from app.models.user.user import User
-from app.core1.security.jwt_handler import JWTManager
+from app.core.security.jwt_handler import JWTManager
 from app.schemas.auth.token import (
     Token,
     TokenPayload,
