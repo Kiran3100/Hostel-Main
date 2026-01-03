@@ -385,6 +385,7 @@ router_metadata = {
         "dashboard": "Multi-hostel dashboard with real-time analytics"
     },
     "features": [
+        
         "Enhanced error handling and validation",
         "Comprehensive caching strategy", 
         "Performance monitoring and metrics",
