@@ -8,10 +8,10 @@ from fastapi import APIRouter, Depends, Path, Query, status, HTTPException
 from app.core.dependencies import get_current_user_dependency
 from app.core.exceptions import NotFoundError, ValidationError
 from app.services.review.review_voting_service import ReviewVotingService
+from app.schemas.common.enums import VoteType
 from app.schemas.review import (
-    VoteType,
     VoteResponse,
-    HostelVotingStats,
+    VotingStats,
 )
 
 router = APIRouter(
@@ -51,7 +51,7 @@ async def cast_vote(
     ),
     vote_type: VoteType = Query(
         ...,
-        description="Type of vote: helpful or unhelpful"
+        description="Type of vote: helpful or not_helpful"
     ),
     voting_service: ReviewVotingService = Depends(get_voting_service),
     current_user = Depends(get_current_user_dependency),
@@ -66,7 +66,7 @@ async def cast_vote(
     - Vote affects review helpfulness score
     
     **Query Parameters:**
-    - vote_type: "helpful" or "unhelpful"
+    - vote_type: "helpful" or "not_helpful"
     
     **Returns:**
     - Updated vote counts
@@ -194,7 +194,7 @@ async def get_vote_status(
 
 @router.get(
     "/stats/{hostel_id}",
-    response_model=HostelVotingStats,
+    response_model=VotingStats,
     summary="Get voting stats for hostel",
     description="Retrieve aggregated voting statistics for a hostel's reviews.",
     responses={
@@ -214,7 +214,7 @@ async def get_voting_stats(
         description="Number of top reviews to return"
     ),
     voting_service: ReviewVotingService = Depends(get_voting_service),
-) -> HostelVotingStats:
+) -> VotingStats:
     """
     Get aggregated voting statistics for a hostel.
     
@@ -268,7 +268,7 @@ async def get_user_voting_history(
     **Returns:**
     - Paginated list of votes
     - Review information for each vote
-    - Vote type (helpful/unhelpful)
+    - Vote type (helpful/not_helpful)
     - Timestamp of vote
     
     **Use Case:**

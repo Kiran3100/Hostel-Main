@@ -18,7 +18,7 @@ from app.models.review.review_response import (
     ResponseTemplate,
     ResponseStatistics,
 )
-from app.repositories.base import BaseRepository, PaginationResult
+from app.repositories.base import BaseRepository, PaginatedResult, AuditContext
 
 
 class ReviewResponseRepository(BaseRepository[ReviewResponse]):
@@ -277,7 +277,7 @@ class ReviewResponseRepository(BaseRepository[ReviewResponse]):
         hostel_id: UUID,
         filters: Optional[Dict[str, Any]] = None,
         pagination: Optional[Dict[str, Any]] = None
-    ) -> PaginationResult[ReviewResponse]:
+    ) -> PaginatedResult[ReviewResponse]:
         """
         Get all responses for hostel.
         
@@ -304,7 +304,7 @@ class ReviewResponseRepository(BaseRepository[ReviewResponse]):
         self,
         hostel_id: Optional[UUID] = None,
         pagination: Optional[Dict[str, Any]] = None
-    ) -> PaginationResult[ReviewResponse]:
+    ) -> PaginatedResult[ReviewResponse]:
         """
         Get responses pending approval.
         
@@ -332,7 +332,7 @@ class ReviewResponseRepository(BaseRepository[ReviewResponse]):
         responder_id: UUID,
         hostel_id: Optional[UUID] = None,
         pagination: Optional[Dict[str, Any]] = None
-    ) -> PaginationResult[ReviewResponse]:
+    ) -> PaginatedResult[ReviewResponse]:
         """
         Get responses by specific responder.
         
@@ -913,7 +913,7 @@ class ReviewResponseRepository(BaseRepository[ReviewResponse]):
         self,
         query,
         pagination: Optional[Dict[str, Any]] = None
-    ) -> PaginationResult:
+    ) -> PaginatedResult:
         """Paginate query results."""
         if not pagination:
             pagination = {'page': 1, 'per_page': 20}
@@ -924,10 +924,9 @@ class ReviewResponseRepository(BaseRepository[ReviewResponse]):
         total = query.count()
         items = query.limit(per_page).offset((page - 1) * per_page).all()
         
-        return PaginationResult(
+        return PaginatedResult(
             items=items,
-            total=total,
+            total_count=total,
             page=page,
-            per_page=per_page,
-            pages=(total + per_page - 1) // per_page
+            page_size=per_page
         )

@@ -10,8 +10,8 @@ from app.core.exceptions import NotFoundError, PermissionError, ValidationError
 from app.services.review.review_response_service import ReviewResponseService
 from app.schemas.review import (
     OwnerResponse,
-    ResponseCreate,
-    ResponseUpdate,
+    HostelResponseCreate,
+    HostelResponseUpdate,
     ResponseTemplate,
     ResponseTemplateCreate,
 )
@@ -53,7 +53,7 @@ async def create_response(
         ...,
         description="Review ID to respond to"
     ),
-    payload: ResponseCreate = ...,
+    payload: HostelResponseCreate = ...,
     response_service: ReviewResponseService = Depends(get_response_service),
     current_user = Depends(get_current_user_dependency),
 ) -> OwnerResponse:
@@ -66,7 +66,7 @@ async def create_response(
     - One response per review
     
     **Request Body:**
-    - content: Response text (10-1000 chars) - Required
+    - response_text: Response text (20-2000 chars) - Required
     
     **Best Practices:**
     - Respond professionally and courteously
@@ -82,7 +82,7 @@ async def create_response(
     result = response_service.create_response(
         review_id=review_id,
         user_id=current_user.id,
-        content=payload.content,
+        content=payload.response_text,
     )
     
     if result.is_err():
@@ -118,7 +118,7 @@ async def update_response(
         ...,
         description="Response ID to update"
     ),
-    payload: ResponseUpdate = ...,
+    payload: HostelResponseUpdate = ...,
     response_service: ReviewResponseService = Depends(get_response_service),
     current_user = Depends(get_current_user_dependency),
 ) -> OwnerResponse:
@@ -130,7 +130,7 @@ async def update_response(
     - Response must not be locked
     
     **Request Body:**
-    - content: Updated response text (10-1000 chars)
+    - response_text: Updated response text (20-2000 chars)
     
     **Note:**
     - Updates are logged for transparency
@@ -139,7 +139,7 @@ async def update_response(
     result = response_service.update_response(
         response_id=response_id,
         user_id=current_user.id,
-        content=payload.content,
+        content=payload.response_text,
     )
     
     if result.is_err():
@@ -315,12 +315,12 @@ async def create_template(
     **Request Body:**
     - name: Template name (3-100 chars)
     - category: Template category (e.g., "positive", "negative")
-    - content: Template text with optional variables
-    - variables: List of variable names used in template (e.g., ["guest_name", "issue"])
+    - template_text: Template text with optional variables
+    - available_placeholders: List of variable names used in template (e.g., ["reviewer_name", "rating"])
     
     **Variables:**
-    Use {{variable_name}} syntax in content
-    Example: "Thank you {{guest_name}} for your feedback!"
+    Use {variable_name} syntax in content
+    Example: "Thank you {reviewer_name} for your feedback!"
     """
     result = response_service.create_template(data=payload)
     

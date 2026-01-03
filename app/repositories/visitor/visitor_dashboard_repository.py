@@ -23,7 +23,7 @@ from app.models.visitor.visitor_dashboard import (
     VisitorActivity,
 )
 from app.repositories.base.base_repository import BaseRepository
-from app.repositories.base.pagination import PaginationParams, PaginationResult
+from app.repositories.base.pagination import PaginationParams, PaginatedResult
 
 
 class RecentSearchRepository(BaseRepository[RecentSearch]):
@@ -77,8 +77,8 @@ class RecentSearchRepository(BaseRepository[RecentSearch]):
             searched_at=datetime.utcnow(),
         )
         
-        self.session.add(search)
-        self.session.flush()
+        self.db.add(search)
+        self.db.flush()
         
         return search
 
@@ -109,7 +109,7 @@ class RecentSearchRepository(BaseRepository[RecentSearch]):
             .limit(limit)
         )
         
-        result = self.session.execute(query)
+        result = self.db.execute(query)
         return list(result.scalars().all())
 
     def track_search_re_execution(
@@ -132,7 +132,7 @@ class RecentSearchRepository(BaseRepository[RecentSearch]):
         search.times_re_executed += 1
         search.last_re_executed_at = datetime.utcnow()
         
-        self.session.flush()
+        self.db.flush()
         return search
 
     def get_popular_searches(
@@ -162,7 +162,7 @@ class RecentSearchRepository(BaseRepository[RecentSearch]):
             .order_by(desc(RecentSearch.times_re_executed))
         )
         
-        result = self.session.execute(query)
+        result = self.db.execute(query)
         return list(result.scalars().all())
 
     def cleanup_old_searches(
@@ -192,7 +192,7 @@ class RecentSearchRepository(BaseRepository[RecentSearch]):
             .order_by(desc(RecentSearch.searched_at))
         )
         
-        result = self.session.execute(query)
+        result = self.db.execute(query)
         searches = list(result.scalars().all())
         
         # Soft delete searches beyond keep_count
@@ -202,7 +202,7 @@ class RecentSearchRepository(BaseRepository[RecentSearch]):
             search.deleted_at = datetime.utcnow()
             deleted_count += 1
         
-        self.session.flush()
+        self.db.flush()
         return deleted_count
 
 
@@ -251,7 +251,7 @@ class RecentlyViewedHostelRepository(BaseRepository[RecentlyViewedHostel]):
                 RecentlyViewedHostel.is_deleted == False,
             )
         )
-        result = self.session.execute(query)
+        result = self.db.execute(query)
         viewed = result.scalar_one_or_none()
         
         if viewed:
@@ -266,7 +266,7 @@ class RecentlyViewedHostelRepository(BaseRepository[RecentlyViewedHostel]):
                 current_sections.update(sections_viewed)
                 viewed.sections_viewed = list(current_sections)
             
-            self.session.flush()
+            self.db.flush()
             return viewed
         
         # Create new
@@ -286,8 +286,8 @@ class RecentlyViewedHostelRepository(BaseRepository[RecentlyViewedHostel]):
             sections_viewed=sections_viewed or [],
         )
         
-        self.session.add(viewed)
-        self.session.flush()
+        self.db.add(viewed)
+        self.db.flush()
         
         return viewed
 
@@ -318,7 +318,7 @@ class RecentlyViewedHostelRepository(BaseRepository[RecentlyViewedHostel]):
             .limit(limit)
         )
         
-        result = self.session.execute(query)
+        result = self.db.execute(query)
         return list(result.scalars().all())
 
     def get_most_viewed(
@@ -348,7 +348,7 @@ class RecentlyViewedHostelRepository(BaseRepository[RecentlyViewedHostel]):
             .limit(limit)
         )
         
-        result = self.session.execute(query)
+        result = self.db.execute(query)
         return list(result.scalars().all())
 
     def mark_action_taken(
@@ -377,7 +377,7 @@ class RecentlyViewedHostelRepository(BaseRepository[RecentlyViewedHostel]):
         elif action_type == "booking":
             viewed.booking_initiated = True
         
-        self.session.flush()
+        self.db.flush()
         return viewed
 
 
@@ -447,8 +447,8 @@ class RecommendedHostelRepository(BaseRepository[RecommendedHostel]):
             expires_at=expires_at,
         )
         
-        self.session.add(recommendation)
-        self.session.flush()
+        self.db.add(recommendation)
+        self.db.flush()
         
         return recommendation
 
@@ -484,7 +484,7 @@ class RecommendedHostelRepository(BaseRepository[RecommendedHostel]):
             .limit(limit)
         )
         
-        result = self.session.execute(query)
+        result = self.db.execute(query)
         return list(result.scalars().all())
 
     def mark_recommendation_viewed(
@@ -507,7 +507,7 @@ class RecommendedHostelRepository(BaseRepository[RecommendedHostel]):
         recommendation.was_viewed = True
         recommendation.viewed_at = datetime.utcnow()
         
-        self.session.flush()
+        self.db.flush()
         return recommendation
 
     def mark_recommendation_clicked(
@@ -532,7 +532,7 @@ class RecommendedHostelRepository(BaseRepository[RecommendedHostel]):
             recommendation.was_viewed = True
             recommendation.viewed_at = datetime.utcnow()
         
-        self.session.flush()
+        self.db.flush()
         return recommendation
 
     def mark_recommendation_converted(
@@ -554,7 +554,7 @@ class RecommendedHostelRepository(BaseRepository[RecommendedHostel]):
         
         recommendation.was_converted = True
         
-        self.session.flush()
+        self.db.flush()
         return recommendation
 
     def get_recommendation_performance(
@@ -581,7 +581,7 @@ class RecommendedHostelRepository(BaseRepository[RecommendedHostel]):
             )
         )
         
-        result = self.session.execute(query)
+        result = self.db.execute(query)
         recommendations = list(result.scalars().all())
         
         if not recommendations:
@@ -653,8 +653,8 @@ class PriceDropAlertRepository(BaseRepository[PriceDropAlert]):
             discount_percentage=discount_percentage,
         )
         
-        self.session.add(alert)
-        self.session.flush()
+        self.db.add(alert)
+        self.db.flush()
         
         return alert
 
@@ -682,7 +682,7 @@ class PriceDropAlertRepository(BaseRepository[PriceDropAlert]):
             .order_by(desc(PriceDropAlert.created_at))
         )
         
-        result = self.session.execute(query)
+        result = self.db.execute(query)
         return list(result.scalars().all())
 
     def mark_alert_read(
@@ -705,7 +705,7 @@ class PriceDropAlertRepository(BaseRepository[PriceDropAlert]):
         alert.is_read = True
         alert.read_at = datetime.utcnow()
         
-        self.session.flush()
+        self.db.flush()
         return alert
 
     def mark_notification_sent(
@@ -736,7 +736,7 @@ class PriceDropAlertRepository(BaseRepository[PriceDropAlert]):
         
         alert.notification_sent_at = datetime.utcnow()
         
-        self.session.flush()
+        self.db.flush()
         return alert
 
 
@@ -784,8 +784,8 @@ class AvailabilityAlertRepository(BaseRepository[AvailabilityAlert]):
             message=message,
         )
         
-        self.session.add(alert)
-        self.session.flush()
+        self.db.add(alert)
+        self.db.flush()
         
         return alert
 
@@ -813,7 +813,7 @@ class AvailabilityAlertRepository(BaseRepository[AvailabilityAlert]):
             .order_by(desc(AvailabilityAlert.created_at))
         )
         
-        result = self.session.execute(query)
+        result = self.db.execute(query)
         return list(result.scalars().all())
 
     def mark_alert_read(
@@ -836,7 +836,7 @@ class AvailabilityAlertRepository(BaseRepository[AvailabilityAlert]):
         alert.is_read = True
         alert.read_at = datetime.utcnow()
         
-        self.session.flush()
+        self.db.flush()
         return alert
 
     def mark_notification_sent(
@@ -867,7 +867,7 @@ class AvailabilityAlertRepository(BaseRepository[AvailabilityAlert]):
         
         alert.notification_sent_at = datetime.utcnow()
         
-        self.session.flush()
+        self.db.flush()
         return alert
 
 
@@ -919,8 +919,8 @@ class VisitorActivityRepository(BaseRepository[VisitorActivity]):
             activity_data=activity_data or {},
         )
         
-        self.session.add(activity)
-        self.session.flush()
+        self.db.add(activity)
+        self.db.flush()
         
         return activity
 
@@ -950,7 +950,7 @@ class VisitorActivityRepository(BaseRepository[VisitorActivity]):
         
         query = query.order_by(desc(VisitorActivity.occurred_at)).limit(limit)
         
-        result = self.session.execute(query)
+        result = self.db.execute(query)
         return list(result.scalars().all())
 
     def get_activity_summary(
@@ -977,7 +977,7 @@ class VisitorActivityRepository(BaseRepository[VisitorActivity]):
             )
         )
         
-        result = self.session.execute(query)
+        result = self.db.execute(query)
         activities = list(result.scalars().all())
         
         # Count by type

@@ -21,7 +21,7 @@ from app.models.visitor.saved_search import (
     SavedSearchNotification,
 )
 from app.repositories.base.base_repository import BaseRepository
-from app.repositories.base.pagination import PaginationParams, PaginationResult
+from app.repositories.base.pagination import PaginationParams, PaginatedResult
 
 
 class SavedSearchRepository(BaseRepository[SavedSearch]):
@@ -113,8 +113,8 @@ class SavedSearchRepository(BaseRepository[SavedSearch]):
             is_paused=False,
         )
         
-        self.session.add(saved_search)
-        self.session.flush()
+        self.db.add(saved_search)
+        self.db.flush()
         
         return saved_search
 
@@ -123,7 +123,7 @@ class SavedSearchRepository(BaseRepository[SavedSearch]):
         visitor_id: UUID,
         active_only: bool = True,
         pagination: Optional[PaginationParams] = None,
-    ) -> PaginationResult[SavedSearch]:
+    ) -> PaginatedResult[SavedSearch]:
         """
         Get all saved searches for a visitor.
         
@@ -207,7 +207,7 @@ class SavedSearchRepository(BaseRepository[SavedSearch]):
         saved_search.times_edited += 1
         saved_search.last_edited_at = datetime.utcnow()
         
-        self.session.flush()
+        self.db.flush()
         return saved_search
 
     def toggle_search_active(
@@ -231,7 +231,7 @@ class SavedSearchRepository(BaseRepository[SavedSearch]):
         
         saved_search.is_active = is_active
         
-        self.session.flush()
+        self.db.flush()
         return saved_search
 
     def pause_search(
@@ -253,7 +253,7 @@ class SavedSearchRepository(BaseRepository[SavedSearch]):
         
         saved_search.is_paused = True
         
-        self.session.flush()
+        self.db.flush()
         return saved_search
 
     def resume_search(
@@ -275,7 +275,7 @@ class SavedSearchRepository(BaseRepository[SavedSearch]):
         
         saved_search.is_paused = False
         
-        self.session.flush()
+        self.db.flush()
         return saved_search
 
     # ==================== Execution Management ====================
@@ -310,7 +310,7 @@ class SavedSearchRepository(BaseRepository[SavedSearch]):
         if limit:
             query = query.limit(limit)
         
-        result = self.session.execute(query)
+        result = self.db.execute(query)
         return list(result.scalars().all())
 
     def update_search_execution(
@@ -359,7 +359,7 @@ class SavedSearchRepository(BaseRepository[SavedSearch]):
         else:
             saved_search.average_execution_time_ms = execution_time_ms
         
-        self.session.flush()
+        self.db.flush()
         return saved_search
 
     def _calculate_next_check_time(
@@ -408,7 +408,7 @@ class SavedSearchRepository(BaseRepository[SavedSearch]):
         saved_search.last_notification_sent_at = datetime.utcnow()
         saved_search.new_matches_count = 0  # Reset after notification
         
-        self.session.flush()
+        self.db.flush()
         return saved_search
 
     # ==================== Statistics & Analytics ====================
@@ -435,7 +435,7 @@ class SavedSearchRepository(BaseRepository[SavedSearch]):
             select(func.count(SavedSearchExecution.id))
             .where(SavedSearchExecution.saved_search_id == search_id)
         )
-        total_executions = self.session.execute(executions_query).scalar_one()
+        total_executions = self.db.execute(executions_query).scalar_one()
         
         # Get successful executions
         successful_query = (
@@ -447,21 +447,21 @@ class SavedSearchRepository(BaseRepository[SavedSearch]):
                 )
             )
         )
-        successful_executions = self.session.execute(successful_query).scalar_one()
+        successful_executions = self.db.execute(successful_query).scalar_one()
         
         # Get total matches found
         matches_query = (
             select(func.count(SavedSearchMatch.id))
             .where(SavedSearchMatch.saved_search_id == search_id)
         )
-        total_matches = self.session.execute(matches_query).scalar_one()
+        total_matches = self.db.execute(matches_query).scalar_one()
         
         # Get notifications sent
         notifications_query = (
             select(func.count(SavedSearchNotification.id))
             .where(SavedSearchNotification.saved_search_id == search_id)
         )
-        notifications_sent = self.session.execute(notifications_query).scalar_one()
+        notifications_sent = self.db.execute(notifications_query).scalar_one()
         
         success_rate = Decimal("0.00")
         if total_executions > 0:
@@ -501,7 +501,7 @@ class SavedSearchRepository(BaseRepository[SavedSearch]):
                 SavedSearch.is_deleted == False,
             )
         )
-        total_searches = self.session.execute(total_query).scalar_one()
+        total_searches = self.db.execute(total_query).scalar_one()
         
         # Active searches
         active_query = select(func.count(SavedSearch.id)).where(
@@ -512,7 +512,7 @@ class SavedSearchRepository(BaseRepository[SavedSearch]):
                 SavedSearch.is_paused == False,
             )
         )
-        active_searches = self.session.execute(active_query).scalar_one()
+        active_searches = self.db.execute(active_query).scalar_one()
         
         # Total matches across all searches
         matches_query = (
@@ -524,7 +524,7 @@ class SavedSearchRepository(BaseRepository[SavedSearch]):
                 )
             )
         )
-        total_matches = self.session.execute(matches_query).scalar_one() or 0
+        total_matches = self.db.execute(matches_query).scalar_one() or 0
         
         # New matches across all searches
         new_matches_query = (
@@ -537,7 +537,7 @@ class SavedSearchRepository(BaseRepository[SavedSearch]):
                 )
             )
         )
-        new_matches = self.session.execute(new_matches_query).scalar_one() or 0
+        new_matches = self.db.execute(new_matches_query).scalar_one() or 0
         
         return {
             "total_saved_searches": total_searches,
@@ -568,7 +568,7 @@ class SavedSearchRepository(BaseRepository[SavedSearch]):
             )
         )
         
-        return self.session.execute(query).scalar_one()
+        return self.db.execute(query).scalar_one()
 
 
 class SavedSearchExecutionRepository(BaseRepository[SavedSearchExecution]):
@@ -625,8 +625,8 @@ class SavedSearchExecutionRepository(BaseRepository[SavedSearchExecution]):
             database_query_time_ms=database_query_time_ms,
         )
         
-        self.session.add(execution)
-        self.session.flush()
+        self.db.add(execution)
+        self.db.flush()
         
         return execution
 
@@ -652,7 +652,7 @@ class SavedSearchExecutionRepository(BaseRepository[SavedSearchExecution]):
             .limit(limit)
         )
         
-        result = self.session.execute(query)
+        result = self.db.execute(query)
         return list(result.scalars().all())
 
     def get_execution_performance_metrics(
@@ -672,7 +672,7 @@ class SavedSearchExecutionRepository(BaseRepository[SavedSearchExecution]):
             SavedSearchExecution.saved_search_id == saved_search_id
         )
         
-        result = self.session.execute(query)
+        result = self.db.execute(query)
         executions = list(result.scalars().all())
         
         if not executions:
@@ -748,8 +748,8 @@ class SavedSearchMatchRepository(BaseRepository[SavedSearchMatch]):
             last_checked_at=now,
         )
         
-        self.session.add(match)
-        self.session.flush()
+        self.db.add(match)
+        self.db.flush()
         
         return match
 
@@ -758,7 +758,7 @@ class SavedSearchMatchRepository(BaseRepository[SavedSearchMatch]):
         saved_search_id: UUID,
         new_only: bool = False,
         pagination: Optional[PaginationParams] = None,
-    ) -> PaginationResult[SavedSearchMatch]:
+    ) -> PaginatedResult[SavedSearchMatch]:
         """
         Get matches for a saved search.
         
@@ -801,7 +801,7 @@ class SavedSearchMatchRepository(BaseRepository[SavedSearchMatch]):
             SavedSearchMatch.id.in_(match_ids)
         )
         
-        result = self.session.execute(query)
+        result = self.db.execute(query)
         matches = result.scalars().all()
         
         count = 0
@@ -811,7 +811,7 @@ class SavedSearchMatchRepository(BaseRepository[SavedSearchMatch]):
             match.notified_at = datetime.utcnow()
             count += 1
         
-        self.session.flush()
+        self.db.flush()
         return count
 
     def mark_match_viewed(
@@ -834,7 +834,7 @@ class SavedSearchMatchRepository(BaseRepository[SavedSearchMatch]):
         match.was_viewed = True
         match.viewed_at = datetime.utcnow()
         
-        self.session.flush()
+        self.db.flush()
         return match
 
     def update_match_verification(
@@ -862,7 +862,7 @@ class SavedSearchMatchRepository(BaseRepository[SavedSearchMatch]):
             )
         )
         
-        result = self.session.execute(query)
+        result = self.db.execute(query)
         match = result.scalar_one_or_none()
         
         if not match:
@@ -875,7 +875,7 @@ class SavedSearchMatchRepository(BaseRepository[SavedSearchMatch]):
             match.is_deleted = True
             match.deleted_at = datetime.utcnow()
         
-        self.session.flush()
+        self.db.flush()
         return match
 
 
@@ -922,8 +922,8 @@ class SavedSearchNotificationRepository(BaseRepository[SavedSearchNotification])
             sent_at=datetime.utcnow(),
         )
         
-        self.session.add(notification)
-        self.session.flush()
+        self.db.add(notification)
+        self.db.flush()
         
         return notification
 
@@ -951,7 +951,7 @@ class SavedSearchNotificationRepository(BaseRepository[SavedSearchNotification])
         if status in ["sent", "delivered"]:
             notification.delivered_at = datetime.utcnow()
         
-        self.session.flush()
+        self.db.flush()
         return notification
 
     def mark_notification_opened(
@@ -974,7 +974,7 @@ class SavedSearchNotificationRepository(BaseRepository[SavedSearchNotification])
         notification.was_opened = True
         notification.opened_at = datetime.utcnow()
         
-        self.session.flush()
+        self.db.flush()
         return notification
 
     def track_link_click(
@@ -996,7 +996,7 @@ class SavedSearchNotificationRepository(BaseRepository[SavedSearchNotification])
         
         notification.links_clicked += 1
         
-        self.session.flush()
+        self.db.flush()
         return notification
 
     def get_notification_history(
@@ -1021,7 +1021,7 @@ class SavedSearchNotificationRepository(BaseRepository[SavedSearchNotification])
             .limit(limit)
         )
         
-        result = self.session.execute(query)
+        result = self.db.execute(query)
         return list(result.scalars().all())
 
     def get_notification_performance(
@@ -1041,7 +1041,7 @@ class SavedSearchNotificationRepository(BaseRepository[SavedSearchNotification])
             SavedSearchNotification.saved_search_id == saved_search_id
         )
         
-        result = self.session.execute(query)
+        result = self.db.execute(query)
         notifications = list(result.scalars().all())
         
         if not notifications:

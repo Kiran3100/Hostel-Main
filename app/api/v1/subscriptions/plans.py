@@ -1,4 +1,3 @@
-# --- File: C:\Hostel-Main\app\api\v1\subscriptions\plans.py ---
 """
 Subscription plan management endpoints.
 
@@ -67,7 +66,7 @@ async def create_plan(
     Raises:
         HTTPException: If user is not admin or creation fails
     """
-    logger.info(f"User {current_user.id} creating new plan: {payload.name}")
+    logger.info(f"User {current_user.id} creating new plan: {payload.plan_name}")  # FIXED: payload.name -> payload.plan_name
     
     # Verify admin access
     if not getattr(current_user, 'is_admin', False):
@@ -87,7 +86,7 @@ async def create_plan(
         )
     
     plan = result.unwrap()
-    logger.info(f"Successfully created plan {plan.id}: {plan.name}")
+    logger.info(f"Successfully created plan {plan.id}: {plan.plan_name}")  # FIXED: plan.name -> plan.plan_name
     
     return plan
 
@@ -329,7 +328,7 @@ async def archive_plan(
 
 
 @router.get(
-    "/by-name/{name}",
+    "/by-name/{plan_name}",  # FIXED: name -> plan_name for consistency
     response_model=PlanResponse,
     summary="Get plan by name",
     description="Retrieve a plan by its unique name.",
@@ -339,7 +338,7 @@ async def archive_plan(
     }
 )
 async def get_plan_by_name(
-    name: str,
+    plan_name: str,  # FIXED: name -> plan_name for consistency
     plan_service: SubscriptionPlanService = Depends(get_plan_service),
     current_user: Any = Depends(get_current_user),
 ) -> PlanResponse:
@@ -347,23 +346,23 @@ async def get_plan_by_name(
     Get plan by name.
     
     Args:
-        name: Plan name
+        plan_name: Plan name
         plan_service: Plan service dependency
         current_user: Current authenticated user
         
     Returns:
         Plan details
     """
-    logger.info(f"User {current_user.id} retrieving plan by name: {name}")
+    logger.info(f"User {current_user.id} retrieving plan by name: {plan_name}")
     
-    result = plan_service.get_plan_by_name(name=name)
+    result = plan_service.get_plan_by_name(plan_name=plan_name)  # FIXED: name -> plan_name
     
     if result.is_err():
         error = result.unwrap_err()
-        logger.error(f"Failed to get plan by name {name}: {error}")
+        logger.error(f"Failed to get plan by name {plan_name}: {error}")
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Plan '{name}' not found"
+            detail=f"Plan '{plan_name}' not found"
         )
     
     return result.unwrap()

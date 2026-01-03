@@ -12,7 +12,7 @@ from fastapi.responses import Response
 from app.core.dependencies import AuthenticationDependency
 from app.services.user.user_profile_service import UserProfileService
 from app.schemas.user import UserDetail
-from app.schemas.user_profile import (
+from app.schemas.user.user_profile import (
     ProfileUpdate,
     ProfileImageUpdate,
     ContactInfoUpdate,

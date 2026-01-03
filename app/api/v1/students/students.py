@@ -24,7 +24,7 @@ from app.schemas.student import (
     CheckoutRequest,
     BulkStatusUpdate,
 )
-from app.schemas.base import User, PaginatedResponse
+from app.schemas.common.base import User, PaginatedResponse
 
 router = APIRouter(
     prefix="/students",

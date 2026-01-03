@@ -22,6 +22,7 @@ __all__ = [
     "FavoriteUpdate",
     "FavoritesExport",
     "FavoriteComparison",
+    "FavoriteBulkOperation",
 ]
 
 
@@ -332,3 +333,78 @@ class FavoriteComparison(BaseSchema):
             )
 
         return unique_ids
+
+
+class FavoriteBulkOperation(BaseSchema):
+    """
+    Bulk operation on multiple favorites.
+    """
+
+    action: str = Field(
+        ...,
+        description="Action to perform",
+        pattern="^(add_tag|remove_tag|delete|update_notes)$",
+    )
+    favorite_ids: List[UUID] = Field(
+        ...,
+        min_length=1,
+        max_length=50,
+        description="List of favorite IDs to operate on",
+    )
+    
+    # Action-specific fields
+    tag: Union[str, None] = Field(
+        default=None,
+        max_length=50,
+        description="Tag to add/remove (required for tag operations)",
+    )
+    notes: Union[str, None] = Field(
+        default=None,
+        max_length=500,
+        description="Notes to set (for update_notes action)",
+    )
+
+    @field_validator("favorite_ids")
+    @classmethod
+    def validate_favorite_ids(cls, v: List[UUID]) -> List[UUID]:
+        """Validate favorite IDs list."""
+        if len(v) == 0:
+            raise ValueError("At least one favorite ID is required")
+        if len(v) > 50:
+            raise ValueError("Maximum 50 favorites can be operated on at once")
+        
+        # Remove duplicates while preserving order
+        seen = set()
+        unique_ids = []
+        for fav_id in v:
+            if fav_id not in seen:
+                seen.add(fav_id)
+                unique_ids.append(fav_id)
+        
+        return unique_ids
+
+    @field_validator("tag")
+    @classmethod
+    def validate_tag(cls, v: Union[str, None], values) -> Union[str, None]:
+        """Validate tag field based on action."""
+        action = values.data.get('action')
+        if action in ['add_tag', 'remove_tag'] and not v:
+            raise ValueError("Tag is required for tag operations")
+        if v:
+            v = v.strip()
+            if not v:
+                return None
+        return v
+
+    @field_validator("notes")
+    @classmethod
+    def validate_notes(cls, v: Union[str, None], values) -> Union[str, None]:
+        """Validate notes field based on action."""
+        action = values.data.get('action')
+        if action == 'update_notes' and not v:
+            raise ValueError("Notes are required for update_notes action")
+        if v:
+            v = v.strip()
+            if not v:
+                return None
+        return v

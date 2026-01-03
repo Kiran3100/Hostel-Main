@@ -48,6 +48,10 @@ from app.schemas.search.search_request import (
     SavedSearchResponse,
     SavedSearchUpdate,
     SearchHistoryResponse,
+    # New schemas for router compatibility
+    SavedSearch,
+    SavedSearchExecution,
+    SavedSearchList,
 )
 from app.schemas.search.search_response import (
     FacetBucket,
@@ -77,6 +81,10 @@ __all__ = [
     "FacetBucket",
     "SavedSearchResponse",
     "SearchHistoryResponse",
+    # New schemas for router compatibility
+    "SavedSearch",
+    "SavedSearchExecution", 
+    "SavedSearchList",
     # Autocomplete
     "AutocompleteRequest",
     "AutocompleteResponse",

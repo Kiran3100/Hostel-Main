@@ -12,9 +12,9 @@ from dataclasses import dataclass
 from enum import Enum
 import asyncio
 
-from app.core1.exceptions import ValidationException, BusinessLogicException
-from app.core1.logging import LoggingContext
-from app.core1.config import settings
+from app.core.exceptions import ValidationException, BusinessLogicException
+from app.core.logging import LoggingContext
+from app.core.config import settings
 from app.models.base.enums import ApprovalStatus, ApprovalType
 from app.repositories.booking import BookingApprovalRepository
 from app.repositories.maintenance import MaintenanceApprovalRepository

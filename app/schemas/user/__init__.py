@@ -1,4 +1,3 @@
-# --- File: app/schemas/user/__init__.py ---
 """
 User schemas package.
 
@@ -18,6 +17,7 @@ from app.schemas.user.user_base import (
 from app.schemas.user.user_profile import (
     ContactInfoUpdate,
     NotificationPreferencesUpdate,
+    ProfileCompletenessResponse,
     ProfileImageUpdate,
     ProfileUpdate,
 )
@@ -33,8 +33,13 @@ from app.schemas.user.user_session import (
     CreateSessionRequest,
     RevokeAllSessionsRequest,
     RevokeSessionRequest,
+    SessionAnalytics,
     SessionInfo,
     UserSession,
+)
+from app.schemas.user.user_preferences import (
+    UserNotificationPreferences,
+    UserNotificationPreferencesUpdate,
 )
 
 __all__ = [
@@ -49,6 +54,7 @@ __all__ = [
     "ProfileImageUpdate",
     "ContactInfoUpdate",
     "NotificationPreferencesUpdate",
+    "ProfileCompletenessResponse",
     # Response
     "UserResponse",
     "UserDetail",
@@ -62,4 +68,8 @@ __all__ = [
     "RevokeSessionRequest",
     "RevokeAllSessionsRequest",
     "CreateSessionRequest",
+    "SessionAnalytics",
+    # Preferences
+    "UserNotificationPreferences",
+    "UserNotificationPreferencesUpdate",
 ]

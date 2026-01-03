@@ -11,7 +11,7 @@ from fastapi.responses import Response
 
 from app.core.dependencies import AuthenticationDependency
 from app.services.user.user_session_service import UserSessionService
-from app.schemas.user_session import (
+from app.schemas.user.user_session import (
     SessionInfo,
     SessionAnalytics,
 )

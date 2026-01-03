@@ -24,6 +24,9 @@ __all__ = [
     "TopActivity",
     "ActivityTimelinePoint",
     "ActivityMetrics",
+    "SupervisorActivityCreate",
+    "SupervisorActivityBulkCreate",
+    "SupervisorActivityTimeline",
 ]
 
 
@@ -674,3 +677,174 @@ class ActivityExportRequest(BaseCreateSchema):
     def normalize_format(cls, v: str) -> str:
         """Normalize format to lowercase."""
         return v.lower().strip()
+
+
+class SupervisorActivityCreate(BaseCreateSchema):
+    """
+    Create supervisor activity entry.
+    
+    Schema for logging new supervisor activities.
+    """
+    
+    activity_type: str = Field(
+        ...,
+        description="Type of activity",
+        examples=[
+            "check_in",
+            "check_out", 
+            "student_interaction",
+            "incident_report",
+            "maintenance_check",
+            "meeting",
+            "custom"
+        ],
+    )
+    activity_description: str = Field(
+        ...,
+        min_length=10,
+        max_length=500,
+        description="Activity description",
+    )
+    
+    # Location and context
+    location: Union[str, None] = Field(
+        default=None,
+        max_length=255,
+        description="Activity location",
+    )
+    student_ids: List[str] = Field(
+        default_factory=list,
+        max_length=50,
+        description="Related student IDs (if applicable)",
+    )
+    
+    # Additional details
+    duration_minutes: Union[int, None] = Field(
+        default=None,
+        ge=1,
+        le=1440,  # Max 24 hours
+        description="Activity duration in minutes",
+    )
+    priority: str = Field(
+        default="normal",
+        pattern=r"^(low|normal|high|urgent)$",
+        description="Activity priority",
+    )
+    
+    # Metadata
+    metadata: Dict[str, Any] = Field(
+        default_factory=dict,
+        description="Additional activity metadata",
+    )
+    notes: Union[str, None] = Field(
+        default=None,
+        max_length=1000,
+        description="Additional notes",
+    )
+
+
+class SupervisorActivityBulkCreate(BaseCreateSchema):
+    """
+    Bulk create supervisor activities.
+    
+    Schema for creating multiple activity entries in one operation.
+    """
+    
+    activities: List[SupervisorActivityCreate] = Field(
+        ...,
+        min_length=1,
+        max_length=500,
+        description="List of activities to create (max 500)",
+    )
+    
+    # Bulk operation metadata
+    import_source: Union[str, None] = Field(
+        default=None,
+        max_length=100,
+        description="Source of bulk import",
+    )
+    batch_id: Union[str, None] = Field(
+        default=None,
+        description="Batch identifier for tracking",
+    )
+
+    @field_validator("activities")
+    @classmethod
+    def validate_activities(cls, v: List[SupervisorActivityCreate]) -> List[SupervisorActivityCreate]:
+        """Validate activities list."""
+        if len(v) > 500:
+            raise ValueError("Maximum 500 activities allowed per bulk operation")
+        return v
+
+
+class SupervisorActivityTimeline(BaseSchema):
+    """
+    Activity timeline with grouped data points.
+    
+    Represents supervisor activities over time periods for visualization.
+    """
+    
+    supervisor_id: str = Field(..., description="Supervisor ID")
+    supervisor_name: str = Field(..., description="Supervisor name")
+    
+    # Timeline configuration
+    start_date: datetime = Field(..., description="Timeline start date")
+    end_date: datetime = Field(..., description="Timeline end date") 
+    granularity: str = Field(
+        ...,
+        pattern=r"^(hour|day|week|month)$",
+        description="Timeline granularity",
+    )
+    
+    # Timeline data
+    timeline_points: List[ActivityTimelinePoint] = Field(
+        default_factory=list,
+        description="Timeline data points",
+    )
+    
+    # Summary statistics
+    total_activities: int = Field(
+        default=0,
+        ge=0,
+        description="Total activities in timeline",
+    )
+    unique_activity_types: int = Field(
+        default=0,
+        ge=0,
+        description="Number of unique activity types",
+    )
+    peak_activity_period: Union[datetime, None] = Field(
+        default=None,
+        description="Period with highest activity",
+    )
+    average_daily_activities: float = Field(
+        default=0.0,
+        ge=0,
+        description="Average activities per day",
+    )
+
+    @computed_field
+    @property
+    def timeline_span_days(self) -> int:
+        """Calculate timeline span in days."""
+        return (self.end_date - self.start_date).days
+
+    @computed_field
+    @property
+    def activity_density(self) -> str:
+        """Categorize activity density."""
+        if not self.timeline_points:
+            return "No Activity"
+        
+        avg_per_point = self.total_activities / len(self.timeline_points)
+        
+        if avg_per_point >= 10:
+            return "Very High"
+        elif avg_per_point >= 5:
+            return "High"
+        elif avg_per_point >= 2:
+            return "Medium"
+        elif avg_per_point >= 1:
+            return "Low"
+        else:
+            return "Very Low"

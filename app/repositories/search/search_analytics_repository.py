@@ -23,7 +23,7 @@ from app.models.search.search_analytics import (
     SearchAnalyticsReport
 )
 from app.repositories.base.base_repository import BaseRepository
-from app.core.exceptions import NotFoundException, ValidationException
+from app.core.exceptions import NotFoundError, ValidationException
 
 
 class SearchTermStatsRepository(BaseRepository[SearchTermStats]):
@@ -859,7 +859,7 @@ class ZeroResultTermRepository(BaseRepository[ZeroResultTerm]):
         """Mark zero result term as resolved."""
         term = self.get_by_id(term_id)
         if not term:
-            raise NotFoundException(f"Zero result term {term_id} not found")
+            raise NotFoundError(f"Zero result term {term_id} not found")
 
         term.resolution_status = 'resolved'
         term.resolution_type = resolution_type
@@ -984,7 +984,7 @@ class SearchAnalyticsReportRepository(BaseRepository[SearchAnalyticsReport]):
         """Publish report."""
         report = self.get_by_id(report_id)
         if not report:
-            raise NotFoundException(f"Report {report_id} not found")
+            raise NotFoundError(f"Report {report_id} not found")
 
         report.is_published = True
         report.published_at = datetime.utcnow()

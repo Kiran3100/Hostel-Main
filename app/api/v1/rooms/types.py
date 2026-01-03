@@ -10,7 +10,7 @@ from fastapi import APIRouter, Depends, Path, Query, status
 
 from app.core.dependencies import AuthenticationDependency
 from app.services.room.room_type_service import RoomTypeService
-from app.schemas.room_type import (
+from app.schemas.room.room_type import (
     RoomTypeDefinition,
     RoomTypeCreate,
     RoomTypeUpdate,

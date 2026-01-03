@@ -33,6 +33,7 @@ __all__ = [
     "ResponseGuidelines",
     "ResponseStats",
     "ResponseTemplate",
+    "ResponseTemplateCreate",
 ]
 
 
@@ -442,3 +443,76 @@ class ResponseTemplate(BaseSchema):
     def normalize_category(cls, v: str) -> str:
         """Normalize category to lowercase."""
         return v.lower().strip()
+
+
+class ResponseTemplateCreate(BaseCreateSchema):
+    """
+    Create response template schema.
+    
+    Used for creating new response templates.
+    """
+    
+    name: str = Field(
+        ...,
+        min_length=3,
+        max_length=100,
+        description="Template name",
+        examples=["Positive Review Thank You", "Negative Review Apology"],
+    )
+    
+    category: str = Field(
+        ...,
+        pattern=r"^(positive|negative|neutral|specific_issue)$",
+        description="Template category based on review type",
+    )
+    
+    template_text: str = Field(
+        ...,
+        min_length=50,
+        max_length=2000,
+        description="Template text with placeholders",
+        examples=[
+            "Dear {reviewer_name}, thank you for your feedback! "
+            "We appreciate your {rating}-star review of {hostel_name}. "
+            "{custom_message} Best regards, {responder_name}"
+        ],
+    )
+    
+    available_placeholders: List[str] = Field(
+        default_factory=lambda: [
+            "{reviewer_name}",
+            "{hostel_name}",
+            "{rating}",
+            "{responder_name}",
+            "{custom_message}",
+        ],
+        description="Available placeholders that can be used in template",
+    )
+    
+    is_active: bool = Field(
+        default=True,
+        description="Whether template should be active immediately",
+    )
+    
+    @field_validator("category")
+    @classmethod
+    def normalize_category(cls, v: str) -> str:
+        """Normalize category to lowercase."""
+        return v.lower().strip()
+    
+    @field_validator("template_text")
+    @classmethod
+    def validate_template_text(cls, v: str) -> str:
+        """Validate template text."""
+        v = v.strip()
+        if not v:
+            raise ValueError("Template text cannot be empty")
+        
+        # Check for minimum word count
+        word_count = len(v.split())
+        if word_count < 10:
+            raise ValueError(
+                "Template should be more detailed (minimum 10 words)"
+            )
+        
+        return v

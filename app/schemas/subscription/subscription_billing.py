@@ -8,18 +8,20 @@ and invoice tracking for subscriptions.
 from datetime import date as Date, datetime
 from decimal import Decimal
 from enum import Enum
-from typing import Union, Annotated
+from typing import Union, Annotated, List
 from uuid import UUID
 
 from pydantic import Field, HttpUrl, model_validator, computed_field, ConfigDict
 
-from app.schemas.common.base import BaseCreateSchema, BaseSchema
+from app.schemas.common.base import BaseCreateSchema, BaseSchema, BaseResponseSchema
 
 __all__ = [
     "InvoiceStatus",
     "BillingCycleInfo",
     "GenerateInvoiceRequest",
     "InvoiceInfo",
+    "SubscriptionInvoice",
+    "InvoiceSummary",
 ]
 
 
@@ -264,3 +266,158 @@ class InvoiceInfo(BaseSchema):
     def is_fully_paid(self) -> bool:
         """Check if invoice is fully paid."""
         return self.amount_due <= Decimal("0")
+
+
+class SubscriptionInvoice(BaseResponseSchema):
+    """
+    Complete subscription invoice with all details.
+
+    Extended invoice information with subscription context,
+    payment history, and billing cycle information.
+    """
+    model_config = ConfigDict(populate_by_name=True)
+
+    # Basic invoice info
+    invoice_id: UUID = Field(..., description="Invoice unique ID")
+    invoice_number: str = Field(..., description="Invoice number")
+    
+    # Subscription context
+    subscription_id: UUID = Field(..., description="Associated subscription")
+    hostel_id: UUID = Field(..., description="Hostel ID")
+    hostel_name: str = Field(..., description="Hostel name")
+    
+    # Plan information
+    plan_id: UUID = Field(..., description="Subscription plan ID")
+    plan_name: str = Field(..., description="Plan internal name")
+    plan_display_name: str = Field(..., description="Plan display name")
+    
+    # Billing period
+    billing_period_start: Date = Field(..., description="Billing period start")
+    billing_period_end: Date = Field(..., description="Billing period end")
+    billing_cycle: str = Field(..., description="Billing cycle (monthly/yearly)")
+    
+    # Dates
+    invoice_date: Date = Field(..., description="Invoice issue date")
+    due_date: Date = Field(..., description="Payment due date")
+    paid_date: Union[Date, None] = Field(None, description="Date when paid")
+    
+    # Amounts
+    subtotal: Annotated[Decimal, Field(..., description="Subtotal amount")]
+    discount_amount: Annotated[Decimal, Field(
+        default=Decimal("0.00"), description="Discount applied"
+    )]
+    tax_amount: Annotated[Decimal, Field(
+        default=Decimal("0.00"), description="Tax amount"
+    )]
+    total_amount: Annotated[Decimal, Field(..., description="Total invoice amount")]
+    amount_paid: Annotated[Decimal, Field(
+        default=Decimal("0.00"), description="Amount paid"
+    )]
+    amount_due: Annotated[Decimal, Field(..., description="Amount still due")]
+    currency: str = Field(default="INR", description="Currency code")
+    
+    # Status and tracking
+    status: InvoiceStatus = Field(..., description="Invoice status")
+    payment_method: Union[str, None] = Field(None, description="Payment method used")
+    payment_reference: Union[str, None] = Field(None, description="Payment reference")
+    
+    # Links and files
+    invoice_url: Union[HttpUrl, None] = Field(None, description="Invoice download URL")
+    payment_url: Union[HttpUrl, None] = Field(None, description="Payment URL")
+    
+    # Additional info
+    notes: Union[str, None] = Field(None, description="Invoice notes")
+    description: Union[str, None] = Field(None, description="Invoice description")
+    
+    @computed_field  # type: ignore[misc]
+    @property
+    def is_paid(self) -> bool:
+        """Check if invoice is fully paid."""
+        return self.status == InvoiceStatus.PAID
+    
+    @computed_field  # type: ignore[misc]
+    @property
+    def is_overdue(self) -> bool:
+        """Check if invoice is overdue."""
+        return (
+            self.status not in (InvoiceStatus.PAID, InvoiceStatus.CANCELLED, InvoiceStatus.REFUNDED)
+            and Date.today() > self.due_date
+        )
+    
+    @computed_field  # type: ignore[misc]
+    @property
+    def days_overdue(self) -> int:
+        """Calculate days overdue (0 if not overdue)."""
+        if not self.is_overdue:
+            return 0
+        return (Date.today() - self.due_date).days
+
+
+class InvoiceSummary(BaseSchema):
+    """
+    Aggregated invoice statistics and summaries.
+
+    Provides overview of invoice metrics for reporting
+    and dashboard purposes.
+    """
+    model_config = ConfigDict(populate_by_name=True)
+
+    # Scope
+    period_start: Date = Field(..., description="Summary period start")
+    period_end: Date = Field(..., description="Summary period end")
+    hostel_id: Union[UUID, None] = Field(None, description="Hostel ID (if hostel-specific)")
+    
+    # Counts
+    total_invoices: int = Field(..., ge=0, description="Total invoices in period")
+    paid_invoices: int = Field(..., ge=0, description="Paid invoices")
+    pending_invoices: int = Field(..., ge=0, description="Pending invoices")
+    overdue_invoices: int = Field(..., ge=0, description="Overdue invoices")
+    cancelled_invoices: int = Field(..., ge=0, description="Cancelled invoices")
+    
+    # Amounts
+    total_billed: Annotated[Decimal, Field(..., description="Total billed amount")]
+    total_paid: Annotated[Decimal, Field(..., description="Total paid amount")]
+    total_outstanding: Annotated[Decimal, Field(..., description="Total outstanding")]
+    total_overdue: Annotated[Decimal, Field(..., description="Total overdue amount")]
+    currency: str = Field(default="INR", description="Currency code")
+    
+    # Averages
+    average_invoice_amount: Annotated[Decimal, Field(..., description="Average invoice amount")]
+    average_payment_days: Union[float, None] = Field(None, description="Average days to payment")
+    
+    # Status breakdown
+    status_breakdown: dict = Field(
+        default_factory=dict,
+        description="Invoice count by status"
+    )
+    monthly_breakdown: List[dict] = Field(
+        default_factory=list,
+        description="Monthly invoice statistics"
+    )
+    
+    @computed_field  # type: ignore[misc]
+    @property
+    def collection_rate(self) -> Decimal:
+        """Calculate collection rate percentage."""
+        if self.total_billed == Decimal("0"):
+            return Decimal("100.00")
+        return (self.total_paid / self.total_billed * 100).quantize(Decimal("0.01"))
+    
+    @computed_field  # type: ignore[misc]
+    @property
+    def overdue_rate(self) -> Decimal:
+        """Calculate overdue rate percentage."""
+        if self.total_invoices == 0:
+            return Decimal("0.00")
+        return (Decimal(str(self.overdue_invoices)) / Decimal(str(self.total_invoices)) * 100).quantize(Decimal("0.01"))
+    
+    @model_validator(mode="after")
+    def validate_invoice_counts(self) -> "InvoiceSummary":
+        """Validate invoice count consistency."""
+        calculated_total = (
+            self.paid_invoices + self.pending_invoices + 
+            self.overdue_invoices + self.cancelled_invoices
+        )
+        if calculated_total > self.total_invoices:
+            raise ValueError("Sum of status-specific counts cannot exceed total")
+        return self

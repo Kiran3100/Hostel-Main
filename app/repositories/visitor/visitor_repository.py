@@ -22,7 +22,7 @@ from app.models.visitor.visitor import (
     VisitorSession,
 )
 from app.repositories.base.base_repository import BaseRepository
-from app.repositories.base.pagination import PaginationParams, PaginationResult
+from app.repositories.base.pagination import PaginationParams, PaginatedResult
 from app.repositories.base.specifications import Specification
 
 
@@ -76,8 +76,8 @@ class VisitorRepository(BaseRepository[Visitor]):
             preferences_metadata={},
         )
         
-        self.session.add(visitor)
-        self.session.flush()
+        self.db.add(visitor)
+        self.db.flush()
         
         return visitor
 
@@ -98,7 +98,7 @@ class VisitorRepository(BaseRepository[Visitor]):
             .options(selectinload(Visitor.preferences))
         )
         
-        result = self.session.execute(query)
+        result = self.db.execute(query)
         return result.scalar_one_or_none()
 
     def find_by_email(self, email: str) -> Optional[Visitor]:
@@ -117,7 +117,7 @@ class VisitorRepository(BaseRepository[Visitor]):
             .where(Visitor.is_deleted == False)
         )
         
-        result = self.session.execute(query)
+        result = self.db.execute(query)
         return result.scalar_one_or_none()
 
     def find_by_phone(self, phone: str) -> Optional[Visitor]:
@@ -136,7 +136,7 @@ class VisitorRepository(BaseRepository[Visitor]):
             .where(Visitor.is_deleted == False)
         )
         
-        result = self.session.execute(query)
+        result = self.db.execute(query)
         return result.scalar_one_or_none()
 
     def get_with_full_profile(self, visitor_id: UUID) -> Optional[Visitor]:
@@ -159,7 +159,7 @@ class VisitorRepository(BaseRepository[Visitor]):
             )
         )
         
-        result = self.session.execute(query)
+        result = self.db.execute(query)
         return result.scalar_one_or_none()
 
     # ==================== Visitor Intelligence & Tracking ====================
@@ -203,7 +203,7 @@ class VisitorRepository(BaseRepository[Visitor]):
         # Recalculate engagement score
         visitor.engagement_score = self._calculate_engagement_score(visitor)
         
-        self.session.flush()
+        self.db.flush()
         return visitor
 
     def update_engagement_score(self, visitor_id: UUID) -> Decimal:
@@ -223,7 +223,7 @@ class VisitorRepository(BaseRepository[Visitor]):
         engagement_score = self._calculate_engagement_score(visitor)
         visitor.engagement_score = engagement_score
         
-        self.session.flush()
+        self.db.flush()
         return engagement_score
 
     def _calculate_engagement_score(self, visitor: Visitor) -> Decimal:
@@ -289,7 +289,7 @@ class VisitorRepository(BaseRepository[Visitor]):
             raise ValueError(f"Visitor not found: {visitor_id}")
         
         visitor.conversion_likelihood = likelihood
-        self.session.flush()
+        self.db.flush()
         
         return visitor
 
@@ -313,7 +313,7 @@ class VisitorRepository(BaseRepository[Visitor]):
             raise ValueError(f"Visitor not found: {visitor_id}")
         
         visitor.visitor_segment = segment
-        self.session.flush()
+        self.db.flush()
         
         return visitor
 
@@ -323,7 +323,7 @@ class VisitorRepository(BaseRepository[Visitor]):
         self,
         days: int = 30,
         pagination: Optional[PaginationParams] = None,
-    ) -> PaginationResult[Visitor]:
+    ) -> PaginatedResult[Visitor]:
         """
         Find visitors active within specified days.
         
@@ -349,7 +349,7 @@ class VisitorRepository(BaseRepository[Visitor]):
         self,
         min_engagement_score: Decimal = Decimal("70.00"),
         pagination: Optional[PaginationParams] = None,
-    ) -> PaginationResult[Visitor]:
+    ) -> PaginatedResult[Visitor]:
         """
         Find visitors with high purchase intent.
         
@@ -374,7 +374,7 @@ class VisitorRepository(BaseRepository[Visitor]):
         self,
         segment: str,
         pagination: Optional[PaginationParams] = None,
-    ) -> PaginationResult[Visitor]:
+    ) -> PaginatedResult[Visitor]:
         """
         Find visitors in a specific segment.
         
@@ -401,7 +401,7 @@ class VisitorRepository(BaseRepository[Visitor]):
         has_bookings: Optional[bool] = None,
         min_engagement_score: Optional[Decimal] = None,
         pagination: Optional[PaginationParams] = None,
-    ) -> PaginationResult[Visitor]:
+    ) -> PaginatedResult[Visitor]:
         """
         Find visitors matching multiple criteria.
         
@@ -469,7 +469,7 @@ class VisitorRepository(BaseRepository[Visitor]):
         total_query = select(func.count(Visitor.id)).where(
             Visitor.is_deleted == False
         )
-        total_visitors = self.session.execute(total_query).scalar_one()
+        total_visitors = self.db.execute(total_query).scalar_one()
         
         # Active visitors (last 30 days)
         cutoff_date = datetime.utcnow() - timedelta(days=30)
@@ -479,7 +479,7 @@ class VisitorRepository(BaseRepository[Visitor]):
                 Visitor.last_active_at >= cutoff_date,
             )
         )
-        active_visitors = self.session.execute(active_query).scalar_one()
+        active_visitors = self.db.execute(active_query).scalar_one()
         
         # Visitors with bookings
         with_bookings_query = select(func.count(Visitor.id)).where(
@@ -488,13 +488,13 @@ class VisitorRepository(BaseRepository[Visitor]):
                 Visitor.total_bookings > 0,
             )
         )
-        visitors_with_bookings = self.session.execute(with_bookings_query).scalar_one()
+        visitors_with_bookings = self.db.execute(with_bookings_query).scalar_one()
         
         # Average engagement score
         avg_score_query = select(func.avg(Visitor.engagement_score)).where(
             Visitor.is_deleted == False
         )
-        avg_engagement_score = self.session.execute(avg_score_query).scalar_one() or Decimal("0.00")
+        avg_engagement_score = self.db.execute(avg_score_query).scalar_one() or Decimal("0.00")
         
         # Conversion rate
         conversion_rate = Decimal("0.00")
@@ -536,7 +536,7 @@ class VisitorRepository(BaseRepository[Visitor]):
                     Visitor.engagement_score <= max_score,
                 )
             )
-            count = self.session.execute(query).scalar_one()
+            count = self.db.execute(query).scalar_one()
             
             distribution.append({
                 "range": label,
@@ -558,7 +558,7 @@ class VisitorRepository(BaseRepository[Visitor]):
         total_query = select(func.count(Visitor.id)).where(
             Visitor.is_deleted == False
         )
-        total = self.session.execute(total_query).scalar_one()
+        total = self.db.execute(total_query).scalar_one()
         
         # Visitors who searched
         searched_query = select(func.count(Visitor.id)).where(
@@ -567,7 +567,7 @@ class VisitorRepository(BaseRepository[Visitor]):
                 Visitor.total_searches > 0,
             )
         )
-        searched = self.session.execute(searched_query).scalar_one()
+        searched = self.db.execute(searched_query).scalar_one()
         
         # Visitors who viewed hostels
         viewed_query = select(func.count(Visitor.id)).where(
@@ -576,7 +576,7 @@ class VisitorRepository(BaseRepository[Visitor]):
                 Visitor.total_hostel_views > 0,
             )
         )
-        viewed = self.session.execute(viewed_query).scalar_one()
+        viewed = self.db.execute(viewed_query).scalar_one()
         
         # Visitors who sent inquiries
         inquired_query = select(func.count(Visitor.id)).where(
@@ -585,7 +585,7 @@ class VisitorRepository(BaseRepository[Visitor]):
                 Visitor.total_inquiries > 0,
             )
         )
-        inquired = self.session.execute(inquired_query).scalar_one()
+        inquired = self.db.execute(inquired_query).scalar_one()
         
         # Visitors who booked
         booked_query = select(func.count(Visitor.id)).where(
@@ -594,7 +594,7 @@ class VisitorRepository(BaseRepository[Visitor]):
                 Visitor.total_bookings > 0,
             )
         )
-        booked = self.session.execute(booked_query).scalar_one()
+        booked = self.db.execute(booked_query).scalar_one()
         
         def calculate_rate(numerator: int, denominator: int) -> Decimal:
             if denominator == 0:
@@ -646,7 +646,7 @@ class VisitorRepository(BaseRepository[Visitor]):
         
         query = query.limit(limit)
         
-        result = self.session.execute(query)
+        result = self.db.execute(query)
         return list(result.scalars().all())
 
     # ==================== Visitor Preferences Management ====================
@@ -677,7 +677,7 @@ class VisitorRepository(BaseRepository[Visitor]):
         if budget_max is not None:
             visitor.budget_max = budget_max
         
-        self.session.flush()
+        self.db.flush()
         return visitor
 
     def update_location_preferences(
@@ -706,7 +706,7 @@ class VisitorRepository(BaseRepository[Visitor]):
         if preferred_areas is not None:
             visitor.preferred_areas = preferred_areas
         
-        self.session.flush()
+        self.db.flush()
         return visitor
 
     def update_amenity_preferences(
@@ -735,7 +735,7 @@ class VisitorRepository(BaseRepository[Visitor]):
         if preferred_amenities is not None:
             visitor.preferred_amenities = preferred_amenities
         
-        self.session.flush()
+        self.db.flush()
         return visitor
 
     def update_notification_preferences(
@@ -780,7 +780,7 @@ class VisitorRepository(BaseRepository[Visitor]):
         if notify_on_new_listings is not None:
             visitor.notify_on_new_listings = notify_on_new_listings
         
-        self.session.flush()
+        self.db.flush()
         return visitor
 
     # ==================== Visitor Sessions ====================
@@ -824,8 +824,8 @@ class VisitorRepository(BaseRepository[Visitor]):
             utm_campaign=utm_campaign,
         )
         
-        self.session.add(session)
-        self.session.flush()
+        self.db.add(session)
+        self.db.flush()
         
         return session
 
@@ -851,7 +851,7 @@ class VisitorRepository(BaseRepository[Visitor]):
             .limit(limit)
         )
         
-        result = self.session.execute(query)
+        result = self.db.execute(query)
         return list(result.scalars().all())
 
     # ==================== Bulk Operations ====================
@@ -874,7 +874,7 @@ class VisitorRepository(BaseRepository[Visitor]):
         if visitor_ids:
             query = query.where(Visitor.id.in_(visitor_ids))
         
-        result = self.session.execute(query)
+        result = self.db.execute(query)
         visitors = result.scalars().all()
         
         count = 0
@@ -882,7 +882,7 @@ class VisitorRepository(BaseRepository[Visitor]):
             visitor.engagement_score = self._calculate_engagement_score(visitor)
             count += 1
         
-        self.session.flush()
+        self.db.flush()
         return count
 
     def bulk_assign_segments(
@@ -917,14 +917,14 @@ class VisitorRepository(BaseRepository[Visitor]):
                     Visitor.total_inquiries >= rules["min_inquiries"]
                 )
             
-            result = self.session.execute(query)
+            result = self.db.execute(query)
             visitors = result.scalars().all()
             
             for visitor in visitors:
                 visitor.visitor_segment = segment_name
                 count += 1
         
-        self.session.flush()
+        self.db.flush()
         return count
 
 
@@ -958,7 +958,7 @@ class VisitorSessionRepository(BaseRepository[VisitorSession]):
         query = select(VisitorSession).where(
             VisitorSession.session_id == session_id
         )
-        result = self.session.execute(query)
+        result = self.db.execute(query)
         visitor_session = result.scalar_one_or_none()
         
         if not visitor_session:
@@ -974,7 +974,7 @@ class VisitorSessionRepository(BaseRepository[VisitorSession]):
             duration = (datetime.utcnow() - visitor_session.started_at).seconds
             visitor_session.duration_seconds = duration
         
-        self.session.flush()
+        self.db.flush()
         return visitor_session
 
     def end_session(
@@ -997,7 +997,7 @@ class VisitorSessionRepository(BaseRepository[VisitorSession]):
         query = select(VisitorSession).where(
             VisitorSession.session_id == session_id
         )
-        result = self.session.execute(query)
+        result = self.db.execute(query)
         visitor_session = result.scalar_one_or_none()
         
         if not visitor_session:
@@ -1012,7 +1012,7 @@ class VisitorSessionRepository(BaseRepository[VisitorSession]):
             duration = (visitor_session.ended_at - visitor_session.started_at).seconds
             visitor_session.duration_seconds = duration
         
-        self.session.flush()
+        self.db.flush()
         return visitor_session
 
 
@@ -1056,7 +1056,7 @@ class VisitorEngagementRepository(BaseRepository[VisitorEngagement]):
                 func.date(VisitorEngagement.engagement_date) == engagement_date.date(),
             )
         )
-        result = self.session.execute(query)
+        result = self.db.execute(query)
         engagement = result.scalar_one_or_none()
         
         if engagement:
@@ -1079,12 +1079,12 @@ class VisitorEngagementRepository(BaseRepository[VisitorEngagement]):
                 favorites_added=favorites_added,
                 inquiries_sent=inquiries_sent,
             )
-            self.session.add(engagement)
+            self.db.add(engagement)
         
         # Calculate engagement score
         engagement.engagement_score = self._calculate_daily_score(engagement)
         
-        self.session.flush()
+        self.db.flush()
         return engagement
 
     def _calculate_daily_score(self, engagement: VisitorEngagement) -> Decimal:

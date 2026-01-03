@@ -8,7 +8,7 @@ transaction history, and balance adjustments.
 
 from datetime import date as Date, datetime
 from decimal import Decimal
-from typing import List, Union
+from typing import Any, Dict, List, Union
 from uuid import UUID
 
 from pydantic import Field, field_validator, model_validator, computed_field
@@ -24,6 +24,11 @@ __all__ = [
     "TransactionItem",
     "BalanceAdjustment",
     "WriteOff",
+    "BalanceResponse",
+    "BalanceAdjustmentRequest",
+    "AdjustmentResponse",
+    "WriteOffRequest",
+    "WriteOffResponse",
 ]
 
 
@@ -619,3 +624,445 @@ class WriteOff(BaseCreateSchema):
         if len(v) < 20:
             raise ValueError("Detailed reason must be at least 20 characters")
         return v
+
+
+class BalanceResponse(BaseResponseSchema):
+    """
+    Balance response schema.
+    
+    Contains current balance information for an entity.
+    """
+
+    entity_id: UUID = Field(
+        ...,
+        description="Entity ID (student or hostel)",
+    )
+    entity_type: str = Field(
+        ...,
+        pattern=r"^(student|hostel)$",
+        description="Entity type",
+    )
+    entity_name: str = Field(
+        ...,
+        description="Entity name",
+    )
+
+    # Balance Information
+    current_balance: Decimal = Field(
+        ...,
+        description="Current account balance",
+    )
+    available_credit: Decimal = Field(
+        Decimal("0.00"),
+        ge=0,
+        description="Available credit balance",
+    )
+    total_outstanding: Decimal = Field(
+        Decimal("0.00"),
+        ge=0,
+        description="Total outstanding amount",
+    )
+    overdue_amount: Decimal = Field(
+        Decimal("0.00"),
+        ge=0,
+        description="Total overdue amount",
+    )
+
+    # Currency
+    currency: str = Field(
+        "INR",
+        min_length=3,
+        max_length=3,
+        description="Currency code",
+    )
+
+    # Timestamps
+    last_updated: datetime = Field(
+        ...,
+        description="When balance was last updated",
+    )
+    last_payment_date: Union[datetime, None] = Field(
+        None,
+        description="Date of last payment",
+    )
+
+    # Additional Info
+    pending_payments_count: int = Field(
+        0,
+        ge=0,
+        description="Number of pending payments",
+    )
+    overdue_payments_count: int = Field(
+        0,
+        ge=0,
+        description="Number of overdue payments",
+    )
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def balance_status(self) -> str:
+        """Get balance status description."""
+        if self.current_balance > 0:
+            return "credit"
+        elif self.current_balance < 0:
+            return "debit"
+        else:
+            return "zero"
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def is_overdue(self) -> bool:
+        """Check if account has overdue amounts."""
+        return self.overdue_amount > 0
+
+
+class BalanceAdjustmentRequest(BaseCreateSchema):
+    """
+    Balance adjustment request schema.
+    
+    Used to request a manual balance adjustment.
+    """
+
+    entity_id: UUID = Field(
+        ...,
+        description="Entity ID to adjust",
+    )
+    entity_type: str = Field(
+        ...,
+        pattern=r"^(student|hostel)$",
+        description="Entity type",
+    )
+
+    # Adjustment Details
+    adjustment_amount: Decimal = Field(
+        ...,
+        description="Adjustment amount (positive for credit, negative for debit)",
+    )
+    adjustment_type: str = Field(
+        ...,
+        pattern=r"^(correction|refund|discount|penalty|waiver|other)$",
+        description="Type of adjustment",
+    )
+
+    # Reason and Documentation
+    reason: str = Field(
+        ...,
+        min_length=10,
+        max_length=500,
+        description="Detailed reason for adjustment",
+    )
+    reference_number: Union[str, None] = Field(
+        None,
+        max_length=100,
+        description="External reference number",
+    )
+    notes: Union[str, None] = Field(
+        None,
+        max_length=1000,
+        description="Additional internal notes",
+    )
+
+    # Supporting Documents
+    supporting_documents: Union[List[str], None] = Field(
+        None,
+        description="URLs or IDs of supporting documents",
+    )
+
+    # Approval
+    requires_approval: bool = Field(
+        True,
+        description="Whether this adjustment requires approval",
+    )
+
+    @field_validator("adjustment_amount")
+    @classmethod
+    def validate_adjustment_amount(cls, v: Decimal) -> Decimal:
+        """Validate adjustment amount."""
+        if v == 0:
+            raise ValueError("Adjustment amount cannot be zero")
+        
+        # Reasonable limit check
+        max_adjustment = Decimal("100000.00")
+        if abs(v) > max_adjustment:
+            raise ValueError(
+                f"Adjustment amount ({abs(v)}) exceeds maximum ({max_adjustment})"
+            )
+        
+        return v.quantize(Decimal("0.01"))
+
+    @field_validator("reason")
+    @classmethod
+    def validate_reason(cls, v: str) -> str:
+        """Validate reason."""
+        v = v.strip()
+        if len(v) < 10:
+            raise ValueError("Reason must be at least 10 characters")
+        return v
+
+
+class AdjustmentResponse(BaseResponseSchema):
+    """
+    Adjustment response schema.
+    
+    Contains confirmation and details after applying adjustment.
+    """
+
+    adjustment_id: UUID = Field(
+        ...,
+        description="Unique adjustment ID",
+    )
+    entity_id: UUID = Field(
+        ...,
+        description="Entity ID",
+    )
+    entity_type: str = Field(
+        ...,
+        description="Entity type",
+    )
+
+    # Adjustment Details
+    adjustment_amount: Decimal = Field(
+        ...,
+        description="Adjustment amount",
+    )
+    adjustment_type: str = Field(
+        ...,
+        description="Adjustment type",
+    )
+
+    # Balance Changes
+    balance_before: Decimal = Field(
+        ...,
+        description="Balance before adjustment",
+    )
+    balance_after: Decimal = Field(
+        ...,
+        description="Balance after adjustment",
+    )
+
+    # Metadata
+    reason: str = Field(
+        ...,
+        description="Adjustment reason",
+    )
+    reference_number: Union[str, None] = Field(
+        None,
+        description="Reference number",
+    )
+
+    # Audit
+    adjusted_by: UUID = Field(
+        ...,
+        description="User who applied adjustment",
+    )
+    adjusted_by_name: str = Field(
+        ...,
+        description="Name of user who adjusted",
+    )
+    adjusted_at: datetime = Field(
+        ...,
+        description="When adjustment was applied",
+    )
+
+    # Approval
+    approval_status: str = Field(
+        ...,
+        pattern=r"^(pending|approved|rejected)$",
+        description="Approval status",
+    )
+    approved_by: Union[UUID, None] = Field(
+        None,
+        description="User who approved",
+    )
+    approved_at: Union[datetime, None] = Field(
+        None,
+        description="When approved",
+    )
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def net_change(self) -> Decimal:
+        """Calculate net change in balance."""
+        return (self.balance_after - self.balance_before).quantize(Decimal("0.01"))
+
+
+class WriteOffRequest(BaseCreateSchema):
+    """
+    Write-off request schema.
+    
+    Used to request writing off an uncollectible amount.
+    """
+
+    entity_id: UUID = Field(
+        ...,
+        description="Entity ID",
+    )
+    entity_type: str = Field(
+        ...,
+        pattern=r"^(student|hostel)$",
+        description="Entity type",
+    )
+
+    # Write-off Details
+    writeoff_amount: Decimal = Field(
+        ...,
+        ge=0,
+        description="Amount to write off",
+    )
+    current_outstanding: Decimal = Field(
+        ...,
+        ge=0,
+        description="Current outstanding amount",
+    )
+
+    # Reason
+    writeoff_reason: str = Field(
+        ...,
+        pattern=r"^(bad_debt|student_dropout|uncollectible|dispute_settled|bankruptcy|other)$",
+        description="Primary write-off reason",
+    )
+    detailed_explanation: str = Field(
+        ...,
+        min_length=20,
+        max_length=1000,
+        description="Detailed explanation for write-off",
+    )
+
+    # Approval Requirements
+    approval_required: bool = Field(
+        True,
+        description="Whether approval is required",
+    )
+    approval_level: str = Field(
+        "manager",
+        pattern=r"^(manager|director|cfo|board)$",
+        description="Required approval level",
+    )
+
+    # Supporting Documentation
+    supporting_documents: Union[List[str], None] = Field(
+        None,
+        description="Supporting document URLs/IDs",
+    )
+    collection_attempts_made: int = Field(
+        0,
+        ge=0,
+        description="Number of collection attempts made",
+    )
+    last_contact_date: Union[datetime, None] = Field(
+        None,
+        description="Date of last contact with debtor",
+    )
+
+    # Additional Info
+    notes: Union[str, None] = Field(
+        None,
+        max_length=1000,
+        description="Additional internal notes",
+    )
+
+    @field_validator("writeoff_amount")
+    @classmethod
+    def validate_writeoff_amount(cls, v: Decimal) -> Decimal:
+        """Validate write-off amount."""
+        if v <= 0:
+            raise ValueError("Write-off amount must be greater than zero")
+        return v.quantize(Decimal("0.01"))
+
+    @field_validator("detailed_explanation")
+    @classmethod
+    def validate_detailed_explanation(cls, v: str) -> str:
+        """Validate detailed explanation."""
+        v = v.strip()
+        if len(v) < 20:
+            raise ValueError("Detailed explanation must be at least 20 characters")
+        return v
+
+
+class WriteOffResponse(BaseResponseSchema):
+    """
+    Write-off response schema.
+    
+    Contains confirmation and details after write-off.
+    """
+
+    writeoff_id: UUID = Field(
+        ...,
+        description="Unique write-off ID",
+    )
+    entity_id: UUID = Field(
+        ...,
+        description="Entity ID",
+    )
+    entity_type: str = Field(
+        ...,
+        description="Entity type",
+    )
+
+    # Write-off Details
+    writeoff_amount: Decimal = Field(
+        ...,
+        ge=0,
+        description="Amount written off",
+    )
+    writeoff_reason: str = Field(
+        ...,
+        description="Write-off reason",
+    )
+
+    # Balance Changes
+    balance_before: Decimal = Field(
+        ...,
+        description="Balance before write-off",
+    )
+    balance_after: Decimal = Field(
+        ...,
+        description="Balance after write-off",
+    )
+
+    # Approval Details
+    authorized_by: UUID = Field(
+        ...,
+        description="User who authorized write-off",
+    )
+    authorized_by_name: str = Field(
+        ...,
+        description="Name of authorizing user",
+    )
+    authorized_at: datetime = Field(
+        ...,
+        description="When write-off was authorized",
+    )
+    approval_level: str = Field(
+        ...,
+        description="Approval level granted",
+    )
+
+    # Status
+    writeoff_status: str = Field(
+        ...,
+        pattern=r"^(pending|approved|rejected|completed)$",
+        description="Write-off status",
+    )
+
+    # Accounting
+    accounting_entry_id: Union[UUID, None] = Field(
+        None,
+        description="Associated accounting entry ID",
+    )
+    fiscal_year: Union[str, None] = Field(
+        None,
+        description="Fiscal year of write-off",
+    )
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def is_completed(self) -> bool:
+        """Check if write-off is completed."""
+        return self.writeoff_status == "completed"
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def net_reduction(self) -> Decimal:
+        """Calculate net balance reduction."""
+        return (self.balance_before - self.balance_after).quantize(Decimal("0.01"))

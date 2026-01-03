@@ -1,14 +1,13 @@
-# --- File: app/schemas/user/user_profile.py ---
 """
 User profile update schemas with comprehensive field validation.
 """
 
 from datetime import date as Date
-from typing import Union
+from typing import Union, List
 
 from pydantic import BaseModel, EmailStr, Field, HttpUrl, field_validator
 
-from app.schemas.common.base import BaseUpdateSchema
+from app.schemas.common.base import BaseResponseSchema, BaseUpdateSchema
 from app.schemas.common.enums import Gender
 
 __all__ = [
@@ -16,6 +15,7 @@ __all__ = [
     "ProfileImageUpdate",
     "ContactInfoUpdate",
     "NotificationPreferencesUpdate",
+    "ProfileCompletenessResponse",
 ]
 
 
@@ -205,42 +205,42 @@ class NotificationPreferencesUpdate(BaseUpdateSchema):
     """
 
     # Channel preferences
-    email_notifications: bool = Field(
-        default=True,
+    email_notifications: Union[bool, None] = Field(
+        default=None,
         description="Enable email notifications",
     )
-    sms_notifications: bool = Field(
-        default=True,
+    sms_notifications: Union[bool, None] = Field(
+        default=None,
         description="Enable SMS notifications",
     )
-    push_notifications: bool = Field(
-        default=True,
+    push_notifications: Union[bool, None] = Field(
+        default=None,
         description="Enable push notifications",
     )
 
     # Notification type preferences
-    booking_notifications: bool = Field(
-        default=True,
+    booking_notifications: Union[bool, None] = Field(
+        default=None,
         description="Receive booking-related notifications",
     )
-    payment_notifications: bool = Field(
-        default=True,
+    payment_notifications: Union[bool, None] = Field(
+        default=None,
         description="Receive payment notifications",
     )
-    complaint_notifications: bool = Field(
-        default=True,
+    complaint_notifications: Union[bool, None] = Field(
+        default=None,
         description="Receive complaint status updates",
     )
-    announcement_notifications: bool = Field(
-        default=True,
+    announcement_notifications: Union[bool, None] = Field(
+        default=None,
         description="Receive hostel announcements",
     )
-    maintenance_notifications: bool = Field(
-        default=True,
+    maintenance_notifications: Union[bool, None] = Field(
+        default=None,
         description="Receive maintenance updates",
     )
-    marketing_notifications: bool = Field(
-        default=False,
+    marketing_notifications: Union[bool, None] = Field(
+        default=None,
         description="Receive marketing communications (opt-in)",
     )
 
@@ -271,3 +271,42 @@ class NotificationPreferencesUpdate(BaseUpdateSchema):
         if v is not None:
             return v.lower().strip()
         return v
+
+
+class ProfileCompletenessResponse(BaseResponseSchema):
+    """
+    Profile completeness analysis response.
+    
+    Provides metrics about profile completion and suggestions.
+    """
+
+    completion_percentage: float = Field(
+        ...,
+        ge=0,
+        le=100,
+        description="Profile completion percentage (0-100)",
+    )
+    total_fields: int = Field(
+        ...,
+        ge=0,
+        description="Total number of profile fields",
+    )
+    completed_fields: int = Field(
+        ...,
+        ge=0,
+        description="Number of completed profile fields",
+    )
+    missing_fields: List[str] = Field(
+        default_factory=list,
+        description="List of missing/incomplete field names",
+        examples=[["phone", "address", "emergency_contact"]],
+    )
+    suggestions: List[str] = Field(
+        default_factory=list,
+        description="Suggestions for improving profile",
+        examples=[["Add a profile photo", "Complete your address information"]],
+    )
+    is_complete: bool = Field(
+        ...,
+        description="Whether profile meets minimum completion requirements",
+    )

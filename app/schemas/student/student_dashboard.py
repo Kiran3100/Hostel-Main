@@ -9,12 +9,14 @@ from datetime import datetime
 from datetime import date as Date
 from decimal import Decimal
 from typing import List, Union, Annotated
+from enum import Enum
 
 from pydantic import Field, computed_field, ConfigDict
 
 from app.schemas.common.base import BaseSchema
 
 __all__ = [
+    "DashboardPeriod",
     "StudentDashboard",
     "StudentFinancialSummary",
     "AttendanceSummary",
@@ -30,6 +32,20 @@ __all__ = [
 # Type aliases for Pydantic v2 decimal constraints
 PercentageDecimal = Annotated[Decimal, Field(ge=0, le=100, decimal_places=2)]
 MoneyAmount = Annotated[Decimal, Field(max_digits=10, decimal_places=2, ge=0)]
+
+
+class DashboardPeriod(str, Enum):
+    """
+    Time period options for dashboard statistics.
+    
+    Defines different time ranges for filtering dashboard data.
+    """
+    
+    CURRENT_MONTH = "current_month"
+    LAST_30_DAYS = "last_30_days"
+    CURRENT_SEMESTER = "current_semester"
+    CURRENT_YEAR = "current_year"
+    ALL_TIME = "all_time"
 
 
 class StudentFinancialSummary(BaseSchema):

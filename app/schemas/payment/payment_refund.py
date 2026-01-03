@@ -23,6 +23,7 @@ __all__ = [
     "RefundApproval",
     "RefundList",
     "RefundListItem",
+    "BulkRefundApproval",
 ]
 
 
@@ -414,3 +415,57 @@ class RefundList(BaseSchema):
     def has_previous(self) -> bool:
         """Check if there's a previous page."""
         return self.page > 1
+
+
+class BulkRefundApproval(BaseSchema):
+    """
+    Bulk refund approval schema.
+    
+    Used to approve multiple refunds at once.
+    """
+
+    refund_ids: List[UUID] = Field(
+        ...,
+        min_length=1,
+        max_length=50,
+        description="List of refund IDs to approve (max 50)",
+    )
+    approval_notes: Union[str, None] = Field(
+        None,
+        max_length=1000,
+        description="Common approval notes for all refunds",
+    )
+    process_immediately: bool = Field(
+        True,
+        description="Process refunds immediately after approval",
+    )
+    send_notifications: bool = Field(
+        True,
+        description="Send approval notifications to requesters",
+    )
+
+    @field_validator("refund_ids")
+    @classmethod
+    def validate_refund_ids(cls, v: List[UUID]) -> List[UUID]:
+        """Validate refund IDs list."""
+        if len(v) == 0:
+            raise ValueError("At least one refund ID is required")
+        
+        if len(v) > 50:
+            raise ValueError("Maximum 50 refunds allowed per bulk approval")
+        
+        # Check for duplicates
+        if len(v) != len(set(v)):
+            raise ValueError("Duplicate refund IDs found")
+        
+        return v
+
+    @field_validator("approval_notes")
+    @classmethod
+    def validate_approval_notes(cls, v: Union[str, None]) -> Union[str, None]:
+        """Validate approval notes."""
+        if v is not None:
+            v = v.strip()
+            if not v:
+                return None
+        return v

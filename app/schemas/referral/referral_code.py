@@ -19,6 +19,7 @@ __all__ = [
     "ReferralCodeResponse",
     "CodeValidationRequest",
     "CodeValidationResponse",
+    "ReferralCodeValidationResponse",
     "ReferralCodeStats",
 ]
 
@@ -274,3 +275,7 @@ class ReferralCodeStats(BaseSchema):
     # Time period
     created_at: datetime = Field(..., description="Code creation date")
     last_used_at: Union[datetime, None] = Field(None, description="Last usage date")
+
+
+# Alias for API compatibility
+ReferralCodeValidationResponse = CodeValidationResponse

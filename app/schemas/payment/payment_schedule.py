@@ -6,9 +6,9 @@ This module defines schemas for managing payment schedules including
 creation, updates, generation, and suspension of scheduled payments.
 """
 
-from datetime import date as Date, timedelta
+from datetime import date as Date, datetime, timedelta
 from decimal import Decimal
-from typing import List, Union
+from typing import Any, Dict, List, Union
 from uuid import UUID
 
 from pydantic import Field, field_validator, model_validator, computed_field
@@ -29,6 +29,8 @@ __all__ = [
     "ScheduledPaymentGenerated",
     "BulkScheduleCreate",
     "ScheduleSuspension",
+    "ScheduleListItem",
+    "ScheduleGenerationResponse",
 ]
 
 
@@ -510,3 +512,209 @@ class ScheduleSuspension(BaseCreateSchema):
             pass
         
         return self
+
+
+class ScheduleListItem(BaseSchema):
+    """
+    Schedule list item for summary views.
+    
+    Optimized schema for displaying multiple schedules.
+    """
+
+    id: UUID = Field(..., description="Schedule ID")
+    
+    # Student Information
+    student_id: UUID = Field(..., description="Student ID")
+    student_name: str = Field(..., description="Student name")
+    student_email: Union[str, None] = Field(None, description="Student email")
+
+    # Hostel Information
+    hostel_id: UUID = Field(..., description="Hostel ID")
+    hostel_name: str = Field(..., description="Hostel name")
+
+    # Schedule Details
+    fee_type: FeeType = Field(..., description="Fee type")
+    amount: Decimal = Field(..., ge=0, description="Amount per period")
+    currency: str = Field(default="INR", description="Currency code")
+
+    # Timing
+    start_date: Date = Field(..., description="Schedule start date")
+    end_date: Union[Date, None] = Field(None, description="Schedule end date")
+    next_due_date: Date = Field(..., description="Next payment due date")
+
+    # Status
+    is_active: bool = Field(..., description="Whether schedule is active")
+    is_suspended: bool = Field(default=False, description="Whether schedule is suspended")
+    
+    # Metadata
+    total_payments_generated: int = Field(
+        default=0,
+        ge=0,
+        description="Total payments generated from this schedule",
+    )
+    payments_completed: int = Field(
+        default=0,
+        ge=0,
+        description="Number of completed payments",
+    )
+    payments_pending: int = Field(
+        default=0,
+        ge=0,
+        description="Number of pending payments",
+    )
+
+    # Timestamps
+    created_at: datetime = Field(..., description="When schedule was created")
+    updated_at: datetime = Field(..., description="When schedule was last updated")
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def status_display(self) -> str:
+        """Get user-friendly status."""
+        if not self.is_active:
+            return "Inactive"
+        elif self.is_suspended:
+            return "Suspended"
+        else:
+            return "Active"
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def days_until_next_payment(self) -> int:
+        """Calculate days until next payment."""
+        return (self.next_due_date - Date.today()).days
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def completion_rate(self) -> float:
+        """Calculate payment completion rate."""
+        if self.total_payments_generated == 0:
+            return 0.0
+        return round(
+            (self.payments_completed / self.total_payments_generated) * 100,
+            2
+        )
+
+
+class ScheduleGenerationResponse(BaseSchema):
+    """
+    Schedule generation response schema.
+    
+    Contains results after generating payments from a schedule.
+    """
+
+    schedule_id: UUID = Field(
+        ...,
+        description="Schedule ID",
+    )
+    schedule_name: str = Field(
+        ...,
+        description="Schedule identifier/name",
+    )
+
+    # Generation Results
+    payments_generated: int = Field(
+        ...,
+        ge=0,
+        description="Number of payments generated",
+    )
+    payments_skipped: int = Field(
+        ...,
+        ge=0,
+        description="Number of payments skipped",
+    )
+    payments_failed: int = Field(
+        ...,
+        ge=0,
+        description="Number of generation failures",
+    )
+
+    # Financial Summary
+    total_amount: Decimal = Field(
+        ...,
+        ge=0,
+        description="Total amount of generated payments",
+    )
+    currency: str = Field(
+        default="INR",
+        description="Currency code",
+    )
+
+    # Generated Payment Details
+    generated_payment_ids: List[UUID] = Field(
+        default_factory=list,
+        description="IDs of successfully generated payments",
+    )
+    skipped_payment_ids: List[UUID] = Field(
+        default_factory=list,
+        description="IDs of skipped payments",
+    )
+
+    # Next Generation
+    next_generation_date: Date = Field(
+        ...,
+        description="When next generation should occur",
+    )
+    next_payment_amount: Decimal = Field(
+        ...,
+        ge=0,
+        description="Amount for next scheduled payment",
+    )
+
+    # Generation Summary
+    generation_summary: Dict[str, Any] = Field(
+        default_factory=dict,
+        description="Detailed generation summary",
+    )
+
+    # Timing
+    generated_at: datetime = Field(
+        default_factory=datetime.utcnow,
+        description="When generation occurred",
+    )
+    generation_period_start: Union[Date, None] = Field(
+        None,
+        description="Start of generation period",
+    )
+    generation_period_end: Union[Date, None] = Field(
+        None,
+        description="End of generation period",
+    )
+
+    # Error Information
+    errors: Union[List[str], None] = Field(
+        None,
+        description="List of errors encountered",
+    )
+    warnings: Union[List[str], None] = Field(
+        None,
+        description="List of warnings",
+    )
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def total_processed(self) -> int:
+        """Calculate total payments processed."""
+        return self.payments_generated + self.payments_skipped + self.payments_failed
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def success_rate(self) -> float:
+        """Calculate generation success rate."""
+        if self.total_processed == 0:
+            return 0.0
+        return round((self.payments_generated / self.total_processed) * 100, 2)
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def average_payment_amount(self) -> Decimal:
+        """Calculate average payment amount."""
+        if self.payments_generated == 0:
+            return Decimal("0.00")
+        return (self.total_amount / self.payments_generated).quantize(Decimal("0.01"))
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def has_errors(self) -> bool:
+        """Check if generation had errors."""
+        return self.payments_failed > 0 or (self.errors is not None and len(self.errors) > 0)

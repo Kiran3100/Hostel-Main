@@ -20,7 +20,7 @@ from app.models.inquiry.inquiry_follow_up import (
 from app.models.inquiry.inquiry import Inquiry
 from app.repositories.base.base_repository import BaseRepository
 from app.repositories.base.query_builder import QueryBuilder
-from app.core1.exceptions import NotFoundException, ValidationException
+from app.core.exceptions import NotFoundError, ValidationException
 
 
 class InquiryFollowUpRepository(BaseRepository[InquiryFollowUp]):
@@ -590,7 +590,7 @@ class InquiryFollowUpRepository(BaseRepository[InquiryFollowUp]):
         """Get inquiry by ID."""
         inquiry = self.session.query(Inquiry).filter(Inquiry.id == inquiry_id).first()
         if not inquiry:
-            raise NotFoundException(f"Inquiry {inquiry_id} not found")
+            raise NotFoundError(f"Inquiry {inquiry_id} not found")
         return inquiry
     
     async def _update_inquiry_follow_up_tracking(

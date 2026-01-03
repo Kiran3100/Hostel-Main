@@ -10,9 +10,9 @@ from app.core.dependencies import get_current_user_dependency, require_role
 from app.core.exceptions import NotFoundError, PermissionError, ValidationError
 from app.services.review.review_moderation_service import ReviewModerationService
 from app.schemas.review import (
-    ModerationQueueItem,
+    PendingReview,
     ModerationRequest,
-    FlagRequest,
+    FlagReview,
     ModerationStats,
     ReviewDetail,
 )
@@ -38,7 +38,7 @@ def get_moderation_service() -> ReviewModerationService:
 
 @router.get(
     "/queue",
-    response_model=List[ModerationQueueItem],
+    response_model=List[PendingReview],
     summary="Get moderation queue",
     description="Retrieve reviews pending moderation. Admin/Moderator only.",
     dependencies=[Depends(require_role(["admin", "moderator"]))],
@@ -185,7 +185,7 @@ async def flag_review(
         ...,
         description="Review ID to flag"
     ),
-    payload: FlagRequest = ...,
+    payload: FlagReview = ...,
     moderation_service: ReviewModerationService = Depends(get_moderation_service),
     current_user = Depends(get_current_user_dependency),
 ) -> dict:
@@ -212,8 +212,8 @@ async def flag_review(
     result = moderation_service.flag_review(
         review_id=review_id,
         user_id=current_user.id,
-        flag_reason=payload.reason,
-        details=payload.details,
+        flag_reason=payload.flag_reason,
+        details=payload.description,
     )
     
     if result.is_err():

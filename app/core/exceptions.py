@@ -18,6 +18,7 @@ class ErrorCode(str, Enum):
     OPERATION_FAILED = "OPERATION_FAILED"
     MAINTENANCE_MODE = "MAINTENANCE_MODE"
     API_DEPRECATED = "API_DEPRECATED"
+    SERVICE_ERROR = "SERVICE_ERROR"
     
     # Authentication & Authorization
     AUTHENTICATION_FAILED = "AUTHENTICATION_FAILED"
@@ -84,6 +85,11 @@ class ErrorCode(str, Enum):
     SMS_SERVICE_ERROR = "SMS_SERVICE_ERROR"
     NOTIFICATION_ERROR = "NOTIFICATION_ERROR"
     PUSH_NOTIFICATION_ERROR = "PUSH_NOTIFICATION_ERROR"
+    
+    # Webhook-specific errors
+    WEBHOOK_VERIFICATION_ERROR = "WEBHOOK_VERIFICATION_ERROR"
+    WEBHOOK_PROCESSING_ERROR = "WEBHOOK_PROCESSING_ERROR"
+    PROVIDER_NOT_SUPPORTED = "PROVIDER_NOT_SUPPORTED"
     
     # Cache and performance errors
     CACHE_ERROR = "CACHE_ERROR"
@@ -159,6 +165,24 @@ class OperationError(BaseAppException):
         super().__init__(message, error_code, details, status_code)
 
 
+class ServiceException(BaseAppException):
+    """Exception raised when service layer operations fail"""
+    
+    def __init__(
+        self,
+        message: str = "Service operation failed",
+        service_name: Optional[str] = None,
+        operation: Optional[str] = None,
+        error_code: ErrorCode = ErrorCode.SERVICE_ERROR,
+        status_code: int = 500
+    ):
+        details = {
+            "service_name": service_name,
+            "operation": operation
+        }
+        super().__init__(message, error_code, details, status_code)
+
+
 class ValidationError(BaseAppException):
     """Exception raised when data validation fails"""
     
@@ -171,6 +195,11 @@ class ValidationError(BaseAppException):
     ):
         details = {"field_errors": field_errors} if field_errors else {}
         super().__init__(message, error_code, details, status_code)
+
+
+class ValidationException(ValidationError):
+    """Alias for ValidationError to match common naming convention"""
+    pass
 
 
 class SettingsValidationError(ValidationError):
@@ -447,6 +476,25 @@ class AuthorizationError(BaseAppException):
     ):
         details = {"required_permission": required_permission} if required_permission else {}
         super().__init__(message, error_code, details, 403)
+
+
+class UnauthorizedError(AuthorizationError):
+    """Alias for AuthorizationError - commonly used name"""
+    
+    def __init__(
+        self,
+        message: str = "Unauthorized access",
+        required_permission: Optional[str] = None,
+        resource: Optional[str] = None,
+        action: Optional[str] = None
+    ):
+        details = {
+            "required_permission": required_permission,
+            "resource": resource,
+            "action": action
+        }
+        super().__init__(message, required_permission, ErrorCode.AUTHORIZATION_FAILED)
+        self.details.update({k: v for k, v in details.items() if v is not None})
 
 
 class SecurityError(BaseAppException):
@@ -1272,7 +1320,46 @@ class PaymentError(BaseAppException):
         super().__init__(message, error_code, details, 402)
 
 
-class PaymentGatewayError(PaymentError):
+class PaymentNotFoundError(ResourceNotFoundError):
+    """Exception raised when a payment is not found"""
+    
+    def __init__(
+        self,
+        payment_id: Optional[str] = None,
+        message: Optional[str] = None
+    ):
+        if not message:
+            message = "Payment not found"
+            if payment_id:
+                message += f" (ID: {payment_id})"
+        super().__init__("Payment", payment_id, message)
+        self.error_code = ErrorCode.RESOURCE_NOT_FOUND
+
+
+class InvalidPaymentDataError(ValidationError):
+    """Exception raised when payment data is invalid"""
+    
+    def __init__(
+        self,
+        message: str = "Invalid payment data",
+        field_errors: Optional[Dict[str, List[str]]] = None,
+        payment_field: Optional[str] = None,
+        invalid_value: Optional[Any] = None
+    ):
+        details = {
+            "payment_field": payment_field,
+            "invalid_value": str(invalid_value) if invalid_value is not None else None
+        }
+        super().__init__(
+            message=message,
+            field_errors=field_errors,
+            error_code=ErrorCode.VALIDATION_ERROR,
+            status_code=422
+        )
+        self.details.update(details)
+
+
+class PaymentGatewayError(BaseAppException):
     """Exception raised when payment gateway operations fail"""
     
     def __init__(
@@ -1280,13 +1367,186 @@ class PaymentGatewayError(PaymentError):
         message: str = "Payment gateway error",
         gateway_name: Optional[str] = None,
         gateway_error_code: Optional[str] = None,
-        **kwargs
+        payment_id: Optional[str] = None,
+        transaction_id: Optional[str] = None
     ):
         details = {
             "gateway_name": gateway_name,
-            "gateway_error_code": gateway_error_code
+            "gateway_error_code": gateway_error_code,
+            "payment_id": payment_id,
+            "transaction_id": transaction_id
         }
-        super().__init__(message, error_code=ErrorCode.PAYMENT_GATEWAY_ERROR, **kwargs)
+        super().__init__(message, ErrorCode.PAYMENT_GATEWAY_ERROR, details, 503)
+
+
+# ========================================
+# Ledger-Specific Exceptions
+# ========================================
+
+class LedgerNotFoundError(ResourceNotFoundError):
+    """Exception raised when a ledger entry is not found"""
+    
+    def __init__(
+        self,
+        ledger_id: Optional[str] = None,
+        entity_id: Optional[str] = None,
+        entity_type: Optional[str] = None,
+        message: Optional[str] = None
+    ):
+        if not message:
+            message = "Ledger not found"
+            if entity_id and entity_type:
+                message = f"Ledger not found for {entity_type} '{entity_id}'"
+            elif ledger_id:
+                message += f" (ID: {ledger_id})"
+        
+        details = {
+            "entity_id": entity_id,
+            "entity_type": entity_type
+        }
+        super().__init__("Ledger", ledger_id, message)
+        self.error_code = ErrorCode.RESOURCE_NOT_FOUND
+        self.details.update(details)
+
+
+class InvalidAdjustmentError(ValidationError):
+    """Exception raised when a ledger adjustment is invalid"""
+    
+    def __init__(
+        self,
+        message: str = "Invalid adjustment",
+        adjustment_type: Optional[str] = None,
+        amount: Optional[float] = None,
+        reason: Optional[str] = None,
+        field_errors: Optional[Dict[str, List[str]]] = None
+    ):
+        details = {
+            "adjustment_type": adjustment_type,
+            "amount": amount,
+            "reason": reason
+        }
+        super().__init__(
+            message=message,
+            field_errors=field_errors,
+            error_code=ErrorCode.VALIDATION_ERROR,
+            status_code=422
+        )
+        self.details.update(details)
+
+
+# ========================================
+# Refund-Specific Exceptions
+# ========================================
+
+class RefundNotFoundError(ResourceNotFoundError):
+    """Exception raised when a refund is not found"""
+    
+    def __init__(
+        self,
+        refund_id: Optional[str] = None,
+        message: Optional[str] = None
+    ):
+        if not message:
+            message = "Refund not found"
+            if refund_id:
+                message += f" (ID: {refund_id})"
+        super().__init__("Refund", refund_id, message)
+        self.error_code = ErrorCode.RESOURCE_NOT_FOUND
+
+
+class InvalidRefundRequestError(ValidationError):
+    """Exception raised when a refund request is invalid"""
+    
+    def __init__(
+        self,
+        message: str = "Invalid refund request",
+        payment_id: Optional[str] = None,
+        refund_amount: Optional[float] = None,
+        reason: Optional[str] = None,
+        field_errors: Optional[Dict[str, List[str]]] = None
+    ):
+        details = {
+            "payment_id": payment_id,
+            "refund_amount": refund_amount,
+            "reason": reason
+        }
+        super().__init__(
+            message=message,
+            field_errors=field_errors,
+            error_code=ErrorCode.VALIDATION_ERROR,
+            status_code=422
+        )
+        self.details.update(details)
+
+
+# ========================================
+# Reminder-Specific Exceptions
+# ========================================
+
+class ReminderConfigNotFoundError(ResourceNotFoundError):
+    """Exception raised when reminder configuration is not found"""
+    
+    def __init__(
+        self,
+        hostel_id: Optional[str] = None,
+        config_id: Optional[str] = None,
+        message: Optional[str] = None
+    ):
+        if not message:
+            message = "Reminder configuration not found"
+            if hostel_id:
+                message = f"Reminder configuration not found for hostel '{hostel_id}'"
+            elif config_id:
+                message += f" (ID: {config_id})"
+        
+        details = {"hostel_id": hostel_id}
+        super().__init__("ReminderConfig", config_id, message)
+        self.error_code = ErrorCode.RESOURCE_NOT_FOUND
+        self.details.update(details)
+
+
+# ========================================
+# Schedule-Specific Exceptions
+# ========================================
+
+class ScheduleNotFoundError(ResourceNotFoundError):
+    """Exception raised when a payment schedule is not found"""
+    
+    def __init__(
+        self,
+        schedule_id: Optional[str] = None,
+        message: Optional[str] = None
+    ):
+        if not message:
+            message = "Payment schedule not found"
+            if schedule_id:
+                message += f" (ID: {schedule_id})"
+        super().__init__("PaymentSchedule", schedule_id, message)
+        self.error_code = ErrorCode.RESOURCE_NOT_FOUND
+
+
+class InvalidScheduleError(ValidationError):
+    """Exception raised when a payment schedule is invalid"""
+    
+    def __init__(
+        self,
+        message: str = "Invalid payment schedule",
+        schedule_type: Optional[str] = None,
+        frequency: Optional[str] = None,
+        validation_issue: Optional[str] = None,
+        field_errors: Optional[Dict[str, List[str]]] = None
+    ):
+        details = {
+            "schedule_type": schedule_type,
+            "frequency": frequency,
+            "validation_issue": validation_issue
+        }
+        super().__init__(
+            message=message,
+            field_errors=field_errors,
+            error_code=ErrorCode.VALIDATION_ERROR,
+            status_code=422
+        )
         self.details.update(details)
 
 
@@ -1338,6 +1598,127 @@ class SMSServiceError(ExternalServiceError):
         details = {"phone_number": phone_number} if phone_number else {}
         super().__init__(message, service_name="sms", **kwargs)
         self.error_code = ErrorCode.SMS_SERVICE_ERROR
+        self.details.update(details)
+
+
+# ========================================
+# Webhook-Specific Exceptions
+# ========================================
+
+class WebhookError(BaseAppException):
+    """Base exception for webhook-related errors"""
+    
+    def __init__(
+        self,
+        message: str = "Webhook operation failed",
+        webhook_id: Optional[str] = None,
+        provider: Optional[str] = None,
+        error_code: ErrorCode = ErrorCode.EXTERNAL_SERVICE_ERROR,
+        status_code: int = 400
+    ):
+        details = {
+            "webhook_id": webhook_id,
+            "provider": provider
+        }
+        super().__init__(message, error_code, details, status_code)
+
+
+class WebhookVerificationError(WebhookError):
+    """Exception raised when webhook signature verification fails"""
+    
+    def __init__(
+        self,
+        message: str = "Webhook verification failed",
+        webhook_id: Optional[str] = None,
+        provider: Optional[str] = None,
+        verification_method: Optional[str] = None,
+        reason: Optional[str] = None
+    ):
+        details = {
+            "verification_method": verification_method,
+            "reason": reason
+        }
+        super().__init__(
+            message=message,
+            webhook_id=webhook_id,
+            provider=provider,
+            error_code=ErrorCode.WEBHOOK_VERIFICATION_ERROR,
+            status_code=401
+        )
+        self.details.update(details)
+
+
+class ProviderNotSupportedError(WebhookError):
+    """Exception raised when a provider is not supported"""
+    
+    def __init__(
+        self,
+        message: str = "Provider not supported",
+        provider: Optional[str] = None,
+        integration_type: Optional[str] = None,
+        supported_providers: Optional[List[str]] = None
+    ):
+        if provider and message == "Provider not supported":
+            message = f"Provider '{provider}' is not supported"
+            if integration_type:
+                message += f" for {integration_type} integration"
+        
+        details = {
+            "integration_type": integration_type,
+            "supported_providers": supported_providers
+        }
+        super().__init__(
+            message=message,
+            provider=provider,
+            error_code=ErrorCode.PROVIDER_NOT_SUPPORTED,
+            status_code=400
+        )
+        self.details.update(details)
+
+
+class WebhookProcessingError(WebhookError):
+    """Exception raised when webhook processing fails"""
+    
+    def __init__(
+        self,
+        message: str = "Webhook processing failed",
+        webhook_id: Optional[str] = None,
+        provider: Optional[str] = None,
+        event_type: Optional[str] = None,
+        processing_stage: Optional[str] = None
+    ):
+        details = {
+            "event_type": event_type,
+            "processing_stage": processing_stage
+        }
+        super().__init__(
+            message=message,
+            webhook_id=webhook_id,
+            provider=provider,
+            error_code=ErrorCode.WEBHOOK_PROCESSING_ERROR,
+            status_code=500
+        )
+        self.details.update(details)
+
+
+class WebhookTimeoutError(WebhookError):
+    """Exception raised when webhook processing times out"""
+    
+    def __init__(
+        self,
+        message: str = "Webhook processing timed out",
+        webhook_id: Optional[str] = None,
+        provider: Optional[str] = None,
+        timeout_seconds: Optional[float] = None
+    ):
+        details = {"timeout_seconds": timeout_seconds}
+        super().__init__(
+            message=message,
+            webhook_id=webhook_id,
+            provider=provider,
+            error_code=ErrorCode.TIMEOUT_ERROR,
+            status_code=504
+        )
         self.details.update(details)
 
 
@@ -1712,10 +2093,12 @@ __all__ = [
     
     # General exceptions
     'OperationError',
+    'ServiceException',
     'ValidationError',
+    'ValidationException',
     'SettingsValidationError',
     'ResourceNotFoundError',
-    'NotFoundError',  # Added this
+    'NotFoundError',
     'DuplicateError',
     'AdminAPIException',
     'MaintenanceMode',
@@ -1733,6 +2116,7 @@ __all__ = [
     # Auth exceptions
     'AuthenticationError',
     'AuthorizationError',
+    'UnauthorizedError',
     'SecurityError',
     'TokenError',
     'TokenExpiredError',
@@ -1788,12 +2172,36 @@ __all__ = [
     
     # Payment exceptions
     'PaymentError',
+    'PaymentNotFoundError',
+    'InvalidPaymentDataError',
     'PaymentGatewayError',
+    
+    # Ledger exceptions
+    'LedgerNotFoundError',
+    'InvalidAdjustmentError',
+    
+    # Refund exceptions
+    'RefundNotFoundError',
+    'InvalidRefundRequestError',
+    
+    # Reminder exceptions
+    'ReminderConfigNotFoundError',
+    
+    # Schedule exceptions
+    'ScheduleNotFoundError',
+    'InvalidScheduleError',
     
     # External service exceptions
     'ExternalServiceError',
     'EmailServiceError',
     'SMSServiceError',
+    
+    # Webhook exceptions
+    'WebhookError',
+    'WebhookVerificationError',
+    'ProviderNotSupportedError',
+    'WebhookProcessingError',
+    'WebhookTimeoutError',
     
     # Notification exceptions
     'NotificationError',

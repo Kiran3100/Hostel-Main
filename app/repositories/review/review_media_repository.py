@@ -16,7 +16,7 @@ from app.models.review.review_media import (
     ReviewMedia,
     ReviewMediaProcessing,
 )
-from app.repositories.base import BaseRepository, PaginationResult
+from app.repositories.base import BaseRepository, PaginatedResult
 
 
 class ReviewMediaRepository(BaseRepository[ReviewMedia]):
@@ -197,7 +197,7 @@ class ReviewMediaRepository(BaseRepository[ReviewMedia]):
     def get_pending_moderation(
         self,
         pagination: Optional[Dict[str, Any]] = None
-    ) -> PaginationResult[ReviewMedia]:
+    ) -> PaginatedResult[ReviewMedia]:
         """
         Get media pending moderation.
         
@@ -220,7 +220,7 @@ class ReviewMediaRepository(BaseRepository[ReviewMedia]):
     def get_flagged_media(
         self,
         pagination: Optional[Dict[str, Any]] = None
-    ) -> PaginationResult[ReviewMedia]:
+    ) -> PaginatedResult[ReviewMedia]:
         """
         Get flagged media.
         
@@ -663,7 +663,7 @@ class ReviewMediaRepository(BaseRepository[ReviewMedia]):
         self,
         query,
         pagination: Optional[Dict[str, Any]] = None
-    ) -> PaginationResult:
+    ) -> PaginatedResult:
         """Paginate query results."""
         if not pagination:
             pagination = {'page': 1, 'per_page': 20}
@@ -674,10 +674,9 @@ class ReviewMediaRepository(BaseRepository[ReviewMedia]):
         total = query.count()
         items = query.limit(per_page).offset((page - 1) * per_page).all()
         
-        return PaginationResult(
+        return PaginatedResult(
             items=items,
-            total=total,
+            total_count=total,
             page=page,
-            per_page=per_page,
-            pages=(total + per_page - 1) // per_page
+            page_size=per_page
         )

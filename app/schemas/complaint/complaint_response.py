@@ -5,6 +5,7 @@ Provides comprehensive response models for different complaint views:
 - Summary responses for list views
 - Detailed responses for single complaint views
 - Dashboard summary statistics
+- Paginated list responses
 """
 
 from datetime import datetime
@@ -20,6 +21,7 @@ __all__ = [
     "ComplaintResponse",
     "ComplaintDetail",
     "ComplaintListItem",
+    "ComplaintListResponse",
     "ComplaintSummary",
     "ComplaintStats",
 ]
@@ -383,6 +385,83 @@ class ComplaintListItem(BaseSchema):
             "low": 1,
         }
         return weight_map.get(self.priority.lower(), 2)
+
+
+class ComplaintListResponse(BaseSchema):
+    """
+    Paginated list response for complaints.
+    
+    Provides complaint items with pagination metadata
+    for efficient list views.
+    """
+    model_config = ConfigDict(from_attributes=True)
+
+    items: List[ComplaintListItem] = Field(
+        default_factory=list,
+        description="List of complaints for current page",
+    )
+    total: int = Field(
+        ...,
+        ge=0,
+        description="Total number of complaints matching filters",
+    )
+    page: int = Field(
+        ...,
+        ge=1,
+        description="Current page number",
+    )
+    page_size: int = Field(
+        ...,
+        ge=1,
+        le=100,
+        description="Number of items per page",
+    )
+    total_pages: int = Field(
+        ...,
+        ge=0,
+        description="Total number of pages",
+    )
+    has_next: bool = Field(
+        ...,
+        description="Whether there are more pages available",
+    )
+    has_previous: bool = Field(
+        ...,
+        description="Whether there are previous pages",
+    )
+
+    @computed_field  # type: ignore[misc]
+    @property
+    def count(self) -> int:
+        """
+        Get count of items in current page.
+        
+        Returns:
+            Number of items in the current page
+        """
+        return len(self.items)
+
+    @computed_field  # type: ignore[misc]
+    @property
+    def next_page(self) -> Union[int, None]:
+        """
+        Get next page number if available.
+        
+        Returns:
+            Next page number or None if no next page
+        """
+        return self.page + 1 if self.has_next else None
+
+    @computed_field  # type: ignore[misc]
+    @property
+    def previous_page(self) -> Union[int, None]:
+        """
+        Get previous page number if available.
+        
+        Returns:
+            Previous page number or None if no previous page
+        """
+        return self.page - 1 if self.has_previous else None
 
 
 class ComplaintSummary(BaseSchema):

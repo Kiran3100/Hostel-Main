@@ -12,13 +12,17 @@ from fastapi import APIRouter, Depends, Query, status, Body, Path
 from app.core.dependencies import get_current_user
 from app.services.leave.leave_application_service import LeaveApplicationService
 from app.schemas.leave import (
-    LeaveApplicationCreate,
-    LeaveApplicationResponse,
-    LeaveApplicationListResponse,
-    LeaveStatus,
-    LeaveType,
+    LeaveApplicationRequest,
+    LeaveCancellationRequest,
+    LeaveResponse,
+    LeaveDetail,
+    LeaveListItem,
+    LeaveSummary,
+    PaginatedLeaveResponse,
+    LeaveBalanceSummary,
 )
-from app.schemas.base import User
+from app.schemas.common.enums import LeaveStatus, LeaveType
+from app.schemas.common.base import User
 
 router = APIRouter(
     prefix="/students/me/leaves",
@@ -41,7 +45,7 @@ def get_leave_service() -> LeaveApplicationService:
 
 @router.get(
     "",
-    response_model=LeaveApplicationListResponse,
+    response_model=PaginatedLeaveResponse,
     status_code=status.HTTP_200_OK,
     summary="List my leave applications",
     description="Retrieve all leave applications for the authenticated student with optional filtering.",
@@ -72,7 +76,7 @@ async def list_my_leaves(
     page_size: int = Query(20, ge=1, le=100, description="Items per page"),
     leave_service: LeaveApplicationService = Depends(get_leave_service),
     current_user: User = Depends(get_current_user),
-) -> LeaveApplicationListResponse:
+) -> PaginatedLeaveResponse:
     """
     List all leave applications for the authenticated student.
     
@@ -87,7 +91,7 @@ async def list_my_leaves(
         current_user: Authenticated user from dependency
         
     Returns:
-        LeaveApplicationListResponse: Paginated list of leave applications
+        PaginatedLeaveResponse: Paginated list of leave applications
     """
     result = leave_service.list_for_student(
         student_id=current_user.id,
@@ -103,16 +107,22 @@ async def list_my_leaves(
 
 @router.get(
     "/{leave_id}",
-    response_model=LeaveApplicationResponse,
+    response_model=LeaveDetail,
     status_code=status.HTTP_200_OK,
     summary="Get leave application details",
     description="Retrieve detailed information about a specific leave application.",
+    responses={
+        200: {"description": "Leave application details retrieved successfully"},
+        401: {"description": "Unauthorized - Invalid or missing authentication"},
+        403: {"description": "Forbidden - Leave application does not belong to student"},
+        404: {"description": "Leave application not found"},
+    },
 )
 async def get_leave_detail(
     leave_id: UUID = Path(..., description="Unique leave application identifier"),
     leave_service: LeaveApplicationService = Depends(get_leave_service),
     current_user: User = Depends(get_current_user),
-) -> LeaveApplicationResponse:
+) -> LeaveDetail:
     """
     Get detailed information about a specific leave application.
     
@@ -122,7 +132,7 @@ async def get_leave_detail(
         current_user: Authenticated user from dependency
         
     Returns:
-        LeaveApplicationResponse: Detailed leave application information
+        LeaveDetail: Detailed leave application information
     """
     result = leave_service.get_by_id(
         leave_id=str(leave_id),
@@ -133,7 +143,7 @@ async def get_leave_detail(
 
 @router.post(
     "",
-    response_model=LeaveApplicationResponse,
+    response_model=LeaveResponse,
     status_code=status.HTTP_201_CREATED,
     summary="Apply for leave",
     description="Submit a new leave application.",
@@ -141,16 +151,17 @@ async def get_leave_detail(
         201: {"description": "Leave application created successfully"},
         400: {"description": "Invalid leave data or overlapping leave exists"},
         401: {"description": "Unauthorized"},
+        422: {"description": "Validation error in leave application data"},
     },
 )
 async def apply_leave(
-    payload: LeaveApplicationCreate = Body(
+    payload: LeaveApplicationRequest = Body(
         ...,
         description="Leave application details including dates, type, and reason",
     ),
     leave_service: LeaveApplicationService = Depends(get_leave_service),
     current_user: User = Depends(get_current_user),
-) -> LeaveApplicationResponse:
+) -> LeaveResponse:
     """
     Create a new leave application for the authenticated student.
     
@@ -158,6 +169,7 @@ async def apply_leave(
     - Leave dates are valid and in the future
     - No overlapping leave applications exist
     - Leave balance is sufficient (if applicable)
+    - Required documents for specific leave types
     
     Args:
         payload: Leave application data
@@ -165,83 +177,142 @@ async def apply_leave(
         current_user: Authenticated user from dependency
         
     Returns:
-        LeaveApplicationResponse: Created leave application details
+        LeaveResponse: Created leave application details
     """
-    leave_data = payload.dict()
+    # The student_id is already included in the LeaveApplicationRequest schema
+    # but we ensure it matches the authenticated user
+    leave_data = payload.model_dump()
     leave_data["student_id"] = current_user.id
     
     result = leave_service.apply(data=leave_data)
     return result.unwrap()
 
 
-@router.patch(
+@router.post(
     "/{leave_id}/cancel",
-    response_model=LeaveApplicationResponse,
+    response_model=LeaveResponse,
     status_code=status.HTTP_200_OK,
     summary="Cancel leave application",
     description="Cancel a pending or approved leave application.",
     responses={
         200: {"description": "Leave cancelled successfully"},
         400: {"description": "Cannot cancel - leave already started or completed"},
+        401: {"description": "Unauthorized"},
+        403: {"description": "Forbidden - Leave application does not belong to student"},
         404: {"description": "Leave application not found"},
+        422: {"description": "Validation error in cancellation request"},
     },
 )
 async def cancel_leave(
     leave_id: UUID = Path(..., description="Unique leave application identifier"),
-    cancellation_reason: Optional[str] = Body(
-        None,
-        embed=True,
-        description="Reason for cancellation",
+    payload: LeaveCancellationRequest = Body(
+        ...,
+        description="Cancellation request details",
     ),
     leave_service: LeaveApplicationService = Depends(get_leave_service),
     current_user: User = Depends(get_current_user),
-) -> LeaveApplicationResponse:
+) -> LeaveResponse:
     """
     Cancel a leave application.
     
     Only pending or future approved leaves can be cancelled.
+    Students can request immediate return for ongoing leaves.
     
     Args:
         leave_id: UUID of the leave application
-        cancellation_reason: Optional reason for cancellation
+        payload: Cancellation request with reason and return details
         leave_service: Injected leave service
         current_user: Authenticated user from dependency
         
     Returns:
-        LeaveApplicationResponse: Updated leave application
+        LeaveResponse: Updated leave application
     """
+    # Ensure the leave_id and student_id in payload match request context
+    cancel_data = payload.model_dump()
+    cancel_data["leave_id"] = leave_id
+    cancel_data["student_id"] = current_user.id
+    
     result = leave_service.cancel(
         leave_id=str(leave_id),
         student_id=current_user.id,
-        reason=cancellation_reason,
+        cancellation_data=cancel_data,
     )
     return result.unwrap()
 
 
 @router.get(
     "/balance/summary",
-    response_model=dict,
+    response_model=LeaveBalanceSummary,
     status_code=status.HTTP_200_OK,
     summary="Get leave balance summary",
     description="Retrieve leave balance and quota information for the authenticated student.",
+    responses={
+        200: {"description": "Leave balance summary retrieved successfully"},
+        401: {"description": "Unauthorized - Invalid or missing authentication"},
+        404: {"description": "Student or hostel information not found"},
+    },
 )
 async def get_leave_balance(
     leave_service: LeaveApplicationService = Depends(get_leave_service),
     current_user: User = Depends(get_current_user),
-) -> dict:
+) -> LeaveBalanceSummary:
     """
     Get leave balance summary including:
-    - Total leave quota
-    - Used leaves
-    - Remaining leaves
-    - Leave by type breakdown
+    - Total leave quota by type
+    - Used leaves by type  
+    - Remaining leaves by type
+    - Carry forward information
+    - Usage statistics
     
     Args:
         leave_service: Injected leave service
         current_user: Authenticated user from dependency
         
     Returns:
-        dict: Leave balance summary
+        LeaveBalanceSummary: Comprehensive leave balance information
     """
     result = leave_service.get_leave_balance(student_id=current_user.id)
+    return result.unwrap()
+
+
+@router.get(
+    "/summary",
+    response_model=LeaveSummary,
+    status_code=status.HTTP_200_OK,
+    summary="Get leave usage summary",
+    description="Retrieve leave usage statistics for the authenticated student.",
+    responses={
+        200: {"description": "Leave summary retrieved successfully"},
+        401: {"description": "Unauthorized - Invalid or missing authentication"},
+    },
+)
+async def get_leave_summary(
+    period_start: Optional[date] = Query(
+        None,
+        description="Summary period start date (defaults to academic year start)",
+    ),
+    period_end: Optional[date] = Query(
+        None, 
+        description="Summary period end date (defaults to academic year end)",
+    ),
+    leave_service: LeaveApplicationService = Depends(get_leave_service),
+    current_user: User = Depends(get_current_user),
+) -> LeaveSummary:
+    """
+    Get leave usage summary for specified period.
+    
+    Args:
+        period_start: Optional start date for summary period
+        period_end: Optional end date for summary period
+        leave_service: Injected leave service
+        current_user: Authenticated user from dependency
+        
+    Returns:
+        LeaveSummary: Leave usage statistics and summary
+    """
+    result = leave_service.get_leave_summary(
+        student_id=current_user.id,
+        period_start=period_start,
+        period_end=period_end,
+    )
     return result.unwrap()

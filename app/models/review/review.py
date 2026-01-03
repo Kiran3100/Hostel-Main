@@ -29,7 +29,7 @@ from sqlalchemy.dialects.postgresql import ARRAY, JSONB, UUID as PG_UUID
 from sqlalchemy.orm import relationship, validates
 
 from app.models.base import BaseModel, TimestampMixin, SoftDeleteMixin, AuditMixin
-from app.models.enums import ReviewStatus
+from app.models.common.enums import ReviewStatus
 
 __all__ = [
     "Review",

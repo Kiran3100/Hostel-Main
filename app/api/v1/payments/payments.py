@@ -23,7 +23,6 @@ from app.schemas.payment import (
     PaymentCancellation,
 )
 from app.core.exceptions import PaymentNotFoundError, UnauthorizedError
-from app.core.result import Result
 
 router = APIRouter(tags=["Payments - Core"])
 
